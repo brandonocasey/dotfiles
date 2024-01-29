@@ -1,0 +1,44 @@
+[core]
+  whitespace = trailing-space,space-before-tab
+[merge]
+  tool = vimdiff
+  stat = true
+[color]
+  ui = auto
+[diff]
+  mnemonicprefix = true
+  renames = copies
+  ignoreSubmodules = dirty
+[branch]
+  autosetupmerge = true
+[rerere]
+  enabled = true
+[hub]
+  protocol = ssh
+[alias]
+  co = checkout
+  up = !git fetch && git pull
+  ci = commit
+  fix = commit --amend -a -C HEAD
+  info = config --get remote.origin.url
+  pushf = push --force-with-lease
+  repick = "!f() { [ -z \"$1\" ] && return 1 || b=$RANDOM; git checkout -b $b && git branch -D '@{-1}' && git checkout \"$1\" && git checkout -b '@{-2}' && git cherry-pick $b && git branch -D $b; }; f"
+  cherrybase = repick
+  diff = auto
+  status = auto
+  branch = auto
+  ui = true
+[user]
+  name = jwbrandon
+  email = bcasey@jwplayer.com
+[push]
+  default = simple
+  autoSetupRemote = true
+[include]
+  path = .git-credentials-helper
+[fetch]
+  prune = true
+[pull]
+  rebase = true
+[init]
+  defaultBranch = main

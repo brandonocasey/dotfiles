@@ -1,0 +1,66 @@
+{
+    "files.autoSave": "afterDelay",
+    "editor.fontFamily": "Inconsolata, Monaco, 'Courier New', monospace",
+    "editor.fontSize": 16,
+    "editor.tabSize": 2,
+    "git.openRepositoryInParentFolders": "never",
+    "extensions.experimental.affinity": {
+        "asvetliakov.vscode-neovim": 1
+    },
+    "terminal.integrated.fontSize": 16,
+    "debug.javascript.autoAttachFilter": "onlyWithFlag",
+    "files.trimTrailingWhitespace": true,
+    "editor.renderWhitespace": "all",
+    "terminal.external.osxExec": "Wezterm.app",
+    "editor.wordWrap": "on",
+    "notebook.navigation.allowNavigateToSurroundingCells": false,
+    "codeium.enableSearch": true,
+    "redhat.telemetry.enabled": false,
+    "peacock.favoriteColors": [
+        {
+            "name": "Angular Red",
+            "value": "#dd0531"
+        },
+        {
+            "name": "Azure Blue",
+            "value": "#007fff"
+        },
+        {
+            "name": "JavaScript Yellow",
+            "value": "#f9e64f"
+        },
+        {
+            "name": "Mandalorian Blue",
+            "value": "#1857a4"
+        },
+        {
+            "name": "Node Green",
+            "value": "#215732"
+        },
+        {
+            "name": "React Blue",
+            "value": "#61dafb"
+        },
+        {
+            "name": "Something Different",
+            "value": "#832561"
+        },
+        {
+            "name": "Svelte Orange",
+            "value": "#ff3d00"
+        },
+        {
+            "name": "Vue Green",
+            "value": "#42b883"
+        }
+    ],
+    "codeium.enableCodeLens": false,
+    "files.autoSaveDelay": 30000,
+    "terminal.integrated.copyOnSelection": true,
+    "vim.useSystemClipboard": true,
+    "gitlens.views.commitDetails.files.layout": "tree",
+    "vim.targets.smartQuotes.aIncludesSurroundingSpaces": false,
+    "eslint.options": {},
+    "sync.autoUpload": true,
+    "sync.gist": "f9e9f5b114435333c2ec69f20ff117a7"
+}
