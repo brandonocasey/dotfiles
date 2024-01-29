@@ -66,5 +66,8 @@ cask 'wezterm'
 cask 'wireshark'
 cask 'zoom'
 
+tap 'rcmdnk/file'
+brew 'brew-file'
+
 # App Store applications
 mas 'Xcode (14.3)', id: 497799835

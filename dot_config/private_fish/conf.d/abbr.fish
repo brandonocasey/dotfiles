@@ -29,6 +29,10 @@ if type -q s
   abbr --add web-search s --provider duckduckgo
 end
 
+if type -q chezmoi
+  abbr --add cm chezmoi
+end
+
 # # use coreutils ls if it exists
 # if cmd_exists "eza"; then
 #   abbr --add ls eza'
