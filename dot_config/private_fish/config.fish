@@ -9,12 +9,19 @@ if status is-interactive
 
   if type -q brew and type -n "$HOMEBREW_PREFIX" -a -f $HOMEBREW_PREFIX/etc/brew-wrap.fish
     source $HOMEBREW_PREFIX/etc/brew-wrap.fish
+    set -gx HOMEBREW_BREWFILE_LEAVES 1
   end
 
   if type -q zoxide
     zoxide init fish | source
     abbr --add cd z
   end
+
+  if type -q fzf and type -q fd
+    export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
+    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  end
+
 
   function fish_greeting
     echo "----"

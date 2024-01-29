@@ -25,11 +25,11 @@ end
 
 
 local function color_scheme_for_system_theme()
-  if get_system_appearance():find 'Dark' then
-    return 'OneDark (base16)'
-  else
-    return 'One Light (base16)'
-  end
+  --if get_system_appearance():find 'Dark' then
+  return 'OneDark (base16)'
+  --else
+  -- return 'One Light (base16)'
+  --end
 end
 
 -- This is where you actually apply your config choices
