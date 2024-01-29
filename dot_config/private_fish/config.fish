@@ -10,6 +10,7 @@ if status is-interactive
   if type -q brew and type -n "$HOMEBREW_PREFIX" -a -f $HOMEBREW_PREFIX/etc/brew-wrap.fish
     source $HOMEBREW_PREFIX/etc/brew-wrap.fish
     set -gx HOMEBREW_BREWFILE_LEAVES 1
+    set -gx HOMEBREW_BREWFILE_TOP_PACKAGES 1
   end
 
   if type -q zoxide
