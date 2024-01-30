@@ -7,7 +7,7 @@ if status is-interactive
     tide configure --auto --style=Rainbow --prompt_colors='True color' --show_time='24-hour format' --rainbow_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=Yes --prompt_connection_andor_frame_color=Lightest --prompt_spacing=Compact --icons='Few icons' --transient=Yes
   end
 
-  if type -q brew and type -n "$HOMEBREW_PREFIX" -a -f $HOMEBREW_PREFIX/etc/brew-wrap.fish
+  if type -q brew && test -f $HOMEBREW_PREFIX/etc/brew-wrap.fish
     source $HOMEBREW_PREFIX/etc/brew-wrap.fish
     set -gx HOMEBREW_BREWFILE_LEAVES 1
     set -gx HOMEBREW_BREWFILE_TOP_PACKAGES 1

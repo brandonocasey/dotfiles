@@ -1,32 +1,33 @@
 #!/usr/bin/env bash
-xcode-select --install 2>/dev/null 1>/dev/null
 
-# clone to ~/.local/share/chezmoi
-if [ ! -d ~/.local/share/chezmoi/.git ]; then
-  mkdir -p ~/.local/share/chezmoi/.git
-  git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/chezmoi/
-fi
+echo "Getting sudo pre-approval"
+sudo -v
+xcode-select --install 2>/dev/null 1>/dev/null
+sudo xcodebuild -license accept
 
 # install nvchad
 if [ ! -d ~/.config/nvim/.git ]; then
+  echo "Cloning nvchad for nvim"
   mkdir -p ~/.config/nvim
   git clone https://github.com/NvChad/NvChad ~/.config/nvim --depth 1 && nvim
 fi
 
-
 # install brew if not installed
 if ! command -v brew 2>/dev/null >/dev/null; then
+  echo "Installing Brew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
 # install brew wrap
 if [ ! -f "$(brew --prefix)/etc/brew-wrap" ]; then
+  echo "Installing brew-file"
   brew install rcmdnk/file/brew-file
 fi
 
 # source brew wrap
 source "$(brew --prefix)/etc/brew-wrap"
 
+echo "Updating using Brewfile"
 # install brew dependencies
 brew file update
 
@@ -34,7 +35,36 @@ brew file update
 eval "$(brew shellenv)"
 
 # chezmoi
+echo "Applying Chezmoi config"
 chezmoi apply --force
+if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+  mkdir -p "$HOME/.config/chezmoi"
+  {
+    echo "[git]"
+    echo "    autoCommit = true"
+    echo "    autoPush = true"
+  } >> "$HOME/.config/chezmoi/chezmoi.toml"
+fi
+
+fish_loc="$(which fish)"
+if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
+  echo "Changing default shell to fish"
+  echo "$fish_loc" | sudo tee -a '/etc/shells'
+  chsh -s "$fish_loc"
+fi
+
+if command -v asdf 2>/dev/null >/dev/null; then
+  while read -r p; do
+    plugin_name="${p%%[[:space:]]*}"
+    asdf plugin-add "$plugin_name"
+    asdf install "$plugin_name"
+    if [ "$plugin_name" = "direnv" ]; then
+      asdf direnv setup --shell fish --version latest
+    fi
+  done < ~/.tool-versions
+fi
+fish -c "fish_update_completions"
+
 
 echo "Writings settings"
 
@@ -172,9 +202,6 @@ defaults write com.apple.ActivityMonitor ShowCategory -int 0
 defaults write com.apple.ActivityMonitor SortColumn -string "CPUUsage"
 defaults write com.apple.ActivityMonitor SortDirection -int 0
 
-killall Dock
-killall Finder
-
 # Specify the preferences directory
 defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "$XDG_CONFIG_HOME/.iterm2"
 
@@ -184,15 +211,16 @@ defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
 # tell hammerspoon to use this as the config directory
 defaults write org.hammerspoon.Hammerspoon MJConfigFile "$XDG_CONFIG_HOME/hammerspoon/init.lua"
 
+killall Dock
+killall Finder
+killall Rectangle || true
+killall Hammerspoon || true
+killall Karabiner-Elements || true
+open /Applications/Hammerspoon.app/
+open /Applications/Karabiner-Elements.app/
+open /Applications/Rectangle.app/
+
 echo "Settings:"
-echo "Now change mouse/trackpad settings"
-echo "  a. Mouse"
-echo "    i. Point & Click: Secondary Click Only + fastest mouse speed"
-echo "    ii. More Gestures: All checked"
-echo "    iii. Uncheck Scroll direction: Natural"
-echo "  b. Trackpad"
-echo "    i. Point & Click: All but look up and data detectors"
-echo "mouse double click speed 3 notches below max"
 echo "Night shift and 1 min Do not Disturb"
 echo "Setup touch id"
 echo "Show battery percentage in bar"
@@ -200,21 +228,15 @@ echo "Add sound icon to menu bar"
 echo "Add Path to finder toolbar"
 echo "Add Favorites"
 echo "Change computer name via System Preferences -> Sharing -> Computer Name: "
-echo "System appearnce to dark always"
+echo "System appearance to dark always"
 echo "bottom bar: "
 echo "- finder"
-echo "- zoom"
-echo "- chrome"
-echo "- logitech camera"
+echo "- brave"
 echo "- system settings"
 echo "- spotify"
 echo "- speedcrunch"
 echo "- devutils"
 echo "- activity monitor"
 echo "- browserstack local"
-echo "- sublime"
-echo "- vscodium"
-echo "- openvpn"
 
-echo "Install logitune https://support.logi.com/hc/en-nz/articles/360024849133-Download-HD-Pro-Webcam-C920"
 echo "Install Epson printer utils"
