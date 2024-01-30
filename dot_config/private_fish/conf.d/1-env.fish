@@ -83,3 +83,4 @@ set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 
 # finding things
 set -gx GREP_OPTIONS "--color=auto"
+set -gx BAT_THEME "TwoDark"

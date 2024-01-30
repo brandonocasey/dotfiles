@@ -30,4 +30,6 @@ if status is-interactive
     echo "----"
   end
 
+  fish_add_path -a -U "~/.local/bin"
+
 end
