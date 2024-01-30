@@ -12,9 +12,13 @@ if status is-interactive
     abbr --add cd z
   end
 
-  if type -q fzf and type -q fd
-    export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix'
-    export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+  if type -q fzf
+    if type -q fd
+      set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix'
+      set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
+    end
+    # onedark theme for fzf
+    set -gx FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS --color=dark --color=fg:-1,bg:-1,hl:#c678dd,fg+:#ffffff,bg+:#4b5263,hl+:#d858fe --color=info:#98c379,prompt:#61afef,pointer:#be5046,marker:#e5c07b,spinner:#61afef,header:#61afef"
   end
 
   if type -q myfly and type -q myfly-fzf and type -q fzf

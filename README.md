@@ -6,3 +6,6 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
 ~/.local/share/chezmoi/install.bash
 
 ```
+
+# Issues
+* switch from tealdear to navi once https://github.com/denisidoro/navi/issues/663 is resolved

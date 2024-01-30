@@ -63,7 +63,11 @@ if command -v asdf 2>/dev/null >/dev/null; then
     fi
   done < ~/.tool-versions
 fi
-fish -c "fish_update_completions"
+fish -c "fish_update_completions" &
+disown
+
+tldr -u &
+disown
 
 
 echo "Writings settings"
