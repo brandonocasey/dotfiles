@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+current_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+source "$current_dir/../shell/index.sh"
+
+if ! cmd_exists docker; then
+  echo 'docker is required!'
+fi
+
+docker run --rm -it \
+  -v "$(pwd):/data" \
+  -e PUID="$(id -u)" \
+  -e PGID="$(id -g)" \
+  "$@"
