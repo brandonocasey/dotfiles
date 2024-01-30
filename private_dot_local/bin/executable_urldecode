@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# URL Tools
+# Adds handy command line aliases useful for dealing with URLs
+#
+# inspired by
+# * http://ruslanspivak.com/2010/06/02/urlencode-and-urldecode-from-a-command-line/
+# * https://github.com/robbyrussell/oh-my-zsh/blob/master/plugins/urltools/urltools.plugin.zsh
+#
+source "$DOTFILES_DIR/shell/index.sh"
+
+if cmd_exists node; then
+  urldecode() {
+    node -e 'console.log(decodeURIComponent(process.argv[1]))' "$1"
+  }
+elif cmd_exists python3; then
+  urldecode() {
+    python3 -c 'import sys, urllib.parse as up; print(up.unquote_plus(sys.argv[1]))' "$1"
+  }
+elif cmd_exists python2; then
+  urldecode() {
+    python2 -c 'import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])' "$1"
+  }
+elif cmd_exists python; then
+  urldecode() {
+    python -c 'import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])' "$1"
+  }
+elif cmd_exists xxd; then
+  urldecode() {
+    printf "$(echo -n "$@" | sed 's/\\/\\\\/g;s/\(%\)\([0-9a-fA-F][0-9a-fA-F]\)/\\x\2/g')\n"
+  }
+elif cmd_exists ruby; then
+  urldecode() {
+    ruby -r cgi -e 'puts CGI.unescape(ARGV[0])' "$1"
+  }
+elif cmd_exists php; then
+  urldecode() {
+    php -r 'echo rawurldecode($argv[1]); echo "\n";' "$1"
+  }
+elif cmd_exists perl; then
+  if perl -MURI::Encode -e; then
+    urldecode() {
+      perl -MURI::Encode -ep 'uri_decode($ARGV[0]);' "$1"
+    }
+  elif perl -MURI::Escape -e; then
+    urldecode() {
+      perl -MURI::Escape -ep 'uri_unescape($ARGV[0]);' "$1"
+    }
+  else
+    urldecode() {
+      perl -e '$new=$ARGV[0]; $new =~ s/\%([A-Fa-f0-9]{2})/pack("C", hex($1))/seg; print "$new\n";' "$1"
+    }
+  fi
+fi
+
+if ! cmd_exists urldecode; then
+  echo >&2 "No supported languages to decode url"
+  exit 1
+fi
+
+if [ -n "$1" ]; then
+  urldecode "$1"
+else
+  echo >&2 "Usage: urlqidecode url"
+  exit 1
+fi

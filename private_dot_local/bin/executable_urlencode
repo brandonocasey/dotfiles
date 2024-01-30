@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# URL Tools
+# Adds handy command line aliases useful for dealing with URLs
+#
+# inspired by
+# * http://ruslanspivak.com/2010/06/02/urlencode-and-urldecode-from-a-command-line/
+# * https://github.com/robbyrussell/oh-my-zsh/blob/master/plugins/urltools/urltools.plugin.zsh
+#
+source "$DOTFILES_DIR/shell/index.sh"
+
+if cmd_exists node; then
+  urlencode() {
+    node -e 'console.log(encodeURIComponent(process.argv[1]))' "$1"
+  }
+elif cmd_exists python3; then
+  urlencode() {
+    python3 -c 'import sys, urllib.parse as up; print(up.quote_plus(sys.argv[1]))' "$1"
+  }
+elif cmd_exists python2; then
+  urlencode() {
+    python2 -c 'import sys, urllib as ul; print ul.quote_plus(sys.argv[1])' "$1"
+  }
+elif cmd_exists python; then
+  urlencode() {
+    python -c 'import sys, urllib as ul; print ul.quote_plus(sys.argv[1])' "$1"
+  }
+elif cmd_exists xxd; then
+  urlencode() {
+    echo "$@" | tr -d "\n" | xxd -plain | sed "s/\(..\)/%\1/g"
+  }
+elif cmd_exists ruby; then
+  urlencode() {
+    ruby -r cgi -e 'puts CGI.escape(ARGV[0])' "$1"
+  }
+elif cmd_exists php; then
+  urlencode() {
+    php -r 'echo rawurlencode($argv[1]); echo "\n";' "$1"
+  }
+elif cmd_exists perl; then
+  if perl -MURI::Encode -e; then
+    urlencode() {
+      perl -MURI::Encode -ep 'uri_encode($ARGV[0]);' "$1"
+    }
+  elif perl -MURI::Escape -e; then
+    urlencode() {
+      perl -MURI::Escape -ep 'uri_escape($ARGV[0]);' "$1"
+    }
+  else
+    urlencode() {
+      perl -e '$new=$ARGV[0]; $new =~ s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg; print "$new\n";' "$1"
+    }
+  fi
+fi
+
+if ! cmd_exists urlencode; then
+  echo >&2 "No supported languages to encode url"
+  exit 1
+fi
+
+if [ -n "$1" ]; then
+  urlencode "$1"
+else
+  echo >&2 "Usage: urlencode url"
+  exit 1
+fi

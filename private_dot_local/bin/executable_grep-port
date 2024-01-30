@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+if [ -n "$1" ]; then
+  lsof -ni4TCP:"$1"
+else
+  echo >&2 Usage: grep-port port-number
+  exit 1
+fi
