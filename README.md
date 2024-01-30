@@ -9,3 +9,6 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
 
 # Issues
 * switch from tealdear to navi once https://github.com/denisidoro/navi/issues/663 is resolved
+
+# References
+https://github.com/johnalanwoods/maintained-modern-unix

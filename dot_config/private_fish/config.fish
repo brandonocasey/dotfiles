@@ -29,6 +29,6 @@ if status is-interactive
   function fish_greeting
   end
 
-  fish_add_path -a -U "~/.local/bin"
+  fish_add_path -a "$HOME/.local/bin"
 
 end
