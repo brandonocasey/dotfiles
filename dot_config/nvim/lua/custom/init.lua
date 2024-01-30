@@ -63,6 +63,9 @@ vim.opt.expandtab = true
 -- set clipboard to 1000kb and 10000 line limit
 vim.opt.shada = "!,'100,<10000,s1000,h"
 
+-- linematch diff
+vim.opt.diffopt:append({ linematch = 60 })
+
 
 -- Lines below replaced by NvChad --
 --

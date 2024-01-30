@@ -22,6 +22,8 @@ abbr --add bim nvim
 abbr --add fim nvim
 abbr --add gim nvim
 abbr --add vi nvim
+abbr --add vimdiff nvim -d
+abbr --add nvimdiff nvim -d
 
 if type -q s
   abbr --add s s --provider duckduckgo
