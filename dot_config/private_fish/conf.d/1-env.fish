@@ -30,6 +30,8 @@ end
 
 if type -q brew
   brew shellenv | source
+  set -gx HOMEBREW_BUNDLE_NO_LOCK 1
+  set -gx HOMEBREW_BUNDLE_FILE "$HOME/.config/brewfile/Brewfile"
 end
 
 set -gx EDITOR nano
@@ -84,3 +86,7 @@ set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 # finding things
 set -gx GREP_OPTIONS "--color=auto"
 set -gx BAT_THEME "TwoDark"
+
+if [ $UNAME = Darwin ]
+  set -gx MACPREFS_BACKUP_DIR "$XDG_DATA_HOME/macprefs/"
+end

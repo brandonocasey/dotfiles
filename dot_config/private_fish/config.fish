@@ -4,13 +4,7 @@ if status is-interactive
   end
 
   if type -q tide && ! set -q -U tide_right_prompt_frame_enabled
-    tide configure --auto --style=Rainbow --prompt_colors='True color' --show_time='24-hour format' --rainbow_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=Yes --prompt_connection_andor_frame_color=Lightest --prompt_spacing=Compact --icons='Few icons' --transient=Yes
-  end
-
-  if type -q brew && test -f $HOMEBREW_PREFIX/etc/brew-wrap.fish
-    source $HOMEBREW_PREFIX/etc/brew-wrap.fish
-    set -gx HOMEBREW_BREWFILE_LEAVES 1
-    set -gx HOMEBREW_BREWFILE_TOP_PACKAGES 1
+    tide configure --auto --style=Classic --prompt_colors='True color' --classic_prompt_color=Darkest --show_time='12-hour format' --classic_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=Yes --prompt_connection_andor_frame_color=Darkest --prompt_spacing=Compact --icons='Few icons' --transient=Yes
   end
 
   if type -q zoxide
@@ -23,11 +17,12 @@ if status is-interactive
     export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
   end
 
+  if type -q myfly and type -q myfly-fzf and type -q fzf
+    mcfly init fish | source
+    mcfly-fzf init fish | source
+  end
 
   function fish_greeting
-    echo "----"
-    echo "Remember to use web-search, btop, ctop, fzf, jq, entr, zi, navi, fd, bat, grex (regex gen), parallel"
-    echo "----"
   end
 
   fish_add_path -a -U "~/.local/bin"

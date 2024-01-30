@@ -56,6 +56,58 @@
           "vertical" : "auto"
         }
       }
+    },
+    {
+      "buttons" : {
+        "mappings" : [
+          {
+            "action" : "missionControl",
+            "option" : false,
+            "shift" : false,
+            "button" : 2,
+            "command" : false,
+            "control" : false
+          },
+          {
+            "action" : "missionControl.spaceLeft",
+            "option" : false,
+            "shift" : false,
+            "button" : 3,
+            "command" : false,
+            "control" : false
+          },
+          {
+            "action" : "missionControl.spaceRight",
+            "option" : false,
+            "shift" : false,
+            "button" : 4,
+            "command" : false,
+            "control" : false
+          }
+        ]
+      },
+      "if" : {
+        "device" : {
+          "productName" : "USB Gaming Mouse",
+          "productID" : "0xc049",
+          "category" : "mouse",
+          "vendorID" : "0x46d"
+        }
+      },
+      "pointer" : {
+        "disableAcceleration" : true
+      },
+      "scrolling" : {
+        "reverse" : {
+          "vertical" : true
+        },
+        "acceleration" : {
+          "vertical" : 2
+        },
+        "speed" : {
+          "vertical" : 1.19
+        }
+      }
     }
   ]
 }

@@ -13,7 +13,6 @@ abbr --add df df -h
 # Automatically make directories recursively
 abbr --add mkdir mkdir -pv
 
-abbr --add wget wget --hsts-file="$XDG_DATA_HOME/wget-hsts"
 abbr --add gs git status
 
 # Vim misspellings
