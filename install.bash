@@ -29,7 +29,7 @@ source "$(brew --prefix)/etc/brew-wrap"
 
 echo "Updating using Brewfile"
 # install brew dependencies
-brew file update
+brew bundle --file=~/"$HOME/.local/share/chezmoi/dot_config/brewfile/Brewfile"
 
 # make sure everything from brew is in the path
 eval "$(brew shellenv)"
