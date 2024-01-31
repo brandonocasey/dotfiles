@@ -1,15 +1,34 @@
 ---@type ChadrcConfig
 local M = {}
 
--- Path to overriding theme and highlights files
-local highlights = require "custom.highlights"
-
 M.ui = {
   theme = "onedark",
-  theme_toggle = { "onedark", "one_light" },
+  lsp_semantic_tokens = true,
+  transparency = true,
 
-  hl_override = highlights.override,
-  hl_add = highlights.add,
+  hl_override = {
+    Comment = {
+      italic = true,
+    },
+  },
+  statusline = {
+    theme = "vscode_colored",
+    overriden_modules = function(modules)
+      -- print path before file name
+      table.insert(
+        modules,
+        2,
+        (function()
+          local path = vim.api.nvim_buf_get_name(0):match "^.*/"
+          path = path:gsub(vim.lsp.buf.list_workspace_folders()[1], '<root>')
+          return "%#St_LspStatus#" .. path
+        end)()
+      )
+    end,
+  }
+  --hl_add = {
+  --  NvimTreeOpenedFolderName = { fg = "green", bold = true },
+  --}
 }
 
 M.plugins = "custom.plugins"
