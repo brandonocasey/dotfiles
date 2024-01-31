@@ -34,13 +34,14 @@ end
 
 -- This is where you actually apply your config choices
 
-local font_size = 17
+local font_size = 16
 local font = wezterm.font_with_fallback({
   {
     -- Normal text
-    --weight = 'Bold',
-    family = 'CommitMono Nerd Font Propo',
-    harfbuzz_features = { 'ss03', 'ss04', 'ss05' }
+    --weight = 900,
+    --family = 'CommitMono Nerd Font Propo',
+    --harfbuzz_features = { 'ss03', 'ss04', 'ss05' }
+    family = 'Iosevka Term',
     --family = '0xProto Nerd Font Propo',
     --family = 'MonaspiceNe Nerd Font',
     --family = 'Inconsolata Nerd Font',

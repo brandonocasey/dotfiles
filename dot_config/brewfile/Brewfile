@@ -1,7 +1,7 @@
 
 # tap repositories and their packages
 
-tap 'homebrew/core'
+#tap 'homebrew/core'
 brew 'act'
 brew 'asdf'
 brew 'bat'
@@ -33,7 +33,7 @@ brew 'neovim'
 brew 'nnn'
 brew 'parallel'
 brew 'ripgrep'
-brew 'tealdear'
+brew 'tealdeer'
 brew 's-search'
 brew 'sd'
 brew 'vifm'
