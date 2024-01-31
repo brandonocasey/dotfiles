@@ -33,10 +33,10 @@ local function color_scheme_for_system_theme()
 end
 
 -- This is where you actually apply your config choices
-local font_size = 16
-config.line_height = 1
+local font_size = 17
+config.line_height = 0.9
 local font = wezterm.font_with_fallback({
-  { family = 'IosevkaTerm Nerd Font Propo' },
+  { family = 'IosevkaTerm Nerd Font Propo', weight = "Medium" },
   { family = 'Inconsolata Nerd Font Propo' },
   { family = 'JetBrains Mono' },
 })
