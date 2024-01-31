@@ -25,13 +25,14 @@ M.ui = {
           -- if there is no git root replace $HOME with ~/
           path = path:gsub(vim.fn.expand('$HOME/'), '~/')
           --path = path:gsub(vim.lsp.buf.list_workspace_folders()[1], '<root>')
-          return "%#St_LspStatus# " .. path
+          return "%#St_LspStatus# " .. path .. " "
         end)()
       )
 
-      --table.remove(modules, 4)
-      --table.remove(modules, 6)
-      --table.remove(modules, 7)
+      -- remove branch
+      table.remove(modules, 4)
+      -- remove utf8
+      table.remove(modules, 10)
     end,
   }
   --hl_add = {
