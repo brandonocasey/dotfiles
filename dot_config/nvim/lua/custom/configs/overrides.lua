@@ -19,6 +19,12 @@ M.treesitter = {
     --   "python"
     -- },
   },
+  autotag = {
+    enable = true
+  },
+  endwise = {
+    enable = true
+  }
 }
 
 M.mason = {

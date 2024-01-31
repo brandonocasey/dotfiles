@@ -44,10 +44,28 @@ local plugins = {
     "NvChad/nvcommunity",
     { import = "nvcommunity.editor.rainbowdelimiters" },
     { import = "nvcommunity.editor.treesittercontext" },
+    { import = "nvcommunity.editor.telescope-undo" },
     { import = "nvcommunity.diagnostics.trouble" },
     { import = "nvcommunity.motion.neoscroll" },
     { import = "nvcommunity.tools.telescope-fzf-native" },
-    { import = "nvcommunity.tools.conjure" },
+    -- { import = "nvcommunity.tools.conjure" },
+    --{ import = "nvcommunity.lsp.lsplines" },
+    --{ import = "nvcommunity.lsp.lspui" },
+    --{ import = "nvcommunity.lsp.lspsaga" },
+    { import = "nvcommunity.lsp.barbecue" },
+  },
+  {
+    "wsdjeg/vim-fetch",
+    lazy = false
+  },
+
+  {
+    "RRethy/nvim-treesitter-endwise",
+    event = { "BufReadPost", "BufNewFile" },
+  },
+  {
+    "windwp/nvim-ts-autotag",
+    event = { "BufReadPost", "BufNewFile" },
   },
   {
     "kylechui/nvim-surround",
