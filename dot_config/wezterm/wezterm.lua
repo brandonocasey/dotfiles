@@ -36,7 +36,7 @@ end
 local font_size = 17
 config.line_height = 0.9
 local font = wezterm.font_with_fallback({
-  { family = 'IosevkaTerm Nerd Font Propo', weight = "Medium" },
+  { family = 'IosevkaTerm Nerd Font Propo', harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' }},
   { family = 'Inconsolata Nerd Font Propo' },
   { family = 'JetBrains Mono' },
 })
@@ -53,7 +53,7 @@ config.color_scheme = color_scheme_for_system_theme()
 --  cursor_fg = 'orange',
 --  cursor_border = 'orange'
 --}
-
+--
 config.scrollback_lines = 100000
 --config.enable_scroll_bar = true
 
