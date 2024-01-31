@@ -34,51 +34,49 @@ if type -q chezmoi
   abbr --add cm chezmoi
 end
 
-# # use coreutils ls if it exists
-# if cmd_exists "eza"; then
-#   abbr --add ls eza'
-#   alias ll="eza -l --git --icons --time-style=long-iso"
-#   abbr --add la ll -ah'
-#   abbr --add la_size la --total-size'
-#   abbr --add ll_size ll --total-size'
-#   abbr --add la_tree la --tree'
-#   abbr --add ll_tree ll --tree'
-#   abbr --add ls_tree eza --tree'
-#   abbr --add tree lstree'
-# else
-#   if [ "$(uname)" = 'Darwin' ] && ! cmd_exists gls; then
-#     # Show me all files and info about them
-#     abbr --add ll ls -lh --color=auto'
-#
-#     # Show me all files, including .dotfiles, and all info about them
-#     abbr --add la ls -lha --color=auto'
-#
-#     # Show me colors for regular ls too
-#     abbr --add ls ls --color=auto'
-#   else
-#     lsbin='ls'
-#
-#     if cmd_exists gls; then
-#       lsbin=gls
-#     fi
-#
-#     alias ls="$lsbin --color=auto"
-#     # Show me all files and info about them
-#     alias ll="ls -lh --color=auto"
-#     # Show me all files, including .dotfiles, and all info about them
-#     alias la="ls -lha --color=auto"
-#
-#     unset lsbin
-#   fi
-# fi
-#
-# if cmd_exists s; then
-#   abbr --add s s --provider duckduckgo'
-#   abbr --add web-search s --provider duckduckgo'
-# fi
-#
-# abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
-#
+# use coreutils ls if it exists
+if type -q eza
+  abbr --add ls eza
+  abbr --add ll eza -l --git --icons --time-style=long-iso
+  abbr --add la ll -ah
+  abbr --add la_size la --total-size
+  abbr --add ll_size ll --total-size
+  abbr --add la_tree la --tree
+  abbr --add ll_tree ll --tree
+  abbr --add ls_tree eza --tree
+  abbr --add tree lstree
+else
+  if [ "$UNAME" = 'Darwin' ] && ! type -q gls
+    # Show me all files and info about them
+    abbr --add ll ls -lh --color=auto
+
+    # Show me all files, including .dotfiles, and all info about them
+    abbr --add la ls -lha --color=auto
+
+    # Show me colors for regular ls too
+    abbr --add ls ls --color=auto
+  else
+    set -l lsbin ls
+
+    if type -q gls
+      set lsbin gls
+    end
+
+    abbr --add ls "$lsbin" --color=auto
+    # Show me all files and info about them
+    abbr --add ll "$lsbin" -lh --color=auto
+    # Show me all files, including .dotfiles, and all info about them
+    abbr --add la "$lsbin" -lha --color=auto
+  end
+end
+
+if type -q s
+  abbr --add s s --provider duckduckgo
+  abbr --add web-search s --provider duckduckgo
+end
+
+#abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
+
 # abbr --add grep grep --color="always"'
 #
 # # easy mysql connection just tack on a -h
@@ -93,13 +91,14 @@ end
 # # go to root git directory
 # abbr --add cdgitroot cd "$(git rev-parse --show-toplevel)"'
 #
-# # node module bs
-# alias npmre="rm -rf ./node_modules && npm i"
-# alias npmrews="rm -rf packages/**/node_modules && npmre"
-#
-# # node workspace module bs
-# alias npmrere="rm -f ./package-lock.json && npmre"
-# alias npmrerews="rm -rf packages/**/node_modules && npmre"
+# node module bs
+alias npmre="rm -rf ./node_modules && npm i"
+alias npmrews="rm -rf 'packages/**/node_modules' && npmre"
+
+# node workspace module bs
+alias npmrere="rm -f ./package-lock.json && npmre"
+alias npmrerews="rm -rf 'packages/**/node_modules' && npmre"
+
 #
 # # keep env when going sudo
 # abbr --add sudo sudo --preserve-env'
