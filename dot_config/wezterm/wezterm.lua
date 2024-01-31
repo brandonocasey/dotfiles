@@ -33,22 +33,12 @@ local function color_scheme_for_system_theme()
 end
 
 -- This is where you actually apply your config choices
-
 local font_size = 16
+config.line_height = 1
 local font = wezterm.font_with_fallback({
-  {
-    -- Normal text
-    --weight = 900,
-    --family = 'CommitMono Nerd Font Propo',
-    --harfbuzz_features = { 'ss03', 'ss04', 'ss05' }
-    family = 'Iosevka Term',
-    --family = '0xProto Nerd Font Propo',
-    --family = 'MonaspiceNe Nerd Font',
-    --family = 'Inconsolata Nerd Font',
-    --harfbuzz_features = { 'calt', 'liga', 'dlig', 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08' }
-    --harfbuzz_features = { 'ss01', 'ss02', 'ss03', 'ss04', 'ss05', 'ss06', 'ss07', 'ss08' }
-  },
-  'JetBrains Mono'
+  { family = 'IosevkaTerm Nerd Font Propo' },
+  { family = 'Inconsolata Nerd Font Propo' },
+  { family = 'JetBrains Mono' },
 })
 
 config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"

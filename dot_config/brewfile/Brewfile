@@ -1,6 +1,4 @@
-
-# tap repositories and their packages
-
+# Cli applications
 #tap 'homebrew/core'
 brew 'act'
 brew 'asdf'
@@ -42,16 +40,12 @@ brew 'wget'
 brew 'xh'
 brew 'xdg-ninja'
 brew 'zoxide'
-
-tap 'sijanc147/formulas'
-brew 'macprefs'
-
-tap 'simonhammes/mcfly-fzf'
-brew 'mcfly-fzf'
-
+brew 'sijanc147/formulas/macprefs'
+brew 'simonhammes/mcfly-fzf/mcfly-fzf'
 brew 'wader/tap/fq'
 
-#tap 'homebrew/cask'
+# Applications
+# tap 'homebrew/cask'
 cask 'android-platform-tools'
 cask 'balenaetcher'
 cask 'brave-browser'
@@ -86,6 +80,12 @@ cask 'vscodium'
 cask 'wezterm'
 cask 'wireshark'
 cask 'zoom'
+
+# fonts
+tap 'homebrew/cask-fonts'
+cask 'font-inconsolata-nerd-font'
+cask 'font-iosevka-term-nerd-font'
+cask 'font-iosevka-term-slab-nerd-font'
 
 # App Store applications
 mas 'Xcode (14.3)', id: 497799835
