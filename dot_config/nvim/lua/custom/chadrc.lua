@@ -20,10 +20,18 @@ M.ui = {
         2,
         (function()
           local path = vim.api.nvim_buf_get_name(0):match "^.*/"
-          path = path:gsub(vim.lsp.buf.list_workspace_folders()[1], '<root>')
-          return "%#St_LspStatus#" .. path
+          -- replace git root in path with nothing
+          path = path:gsub(vim.fn.finddir(".git", ".;"):gsub('.git', ''), '')
+          -- if there is no git root replace $HOME with ~/
+          path = path:gsub(vim.fn.expand('$HOME/'), '~/')
+          --path = path:gsub(vim.lsp.buf.list_workspace_folders()[1], '<root>')
+          return "%#St_LspStatus# " .. path
         end)()
       )
+
+      --table.remove(modules, 4)
+      --table.remove(modules, 6)
+      --table.remove(modules, 7)
     end,
   }
   --hl_add = {
