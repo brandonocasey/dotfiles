@@ -36,15 +36,15 @@ end
 
 # use coreutils ls if it exists
 if type -q eza
-  abbr --add ls eza
-  abbr --add ll eza -l --git --icons --time-style=long-iso
-  abbr --add la ll -ah
-  abbr --add la_size la --total-size
-  abbr --add ll_size ll --total-size
-  abbr --add la_tree la --tree
-  abbr --add ll_tree ll --tree
-  abbr --add ls_tree eza --tree
-  abbr --add tree lstree
+  alias ls 'eza'
+  alias ll 'ls -l --git --icons --time-style=long-iso'
+  alias la 'll -ah'
+  alias la_size 'la --total-size'
+  alias ll_size 'll --total-size'
+  alias la_tree 'la --tree'
+  alias ll_tree 'll --tree'
+  alias ls_tree 'eza --tree'
+  alias tree 'lstree'
 else
   if [ "$UNAME" = 'Darwin' ] && ! type -q gls
     # Show me all files and info about them
