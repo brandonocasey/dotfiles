@@ -1,14 +1,41 @@
 [core]
+  # consider trailing space and space before a tab an error
   whitespace = trailing-space,space-before-tab
-[merge]
-  tool = vimdiff
-  stat = true
-[color]
-  ui = auto
+  # use the fs monitor to speed up git
+  fsmonitor = true
+  # use git-delta, aka delta to get better diffs
+  pager = delta
+[help]
+  # 5 seconds before git command auto corrects
+  autocorrect = 10
+
+[checkout]
+  # use number of cores on the cpu to determine how many workers to use
+  workers = 0
+
+[commit]
+  # show a small diff when committing
+  # use a git commit template to help make good commits
+  template = ~/.config/git/commit-template
+
 [diff]
+  # use values with real meaning for diffs, instead of just a and b
   mnemonicprefix = true
+  # detect moves or copies as renames
   renames = copies
+  # show moved lines in a different color than add/remove
+  colorMoved = default
+  # only give a commit summary of submodules not a diff
   ignoreSubmodules = dirty
+
+[fetch]
+  # use whatever git things is best
+  parallel = 0
+# re-config below here
+
+[merge]
+  tool = nvimdiff
+  stat = true
 [branch]
   autosetupmerge = true
 [rerere]
@@ -16,14 +43,9 @@
 [hub]
   protocol = ssh
 [alias]
-  co = checkout
   up = !git fetch && git pull
-  ci = commit
   fix = commit --amend -a -C HEAD
-  info = config --get remote.origin.url
   pushf = push --force-with-lease
-  repick = "!f() { [ -z \"$1\" ] && return 1 || b=$RANDOM; git checkout -b $b && git branch -D '@{-1}' && git checkout \"$1\" && git checkout -b '@{-2}' && git cherry-pick $b && git branch -D $b; }; f"
-  cherrybase = repick
   diff = auto
   status = auto
   branch = auto
@@ -34,11 +56,12 @@
 [push]
   default = simple
   autoSetupRemote = true
-[include]
-  path = .git-credentials-helper
 [fetch]
   prune = true
 [pull]
   rebase = true
 [init]
   defaultBranch = main
+
+[delta]
+  line-numbers = true

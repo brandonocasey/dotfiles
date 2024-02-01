@@ -1,0 +1,7 @@
+
+
+# <fix, feat, build, chore, ci, docs, perf, style, refactor, test>(optional scope)!: <description>
+#
+# BREAKING CHANGE: in body if something broke
+#
+# Co-authored-by: name <user@users.noreply.github.com>
