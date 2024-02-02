@@ -32,6 +32,16 @@
   # use whatever git things is best
   parallel = 0
 # re-config below here
+[user]
+  # Force local repo-level configuration for email
+  useConfigOnly = true
+
+[alias]
+  pushf = push --force-with-lease
+  ammend = commit --amend
+  amend = commit --amend
+  commitv = commit --verbose
+
 
 [merge]
   tool = nvimdiff
@@ -50,9 +60,6 @@
   status = auto
   branch = auto
   ui = true
-[user]
-  name = jwbrandon
-  email = bcasey@jwplayer.com
 [push]
   default = simple
   autoSetupRemote = true

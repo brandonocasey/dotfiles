@@ -44,6 +44,8 @@ brew 'zoxide'
 brew 'sijanc147/formulas/macprefs'
 brew 'simonhammes/mcfly-fzf/mcfly-fzf'
 brew 'wader/tap/fq'
+brew 'wget2'
+brew 'mosh'
 
 # Applications
 # tap 'homebrew/cask'

@@ -34,46 +34,55 @@ if type -q chezmoi
   abbr --add cm chezmoi
 end
 
-# use coreutils ls if it exists
+# use eza if it exists
 if type -q eza
   alias ls 'eza'
   alias ll 'ls -l --git --icons --time-style=long-iso'
   alias la 'll -ah'
-  alias la_size 'la --total-size'
-  alias ll_size 'll --total-size'
-  alias la_tree 'la --tree'
-  alias ll_tree 'll --tree'
-  alias ls_tree 'eza --tree'
-  alias tree 'lstree'
+
+  alias la-size 'la --total-size'
+  alias ll-size 'll --total-size'
+
+  alias la-tree 'la --tree'
+  alias ll-tree 'll --tree'
+
+  alias tree 'ls-tree'
+  alias ls-tree 'eza --tree'
 else
-  if [ "$UNAME" = 'Darwin' ] && ! type -q gls
-    # Show me all files and info about them
-    abbr --add ll ls -lh --color=auto
-
-    # Show me all files, including .dotfiles, and all info about them
-    abbr --add la ls -lha --color=auto
-
-    # Show me colors for regular ls too
-    abbr --add ls ls --color=auto
-  else
-    set -l lsbin ls
-
-    if type -q gls
-      set lsbin gls
-    end
-
-    abbr --add ls "$lsbin" --color=auto
-    # Show me all files and info about them
-    abbr --add ll "$lsbin" -lh --color=auto
-    # Show me all files, including .dotfiles, and all info about them
-    abbr --add la "$lsbin" -lha --color=auto
+  set -l lsbin ls
+  # use coreutils ls if it exists
+  if type -q gls
+    set lsbin gls
   end
+
+  # ls with color
+  alias ls "$lsbin --color=auto"
+  # Show me all files and info about them
+  alias ll "ls -lh --color=auto"
+  # Show me all files, including .dotfiles, and all info about them
+  alias la "$lsbin -lha --color=auto"
 end
 
 if type -q s
   abbr --add s s --provider duckduckgo
   abbr --add web-search s --provider duckduckgo
 end
+
+if type -q curlie
+  alias curl curlie
+end
+
+if type -q duf
+  abbr --add disk-info duf
+  abbr --add disc-info duf
+end
+
+if type -q dust
+  abbr --add file-sizes dust
+  abbr --add sizes dust
+  abbr --add tree-size dust
+end
+
 
 #abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
 
@@ -92,12 +101,88 @@ end
 # abbr --add cdgitroot cd "$(git rev-parse --show-toplevel)"'
 #
 # node module bs
-alias npmre="rm -rf ./node_modules && npm i"
-alias npmrews="rm -rf 'packages/**/node_modules' && npmre"
 
-# node workspace module bs
-alias npmrere="rm -f ./package-lock.json && npmre"
-alias npmrerews="rm -rf 'packages/**/node_modules' && npmre"
+function findup 
+  if [ -z "$1" ]
+    echo "Usage find-up <filename>"
+    return 1
+  end
+  set -l filename $1
+  set -l cwd $2
+
+  if [ -z "$cwd" ]
+    set -l cwd $(pwd)
+  end
+
+
+  if [ -f "$cwd/$file" ]
+    echo "$cwd"
+    return 0
+  end
+
+  if [ "$cwd" = "/" ]
+    echo ""
+    return 1
+  end
+
+  findup "$filename" "$(dirname "$cwd")"
+  return $status
+end
+
+function npmre 
+  set -l tmpdir $(mktemp -d)
+  if [ -d "./node_modules" ]
+    echo "Removing ./node_modules"
+    mv ./node_modules "$tmpdir" 
+  end
+
+  rm -rf "$tmpdir" &
+  disown
+  npm i 
+end
+
+alias npmrere "echo 'Removing ./package-lock.json' && rm -f ./package-lock.json && npmre"
+
+function npmlsws 
+  set -l workspaces $(node -e "console.log(require(`./package.json`).workspaces.join(`\n`))")
+  for w in $workspaces
+    eval "set -l dirs $w" 
+    for d in $dirs 
+      echo $d
+    end
+  end
+end
+
+function npmrews
+  set -l tmpdir $(mktemp -d)
+  for d in $(npmlsws)
+    if [ -d "$d/node_modules" ]
+      echo "Removing $d/node_modules"
+      mv $d/node_modules "$tmpdir/$d/node_modules"
+    end
+  end
+  rm -rf "$tmpdir" &
+  disown
+  npmre
+end
+
+# move things to a temp dir and then remove that temp dir
+function npmrerews
+  set -l tmpdir $(mktemp -d)
+  for d in $(npmlsws)
+    if [ -d "$d/node_modules" ]
+      echo "Removing $d/node_modules"
+      mv $d/node_modules "$tmpdir/$d/node_modules"
+    end
+    if [ -f "$d/package-lock.json" ]
+      echo "Removing $d/package-lock.json"
+      rm -f $d/package-lock.json
+    end
+  end
+  rm -rf "$tmpdir" &
+  disown
+  npmrere
+end
 
 #
 # # keep env when going sudo
