@@ -46,6 +46,7 @@ brew 'wader/tap/fq'
 brew 'wget2'
 brew 'mosh'
 brew 'bottom'
+brew 'lazydocker'
 
 # Applications
 # tap 'homebrew/cask'

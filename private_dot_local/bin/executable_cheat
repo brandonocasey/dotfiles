@@ -1,24 +1,36 @@
 #!/usr/bin/env bash
-cat << EOF
-Cheatsheet:
-  * choose    - Use instead of cut/awk | * curlie  - curl with colors
-  * dasel     - json/toml/yaml/xml/csv | * delta   - diff tool
-  * duf       - df, list drive info    | * dust    - du, files/dir size as tree
-  * entr      - watch change, run task | * fd      - find alternative
-  * forgit    - TODO                   | * fq      - parse binary formats
-  * gh        - github cli             | * git-ext - TODO
-  * glow      - cli md previews        | * grex    - generate regex from tests
-  * hyperfine - benchmark cli          | * lazygit - TODO
-  * parallel  - xargs but parallel     | * tldr    - cheatsheets for commands
-  * tokei     - github style loc/lang  | * s       - web search from cli
-  * sd        - sed with better regex  | * xh      - http requests
-  * zi        - fzf cd using zoxide    | *
 
-Poweline git symbol info: <branch> <ongoing action> ⇣1 ⇡2 *3 ~4 +5 !6 ?7
-  ⇣1 - commits behind remote  | ⇡2 - commits ahead of the remote
-  *3 - stashes                | ~4 - merge conflicts
-  +5 - staged changes         | !6 - unstaged changes
-  ?7 - untracked files        |
+e () {
+  echo -e "\033[1;34m$1\033[0m"
+}
+
+cat <<EOF
+$(e Cheatsheet:)
+  * $(e choose)     - Use instead of cut/awk | * $(e curlie)  - curl with colors
+  * $(e dasel)      - json/toml/yaml/xml/csv | * $(e delta)   - diff tool
+  * $(e duf)        - df, list drive info    | * $(e dust)    - du, files/dir size as tree
+  * $(e entr)       - watch change, run task | * $(e fd)      - find alternative
+  * $(e forgit)     - TODO                   | * $(e fq)      - parse binary formats
+  * $(e git-extra)  - TODO                   | * $(e gh)         - github cli
+  * $(e glow)       - cli md previews        | * $(e grex)    - generate regex from tests
+  * $(e hyperfine)  - benchmark cli          | * $(e lazygit) - tui for git
+  * $(e parallel)   - xargs but parallel     | * $(e tldr)    - cheatsheets for commands
+  * $(e tokei)      - github style loc/lang  | * $(e s)       - web search from cli
+  * $(e sd)         - sed with better regex  | * $(e xh)      - http requests
+  * $(e lazydocker) - tui for docker         | * $(e zi)      - fzf cd using zoxide   
+
+$(e 'Poweline git symbol info:') <branch> <ongoing action> ⇣1 ⇡2 *3 ~4 +5 !6 ?7
+  $(e '⇣1') - commits behind remote  | $(e '⇡2') - commits ahead of the remote
+  $(e '*3') - stashes                | $(e '~4') - merge conflicts
+  $(e '+5') - staged changes         | $(e '!6') - unstaged changes
+  $(e '?7') - untracked files        |
+
+$(e 'Conventional Commit Docs:')
+  <fix, feat, build, chore, ci, docs, perf, style, refactor, test>(optional scope)!: <description>
+
+  BREAKING CHANGE: in body if something broke
+
+  Co-authored-by: name <user@users.noreply.github.com>
 
 Keybinds:
 EOF
