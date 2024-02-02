@@ -45,6 +45,8 @@
   diff-min = diff --diff-algorithm=minimal
   diff-pat = diff --diff-algorithm=patience
 
+# TODO: everything below here starting at git-config for http
+
 [merge]
   tool = nvimdiff
   stat = true
