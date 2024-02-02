@@ -16,14 +16,18 @@ abbr --add mkdir mkdir -pv
 abbr --add gs git status
 
 # Vim misspellings
-abbr --add vim nvim
-abbr --add cim nvim
-abbr --add bim nvim
-abbr --add fim nvim
-abbr --add gim nvim
-abbr --add vi nvim
-abbr --add vimdiff nvim -d
-abbr --add nvimdiff nvim -d
+abbr --add vim $EDITOR
+abbr --add cim $EDITOR
+abbr --add bim $EDITOR
+abbr --add fim $EDITOR
+abbr --add gim $EDITOR
+abbr --add vi $EDITOR
+
+abbr --add nvim-fzf fzf --height 40% --reverse --bind "'enter:become($EDITOR {})'"
+if [ $EDITOR = 'nvim' ]
+  abbr --add vimdiff nvim -d
+  abbr --add nvimdiff nvim -d
+end
 
 if type -q s
   abbr --add s s --provider duckduckgo
@@ -69,7 +73,7 @@ if type -q s
 end
 
 if type -q curlie
-  alias curl curlie
+  abbr --add curl curlie
 end
 
 if type -q duf
@@ -82,6 +86,16 @@ if type -q dust
   abbr --add sizes dust
   abbr --add tree-size dust
 end
+
+if type -q btm
+  abbr --add htop btm -b
+  abbr --add top btm -b
+end
+
+if type -q wget2
+  abbr --add wget wget2
+end
+
 
 
 #abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
