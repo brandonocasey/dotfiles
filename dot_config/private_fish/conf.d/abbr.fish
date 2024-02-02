@@ -23,7 +23,11 @@ abbr --add fim $EDITOR
 abbr --add gim $EDITOR
 abbr --add vi $EDITOR
 
-abbr --add nvim-fzf fzf --height 40% --reverse --bind "'enter:become($EDITOR {})'"
+if type -q fzf
+  alias nvf "fzf --height 40% --reverse --bind 'enter:become($EDITOR {})'"
+  alias vf "fzf --height 40% --reverse --bind 'enter:become($EDITOR {})'"
+end
+
 if [ $EDITOR = 'nvim' ]
   abbr --add vimdiff nvim -d
   abbr --add nvimdiff nvim -d

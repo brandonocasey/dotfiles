@@ -41,7 +41,9 @@
   ammend = commit --amend
   amend = commit --amend
   commitv = commit --verbose
-
+  diff-his = diff --diff-algorithm=histogram
+  diff-min = diff --diff-algorithm=minimal
+  diff-pat = diff --diff-algorithm=patience
 
 [merge]
   tool = nvimdiff

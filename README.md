@@ -12,3 +12,4 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
 
 # References
 https://github.com/johnalanwoods/maintained-modern-unix
+https://github.com/TaKO8Ki/awesome-alternatives-in-rust
