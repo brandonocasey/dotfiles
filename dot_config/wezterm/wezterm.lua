@@ -49,6 +49,7 @@ config.font_size = font_size
 config.color_scheme = color_scheme_for_system_theme()
 
 --config.colors = {
+--  background = 'black',
 --  cursor_bg = 'orange',
 --  cursor_fg = 'orange',
 --  cursor_border = 'orange'
