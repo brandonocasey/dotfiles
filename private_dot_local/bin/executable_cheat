@@ -11,13 +11,14 @@ $(e Cheatsheet:)
   * $(e duf)        - df, list drive info    | * $(e dust)    - du, files/dir size as tree
   * $(e entr)       - watch change, run task | * $(e fd)      - find alternative
   * $(e forgit)     - TODO                   | * $(e fq)      - parse binary formats
-  * $(e git-extra)  - TODO                   | * $(e gh)         - github cli
+  * $(e git-extra)  - extra git commands     | * $(e gh)      - github cli
   * $(e glow)       - cli md previews        | * $(e grex)    - generate regex from tests
   * $(e hyperfine)  - benchmark cli          | * $(e lazygit) - tui for git
   * $(e parallel)   - xargs but parallel     | * $(e tldr)    - cheatsheets for commands
   * $(e tokei)      - github style loc/lang  | * $(e s)       - web search from cli
   * $(e sd)         - sed with better regex  | * $(e xh)      - http requests
   * $(e lazydocker) - tui for docker         | * $(e zi)      - fzf cd using zoxide   
+  * $(e scratch)    - nvim scratch pad       | * $(e vf)      - fzf into vim   
 
 $(e 'Poweline git symbol info:') <branch> <ongoing action> ⇣1 ⇡2 *3 ~4 +5 !6 ?7
   $(e '⇣1') - commits behind remote  | $(e '⇡2') - commits ahead of the remote
@@ -33,4 +34,12 @@ $(e 'Conventional Commit Docs:')
   Co-authored-by: name <user@users.noreply.github.com>
 
 Keybinds:
+  * shell
+    * CTRL-R mcfly-history
+    * CTRL-F? fzf-ripgrep-to-nvim
+    * CTRL-D? fzf cd with zoxide?
+    * CTRL-E? fzf-fd-to-nvim
+    * CTRL-X? fzf-sad find replace
+    * CTRL-M? nvim oil
+  * nvim
 EOF

@@ -12,8 +12,11 @@ abbr --add df df -h
 
 # Automatically make directories recursively
 abbr --add mkdir mkdir -pv
-
 abbr --add gs git status
+
+abbr --add l ls
+abbr --add g git
+
 
 # Vim misspellings
 abbr --add vim $EDITOR
@@ -22,6 +25,7 @@ abbr --add bim $EDITOR
 abbr --add fim $EDITOR
 abbr --add gim $EDITOR
 abbr --add vi $EDITOR
+abbr --add v $EDITOR
 
 if type -q fzf
   alias nvf "fzf --height 40% --reverse --bind 'enter:become($EDITOR {})'"
@@ -100,6 +104,9 @@ if type -q wget2
   abbr --add wget wget2
 end
 
+function scratch
+  nvim "$(mktemp).md"
+end
 
 
 #abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'

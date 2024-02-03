@@ -27,7 +27,7 @@ local plugins = {
   {
     "nvim-tree/nvim-tree.lua",
     opts = overrides.nvimtree,
-    -- lazy = false,
+    lazy = true,
   },
 
   -- Install a plugin
@@ -72,10 +72,26 @@ local plugins = {
     event = "VeryLazy",
     config = function()
       require("nvim-surround").setup({
-        -- Configuration here
+        -- configuration here
       })
     end,
   },
+
+  {
+    'stevearc/oil.nvim',
+    event = "VeryLazy",
+    opts = {},
+    -- Optional dependencies
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("oil").setup({
+        default_file_explorer = true,
+        -- configuration here
+      })
+    end,
+
+  }
+
 
   -- lua version of typescript-language-server
   -- {
@@ -88,21 +104,6 @@ local plugins = {
   --   end,
   -- },
 
-  {
-    "ahmedkhalf/project.nvim",
-    event = "VeryLazy",
-    config = function()
-      require("project_nvim").setup({
-        -- Configuration here
-      })
-    end,
-  },
-
-
-  {
-    "mg979/vim-visual-multi",
-    lazy = false,
-  }
 }
 
 return plugins
