@@ -16,7 +16,6 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
     * forgit
     * lazydocker
     * https://formulae.brew.sh/formula/felinks
-
 * ssh key stuff
     * Can we setup https://superuser.com/questions/232373/how-to-tell-git-which-private-key-to-use/1664624#1664624
     * https://usercomp.com/news/1044072/using-ssh-agent-on-mac
@@ -33,6 +32,7 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
     * https://github.com/mfussenegger/nvim-dap
     * https://github.com/rcarriga/nvim-dap-ui
     * https://github.com/sindrets/diffview.nvim
+* Fill out description for all abbrs
 
 # Low Priorities
 * fix regular vim

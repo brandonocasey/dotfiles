@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+pcap="$(mktemp).pcap"
+sudo test
+if ! (sudo tcpdump -q -s 0 -i any -w "$pcap" >/dev/null 2>&1 &); then
+  echo 'tcpdump failed to start'
+  return 1
+fi
+
+finish() {
+  sudo pkill -f "$pcap"
+  sudo chown "$(id -u -n)":"$(id -g -n)" "$pcap"
+  echo "$pcap"
+  trap - SIGINT
+  trap
+  unset -f finish
+}
+
+trap "echo && finish && return 0" SIGINT
+printf 'Hit [Any Key] to kill tcpdump'
+read -r
+finish
