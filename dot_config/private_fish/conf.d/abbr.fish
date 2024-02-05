@@ -153,6 +153,7 @@ end
 
 function npmre --description "remove ./node_modules and reinstall"
   set -l tmpdir $(mktemp -d)
+  mkdir -p "$tmpdir"
   if [ -d "./node_modules" ]
     echo "Removing ./node_modules"
     mv ./node_modules "$tmpdir" 
@@ -181,9 +182,11 @@ end
 
 function npmrews --description "Remove all workspace node_modules and reinstall"
   set -l tmpdir $(mktemp -d)
+  mkdir -p "$tmpdir"
   for d in $(npmlsws)
     if [ -d "$d/node_modules" ]
       echo "Removing $d/node_modules"
+      mkdir -p "$tmpdir/$d"
       mv $d/node_modules "$tmpdir/$d/node_modules"
     end
   end
@@ -194,20 +197,18 @@ end
 
 # move things to a temp dir and then remove that temp dir
 function npmrerews --description "Remove all workspace node_modules/package-lock and reinstall"
-  set -l tmpdir $(mktemp -d)
   for d in $(npmlsws)
-    if [ -d "$d/node_modules" ]
-      echo "Removing $d/node_modules"
-      mv $d/node_modules "$tmpdir/$d/node_modules"
-    end
     if [ -f "$d/package-lock.json" ]
       echo "Removing $d/package-lock.json"
       rm -f $d/package-lock.json
     end
   end
-  rm -rf "$tmpdir" &
+
+  if [ -f "./package-lock.json" ]
+    echo "Removing ./package-lock.json"
+  end
   disown
-  npmrere
+  npmrews
 end
 
 function nvim-x -a filename --description "Create the file as an executable and then enter with nvim"
