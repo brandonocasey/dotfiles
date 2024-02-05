@@ -6,19 +6,36 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
 ~/.local/share/chezmoi/install.bash
 ```
 
-
 # Priorities
 * setup delta
-* keybinds
-  * CTRL-d -> fzf Change directory
-  * CTRL-s -> fzf search for file and nvim
-  * CTRL-g -> fzf search for text and nvim
-  * CTRL-s -> use the scratch function
-  * CTRL-x -> find replace using sad?
 * https://github.com/junegunn/fzf/blob/master/ADVANCED.md#switching-between-ripgrep-mode-and-fzf-mode-using-a-single-key-binding
 * evaluate
     * https://github.com/TheR1D/shell_gpt
     * https://aider.chat/docs/install.html
+    * lazygit
+    * forgit
+    * lazydocker
+    * https://formulae.brew.sh/formula/felinks
+
+* ssh key stuff
+    * Can we setup https://superuser.com/questions/232373/how-to-tell-git-which-private-key-to-use/1664624#1664624
+    * https://usercomp.com/news/1044072/using-ssh-agent-on-mac
+    * Fish ssh agent
+* nvim extensions
+    * https://github.com/akinsho/toggleterm.nvim
+    * https://github.com/ggandor/leap.nvim
+    * https://github.com/gbprod/cutlass.nvim
+    * Copilot or chatgpt
+    * https://github.com/iamcco/markdown-preview.
+    * https://github.com/David-Kunz/treesitter-unit
+    * Vim-expand-region 
+    * Refactoring https://github.com/ThePrimeagen/refactoring.nvim
+    * https://github.com/mfussenegger/nvim-dap
+    * https://github.com/rcarriga/nvim-dap-ui
+    * https://github.com/sindrets/diffview.nvim
+
+# Low Priorities
+* fix regular vim
 
 # Interesting Binaries
 > I dont install these as they are not on homebrew
@@ -28,7 +45,6 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
 * https://github.com/marcosnils/bin/
 * https://github.com/reemus-dev/gitnr
 * https://github.com/cezaraugusto/mklicense
-
 
 # Issues
 * switch from tealdear to navi once https://github.com/denisidoro/navi/issues/663 is resolved
