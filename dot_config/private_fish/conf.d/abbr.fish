@@ -104,11 +104,6 @@ if type -q wget2
   abbr --add wget wget2
 end
 
-function scratch
-  nvim "$(mktemp).md"
-end
-
-
 #abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
 
 # abbr --add grep grep --color="always"'

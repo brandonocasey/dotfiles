@@ -26,6 +26,18 @@ if status is-interactive
     mcfly-fzf init fish | source
   end
 
+  function scratch
+    set -l file "$(mkdtemp).md" 
+    nvim "$file"
+    echo "$file"
+  end
+
+  # send OSC 133 to mark prompt start
+  function mark_prompt_start --on-event fish_prompt
+    echo -en "\e]133;A\e\\"
+  end
+
+
   function fish_greeting
   end
 

@@ -38,7 +38,6 @@ brew 'vifm'
 brew 'vivid'
 brew 'wget'
 brew 'xh'
-brew 'xdg-ninja'
 brew 'zoxide'
 brew 'sijanc147/formulas/macprefs'
 brew 'simonhammes/mcfly-fzf/mcfly-fzf'
@@ -47,6 +46,7 @@ brew 'wget2'
 brew 'mosh'
 brew 'bottom'
 brew 'lazydocker'
+brew 'doron-cohen/tap/antidot'
 
 # Applications
 # tap 'homebrew/cask'
@@ -92,4 +92,4 @@ cask 'font-iosevka-term-nerd-font'
 cask 'font-iosevka-term-slab-nerd-font'
 
 # App Store applications
-mas 'Xcode (14.3)', id: 497799835
+mas 'Xcode', id: 497799835
