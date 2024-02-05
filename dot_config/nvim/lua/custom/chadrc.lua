@@ -2,7 +2,7 @@
 local M = {}
 
 M.ui = {
-  theme = "onedark",
+  theme = 'onedark',
   lsp_semantic_tokens = true,
   transparency = true,
 
@@ -12,12 +12,12 @@ M.ui = {
     },
   },
   statusline = {
-    theme = "minimal",
+    theme = "vscode_colored",
     overriden_modules = function(modules)
       -- remove branch
       table.remove(modules, 3)
       -- remove utf8
-      table.remove(modules, 6)
+      table.remove(modules, 9)
 
     end,
   }

@@ -25,6 +25,12 @@ local plugins = {
   },
 
   {
+    "nvim-treesitter/nvim-treesitter",
+    opts = overrides.treesitter,
+  },
+
+
+  {
     "nvim-tree/nvim-tree.lua",
     opts = overrides.nvimtree,
     lazy = true,
@@ -79,19 +85,22 @@ local plugins = {
 
   {
     'stevearc/oil.nvim',
-    event = "VeryLazy",
     opts = {},
     -- Optional dependencies
     dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
-      require("oil").setup({
-        default_file_explorer = true,
-        -- configuration here
-      })
+      require("oil").setup()
+    end,
+
+  },
+  {
+    'nmac427/guess-indent.nvim',
+    event = "VeryLazy",
+    config = function()
+      require('guess-indent').setup()
     end,
 
   }
-
 
   -- lua version of typescript-language-server
   -- {
@@ -105,5 +114,30 @@ local plugins = {
   -- },
 
 }
+
+
+-- automatically open oil.nvim on directory
+local autocmd = vim.api.nvim_create_autocmd
+
+local function open_oil(data)
+
+  -- buffer is a directory
+  local directory = vim.fn.isdirectory(data.file) == 1
+
+  -- buffer is a [No Name]
+  local no_name = data.file == "" and vim.bo[data.buf].buftype == ""
+
+  if directory and not no_name then
+    -- change to the directory
+    vim.cmd.cd(data.file)
+    -- open oil
+    require("oil").open(data.file)
+  end
+
+end
+
+autocmd({ "VimEnter" }, { callback = open_oil })
+
+
 
 return plugins
