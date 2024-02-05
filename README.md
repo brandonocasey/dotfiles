@@ -32,7 +32,7 @@ git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/
     * https://github.com/mfussenegger/nvim-dap
     * https://github.com/rcarriga/nvim-dap-ui
     * https://github.com/sindrets/diffview.nvim
-* Fill out description for all abbrs
+* get a global find-replace keybind
 
 # Low Priorities
 * fix regular vim
