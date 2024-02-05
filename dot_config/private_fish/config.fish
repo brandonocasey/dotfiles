@@ -32,7 +32,11 @@ if status is-interactive
   function scratch --description "Open a scratch pad in your editor for quick notes"
     set -l file "$(mktemp -t scratch).md" 
     $EDITOR "$file"
-    echo "$file"
+    if [ ! -s "$file" ]
+      rm -f "$file"
+    else
+      echo "$file"
+    end
   end
 
   # send OSC 133 to mark prompt start
@@ -49,12 +53,20 @@ if status is-interactive
     clear
   end
 
+  function fzf-fd-nvim
+    nvim '+Telescope find_files'
+  end
+  function fzf-rg-nvim
+    nvim '+Telescope live_grep'
+  end
+
   # * keybinds
   # * CTRL-h -> fzf Change directory
   bind \ch '_zi'
   # * CTRL-f -> fzf search for file and nvim
-  bind \cf 'vf'
+  bind \cf 'fzf-fd-nvim'
   # * CTRL-m -> fzf search for text and nvim
+  bind \cf 'fzf-rg-nvim'
   # * CTRL-o -> use the scratch function
   bind \co 'scratch'
   # * CTRL-j -> find replace using sad?

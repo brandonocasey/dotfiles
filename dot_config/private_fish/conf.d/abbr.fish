@@ -128,26 +128,22 @@ end
 #
 # node module bs
 
-function findup --description "Find a specific file, searching recursibly above the cwd"
-  if [ -z "$1" ]
+function findup -a filename cwd --description "Find a specific file, searching recursibly above the cwd"
+  if [ -z "$filename" ]
     echo "Usage find-up <filename>"
     return 1
   end
-  set -l filename $1
-  set -l cwd $2
 
   if [ -z "$cwd" ]
-    set -l cwd $(pwd)
+    set cwd "$PWD"
   end
 
-
-  if [ -f "$cwd/$file" ]
+  if [ -f "$cwd/$filename" ]
     echo "$cwd"
     return 0
   end
 
-  if [ "$cwd" = "/" ]
-    echo ""
+  if [ -z "$cwd" ] || [ "$cwd" = "/" ] || [ "$cwd" = "." ]
     return 1
   end
 
@@ -155,7 +151,7 @@ function findup --description "Find a specific file, searching recursibly above 
   return $status
 end
 
-function npmre 
+function npmre --description "remove ./node_modules and reinstall"
   set -l tmpdir $(mktemp -d)
   if [ -d "./node_modules" ]
     echo "Removing ./node_modules"
@@ -167,9 +163,13 @@ function npmre
   npm i 
 end
 
-alias npmrere "echo 'Removing ./package-lock.json' && rm -f ./package-lock.json && npmre"
+function npmrere --description "Remove ./node_modules && ./package-lock.json and reinstall"
+  echo 'Removing ./package-lock.json' 
+  rm -f ./package-lock.json 
+  npmre
+end
 
-function npmlsws 
+function npmlsws --description "print all workspace directories"
   set -l workspaces $(node -e "console.log(require(`./package.json`).workspaces.join(`\n`))")
   for w in $workspaces
     eval "set -l dirs $w" 
@@ -179,7 +179,7 @@ function npmlsws
   end
 end
 
-function npmrews
+function npmrews --description "Remove all workspace node_modules and reinstall"
   set -l tmpdir $(mktemp -d)
   for d in $(npmlsws)
     if [ -d "$d/node_modules" ]
@@ -193,7 +193,7 @@ function npmrews
 end
 
 # move things to a temp dir and then remove that temp dir
-function npmrerews
+function npmrerews --description "Remove all workspace node_modules/package-lock and reinstall"
   set -l tmpdir $(mktemp -d)
   for d in $(npmlsws)
     if [ -d "$d/node_modules" ]
@@ -209,6 +209,17 @@ function npmrerews
   disown
   npmrere
 end
+
+function nvim-x -a filename --description "Create the file as an executable and then enter with nvim"
+  touch "$filename"
+  chmod +x "$filename"
+  nvim "$filename"
+  if ! test -s "$filename"
+    rm -f $filename
+    echo "removing empty file $filename"
+  end
+end
+
 
 alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 
