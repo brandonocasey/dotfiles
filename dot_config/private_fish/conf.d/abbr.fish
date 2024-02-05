@@ -28,8 +28,14 @@ abbr --add vi $EDITOR
 abbr --add v $EDITOR
 
 if type -q fzf
-  alias nvf "fzf --height 40% --reverse --bind 'enter:become($EDITOR {})'"
-  alias vf "fzf --height 40% --reverse --bind 'enter:become($EDITOR {})'"
+  function vf
+    if [ -n "$1" ] && [ -d "$1" ]
+      cd "$1"
+    end
+    fzf --height 40% --reverse --bind "enter:become($EDITOR {})"
+  end
+
+  alias nvf vf
 end
 
 if [ $EDITOR = 'nvim' ]
@@ -122,7 +128,7 @@ end
 #
 # node module bs
 
-function findup 
+function findup --description "Find a specific file, searching recursibly above the cwd"
   if [ -z "$1" ]
     echo "Usage find-up <filename>"
     return 1
@@ -203,6 +209,8 @@ function npmrerews
   disown
   npmrere
 end
+
+alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 
 #
 # # keep env when going sudo

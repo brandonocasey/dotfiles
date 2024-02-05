@@ -71,6 +71,7 @@ set -gx GEM_SPEC_CACHE "$XDG_CACHE_HOME/gem"
 set -gx MYSQL_HISTFILE "$XDG_DATA_HOME/mysql_history"
 set -gx XAUTHORITY "$XDG_RUNTIME_DIR/Xauthority"
 set -gx KODI_DATA "$XDG_DATA_HOME/kodi"
+set -gx WGETRC "$XDG_CONFIG_HOME/wgetrc"
 
 # set -gx GVIMINIT 'let $MYGVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/gvimrc" : "$XDG_CONFIG_HOME/nvim/init.gvim" | so $MYGVIMRC'
 set -gx VIMINIT 'let $MYVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/vimrc" : "$XDG_CONFIG_HOME/nvim/init.lua" | so $MYVIMRC'

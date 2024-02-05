@@ -19,6 +19,7 @@ $(e Cheatsheet:)
   * $(e sd)         - sed with better regex  | * $(e xh)      - http requests
   * $(e lazydocker) - tui for docker         | * $(e zi)      - fzf cd using zoxide   
   * $(e scratch)    - nvim scratch pad       | * $(e vf)      - fzf into vim   
+  * $(e antidot)    - move files to xdg      | * $(e vf)      - fzf into vim   
 
 $(e 'Poweline git symbol info:') <branch> <ongoing action> ⇣1 ⇡2 *3 ~4 +5 !6 ?7
   $(e '⇣1') - commits behind remote  | $(e '⇡2') - commits ahead of the remote
@@ -33,13 +34,11 @@ $(e 'Conventional Commit Docs:')
 
   Co-authored-by: name <user@users.noreply.github.com>
 
-Keybinds:
-  * shell
-    * CTRL-R mcfly-history
-    * CTRL-F? fzf-ripgrep-to-nvim
-    * CTRL-D? fzf cd with zoxide?
-    * CTRL-E? fzf-fd-to-nvim
-    * CTRL-X? fzf-sad find replace
-    * CTRL-M? nvim oil
-  * nvim
+$(e Keybinds):
+                  $(e shell)                    |            $(e nvim)
+  * $(e CTRL-f) -> fzf search for file and nvim | * $(e '<leader>ff') - find by name and edit
+  * $(e CTRL-m) -> fzf search for text and nvim | * $(e '<leader>fw') - find by text and edit
+  * $(e CTRL-j) -> find replace using sad?      |
+  * $(e CTRL-h) -> fzf Change directory         |
+  * $(e CTRL-o) -> use the scratch function     |
 EOF

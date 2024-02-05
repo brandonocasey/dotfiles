@@ -7,8 +7,11 @@ if status is-interactive
     tide configure --auto --style=Classic --prompt_colors='True color' --classic_prompt_color=Darkest --show_time='12-hour format' --classic_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=Yes --prompt_connection_andor_frame_color=Darkest --prompt_spacing=Compact --icons='Few icons' --transient=Yes
   end
 
+  if type -q antidot
+    antidot init | source
+  end
+
   if type -q zoxide
-    zoxide init fish | source
     abbr --add cd z
   end
 
@@ -26,9 +29,9 @@ if status is-interactive
     mcfly-fzf init fish | source
   end
 
-  function scratch
-    set -l file "$(mkdtemp).md" 
-    nvim "$file"
+  function scratch --description "Open a scratch pad in your editor for quick notes"
+    set -l file "$(mktemp -t scratch).md" 
+    $EDITOR "$file"
     echo "$file"
   end
 
@@ -40,6 +43,22 @@ if status is-interactive
 
   function fish_greeting
   end
+
+  function _zi
+    zi
+    clear
+  end
+
+  # * keybinds
+  # * CTRL-h -> fzf Change directory
+  bind \ch '_zi'
+  # * CTRL-f -> fzf search for file and nvim
+  bind \cf 'vf'
+  # * CTRL-m -> fzf search for text and nvim
+  # * CTRL-o -> use the scratch function
+  bind \co 'scratch'
+  # * CTRL-j -> find replace using sad?
+
 
   fish_add_path -a "$HOME/.local/bin"
 
