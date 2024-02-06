@@ -52,12 +52,19 @@ if status is-interactive
     zi
     clear
   end
-
-  function fzf-fd-nvim
-    nvim '+Telescope find_files'
+ 
+  function fzf-fd-nvim -a cwd --description "Open nvm to Telescope find_files selector"
+    if [ -z "$cwd" ] || [ ! -d "$cwd" ]
+      set cwd "$(find-root)"
+    end
+    nvim -c "cd $cwd" -c "Telescope find_files"
   end
-  function fzf-rg-nvim
-    nvim '+Telescope live_grep'
+
+  function fzf-rg-nvim -a cwd --description "Open nvm to Telescope live_grep selector"
+    if [ -z "$cwd" ] || [ ! -d "$cwd" ]
+      set cwd "$(find-root)"
+    end
+    nvim -c "cd $cwd" -c "Telescope live_grep"
   end
 
   # * keybinds

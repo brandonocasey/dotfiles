@@ -27,17 +27,6 @@ abbr --add gim $EDITOR
 abbr --add vi $EDITOR
 abbr --add v $EDITOR
 
-if type -q fzf
-  function vf
-    if [ -n "$1" ] && [ -d "$1" ]
-      cd "$1"
-    end
-    fzf --height 40% --reverse --bind "enter:become($EDITOR {})"
-  end
-
-  alias nvf vf
-end
-
 if [ $EDITOR = 'nvim' ]
   abbr --add vimdiff nvim -d
   abbr --add nvimdiff nvim -d
@@ -128,7 +117,7 @@ end
 #
 # node module bs
 
-function findup -a filename cwd --description "Find a specific file, searching recursibly above the cwd"
+function find-up -a filename cwd --description "Find a specific file, searching recursibly above the cwd"
   if [ -z "$filename" ]
     echo "Usage find-up <filename>"
     return 1
@@ -138,7 +127,7 @@ function findup -a filename cwd --description "Find a specific file, searching r
     set cwd "$PWD"
   end
 
-  if [ -f "$cwd/$filename" ]
+  if [ -f "$cwd/$filename" ] || [ -d "$cwd/$filename" ]
     echo "$cwd"
     return 0
   end
@@ -147,9 +136,22 @@ function findup -a filename cwd --description "Find a specific file, searching r
     return 1
   end
 
-  findup "$filename" "$(dirname "$cwd")"
+  find-up "$filename" "$(dirname "$cwd")"
   return $status
 end
+
+function find-root --description "Find the root of a git directory or package, defaults to PWD"
+  set -l dir "" 
+  for test in .git package.json
+    set dir $(find-up "$test")
+    if [ -n "$dir" ] && [ -d "$dir" ]
+      echo "$dir"
+      return
+    end
+  end
+  echo "$PWD"
+end
+
 
 function npmre --description "remove ./node_modules and reinstall"
   set -l tmpdir $(mktemp -d)
