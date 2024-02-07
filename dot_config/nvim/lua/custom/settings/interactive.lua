@@ -54,9 +54,6 @@ vim.opt.completeopt = 'menuone,noselect'
 -- pop up menu height
 vim.opt.pumheight = 10
 
--- set the title
-vim.opt.title = true
-
 -- do not write backups
 vim.opt.writebackup = false
 

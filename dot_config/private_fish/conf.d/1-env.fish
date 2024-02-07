@@ -20,13 +20,13 @@ if test -z "$XDG_CACHE_HOME"
 end
 
 # TODO: do we need this?
-# if test -z "$XDG_RUNTIME_DIR"
-#   if test $UNAME = 'Darwin'
-#     set -gx XDG_RUNTIME_DIR "$HOME/Library/Application Support"
-#   else if test $UNAME = 'Linux'
-#     set -gx XDG_RUNTIME_DIR "/run/user/$(id -u)"
-#   end
-# end
+if test -z "$XDG_RUNTIME_DIR"
+  if test $UNAME = 'Darwin'
+    set -gx XDG_RUNTIME_DIR "$HOME/Library/Application Support"
+  else if test $UNAME = 'Linux'
+    set -gx XDG_RUNTIME_DIR "/run/user/$(id -u)"
+  end
+end
 
 if type -q brew
   brew shellenv | source
