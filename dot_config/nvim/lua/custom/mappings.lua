@@ -3,13 +3,13 @@ local M = {}
 
 M.general = {
   -- normal mode
-  n = {},
+  --n = {},
 
   -- visual mode
-  v = {},
+  --v = {},
 
   -- insert mode
-  i = {}
+  --i = {}
 }
 
 -- more keybinds!
