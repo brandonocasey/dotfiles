@@ -73,7 +73,7 @@ if status is-interactive
   # * CTRL-f -> fzf search for file and nvim
   bind \cf 'fzf-fd-nvim'
   # * CTRL-m -> fzf search for text and nvim
-  bind \cm 'fzf-rg-nvim'
+  bind \ci 'fzf-rg-nvim'
   # * CTRL-o -> use the scratch function
   bind \co 'scratch'
   # * CTRL-j -> find replace using sad?

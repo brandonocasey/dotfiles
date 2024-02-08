@@ -37,7 +37,7 @@ $(e 'Conventional Commit Docs:')
 $(e Keybinds):
                   $(e shell)                    |            $(e nvim)
   * $(e CTRL-f) -> fzf search for file and nvim | * $(e '<leader>ff') - find by name and edit
-  * $(e CTRL-m) -> fzf search for text and nvim | * $(e '<leader>fw') - find by text and edit
+  * $(e CTRL-i) -> fzf search for text and nvim | * $(e '<leader>fw') - find by text and edit
   * $(e CTRL-j) -> find replace using sad?      |
   * $(e CTRL-h) -> fzf Change directory         |
   * $(e CTRL-o) -> use the scratch function     |
