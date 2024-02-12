@@ -1,6 +1,5 @@
 README.md
-install-mac.bash
-install-win.ps1
+install
 {{- if ne .chezmoi.os "darwin" }}
 .config/karabiner
 .config/hammerspoon

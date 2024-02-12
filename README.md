@@ -1,14 +1,15 @@
 # Dotfiles
 
-## Install Mac
+## Install Mac/Linux
 ```bash
-mkdir -p ~/.local/share/chezmoi/
-git clone git@brandonocasey.github.com:brandonocasey/chezmoi.git ~/.local/share/chezmoi/
-~/.local/share/chezmoi/install.bash
+curl 'https://raw.githubusercontent.com/brandonocasey/chezmoi/main/install/install.bash' | bash
 ```
 ## Install Windows
-
-## Install Linux
+```ps1
+Set-ExecutionPolicy Bypass -Scope Process -Force; 
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/brandonocasey/chezmoi/main/install/install.ps1'))
+```
 
 # Priorities
 * setup delta
