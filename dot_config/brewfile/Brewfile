@@ -45,7 +45,7 @@ brew 'bottom'
 brew 'lazydocker'
 
 tap 'wader/tap'
-install 'water/tap/fq'
+brew 'water/tap/fq'
 
 tap 'doron-cohen/tap'
 brew 'doron-cohen/tap/antidot'
