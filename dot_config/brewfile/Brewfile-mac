@@ -39,9 +39,5 @@ cask 'wezterm'
 cask 'wireshark'
 cask 'zoom'
 
-# fonts
-tap 'homebrew/cask-fonts'
-cask 'font-iosevka-term-slab-nerd-font'
-
 # App Store applications
 mas 'Xcode', id: 497799835

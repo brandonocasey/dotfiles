@@ -1,22 +1,16 @@
 # Dotfiles
 
-## Step 1: Setup ssh key
-1. Run `ssh-keygen` and add the key to your github account
-
 ## Install Mac/Linux
-*CHANGE THE SSH KEY LOCATION ACCORDINGLY*
 ```bash
-curl --user brandonocasey https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.bash | bash
+curl https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.bash | bash
 ```
 ## Install Windows
-*CHANGE THE SSH KEY LOCATION ACCORDINGLY*
 ```ps1
-mkdir -p ~/.local/share && \
-git clone git@github.com:brandonocasey/dotfiles.git ~/.local/share/chezmoi && \
-~/.local/share/chezmoi/install/install.ps1
+(irm -useb https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.ps1) | powershell -c -
 ```
 
 # Priorities
+* Use chezmoi --purge --purge-binary for initial setup and use chezmoi scripts for things
 * setup delta
 * https://github.com/junegunn/fzf/blob/master/ADVANCED.md#switching-between-ripgrep-mode-and-fzf-mode-using-a-single-key-binding
 * evaluate
