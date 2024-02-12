@@ -3,8 +3,6 @@
 echo "Getting sudo pre-approval"
 sudo -v
 
-brew_installed=1
-
 if [ "$(uname)" = "Linux" ]; then 
   sudo apt-get install curl git
   PATH="$PATH:/home/linuxbrew/.linuxbrew/bin"
@@ -34,8 +32,7 @@ if ! command -v chezmoi 2>/dev/null >/dev/null; then
   brew install chezmoi
 fi
 
-chezmoi apply --force
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey
+chezmoi init --apply brandonocasey
 
 # install brew dependencies
 echo "Installing Brewfile software"

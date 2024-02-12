@@ -1,13 +1,15 @@
 # Dotfiles
 
+## Step 1: Setup ssh key
+1. Run `ssh-keygen` and add the key to your github account
+
 ## Install Mac/Linux
-Setup ssh key
+*CHANGE THE SSH KEY LOCATION ACCORDINGLY*
 ```bash
-mkdir -p ~/.local/share && \
-  git@github.com:brandonocasey/dotfiles.git ~/.local/share/chezmoi && \
-  ~/.local/share/chezmoi/install/install.bash
+curl --user brandonocasey https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.bash | bash
 ```
 ## Install Windows
+*CHANGE THE SSH KEY LOCATION ACCORDINGLY*
 ```ps1
 mkdir -p ~/.local/share && \
 git clone git@github.com:brandonocasey/dotfiles.git ~/.local/share/chezmoi && \
