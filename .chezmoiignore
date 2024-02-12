@@ -5,6 +5,7 @@ install
 .config/hammerspoon
 .config/iterm2
 .config/linearmouse
+.config/brewfile/Brewfile-mac
 .vscode-oss/
 Library/Application Support/
 {{- end }}

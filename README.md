@@ -1,14 +1,17 @@
 # Dotfiles
 
 ## Install Mac/Linux
+Setup ssh key
 ```bash
-curl 'https://raw.githubusercontent.com/brandonocasey/chezmoi/main/install/install.bash' | bash
+mkdir -p ~/.local/share && \
+  git@github.com:brandonocasey/dotfiles.git ~/.local/share/chezmoi && \
+  ~/.local/share/chezmoi/install/install.bash
 ```
 ## Install Windows
 ```ps1
-Set-ExecutionPolicy Bypass -Scope Process -Force; 
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
-iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/brandonocasey/chezmoi/main/install/install.ps1'))
+mkdir -p ~/.local/share && \
+git clone git@github.com:brandonocasey/dotfiles.git ~/.local/share/chezmoi && \
+~/.local/share/chezmoi/install/install.ps1
 ```
 
 # Priorities
