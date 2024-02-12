@@ -18,11 +18,8 @@ if ! command -v brew 2>/dev/null >/dev/null; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# install brew wrap
-if [ ! -f "$(brew --prefix)/etc/brew-wrap" ]; then
-  echo "Installing brew-file"
-  brew install rcmdnk/file/brew-file
-fi
+# prevent annoying "Login Item" Notifications
+sfltool resetbtm
 
 # install brew dependencies
 brew bundle --file="$HOME/.local/share/chezmoi/dot_config/brewfile/Brewfile"

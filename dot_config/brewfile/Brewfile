@@ -48,6 +48,7 @@ brew 'mosh'
 brew 'bottom'
 brew 'lazydocker'
 brew 'doron-cohen/tap/antidot'
+brew 'mist-cli'
 
 # Applications
 # tap 'homebrew/cask'
