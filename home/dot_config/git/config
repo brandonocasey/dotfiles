@@ -51,14 +51,19 @@
   # automatically do them
   autoUpdate = true
 
+[column]
+  # allow showing things as columns rather than a long new-line separated list
+	ui = auto
+
+[branch]
+  # sort branches when listed by committerdate
+	sort = -committerdate
 
 # TODO: everything below here starting at git-config for http
 
 [merge]
   tool = nvimdiff
   stat = true
-[branch]
-  autosetupmerge = true
 [hub]
   protocol = ssh
 [alias]
@@ -81,3 +86,4 @@
 
 [delta]
   line-numbers = true
+
