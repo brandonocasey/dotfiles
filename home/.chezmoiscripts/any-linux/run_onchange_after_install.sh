@@ -202,10 +202,5 @@ if cmd_exists asdf; then
 fi
 
 if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
-  mkdir -p "$HOME/.config/chezmoi"
-  {
-    echo "[git]"
-    echo "    autoCommit = true"
-    echo "    autoPush = true"
-  } >> "$HOME/.config/chezmoi/chezmoi.toml"
+  chezmoi init
 fi
