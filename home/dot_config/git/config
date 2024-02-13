@@ -44,6 +44,7 @@
   diff-his = diff --diff-algorithm=histogram
   diff-min = diff --diff-algorithm=minimal
   diff-pat = diff --diff-algorithm=patience
+  diff-word = diff --word-diff
   root = rev-parse --show-toplevel
 
 [rerere]
