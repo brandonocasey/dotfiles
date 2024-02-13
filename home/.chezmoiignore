@@ -1,11 +1,37 @@
+
 README.md
 install
+
+# ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}
+.chezmoiscripts/darwin/**
 .config/karabiner
 .config/hammerspoon
 .config/iterm2
 .config/linearmouse
 .config/brewfile/Brewfile-mac
 .vscode-oss/
-Library/Application Support/
+Library/
+{{- end }}
+
+# ignore these files if not on windows
+{{- if ne .chezmoi.os "windows" }}
+.chezmoiscripts/windows/**
+# ignore these files only on windows
+{{- else }}
+.config
+.envrc
+.telnetrc
+.tool-versions
+.local
+{{- end }}
+
+# ignore these files if not on linux
+{{- if ne .chezmoi.os "linux" }}
+.chezmoiscripts/linux/**
+{{- end }}
+
+# ignore these files if not on Linux or Mac
+{{- if (and (ne .chezmoi.os "linux") (ne .chezmoi.os "darwin")) }}
+.chezmoiscripts/any-linux
 {{- end }}

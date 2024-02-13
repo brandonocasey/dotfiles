@@ -1,13 +1,7 @@
 # Dotfiles
 
-## Install Mac/Linux
-```bash
-curl https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.bash | bash
-```
-## Install Windows
-```ps1
-(irm -useb https://raw.githubusercontent.com/brandonocasey/dotfiles/main/install/install.ps1) | powershell -c -
-```
+## Install
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey
 
 # Priorities
 * Use chezmoi --purge --purge-binary for initial setup and use chezmoi scripts for things
