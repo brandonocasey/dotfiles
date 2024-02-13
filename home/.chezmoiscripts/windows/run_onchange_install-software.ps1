@@ -14,6 +14,7 @@ if (Get-Command choco.exe -ErrorAction SilentlyContinue) {
 
 # Install chocolatey if not installed
 if (-Not $ChocoInstalled) {
+  Write-Host "Installing Chocolatey"
   Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 }
 
@@ -41,6 +42,7 @@ $Packages = '7zip',
 'wezterm.install',
 'zoom'
 
+Write-Host "Installing Chocolatey packages"
 ForEach ($PackageName in $Packages) {
   choco install $PackageName -y
 }
