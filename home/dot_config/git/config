@@ -45,6 +45,13 @@
   diff-min = diff --diff-algorithm=minimal
   diff-pat = diff --diff-algorithm=patience
 
+[rerere]
+  # save conflict resolutions
+  enabled = true
+  # automatically do them
+  autoUpdate = true
+
+
 # TODO: everything below here starting at git-config for http
 
 [merge]
@@ -52,8 +59,6 @@
   stat = true
 [branch]
   autosetupmerge = true
-[rerere]
-  enabled = true
 [hub]
   protocol = ssh
 [alias]
