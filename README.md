@@ -20,6 +20,7 @@
     * Can we setup https://superuser.com/questions/232373/how-to-tell-git-which-private-key-to-use/1664624#1664624
     * https://usercomp.com/news/1044072/using-ssh-agent-on-mac
     * Fish ssh agent
+    * gpg ssh key
 * nvim extensions
     * https://github.com/akinsho/toggleterm.nvim
     * https://github.com/ggandor/leap.nvim

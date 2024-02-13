@@ -18,6 +18,7 @@ if (-Not $ChocoInstalled) {
   Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 }
 
+
 $Packages = '7zip',
 'autohotkey.portable',
 'bitwarden',
@@ -31,18 +32,30 @@ $Packages = '7zip',
 'flow-launcher',
 'nerd-fonts-IosevkaTerm',
 'plex',
+'localsend',
+'kdeconnect-kde',
 'plexamp',
 'qbittorrent',
 'rufus',
-'sharex',
+'obs-studio',
 'spotify',
 'steam',
 'sublimetext4',
 'ventoy',
 'wezterm.install',
+'wireshark',
+'lmms',
+'blender',
+'godot',
+'imageoptim'
+'imgburn',
 'zoom'
 
 Write-Host "Installing Chocolatey packages"
 ForEach ($PackageName in $Packages) {
   choco install $PackageName -y
 }
+
+Write-Host "Enable Windows Subsystem for Linux"
+gcm -module DISM #List available commands
+Enable-WindowsOptionalFeature -online -FeatureName Microsoft-Windows-Subsystem-Linux -n
