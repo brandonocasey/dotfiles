@@ -1,10 +1,12 @@
 # Dotfiles
 
 ## Install
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey
+### Linux/Mac
+`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey`
+### Windows
+`Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
 # Priorities
-* Use chezmoi --purge --purge-binary for initial setup and use chezmoi scripts for things
 * setup delta
 * https://github.com/junegunn/fzf/blob/master/ADVANCED.md#switching-between-ripgrep-mode-and-fzf-mode-using-a-single-key-binding
 * evaluate
