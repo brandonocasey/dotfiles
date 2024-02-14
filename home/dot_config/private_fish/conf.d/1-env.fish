@@ -22,12 +22,7 @@ end
 
 if [ $UNAME = Darwin ]
   set -gx MACPREFS_BACKUP_DIR "$XDG_DATA_HOME/macprefs/"
-else if [ $UNAME = Linux ]
-  fish_add_path -a "/home/linuxbrew/.linuxbrew/bin"
 end
-
-fish_add_path -a "$HOME/.local/bin"
-fish_add_path -a "./node_modules/.bin"
 
 # TODO: do we need this?
 if test -z "$XDG_RUNTIME_DIR"
@@ -38,9 +33,21 @@ if test -z "$XDG_RUNTIME_DIR"
   end
 end
 
-if type -q brew
+set -l brew_location ""
+if type -q brew 
+  set brew_location $(which brew) 
+else if test -f /usr/local/bin/brew
+  set brew_location /usr/local/bin/brew
+else if test -f /home/linuxbrew/.linuxbrew/bin/brew
+  set brew_location /home/linuxbrew/.linuxbrew/bin/brew
+end
+
+if [ -n "$brew_location" ]
   brew shellenv | source
 end
+
+fish_add_path -a "$HOME/.local/bin"
+fish_add_path -a "./node_modules/.bin"
 
 set -gx EDITOR nano
 # Set default command editor to vim
