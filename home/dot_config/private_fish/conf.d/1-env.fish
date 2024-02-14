@@ -37,7 +37,7 @@ set -l brew_location ""
 if test -f /usr/local/bin/brew
   set brew_location /usr/local
 else if test -f /home/linuxbrew/.linuxbrew/bin/brew
-  set brew_location /home/linuxbrew/.linuxbrew/
+  set brew_location /home/linuxbrew/.linuxbrew
 end
 
 if ! set -q MANPATH
