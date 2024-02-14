@@ -26,12 +26,13 @@ Library/
 .local
 {{- end }}
 
-# ignore these files if not on linux
-{{- if ne .chezmoi.os "linux" }}
+# ignore these files if not on linux or on windows subsystem for linux
+{{- if (or (ne .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft")) }}
 .chezmoiscripts/linux/**
 {{- end }}
 
 # ignore these files if not on Linux or Mac
 {{- if (and (ne .chezmoi.os "linux") (ne .chezmoi.os "darwin")) }}
+# WSL-specific code
 .chezmoiscripts/any-linux/**
 {{- end }}

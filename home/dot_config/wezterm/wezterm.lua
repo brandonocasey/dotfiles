@@ -55,7 +55,7 @@ config.color_scheme = color_scheme_for_system_theme()
 --  cursor_border = 'orange'
 --}
 --
-config.scrollback_lines = 100000
+config.scrollback_lines = 10000
 --config.enable_scroll_bar = true
 
 config.window_frame = {
