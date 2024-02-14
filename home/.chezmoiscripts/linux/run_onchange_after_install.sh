@@ -7,16 +7,20 @@ cmd_exists() {
 
   return 1
 }
-UNAME="$(uname)"
 PATH="$PATH:/home/linuxbrew/.linuxbrew/bin"
 
-if ! cmd_exists curl || ! cmd_exists git; then
-  echo "Installing git/curl"
-  if cmd_exists apt-get; then
-    sudo apt-get install curl git
-  elif cmd_exists yum; then
-    sudo yum install curl git
-  elif cmd_exists pacman; then
-    sudo pacman -S curl git
-  fi
+echo "Installing linux packages"
+if cmd_exists apt-get; then
+  sudo apt-get update && sudo apt-get install -y gcc make flatpak gnome-software-plugin-flatpak
+elif cmd_exists yum; then
+  sudo yum install -y curl gcc make
+  echo "TODO: this distro is mostly untested"
+elif cmd_exists pacman; then
+  sudo pacman -S --no-confirm gcc make
+  echo "TODO: this distro is mostly untested"
+fi
+
+if cmd_exists flatpak; then
+  flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  flatpak install flathub org.wezfurlong.wezterm
 fi

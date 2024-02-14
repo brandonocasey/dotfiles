@@ -27,11 +27,11 @@ else
   if ! cmd_exists curl || ! cmd_exists git; then
     echo "Installing git/curl"
     if cmd_exists apt-get; then
-      sudo apt-get install curl git
+      sudo apt-get update && sudo apt-get install -y curl git
     elif cmd_exists yum; then
-      sudo yum install curl git
+      sudo yum install -y curl git 
     elif cmd_exists pacman; then
-      sudo pacman -S curl git
+      sudo pacman -S --no-confirm curl git
     fi
   fi
 fi
@@ -181,7 +181,8 @@ fi
 if [ ! -d ~/.config/nvim/.git ]; then
   mkdir -p ~/.config/nvim
   git clone https://github.com/NvChad/NvChad ~/.config/nvim --depth 1
-  nvim --headless +q 2>/dev/null 1>/dev/null &
+  nvim --headless +qall 2>/dev/null 1>/dev/null &
+  nvim --headless +MasonInstallAll +qall 2>/dev/null 1>/dev/null &
   disown
 fi
 
