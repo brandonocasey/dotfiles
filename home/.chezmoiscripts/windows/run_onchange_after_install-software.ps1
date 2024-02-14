@@ -57,5 +57,4 @@ ForEach ($PackageName in $Packages) {
 }
 
 Write-Host "Enable Windows Subsystem for Linux"
-gcm -module DISM #List available commands
-Enable-WindowsOptionalFeature -online -FeatureName Microsoft-Windows-Subsystem-Linux -n
+wsl --install
