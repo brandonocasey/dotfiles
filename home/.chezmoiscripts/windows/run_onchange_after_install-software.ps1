@@ -47,9 +47,11 @@ $Packages = '7zip',
 'lmms',
 'blender',
 'godot',
-'imageoptim'
+'imageoptim',
 'imgburn',
-'zoom'
+'zoom',
+'git',
+'calibre'
 
 Write-Host "Installing Chocolatey packages"
 ForEach ($PackageName in $Packages) {
@@ -57,4 +59,5 @@ ForEach ($PackageName in $Packages) {
 }
 
 Write-Host "Enable Windows Subsystem for Linux"
-wsl --install
+gcm -module DISM #List available commands
+Enable-WindowsOptionalFeature -online -FeatureName Microsoft-Windows-Subsystem-Linux -n
