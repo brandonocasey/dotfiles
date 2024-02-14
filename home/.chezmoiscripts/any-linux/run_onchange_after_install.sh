@@ -24,15 +24,13 @@ if [ "$UNAME" = "Darwin" ]; then
 else
   PATH="$PATH:/home/linuxbrew/.linuxbrew/bin"
 
-  if ! cmd_exists curl || ! cmd_exists git; then
-    echo "Installing git/curl"
-    if cmd_exists apt-get; then
-      sudo apt-get update && sudo apt-get install -y curl git
-    elif cmd_exists yum; then
-      sudo yum install -y curl git 
-    elif cmd_exists pacman; then
-      sudo pacman -S --no-confirm curl git
-    fi
+  echo "Installing linux packages"
+  if cmd_exists apt-get; then
+    sudo apt-get update && sudo apt-get install -y curl git make gcc
+  elif cmd_exists yum; then
+    sudo yum install -y curl git make gcc
+  elif cmd_exists pacman; then
+    sudo pacman -S --no-confirm curl git make gcc
   fi
 fi
 
