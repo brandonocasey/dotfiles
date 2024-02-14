@@ -78,8 +78,4 @@ if status is-interactive
   bind \co 'scratch'
   # * CTRL-j -> find replace using sad?
 
-
-  fish_add_path -a "$HOME/.local/bin"
-  fish_add_path -a "./node_modules/.bin"
-
 end
