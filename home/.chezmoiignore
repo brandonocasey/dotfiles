@@ -32,6 +32,6 @@ Library/
 {{- end }}
 
 # ignore these files if not on Linux or Mac
-{{- if (and (ne .chezmoi.os "linux") (ne .chezmoi.os "darwin")) }}
+{{- if (or (ne .chezmoi.os "linux") (ne .chezmoi.os "darwin")) }}
 .chezmoiscripts/any-linux
 {{- end }}
