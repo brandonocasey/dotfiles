@@ -47,9 +47,9 @@ set -gx EDITOR nano
 if type -q nvim
   set -gx MANPAGER "nvim +Man!"
   set -gx EDITOR nvim
-else if cmd_exists vim; then
+else if type -q vim; then
   set -gx EDITOR vim
-else if bin_exist vi; then
+else if type -q vi; then
   set -gx EDITOR vi
 end
 

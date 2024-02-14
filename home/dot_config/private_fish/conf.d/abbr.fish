@@ -230,11 +230,11 @@ alias docker-compose-update 'docker-compose pull && docker-compose up --force-re
 # # keep env when going sudo
 # abbr --add sudo sudo --preserve-env'
 #
-# if cmd_exists rlwrap; then
+# if type -q rlwrap; then
 #   abbr --add telnet rlwrap telnet'
 # fi
 #
-# if cmd_exists multitail; then
+# if type -q multitail; then
 #   abbr --add tail multitail'
 # else
 #   abbr --add tail tail -f'
