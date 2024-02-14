@@ -1,3 +1,4 @@
+
 if test -z "$UNAME"
   set -gx UNAME $(uname)
 end
@@ -19,6 +20,15 @@ if test -z "$XDG_CACHE_HOME"
   set -gx XDG_CACHE_HOME "$HOME/.cache"
 end
 
+if [ $UNAME = Darwin ]
+  set -gx MACPREFS_BACKUP_DIR "$XDG_DATA_HOME/macprefs/"
+else if [ $UNAME = Linux ]
+  fish_add_path -a "/home/linuxbrew/.linuxbrew/bin"
+end
+
+fish_add_path -a "$HOME/.local/bin"
+fish_add_path -a "./node_modules/.bin"
+
 # TODO: do we need this?
 if test -z "$XDG_RUNTIME_DIR"
   if test $UNAME = 'Darwin'
@@ -30,8 +40,6 @@ end
 
 if type -q brew
   brew shellenv | source
-  set -gx HOMEBREW_BUNDLE_NO_LOCK 1
-  set -gx HOMEBREW_BUNDLE_FILE "$HOME/.config/brewfile/Brewfile"
 end
 
 set -gx EDITOR nano
@@ -87,7 +95,3 @@ set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 # finding things
 set -gx GREP_OPTIONS "--color=auto"
 set -gx BAT_THEME "TwoDark"
-
-if [ $UNAME = Darwin ]
-  set -gx MACPREFS_BACKUP_DIR "$XDG_DATA_HOME/macprefs/"
-end
