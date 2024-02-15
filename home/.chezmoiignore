@@ -1,6 +1,6 @@
 
 README.md
-install
+.chezmoiscripts/.script-env.sh
 
 # ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}

@@ -1,38 +1,5 @@
 #!/usr/bin/env bash
-
-cmd_exists() {
-  if command -v "$1" 2>/dev/null 1>/dev/null; then
-    return 0
-  fi
-
-  return 1
-}
-UNAME="$(uname)"
-
-if [ "$UNAME" = "Darwin" ]; then
-  PATH="$PATH:/usr/local/bin"
-  if ! xcode-select -p 1>/dev/null; then
-    echo "Installing xcode command line tools"
-    xcode-select --install
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-    SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
-    echo "Please start this script again after xcode command line tools install by running:"
-    echo "bash $SCRIPT_DIR/$SCRIPT_NAME"
-    exit 0
-  fi
-
-else
-  PATH="$PATH:/home/linuxbrew/.linuxbrew/bin"
-
-  echo "Installing linux packages"
-  if cmd_exists apt-get; then
-    sudo apt-get update && sudo apt-get install -y curl git make gcc
-  elif cmd_exists yum; then
-    sudo yum install -y curl git make gcc
-  elif cmd_exists pacman; then
-    sudo pacman -S --no-confirm curl git make gcc
-  fi
-fi
+source "$(chezmoi source-path)/.chezmoiscripts/.script-env.sh"
 
 # install brew if not installed
 if ! cmd_exists brew; then
@@ -41,7 +8,7 @@ if ! cmd_exists brew; then
 fi
 
 # make sure everything from brew is in the path
-eval "$(brew shellenv)"
+brew_shellenv
 
 BUNDLE=$(cat <<EOF
 brew 'act'
