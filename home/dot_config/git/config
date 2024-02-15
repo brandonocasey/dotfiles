@@ -6,7 +6,7 @@
   # use git-delta, aka delta to get better diffs
   pager = delta
 [help]
-  # 5 seconds before git command auto corrects
+  # 1 seconds before git command auto corrects
   autocorrect = 10
 
 [checkout]
@@ -46,6 +46,8 @@
   diff-pat = diff --diff-algorithm=patience
   diff-word = diff --word-diff
   root = rev-parse --show-toplevel
+  up = !git fetch && git pull
+  fix = commit --amend -a -C HEAD
 
 [rerere]
   # save conflict resolutions
@@ -61,31 +63,33 @@
   # sort branches when listed by committerdate
 	sort = -committerdate
 
-# TODO: everything below here starting at git-config for http
-
-[merge]
-  tool = nvimdiff
-  stat = true
-[hub]
-  protocol = ssh
-[alias]
-  up = !git fetch && git pull
-  fix = commit --amend -a -C HEAD
-  pushf = push --force-with-lease
-  diff = auto
-  status = auto
-  branch = auto
-  ui = true
-[push]
-  default = simple
-  autoSetupRemote = true
-[fetch]
-  prune = true
-[pull]
-  rebase = true
 [init]
+  # use main for the default during git init as its more correct
   defaultBranch = main
 
+[merge]
+  # three panes for merge
+  tool = nvimdiff3
+
+[pack]
+  # Use any number of threads if possible
+  threads = 0
+
+[push]
+  # assume the remote branch has the same name as the local one
+  autoSetupRemote = true
+
+[pull]
+  # apply remote changes before my local changes as they already exist
+  rebase = true
+
+[fetch]
+  # auto prune local branches when a merge or delete is detected on origin
+  prune = true
+  parallel = 0
+
+[hub]
+  protocol = ssh
 [delta]
   line-numbers = true
 
