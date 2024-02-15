@@ -33,13 +33,6 @@ if test -z "$XDG_RUNTIME_DIR"
   end
 end
 
-set -l brew_location ""
-if test -f /usr/local/bin/brew
-  set brew_location /usr/local
-else if test -f /home/linuxbrew/.linuxbrew/bin/brew
-  set brew_location /home/linuxbrew/.linuxbrew
-end
-
 if ! set -q MANPATH
   set -gx MANPATH ''
 end
@@ -48,20 +41,22 @@ if ! set -q INFOPATH
   set -gx INFOPATH
 end
 
+for brew_location in "/usr/local" "/opt/homebrew" "/home/linuxbrew/.linuxbrew"
+  if [ -s "$brew_location/bin/brew" ]
+    set -gx HOMEBREW_PREFIX "$brew_location";
+    set -gx HOMEBREW_CELLAR "$brew_location/Cellar";
+    set -gx HOMEBREW_REPOSITORY "$brew_location/Homebrew";
+    fish_add_path -a "$brew_location/bin"
+    fish_add_path -a "$brew_location/sbin"
 
-if [ -n "$brew_location" ]
-  set -gx HOMEBREW_PREFIX "$brew_location";
-  set -gx HOMEBREW_CELLAR "$brew_location/Cellar";
-  set -gx HOMEBREW_REPOSITORY "$brew_location/Homebrew";
-  fish_add_path -a "$brew_location/bin"
-  fish_add_path -a "$brew_location/sbin"
+    if ! contains "$brew_location/share/man" $MANPATH
+      set -gx MANPATH "$brew_location/share/man" $MANPATH
+    end
 
-  if ! contains "$brew_location/share/man" $MANPATH
-    set -gx MANPATH "$brew_location/share/man" $MANPATH
-  end
-
-  if ! contains "$brew_location/share/info" $INFOPATH
-    set -gx INFOPATH "$brew_location/share/info" $INFOPATH
+    if ! contains "$brew_location/share/info" $INFOPATH
+      set -gx INFOPATH "$brew_location/share/info" $INFOPATH
+    end
+    break;
   end
 end
 
