@@ -35,6 +35,7 @@
 [user]
   # Force local repo-level configuration for email
   useConfigOnly = true
+  name = Brandon Casey
 
 [alias]
   pushf = push --force-with-lease
