@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+
+pnpm=""
+workspace=""
+pkglock=""
+
+if ! command -v "npm" 2>/dev/null 1>/dev/null; then
+  echo "npm must be installed to use this" 1>&2 && exit 1
+fi
+
+print_help() {
+cat <<EOF
+  Usage: npmre [--pnpm][--workspaces][--lock]
+
+  > node_modules removal and reinstall for workspaces and beyond
+
+  -h, --help       show this help message
+      --pnpm       use pnpm (requires pnpm-workspace.yaml in root for workspaces)
+      --lock       remove package-lock.json (will also remove for workspaces)
+  -w, --workspaces remove node_modules for monorepo as well
+EOF
+
+}
+
+while [ $# -gt 0 ]; do
+  arg="$1"; shift
+
+  case "$arg" in
+
+    (--help|-h) print_help && exit ;;
+    (--pnpm) pnpm="true" ;;
+    (--workspace|--workspaces|-w|-ws) workspace="true" ;;
+    (--lock|--package-lock|--pkg-lock) pkglock="true" ;;
+    (*) print_help && echo "invalid argument $arg" 1>&2 && exit 1 ;;
+  esac
+done
+
+if [ -n "$pnpm" ]; then
+  if ! command -v "pnpm" 2>/dev/null 1>/dev/null; then
+    npm i -g pnpm
+  fi
+fi
+
+
+nl=$'\n'
+root=""
+
+if [ -n "$workspace" ]; then
+  root="$(find-root)"
+else
+  root="$(find-up package.json || "$PWD")"
+fi
+
+
+if [ -n "$pnpm" ] && [ -n "$workspace" ] && ! [ -f "./pnpm-workspace.yaml" ]; then
+  echo "Warning no pnpm-workspace.yaml file found!"
+  workspace=
+fi
+
+echo "$root"
+
+DIRS=('.')
+
+if [ -n "$workspace" ]; then
+  workspaces=""
+
+  if [ "$pnpm" ]; then
+    workspaces="$(dasel -r yaml -f pnpm-workspace.yaml -w - -s "packages.all().join($nl)")"
+  else
+    workspaces="$(dasel -r json -f package.json -w - -s "workspaces.all().join($nl)")"
+  fi
+
+  while IFS=$nl read -r line; do
+    for d in $line; do
+      DIRS+=("$d")
+    done
+  done <<< "$workspaces"
+fi
+
+tmpdir="$(mktemp -d)"
+mkdir -p "$tmpdir"
+
+for d in "${DIRS[@]}"; do
+  if [ -d "$d/node_modules" ]; then
+    echo "Removing $d/node_modules"
+    mkdir -p "$tmpdir/$d"
+    mv "$d/node_modules" "$tmpdir/$d/node_modules"
+  fi
+
+  if [ -n "$pnpm" ] && [ -f "$d/pnpm-lock.yaml" ]; then
+    echo "Removing $d/pnpm-lock.yaml"
+    rm -f "$d/pnpm-lock.yaml"
+  elif [ -f "$d/package-lock.json" ]; then
+    echo "Removing $d/package-lock.json"
+    rm -f "$d/package-lock.json"
+  fi
+done
+
+rm -rf "$tmpdir" &
+disown
+
+if [ -n "$pnpm" ]; then
+  pnpm i
+else
+  npm i
+fi
