@@ -61,7 +61,7 @@ for brew_location in "/usr/local" "/opt/homebrew" "/home/linuxbrew/.linuxbrew"
 end
 
 fish_add_path -a "$HOME/.local/bin"
-fish_add_path -a "./node_modules/.bin"
+set -gx PATH $PATH ./node_modules/.bin
 
 set -gx EDITOR nano
 # Set default command editor to vim

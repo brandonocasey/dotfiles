@@ -37,9 +37,9 @@ if type -q asdf
     end
 
     if test -f $ASDF_DIR/asdf.fish
-      source $ASDF_DIR/asdf.fish
+      #source $ASDF_DIR/asdf.fish
     else if test -f $ASDF_DIR/libexec/asdf.fish
-      source $ASDF_DIR/libexec/asdf.fish
+      #source $ASDF_DIR/libexec/asdf.fish
     end
   end
 
