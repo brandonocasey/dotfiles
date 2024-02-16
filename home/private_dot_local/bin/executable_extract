@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # ------------------------------------------------------------------------------
 # a modified version of the extract plugin from oh-my-zsh
 #          FILE:  extract.plugin.zsh
