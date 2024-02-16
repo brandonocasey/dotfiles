@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+for test in .git package.json; do
+  dir="$(find-up "$test")"
+  if [ -n "$dir" ] && [ -d "$dir" ]; then
+    echo "$dir"
+    exit
+  fi
+done
+echo "$PWD"
