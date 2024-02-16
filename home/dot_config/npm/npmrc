@@ -4,5 +4,6 @@ cache=${XDG_CACHE_HOME}/npm
 tmp=${XDG_RUNTIME_DIR}/npm
 init-module=${XDG_CONFIG_HOME}/npm/config/npm-init.js
 init-version=0.0.0
+init-author-name=Brandon Casey
 save-exact=true
 fund=false
