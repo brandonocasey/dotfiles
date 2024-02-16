@@ -30,7 +30,7 @@ if status is-interactive
   end
 
   function scratch --description "Open a scratch pad in your editor for quick notes"
-    set -l file "$(mktemp -t scratch).md" 
+    set -l file "$(mktemp -t scratch).md"
     $EDITOR "$file"
     if [ ! -s "$file" ]
       rm -f "$file"
@@ -52,7 +52,7 @@ if status is-interactive
     zi
     clear
   end
- 
+
   function fzf-fd-nvim -a cwd --description "Open nvm to Telescope find_files selector"
     if [ -z "$cwd" ] || [ ! -d "$cwd" ]
       set cwd "$(find-root)"
