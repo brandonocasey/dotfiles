@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+find-up() {
+  if [ -z "$1" ]; then
+    echo "Usage find-up <name> [cwd]"
+    return 1
+  fi
+
+  name="$1"
+  cwd="${2:-$PWD}"
+
+  if [ -f "$cwd/$name" ] || [ -d "$cwd/$name" ]; then
+    echo "$cwd"
+    return 0
+  fi
+
+  if [ -z "$cwd" ] || [ "$cwd" = "/" ] || [ "$cwd" = "." ]; then
+    return 1
+  fi
+
+  find-up "$name" "$(dirname "$cwd")"
+  return "$?"
+}
+
+find-up "$@"
+exit "$?"
