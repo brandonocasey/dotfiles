@@ -9,6 +9,9 @@
   # 1 seconds before git command auto corrects
   autocorrect = 10
 
+[advice]
+  # turn of git status hints telling you to git add
+  statusHints = false
 [checkout]
   # use number of cores on the cpu to determine how many workers to use
   workers = 0
@@ -27,15 +30,25 @@
   colorMoved = default
   # only give a commit summary of submodules not a diff
   ignoreSubmodules = dirty
+  # better diff than default
+  algorithm = histogram
 
 [fetch]
   # use whatever git things is best
   parallel = 0
-# re-config below here
+  # avoid repo corruption
+  fsckobjects = true
+  # auto prune local branches when a merge or delete is detected on origin
+  prune = true
+
 [user]
   # Force local repo-level configuration for email
   useConfigOnly = true
   name = Brandon Casey
+
+[transfer]
+  # prevent repo corruption
+  fsckObjects = true
 
 [alias]
   pushf = push --force-with-lease
@@ -58,11 +71,15 @@
 
 [column]
   # allow showing things as columns rather than a long new-line separated list
-	ui = auto
+  ui = auto
 
 [branch]
   # sort branches when listed by committerdate
-	sort = -committerdate
+  sort = -committerdate
+
+[receive]
+  # prevent repo corruption
+  fsckObjects = true
 
 [init]
   # use main for the default during git init as its more correct
@@ -71,6 +88,8 @@
 [merge]
   # three panes for merge
   tool = nvimdiff3
+  # three diff markers for conflicts
+  conflictstyle = zdiff3
 
 [pack]
   # Use any number of threads if possible
@@ -84,13 +103,13 @@
   # apply remote changes before my local changes as they already exist
   rebase = true
 
-[fetch]
-  # auto prune local branches when a merge or delete is detected on origin
-  prune = true
-  parallel = 0
+[interactive]
+  # use delta for git add -p
+  diffFilter delta --color-only
 
+[log]
+  # iso dates in log
+  date = iso
 [hub]
   protocol = ssh
-[delta]
-  line-numbers = true
 
