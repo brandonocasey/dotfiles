@@ -62,6 +62,7 @@
   root = rev-parse --show-toplevel
   up = !git fetch && git pull
   fix = commit --amend -a -C HEAD
+  checkout-default = "!git checkout $(git rev-parse --abbrev-ref origin/HEAD | sed 's@^origin/@@')"
 
 [rerere]
   # save conflict resolutions
