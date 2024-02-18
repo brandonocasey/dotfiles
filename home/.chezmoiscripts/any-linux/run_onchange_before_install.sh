@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 env
-source "$(chezmoi source-path)/.chezmoiscripts/.script-env.sh"
+source "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.script-env.sh"
 
 # install brew if not installed
 if ! cmd_exists brew; then
