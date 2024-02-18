@@ -61,7 +61,7 @@ ForEach ($PackageName in $Packages) {
 Write-Host "Enable Windows Subsystem for Linux"
 gcm -module DISM #List available commands
 Enable-WindowsOptionalFeature -online -FeatureName Microsoft-Windows-Subsystem-Linux -n
-choco install wsl2 --params "/Version:2 /Retry:true"
+choco install wsl2 --params "/Version:2 /Retry:true" -y
 @"
 Install instructions here
 "@
