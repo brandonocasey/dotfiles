@@ -106,7 +106,7 @@
 
 [interactive]
   # use delta for git add -p
-  diffFilter delta --color-only
+  diffFilter = delta --color-only
 
 [log]
   # iso dates in log
