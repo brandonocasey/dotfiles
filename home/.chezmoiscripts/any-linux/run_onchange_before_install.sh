@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "$ENV"
+env
 source "$(chezmoi source-path)/.chezmoiscripts/.script-env.sh"
 
 # install brew if not installed
