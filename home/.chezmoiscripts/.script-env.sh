@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 UNAME="$(uname)"
-PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 cmd_exists() {
   if command -v "$1" 2>/dev/null 1>/dev/null; then
     return 0
