@@ -29,7 +29,7 @@ if [ "$UNAME" = "Darwin" ]; then
     echo "Waiting for xcode command line tools to finish installing"
     sleep 5;
   done
-elif ! cmd_exists curl || ! cmd_exists git; then
+else
   install_linux_pkg curl git build-essential
 fi
 
