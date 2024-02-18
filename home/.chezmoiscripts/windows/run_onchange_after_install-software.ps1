@@ -62,6 +62,7 @@ Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile winget.msixbundle
 Add-AppPackage -ForceApplicationShutdown .\winget.msixbundle
 del .\winget.msixbundle
 
+winget install KDE.KDEConnect
 Write-Host "Enable Windows Subsystem for Linux"
 gcm -module DISM #List available commands
 Enable-WindowsOptionalFeature -online -FeatureName Microsoft-Windows-Subsystem-Linux -n
