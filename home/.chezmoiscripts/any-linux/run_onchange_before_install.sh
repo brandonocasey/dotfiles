@@ -8,11 +8,11 @@ if ! cmd_exists brew; then
 fi
 
 BUNDLE=$(cat <<EOF
+brew 'gcc'
+brew 'make'
 brew 'act'
 brew 'asdf'
 brew 'bat'
-brew 'gcc'
-brew 'make'
 brew 'chezmoi'
 brew 'choose'
 brew 'ctop'
