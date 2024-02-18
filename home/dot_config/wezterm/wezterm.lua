@@ -95,5 +95,10 @@ config.keys = {
   },
 }
 
+local wsl_domains = wezterm.default_wsl_domains()
+
+if next(wsl_domains) ~= nil then
+  config.default_domain = wsl_domains[1].name
+end
 -- and finally, return the configuration to wezterm
 return config
