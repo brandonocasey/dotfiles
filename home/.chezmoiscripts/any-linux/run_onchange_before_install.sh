@@ -7,9 +7,6 @@ if ! cmd_exists brew; then
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-# make sure everything from brew is in the path
-brew_shellenv
-
 BUNDLE=$(cat <<EOF
 brew 'act'
 brew 'asdf'
