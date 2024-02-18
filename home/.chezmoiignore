@@ -20,6 +20,7 @@ Library/
 # ignore these files only on windows
 {{- else }}
 .config
+!.config/wezterm
 .envrc
 .telnetrc
 .tool-versions
