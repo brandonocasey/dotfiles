@@ -57,6 +57,10 @@ Write-Host "Installing Chocolatey packages"
 ForEach ($PackageName in $Packages) {
   choco install $PackageName -y
 }
+Write-Host "Update winget"
+Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile winget.msixbundle
+Add-AppPackage -ForceApplicationShutdown .\winget.msixbundle
+del .\winget.msixbundle
 
 Write-Host "Enable Windows Subsystem for Linux"
 gcm -module DISM #List available commands
