@@ -99,6 +99,11 @@ local wsl_domains = wezterm.default_wsl_domains()
 
 if next(wsl_domains) ~= nil then
   config.default_domain = wsl_domains[1].name
+  table.insert(config.keys, {
+    key = 'v',
+    mods = 'CTRL',
+    action = wezterm.action.PasteFrom 'Clipboard'
+  })
 end
 -- and finally, return the configuration to wezterm
 return config
