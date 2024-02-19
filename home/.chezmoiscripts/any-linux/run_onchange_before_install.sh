@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e
 UNAME="$(uname)"
 export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 cmd_exists() {
