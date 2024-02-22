@@ -10,7 +10,7 @@ echo "Writings settings"
 ##
 
 # Set to the right
-defaults write com.apple.dock "orientation" -string "right"
+defaults write com.apple.dock "orientation" -string "bottom"
 
 # Set dock icon size
 defaults write com.apple.dock "tilesize" -int "75"
