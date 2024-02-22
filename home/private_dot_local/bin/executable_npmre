@@ -59,6 +59,7 @@ if [ -n "$pnpm" ] && [ -n "$workspace" ] && ! [ -f "./pnpm-workspace.yaml" ]; th
 fi
 
 echo "$root"
+cd "$root"
 
 DIRS=('.')
 

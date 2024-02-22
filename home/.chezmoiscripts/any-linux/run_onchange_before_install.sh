@@ -92,9 +92,6 @@ brew 'wader/tap/fq'
 tap 'doron-cohen/tap'
 brew 'doron-cohen/tap/antidot'
 
-tap 'simonhammes/mcfly-fzf'
-brew 'simonhammes/mcfly-fzf/mcfly-fzf'
-
 EOF
 )
 
