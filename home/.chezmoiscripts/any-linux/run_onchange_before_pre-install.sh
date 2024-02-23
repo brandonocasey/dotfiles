@@ -85,6 +85,7 @@ brew 'wget2'
 brew 'mosh'
 brew 'bottom'
 brew 'lazydocker'
+brew 'vale'
 
 tap 'wader/tap'
 brew 'wader/tap/fq'
