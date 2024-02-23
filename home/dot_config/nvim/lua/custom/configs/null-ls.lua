@@ -6,7 +6,7 @@ local eslint_d = {
     '--no-error-on-unmatched-pattern',
     '--report-unused-disable-directives',
     '--config',
-    vim.fn.expand('$HOME/BrandonProjects/js-metarepo/tooling/eslint-tsc/src/js/eslint-config.cjs'),
+    vim.fn.expand('$HOME/Projects/js-metarepo/tooling/js-lint/src/js/config.cjs'),
     '--ext',
     '.js,.ts,.jsx,.mjs,.cjs,.tsx',
     '--cache'
@@ -24,7 +24,7 @@ local M = {
         group = augroup,
         buffer = bufnr,
         callback = function()
-          -- vim.lsp.buf.format({ async = false })
+          vim.lsp.buf.format({ async = false })
         end,
       })
     end

@@ -40,6 +40,7 @@ M.mason = {
     "shellcheck",
 
     -- markdown
+    "vale",
     "vale-ls",
 
     -- web dev stuff
@@ -50,7 +51,6 @@ M.mason = {
     "eslint_d",
     -- somewhat handled by typescript-tools.nvim
     "typescript-language-server",
-
 
     -- github actions
     "actionlint",

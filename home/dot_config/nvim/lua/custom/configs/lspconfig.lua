@@ -15,9 +15,11 @@ for _, lsp in ipairs(servers) do
 end
 
 lspconfig.vale_ls.setup({
-  on_attach = on_attach,
-  capabilities = capabilities,
-  single_file_support = true
+  settings = {
+    initializationParams = {
+      configPath = vim.env.VALE_CONFIG_PATH
+    }
+  }
 })
 
 lspconfig.tsserver.setup({
