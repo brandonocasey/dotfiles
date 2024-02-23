@@ -40,10 +40,7 @@ M.mason = {
     "shellcheck",
 
     -- markdown
-    "proselint",
-    "write-good",
-    "grammarly-languageserver",
-    "alex",
+    "vale-ls",
 
     -- web dev stuff
     "css-lsp",
