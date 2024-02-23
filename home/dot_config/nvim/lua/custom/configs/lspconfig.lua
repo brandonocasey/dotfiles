@@ -5,7 +5,7 @@ local lspconfig = require "lspconfig"
 
 -- if you just want default config for the servers then put them in a table
 -- tsserver is handled by typescript-tools.nvim, see plugins.lua
-local servers = { "html", "cssls", "typos_lsp", "yamlls" }
+local servers = { "html", "cssls", "typos_lsp", "yamlls", "vale_ls" }
 
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup {
@@ -23,7 +23,7 @@ lspconfig.tsserver.setup({
 })
 
 lspconfig.stylelint_lsp.setup({
-  root_dir = require("lspconfig").util.root_pattern(".git", "package.json"),
+  root_dir = lspconfig.util.root_pattern(".git", "package.json"),
   filetypes = { "css", "scss" },
   on_attach = function(client)
     client.server_capabilities.documentFormattingProvider = false
@@ -33,7 +33,7 @@ lspconfig.stylelint_lsp.setup({
   settings = {
     stylelintplus = {
       autoFixOnFormat = true,
-      configFile = vim.fn.expand('$HOME/BrandonProjects/js-metarepo/tooling/css-lint/src/js/config.cjs')
+      configFile = vim.fn.expand('$HOME/BrandonProjects/js-metarepo/tooling/stylelint/src/js/config.cjs')
     },
   },
 })
