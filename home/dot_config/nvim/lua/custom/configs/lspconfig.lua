@@ -5,7 +5,7 @@ local lspconfig = require "lspconfig"
 
 -- if you just want default config for the servers then put them in a table
 -- tsserver is handled by typescript-tools.nvim, see plugins.lua
-local servers = { "html", "cssls", "typos_lsp", "yamlls", "vale_ls" }
+local servers = { "html", "cssls", "typos_lsp", "yamlls" }
 
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup {
@@ -13,6 +13,12 @@ for _, lsp in ipairs(servers) do
     capabilities = capabilities,
   }
 end
+
+lspconfig.vale_ls.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  single_file_support = true
+})
 
 lspconfig.tsserver.setup({
   on_attach = function(client)
