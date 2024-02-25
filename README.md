@@ -15,7 +15,6 @@
     * lazydocker
     * https://formulae.brew.sh/formula/felinks
 * ssh key stuff
-    * Can we setup https://superuser.com/questions/232373/how-to-tell-git-which-private-key-to-use/1664624#1664624
     * https://usercomp.com/news/1044072/using-ssh-agent-on-mac
     * Fish ssh agent
     * gpg ssh key
@@ -51,5 +50,5 @@
 * check neovim releases for https://github.com/neovim/neovim/issues/7257
 
 # References
-https://github.com/johnalanwoods/maintained-modern-unix
-https://github.com/TaKO8Ki/awesome-alternatives-in-rust
+* https://github.com/johnalanwoods/maintained-modern-unix
+* https://github.com/TaKO8Ki/awesome-alternatives-in-rust
