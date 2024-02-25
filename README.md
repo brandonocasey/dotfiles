@@ -7,7 +7,6 @@
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
 # Priorities
-* https://github.com/junegunn/fzf/blob/master/ADVANCED.md#switching-between-ripgrep-mode-and-fzf-mode-using-a-single-key-binding
 * evaluate
     * https://github.com/TheR1D/shell_gpt
     * https://aider.chat/docs/install.html

@@ -118,3 +118,18 @@
   date = iso
 [hub]
   protocol = ssh
+
+# config ad described in https://superuser.com/a/1664624
+# if in ~/Projects/brandonocasey
+[includeIf "gitdir:~/Projects/brandonocasey/"]
+  path = ~/.config/git/brandonocasey
+
+# config ad described in https://superuser.com/a/1664624
+# if in ~/Projects/brandonocasey
+[includeIf "gitdir:~/.local/share/chezmoi/"]
+  path = ~/.config/git/brandonocasey
+
+
+# include a local config
+[include]
+  path = ~/.config/git/local

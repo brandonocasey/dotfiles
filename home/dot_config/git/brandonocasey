@@ -1,0 +1,6 @@
+[user]
+  name = brandonocasey
+  email = brandonocasey@gmail.com
+
+[core]
+  sshCommand = "ssh -i ~/.ssh/brandonocasey-github"
