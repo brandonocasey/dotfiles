@@ -106,15 +106,12 @@
 
 [interactive]
   # use delta for git add -p
-  diffFilter = delta --color-only --features=interactive
+  diffFilter = delta --color-only
 
 [delta]
   features = decorations
   tabs = 2
   hyperlinks = true
-
-[delta "interactive"]
-  keep-plus-minus-markers = false
 
 [log]
   # iso dates in log
