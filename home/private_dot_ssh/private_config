@@ -2,4 +2,4 @@ Include ~/.ssh/local
 
 Host *
   AddKeysToAgent 72h
-  IdentitiesOnly yes
+  #IdentitiesOnly yes

@@ -3,6 +3,7 @@
 ## Install
 ### Linux/Mac
 `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin`
+
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
@@ -14,10 +15,6 @@
     * forgit
     * lazydocker
     * https://formulae.brew.sh/formula/felinks
-* ssh key stuff
-    * https://usercomp.com/news/1044072/using-ssh-agent-on-mac
-    * Fish ssh agent
-    * gpg ssh key
 * nvim extensions
     * https://github.com/akinsho/toggleterm.nvim
     * https://github.com/ggandor/leap.nvim
@@ -36,7 +33,7 @@
 * fix regular vim
 
 # Interesting Binaries
-> I dont install these as they are not on homebrew
+> install these if they are added to homebrew
 
 * https://github.com/qarmin/czkawka
 * https://github.com/facebookincubator/fastmod
@@ -45,9 +42,10 @@
 * https://github.com/cezaraugusto/mklicense
 
 # Issues
-* switch from tealdear to navi once https://github.com/denisidoro/navi/issues/663 is resolved
+* switch from tealdear to navi once https://github.com/denisidoro/navi/issues/663
 * remove vim-fetch if this ever gets added https://github.com/neovim/neovim/issues/1281
 * check neovim releases for https://github.com/neovim/neovim/issues/7257
+* IdentitiesOnly fails in ~/.ssh/config when doing npm install on git dependencies
 
 # References
 * https://github.com/johnalanwoods/maintained-modern-unix
