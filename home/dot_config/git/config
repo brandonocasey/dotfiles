@@ -63,6 +63,7 @@
   up = !git fetch && git pull
   fix = commit --amend -a -C HEAD
   checkout-default = "!git checkout $(git rev-parse --abbrev-ref origin/HEAD | sed 's@^origin/@@')"
+  logone = log --all --decorate --oneline --graph
 
 [rerere]
   # save conflict resolutions
@@ -116,6 +117,7 @@
 [log]
   # iso dates in log
   date = iso
+
 [hub]
   protocol = ssh
 
