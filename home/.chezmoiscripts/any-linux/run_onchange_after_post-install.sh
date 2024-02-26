@@ -4,7 +4,8 @@ export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/
 echo "Setting up ssh keys via bitwarden"
 bw login
 bw sync
-export BW_SESSION=$(bw unlock --raw)
+export BW_SESSION="$(bw unlock --raw)"
+echo "$BW_SESSION"
 
 TEMP="$(mktemp -d)"
 mkdir -p "$TEMP"
@@ -22,7 +23,7 @@ mkdir -p ~/.ssh
 sudo mv "$TEMP"/* "$HOME/.ssh/"
 sudo chmod 700 "$HOME/.ssh"
 
-sudo find "$TEMP/.ssh" -name '*.pub' -print0 |
+sudo find "$TEMP" -name '*.pub' -print0 |
     while IFS= read -r -d '' pubkey; do
       privkey="${pubkey/.pub/}"
       if [ -f "$privkey" ]; then
