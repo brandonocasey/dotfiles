@@ -1,5 +1,5 @@
 Include ~/.ssh/local
 
 Host *
-  AddKeysToAgent 10m
+  AddKeysToAgent 72h
   IdentitiesOnly yes
