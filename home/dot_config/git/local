@@ -1,0 +1,15 @@
+
+
+[commit]
+  gpgsign = true
+
+[user]
+  name = jwbrandon
+  email = bcasey@jwplayer.com
+  signingkey = ~/.ssh/jwbrandon-github-sign.pub
+
+[gpg]
+  format = ssh
+
+[core]
+  sshCommand = "ssh -i ~/.ssh/jwbrandon-github-auth"
