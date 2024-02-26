@@ -112,13 +112,13 @@ end
 # # reverse a string
 # alias reverse="perl -e 'print reverse <>'"
 #
-# # go to root git directory
-# abbr --add cdgitroot cd "$(git rev-parse --show-toplevel)"'
 #
 # node module bs
 
 
 alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
+
+abbr cdroot cd "$(find-root)"
 
 #
 # # keep env when going sudo
