@@ -1,6 +1,10 @@
 [user]
   name = brandonocasey
   email = brandonocasey@gmail.com
+  signingkey = ~/.ssh/brandonocasey-github-sign.pub
+
+[gpg]
+  format = ssh
 
 [core]
-  sshCommand = "ssh -i ~/.ssh/brandonocasey-github"
+  sshCommand = "ssh -i ~/.ssh/brandonocasey-github-auth"
