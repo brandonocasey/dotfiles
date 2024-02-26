@@ -7,8 +7,8 @@
 -- })
 --
 
-vim.opt.spelllang = { 'en_us' }
-vim.opt.spell = true
+-- vim.opt.spelllang = { 'en_us' }
+-- vim.opt.spell = true
 
 -- turn off swap file
 vim.opt.swapfile = false
@@ -43,7 +43,7 @@ vim.opt.shada = "!,'100,<10000,s1000,h"
 -- linematch diff
 vim.opt.diffopt:append({ linematch = 60 })
 
--- faster completion 
+-- faster completion
 vim.opt.updatetime = 100
 -- wait for mapped sequenences to complete
 vim.opt.timeoutlen = 1000

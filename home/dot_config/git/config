@@ -123,15 +123,18 @@
 
 # config ad described in https://superuser.com/a/1664624
 # if in ~/Projects/brandonocasey
-[includeIf "gitdir:~/Projects/brandonocasey/"]
+[includeIf "hasconfig:remote.*.url:git@github.com:brandonocasey/**"]
   path = ~/.config/git/brandonocasey
 
-# if in ~/.local/share/chezmoi/
-[includeIf "gitdir:~/.local/share/chezmoi/"]
+[includeIf "hasconfig:remote.*.url:git@github.com:videojs/**"]
   path = ~/.config/git/brandonocasey
 
-[includeIf "gitdir:~/Projects/jwplayer/"]
+[includeIf "hasconfig:remote.*.url:git@github.com:jwplayer/**"]
   path = ~/.config/git/jwbrandon
+
+[includeIf "hasconfig:remote.*.url:git@github.com:jwbrandon/**"]
+  path = ~/.config/git/jwbrandon
+
 
 # include a local config
 [include]
