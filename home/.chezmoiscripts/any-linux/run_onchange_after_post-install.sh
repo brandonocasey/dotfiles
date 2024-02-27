@@ -11,27 +11,20 @@ TEMP="$(mktemp -d)"
 mkdir -p "$TEMP"
 cd "$TEMP"
 
-ATTACHMENTS=(brandonocasey-github-auth brandonocasey-github-auth.pub brandonocasey-github-sign brandonocasey-github-sign.pub)
-
-for a in "${ATTACHMENTS[@]}"; do
-  bw get attachment "$a" --itemid 0608e72b-a25b-4b7d-ad72-b12101687d21
-done
-
 sudo -v
-mkdir -p ~/.ssh
+mkdir -p "$HOME/.ssh"
 
-sudo mv "$TEMP"/* "$HOME/.ssh/"
 sudo chmod 700 "$HOME/.ssh"
 
-sudo find "$TEMP" -name '*.pub' -print0 |
-    while IFS= read -r -d '' pubkey; do
-      privkey="${pubkey/.pub/}"
-      if [ -f "$privkey" ]; then
-        sudo chmod 600 "$privkey"
-        sudo mv -fv "$privkey" "$HOME/.ssh/$(basename "$privkey")"
-      fi
-      sudo chmod 644 "$pubkey"
-      sudo mv -fv "$pubkey" "$HOME/.ssh/$(basename "$pubkey")"
-    done
+for a in "brandonocasey-github-auth" "brandonocasey-github-auth.pub" "brandonocasey-github-sign" "brandonocasey-github-sign.pub"; do
+  bw get attachment "$a" --itemid 0608e72b-a25b-4b7d-ad72-b12101687d21
+  sudo mv "$TEMP/$a" "$HOME/.ssh/$a"
+
+  if echo "$a" | grep -q '.pub'; then
+    sudo chmod 644 "$HOME/.ssh/$a"
+  else
+    sudo chmod 600 "$HOME/.ssh/$a"
+  fi
+done
 
 rm -rf "$TEMP"
