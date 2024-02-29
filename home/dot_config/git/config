@@ -6,8 +6,8 @@
   # use git-delta, aka delta to get better diffs
   pager = delta
 [help]
-  # 1 seconds before git command auto corrects
-  autocorrect = 10
+  # 0.5 seconds before git command auto corrects
+  autocorrect = 5
 
 [advice]
   # turn of git status hints telling you to git add
