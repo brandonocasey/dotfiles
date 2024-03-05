@@ -17,6 +17,8 @@ end
 lspconfig.vale_ls.setup({
   settings = {
     initializationParams = {
+      syncOnStartup = true,
+      installVale = true,
       configPath = vim.env.VALE_CONFIG_PATH
     }
   }
