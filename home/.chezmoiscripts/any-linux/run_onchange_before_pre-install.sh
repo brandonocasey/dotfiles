@@ -88,6 +88,7 @@ brew 'lazydocker'
 brew 'age'
 brew 'python-setuptools'
 brew 'bash'
+brew 'direnv'
 
 tap 'wader/tap'
 brew 'wader/tap/fq'
