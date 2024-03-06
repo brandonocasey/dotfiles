@@ -53,6 +53,8 @@
 [alias]
   pushf = push --force-with-lease
   ammend = commit --amend
+  difff = "!git diff \"$@\" -- \":!package-lock.json\" #"
+  diff-last = "!git difff HEAD~1"
   amend = commit --amend
   commitv = commit --verbose
   diff-his = diff --diff-algorithm=histogram
