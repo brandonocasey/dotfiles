@@ -63,14 +63,24 @@ end
 fish_add_path -a "$HOME/.local/bin"
 set -gx PATH $PATH ./node_modules/.bin
 
+set -gx PAGER less
+set -gx GIT_PAGER less
+# Set default command editor to vim
+if type -q delta
+  set -gx GIT_PAGER delta
+else if type -q bat
+  set -gx PAGER bat
+  set -gx GIT_PAGER bat
+end
+
 set -gx EDITOR nano
 # Set default command editor to vim
 if type -q nvim
   set -gx MANPAGER "nvim +Man!"
   set -gx EDITOR nvim
-else if type -q vim; then
+else if type -q vim
   set -gx EDITOR vim
-else if type -q vi; then
+else if type -q vi
   set -gx EDITOR vi
 end
 
@@ -79,6 +89,7 @@ set -gx VISUAL $EDITOR
 set -gx VISUAL_EDITOR $EDITOR
 set -gx SVN_EDITOR $EDITOR
 set -gx GIT_EDITOR $EDITOR
+
 
 # themed ls colors
 if type -q vivid
