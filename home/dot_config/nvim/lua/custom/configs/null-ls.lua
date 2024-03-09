@@ -6,7 +6,7 @@ local eslint_d = {
     '--no-error-on-unmatched-pattern',
     '--report-unused-disable-directives',
     '--config',
-    vim.fn.expand('$HOME/Projects/js-metarepo/tooling/js-lint/src/js/config.cjs'),
+    vim.fn.expand('$HOME/Projects/brandonocasey/js-metarepo/tooling/eslint-tsc/src/js/eslint-config.cjs'),
     '--ext',
     '.js,.ts,.jsx,.mjs,.cjs,.tsx',
     '--cache'
