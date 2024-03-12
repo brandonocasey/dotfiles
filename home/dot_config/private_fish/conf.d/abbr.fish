@@ -13,6 +13,7 @@ abbr --add df df -h
 # Automatically make directories recursively
 abbr --add mkdir mkdir -pv
 abbr --add gs git status
+abbr --add gd git difff
 
 abbr --add l ls
 abbr --add g git
@@ -118,7 +119,7 @@ end
 
 alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 
-abbr cdroot cd "$(find-root)"
+abbr --add cdroot cd "$(find-root)"
 
 #
 # # keep env when going sudo
