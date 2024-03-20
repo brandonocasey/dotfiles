@@ -65,7 +65,7 @@
       "int" : 1
     },
     "footprintAlpha" : {
-      "float" : 0.30000001192092896
+      "float" : 0.3
     },
     "footprintAnimationDurationMultiplier" : {
       "float" : 0
@@ -232,7 +232,7 @@
     },
     "bottomRight" : {
       "keyCode" : 21,
-      "modifierFlags" : 1572864
+      "modifierFlags" : 1966080
     },
     "center" : {
       "keyCode" : 8,
