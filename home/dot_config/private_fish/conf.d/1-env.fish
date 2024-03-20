@@ -48,6 +48,7 @@ for brew_location in "/usr/local" "/opt/homebrew" "/home/linuxbrew/.linuxbrew"
     set -gx HOMEBREW_REPOSITORY "$brew_location/Homebrew";
     fish_add_path -a "$brew_location/bin"
     fish_add_path -a "$brew_location/sbin"
+    fish_add_path -a "$brew_location/opt/python/libexec/bin"
 
     if ! contains "$brew_location/share/man" $MANPATH
       set -gx MANPATH "$brew_location/share/man" $MANPATH
