@@ -130,4 +130,7 @@ set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 set -gx GREP_OPTIONS "--color=auto"
 set -gx BAT_THEME "TwoDark"
 
+# Don't mangle escaped characters with less
+set -gx LESS "-R"
+
 fish_add_path -a "$HOME/.local/share/npm/bin"
