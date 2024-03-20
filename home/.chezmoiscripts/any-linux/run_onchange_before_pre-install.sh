@@ -89,6 +89,7 @@ brew 'age'
 brew 'python-setuptools'
 brew 'bash'
 brew 'direnv'
+brew 'tmux'
 
 tap 'wader/tap'
 brew 'wader/tap/fq'
