@@ -90,6 +90,11 @@ brew 'python-setuptools'
 brew 'bash'
 brew 'direnv'
 brew 'tmux'
+brew 'mise'
+
+
+tap 'jdx/tap'
+brew 'jdx/tap/usage'
 
 tap 'wader/tap'
 brew 'wader/tap/fq'
@@ -184,19 +189,8 @@ if [ ! -d ~/.config/nvim/.git ]; then
   disown
 fi
 
-if cmd_exists asdf; then
-  plugin_list="$(asdf plugin-list)"
-  while read -r p; do
-    plugin_name="${p%%[[:space:]]*}"
-    if ! echo "$plugin_list" | grep -q "$plugin_name"; then
-      echo "Installing asdf plugin $plugin_name"
-      asdf plugin-add "$plugin_name"
-      asdf install "$plugin_name"
-      if [ "$plugin_name" = "direnv" ]; then
-        asdf direnv setup --shell fish --version latest
-      fi
-    fi
-  done < ~/.tool-versions
+if cmd_exists mise; then
+  mise install 2>/dev/null 1>/dev/null
 fi
 
 if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
