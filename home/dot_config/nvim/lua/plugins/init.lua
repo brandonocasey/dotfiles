@@ -1,16 +1,42 @@
----@type NvPluginSpec[]
-local plugins = {
-  -- {
-  --   "stevearc/conform.nvim",
-  --   -- event = 'BufWritePre' -- uncomment for format on save
-  --   config = function()
-  --     require "configs.conform"
-  --   end,
-  -- },
+local highlight = {
+  "RainbowRed",
+  "RainbowYellow",
+  "RainbowBlue",
+  "RainbowOrange",
+  "RainbowGreen",
+  "RainbowViolet",
+  "RainbowCyan",
+}
 
+local hooks = require "ibl.hooks"
+-- create the highlight groups in the highlight setup hook, so they are reset
+-- every time the colorscheme changes
+hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
+  vim.api.nvim_set_hl(0, "RainbowRed", { fg = "#E06C75" })
+  vim.api.nvim_set_hl(0, "RainbowYellow", { fg = "#E5C07B" })
+  vim.api.nvim_set_hl(0, "RainbowBlue", { fg = "#61AFEF" })
+  vim.api.nvim_set_hl(0, "RainbowOrange", { fg = "#D19A66" })
+  vim.api.nvim_set_hl(0, "RainbowGreen", { fg = "#98C379" })
+  vim.api.nvim_set_hl(0, "RainbowViolet", { fg = "#C678DD" })
+  vim.api.nvim_set_hl(0, "RainbowCyan", { fg = "#56B6C2" })
+end)
+
+return {
+
+  { "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    opts = {
+      indent = {
+        highlight = highlight
+      }
+    }
+  },
+
+  { "folke/neodev.nvim", opts = {}, lazy = false },
   {
     "neovim/nvim-lspconfig",
     config = function()
+      require("neodev").setup()
       require("nvchad.configs.lspconfig").defaults()
       require "configs.lspconfig"
     end,
@@ -26,10 +52,11 @@ local plugins = {
 
         -- lua stuff
         "lua-language-server",
-        "stylua",
+        -- "stylua",
 
         -- shell
         "shellcheck",
+        "bash-language-server",
 
         -- markdown
         "vale",
@@ -40,8 +67,7 @@ local plugins = {
         "html-lsp",
         "eslint-lsp",
         "stylelint-lsp",
-        "eslint_d",
-        -- somewhat handled by typescript-tools.nvim
+        -- "eslint_d",
         "typescript-language-server",
 
         -- github actions
@@ -51,8 +77,7 @@ local plugins = {
         "hadolint",
 
         -- json
-        "jsonlint",
-        "fixjson",
+        "json-lsp",
 
         -- yaml
         "yaml-language-server",
@@ -65,15 +90,35 @@ local plugins = {
     opts = {
       ensure_installed = {
         "vim",
-        "lua",
-        "html",
+        "bash",
         "css",
+        "csv",
+        "fish",
+        "gitcommit",
+        "gitignore",
+        'gitattributes',
+        "git_config",
+        "git_rebase",
+        "html",
         "javascript",
-        "typescript",
-        "tsx",
-        "c",
+        "json",
+        "json5",
+        "lua",
         "markdown",
         "markdown_inline",
+        "perl",
+        "php",
+        "python",
+        "scss",
+        "ssh_config",
+        "sql",
+        "tmux",
+        "typescript",
+        "tsx",
+        "toml",
+        "xml",
+        "yaml",
+
       },
       indent = {
         enable = true,
@@ -93,7 +138,17 @@ local plugins = {
     lazy = false,
     dependencies = { "nvim-lua/plenary.nvim" },
     config = function()
-      require('null-ls').setup(require('configs.null-ls'))
+      local null_ls = require('null-ls')
+
+      null_ls.setup({
+        sources = {
+          -- github actions
+          null_ls.builtins.diagnostics.actionlint,
+
+          -- docker
+          null_ls.builtins.diagnostics.hadolint,
+        }
+      })
     end
   },
 
@@ -105,15 +160,22 @@ local plugins = {
     { import = "nvcommunity.diagnostics.trouble" },
     { import = "nvcommunity.motion.neoscroll" },
     { import = "nvcommunity.tools.telescope-fzf-native" },
-    -- { import = "nvcommunity.tools.conjure" },
-    --{ import = "nvcommunity.lsp.lsplines" },
-    --{ import = "nvcommunity.lsp.lspui" },
-    --{ import = "nvcommunity.lsp.lspsaga" },
-    { import = "nvcommunity.lsp.barbecue" },
+    { import = "nvcommunity.file-explorer.oil-nvim"},
   },
   {
     "wsdjeg/vim-fetch",
     lazy = false
+  },
+
+  {
+    "nvim-pack/nvim-spectre",
+    build = false,
+    cmd = "Spectre",
+    opts = { open_cmd = "noswapfile vnew" },
+    -- stylua: ignore
+    keys = {
+      { "<leader>sr", function() require("spectre").open() end, desc = "Replace in files (Spectre)" },
+    },
   },
 
   {
@@ -135,62 +197,17 @@ local plugins = {
   },
 
   {
-    'stevearc/oil.nvim',
-    opts = {},
-    -- Optional dependencies
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    config = function()
-      require("oil").setup()
-    end,
-
-  },
-  {
     'nmac427/guess-indent.nvim',
-    event = "VeryLazy",
+    lazy = false,
     config = function()
       require('guess-indent').setup()
     end,
-
+  },
+  {
+    "cappyzawa/trim.nvim",
+    lazy = false,
+    opts = {
+      highlight = true
+    }
   }
-
-  -- lua version of typescript-language-server
-  -- {
-  --   "pmizio/typescript-tools.nvim",
-  --   event = "VeryLazy",
-  --   dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-  --   opts = {},
-  --   config = function()
-  --     require("typescript-tools").setup({
-  --       on_attach = require("nvchad.configs.lspconfig").on_attach
-  --       on_init = require("nvchad.configs.lspconfig").on_init
-  --       capabilities = require("nvchad.configs.lspconfig").capabilities
-  --     });
-  --   end,
-  -- },
-
 }
-
-
--- automatically open oil.nvim on directory
-local autocmd = vim.api.nvim_create_autocmd
-
-local function open_oil(data)
-
-  -- buffer is a directory
-  local directory = vim.fn.isdirectory(data.file) == 1
-
-  -- buffer is a [No Name]
-  local no_name = data.file == "" and vim.bo[data.buf].buftype == ""
-
-  if directory and not no_name then
-    -- change to the directory
-    vim.cmd.cd(data.file)
-    -- open oil
-    require("oil").open(data.file)
-  end
-
-end
-
-autocmd({ "VimEnter" }, { callback = open_oil })
-
-return plugins

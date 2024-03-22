@@ -4,7 +4,16 @@ local on_init = require("nvchad.configs.lspconfig").on_init
 local capabilities = require("nvchad.configs.lspconfig").capabilities
 
 local lspconfig = require "lspconfig"
-local servers = { "html", "cssls", "typos_lsp", "yamlls" }
+local servers = { 
+  "jsonls",
+  "html", 
+  "cssls", 
+  "typos_lsp", 
+  "lua_ls",
+  "yamlls", 
+  "bashls", 
+  "tsserver" 
+}
 
 -- lsps with default config
 for _, lsp in ipairs(servers) do
@@ -16,6 +25,9 @@ for _, lsp in ipairs(servers) do
 end
 
 lspconfig.vale_ls.setup({
+  on_init = on_init,
+  on_attach = on_attach,
+  capabilities = capabilities,
   settings = {
     initializationParams = {
       syncOnStartup = true,
@@ -25,22 +37,12 @@ lspconfig.vale_ls.setup({
   }
 })
 
-lspconfig.tsserver.setup({
-  on_attach = function(client)
-    client.server_capabilities.documentFormattingProvider = false
-    client.server_capabilities.documentRangeFormattingProvider = false
-  end,
-  capabilities = capabilities
-})
-
 lspconfig.stylelint_lsp.setup({
   root_dir = lspconfig.util.root_pattern(".git", "package.json"),
-  filetypes = { "css", "scss" },
-  on_attach = function(client)
-    client.server_capabilities.documentFormattingProvider = false
-    client.server_capabilities.documentRangeFormattingProvider = false
-  end,
-  capabilities,
+  filetypes = { "css", "scss", "less" },
+  on_attach = on_attach,
+  capabilities = capabilities,
+  on_init = on_init,
   settings = {
     stylelintplus = {
       autoFixOnFormat = true,
@@ -50,15 +52,13 @@ lspconfig.stylelint_lsp.setup({
 })
 
 lspconfig.eslint.setup({
- root_dir = require("lspconfig").util.root_pattern(".git", "package.json"),
- on_attach = function(client)
-   client.server_capabilities.document_formatting = true
- end,
- capabilities,
- settings = {
-   codeActionOnSave = {
-     enable = true
-   },
-   configFile = vim.fn.expand('$HOME/Projects/brandonocasey/js-metarepo/tooling/eslint-tsc/src/js/eslint-config.cjs')
- },
+  root_dir = require("lspconfig").util.root_pattern(".git", "package.json"),
+  on_attach = on_attach,
+  capabilities = capabilities,
+  on_init = on_init,
+  settings = {
+    options = {
+      overrideConfigFile = vim.fn.expand('$HOME/Projects/brandonocasey/js-metarepo/tooling/eslint-tsc/src/js/eslint-config.cjs')
+    }
+  },
 })
