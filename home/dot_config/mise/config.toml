@@ -4,3 +4,6 @@ python = ['system']
 
 [settings]
 experimental = true
+trusted_config_paths = [
+    '~/Projects/',
+]
