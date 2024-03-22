@@ -91,6 +91,8 @@ brew 'bash'
 brew 'direnv'
 brew 'tmux'
 brew 'mise'
+brew 'htmlq'
+brew 'yq'
 
 
 tap 'jdx/tap'
