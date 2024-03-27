@@ -161,6 +161,7 @@ return {
     { import = "nvcommunity.motion.neoscroll" },
     { import = "nvcommunity.tools.telescope-fzf-native" },
     { import = "nvcommunity.file-explorer.oil-nvim"},
+    { import = "nvcommunity.lsp.barbecue"},
   },
   {
     "wsdjeg/vim-fetch",
@@ -207,7 +208,8 @@ return {
     "cappyzawa/trim.nvim",
     lazy = false,
     opts = {
-      highlight = true
+      highlight = true,
+      trim_last_line = false
     }
   }
 }
