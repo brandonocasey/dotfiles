@@ -24,13 +24,21 @@ if status is-interactive
     set -gx FZF_DEFAULT_OPTS "$FZF_DEFAULT_OPTS --color=dark --color=fg:-1,bg:-1,hl:#c678dd,fg+:#ffffff,bg+:#4b5263,hl+:#d858fe --color=info:#98c379,prompt:#61afef,pointer:#be5046,marker:#e5c07b,spinner:#61afef,header:#61afef"
   end
 
-  function scratch --description "Open a scratch pad in your editor for quick notes"
-    set -l file "$(mktemp -t scratch).md"
+  function journal -a filename --description "Open a journal entry in your editor for quick notes"
+    if [ -z "$filename" ]
+      set filename "default"
+    end
+    if [ (path extension "$filename") != '.md' ]
+      set filename "$filename.md"
+    end
+    set -l file "$HOME/Journal/$filename"
+    if [ ! -d "$HOME/Journal" ]
+      mkdir -p "$HOME/Journal"
+    end
+
     $EDITOR "$file"
     if [ ! -s "$file" ]
       rm -f "$file"
-    else
-      echo "$file"
     end
   end
 
@@ -75,7 +83,7 @@ if status is-interactive
 
   function add_all_ssh_identities -d "Add ssh identities"
     set -l existing_keys (ssh-add -l)
-    for file in (grep -slR "PRIVATE" $HOME/.ssh/)
+    for file in (grep -slR "PRIVATE" $HOME/.ssh/ | sort)
       if not string match -q (string join '' '*' (ssh-keygen -lf "$file") '*') "$existing_keys"
         ssh-add "$file"
       end
