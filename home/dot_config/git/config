@@ -131,7 +131,7 @@
 [include]
   path = ~/.config/git/local
 
-# config ad described in https://superuser.com/a/1664624
+# config as described in https://superuser.com/a/1664624
 # if in ~/Projects/brandonocasey
 [includeIf "hasconfig:remote.*.url:git@github.com:brandonocasey/**"]
   path = ~/.config/git/brandonocasey
