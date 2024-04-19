@@ -15,6 +15,7 @@ abbr --add mkdir mkdir -pv
 abbr --add gs git status
 abbr --add gd git diff
 abbr --add gp git push
+abbr --add gl git log
 
 abbr --add l ls
 abbr --add g git
