@@ -1,5 +1,3 @@
 #!/usr/bin/env bash
 
-current_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-
-"$current_dir/docker-run" --entrypoint ffmpeg linuxserver/ffmpeg "$@"
+docker-run --entrypoint ffmpeg linuxserver/ffmpeg "$@"

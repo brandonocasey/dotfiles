@@ -4,6 +4,7 @@
 pnpm=""
 workspace=""
 pkglock=""
+skip_install=""
 
 if ! command -v "npm" 2>/dev/null 1>/dev/null; then
   echo "npm must be installed to use this" 1>&2 && exit 1
@@ -15,10 +16,11 @@ cat <<EOF
 
   > node_modules removal and reinstall for workspaces and beyond
 
-  -h, --help       show this help message
-      --pnpm       use pnpm (requires pnpm-workspace.yaml in root for workspaces)
-      --lock       remove package-lock.json (will also remove for workspaces)
-  -w, --workspaces remove node_modules for monorepo as well
+  -h, --help         show this help message
+      --pnpm         use pnpm (requires pnpm-workspace.yaml in root for workspaces)
+      --lock         remove package-lock.json (will also remove for workspaces)
+  -w, --workspaces   remove node_modules for monorepo as well
+  -s, --skip-install skip doing the install, just cleanup
 EOF
 
 }
@@ -32,6 +34,7 @@ while [ $# -gt 0 ]; do
     (--pnpm) pnpm="true" ;;
     (--workspace|--workspaces|-w|-ws) workspace="true" ;;
     (--lock|--package-lock|--pkg-lock) pkglock="true" ;;
+    (--skip-install|-s) skip_install="true" ;;
     (*) print_help && echo "invalid argument $arg" 1>&2 && exit 1 ;;
   esac
 done
@@ -103,8 +106,10 @@ done
 rm -rf "$tmpdir" &
 disown
 
-if [ -n "$pnpm" ]; then
-  pnpm i
-else
-  npm i
+if [ -z "$skip_install" ]; then
+  if [ -n "$pnpm" ]; then
+    pnpm i
+  else
+    npm i
+  fi
 fi
