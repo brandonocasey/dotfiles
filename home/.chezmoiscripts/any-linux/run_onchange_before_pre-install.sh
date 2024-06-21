@@ -91,6 +91,7 @@ brew 'tmux'
 brew 'mise'
 brew 'htmlq'
 brew 'yq'
+brew 'moreutlis'
 
 
 tap 'jdx/tap'
