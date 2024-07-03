@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
     (--pnpm) pnpm="true" ;;
     (--workspace|--workspaces|-w|-ws) workspace="true" ;;
     (--lock|--package-lock|--pkg-lock) pkglock="true" ;;
-    (--skip-install|-s) skip_install="true" ;;
+    (--skip-install|-s|--no-install) skip_install="true" ;;
     (*) print_help && echo "invalid argument $arg" 1>&2 && exit 1 ;;
   esac
 done
