@@ -93,7 +93,6 @@ brew 'htmlq'
 brew 'yq'
 brew 'moreutils'
 
-
 tap 'jdx/tap'
 brew 'jdx/tap/usage'
 
@@ -156,6 +155,7 @@ cask 'zoom'
 
 # App Store applications
 mas 'Xcode', id: 497799835
+mas 'WireGuard', id: 1451685025
 
 EOF
 )
