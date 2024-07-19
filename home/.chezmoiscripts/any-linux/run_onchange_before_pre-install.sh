@@ -183,14 +183,6 @@ if cmd_exists tldr; then
 fi
 
 
-if [ ! -d ~/.config/nvim/.git ]; then
-  mkdir -p ~/.config/nvim
-  git clone https://github.com/NvChad/NvChad ~/.config/nvim --depth 1
-  nvim --headless +qall 2>/dev/null 1>/dev/null &
-  nvim --headless +MasonInstallAll +qall 2>/dev/null 1>/dev/null &
-  disown
-fi
-
 if cmd_exists mise; then
   mise install 2>/dev/null 1>/dev/null
 fi
