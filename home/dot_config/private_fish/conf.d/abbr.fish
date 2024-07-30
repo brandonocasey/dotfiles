@@ -47,10 +47,11 @@ end
 if type -q eza
   alias ls 'eza'
   alias ll 'ls -l --git --icons --time-style=long-iso'
-  alias la 'll -ah'
+  alias la 'll -ahoH'
 
   alias la-size 'la --total-size'
   alias ll-size 'll --total-size'
+  alias lh 'la-size'
 
   alias la-tree 'la --tree'
   alias ll-tree 'll --tree'
