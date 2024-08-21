@@ -100,9 +100,6 @@ vim.cmd([[
   noremap <expr> <silent> <Home> SmartHome()
   imap <silent> <Home> <C-O><Home>
 ]])
-
-
-
 --" shift tab to unindent
 --imap <S-Tab> <C-d>
 --nmap <S-Tab> <<_<esc>
@@ -111,3 +108,7 @@ vim.cmd([[
 --" tab to indent in
 --nmap <Tab> >>_<esc>
 --vmap <Tab> >><esc>
+--
+--
+--
+

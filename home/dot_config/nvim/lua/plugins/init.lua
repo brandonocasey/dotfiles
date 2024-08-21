@@ -162,6 +162,8 @@ return {
     { import = "nvcommunity.tools.telescope-fzf-native" },
     { import = "nvcommunity.file-explorer.oil-nvim"},
     { import = "nvcommunity.lsp.barbecue"},
+    { import = "nvcommunity.lsp.barbecue"},
+    { import = "nvcommunity.completion.codeium"},
   },
   {
     "wsdjeg/vim-fetch",
@@ -211,5 +213,5 @@ return {
       highlight = true,
       trim_last_line = false
     }
-  }
+  },
 }

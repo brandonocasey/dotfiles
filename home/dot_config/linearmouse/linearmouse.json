@@ -1,59 +1,58 @@
 {
-  "$schema" : "https:\/\/schema.linearmouse.app\/0.9.5",
   "schemes" : [
     {
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0xc52b",
+          "vendorID" : "0x46d",
+          "productName" : "USB Receiver"
+        }
+      },
       "buttons" : {
         "universalBackForward" : true,
         "mappings" : [
           {
-            "action" : "missionControl",
-            "option" : false,
-            "shift" : false,
             "button" : 2,
             "command" : false,
-            "control" : false
+            "shift" : false,
+            "control" : false,
+            "option" : false,
+            "action" : "missionControl"
           },
           {
-            "action" : "missionControl.spaceLeft",
-            "option" : false,
             "shift" : false,
+            "option" : false,
+            "control" : false,
             "button" : 3,
             "command" : false,
-            "control" : false
+            "action" : "missionControl.spaceLeft"
           },
           {
-            "action" : "missionControl.spaceRight",
-            "option" : false,
             "shift" : false,
-            "button" : 4,
+            "option" : false,
             "command" : false,
+            "action" : "missionControl.spaceRight",
+            "button" : 4,
             "control" : false
           }
         ]
-      },
-      "if" : {
-        "device" : {
-          "productName" : "USB Receiver",
-          "productID" : "0xc52b",
-          "category" : "mouse",
-          "vendorID" : "0x46d"
-        }
       },
       "pointer" : {
         "disableAcceleration" : true
       },
       "scrolling" : {
-        "speed" : {
-          "vertical" : 0
-        },
-        "acceleration" : {
-          "vertical" : 1
-        },
         "reverse" : {
           "vertical" : true
         },
         "distance" : {
           "vertical" : "auto"
+        },
+        "speed" : {
+          "vertical" : 0
+        },
+        "acceleration" : {
+          "vertical" : 1
         }
       }
     },
@@ -61,41 +60,38 @@
       "buttons" : {
         "mappings" : [
           {
-            "action" : "missionControl",
             "option" : false,
+            "action" : "missionControl",
+            "control" : false,
             "shift" : false,
             "button" : 2,
-            "command" : false,
-            "control" : false
+            "command" : false
           },
           {
             "action" : "missionControl.spaceLeft",
+            "control" : false,
+            "command" : false,
             "option" : false,
             "shift" : false,
-            "button" : 3,
-            "command" : false,
-            "control" : false
+            "button" : 3
           },
           {
             "action" : "missionControl.spaceRight",
-            "option" : false,
             "shift" : false,
-            "button" : 4,
             "command" : false,
-            "control" : false
+            "option" : false,
+            "control" : false,
+            "button" : 4
           }
         ]
       },
       "if" : {
         "device" : {
-          "productName" : "USB Gaming Mouse",
           "productID" : "0xc049",
           "category" : "mouse",
+          "productName" : "USB Gaming Mouse",
           "vendorID" : "0x46d"
         }
-      },
-      "pointer" : {
-        "disableAcceleration" : true
       },
       "scrolling" : {
         "reverse" : {
@@ -107,7 +103,11 @@
         "speed" : {
           "vertical" : 1.19
         }
+      },
+      "pointer" : {
+        "disableAcceleration" : true
       }
     }
-  ]
+  ],
+  "$schema" : "https:\/\/schema.linearmouse.app\/0.9.5"
 }

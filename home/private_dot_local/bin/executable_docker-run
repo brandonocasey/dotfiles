@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-if ! cmd_exists docker; then
-  echo 'docker is required!'
-fi
-
 echo "volume is $(pwd):/data"
 docker run --rm -it \
   -v "$(pwd):/data" \
