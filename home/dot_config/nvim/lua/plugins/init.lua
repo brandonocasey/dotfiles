@@ -42,6 +42,16 @@ return {
     end,
   },
 
+  {
+    "NvChad/nvim-colorizer.lua",
+    opts = {
+      user_default_options = {
+        css = true;
+      }
+    }
+  },
+
+
   -- override plugin configs
   {
     "williamboman/mason.nvim",
@@ -161,7 +171,6 @@ return {
     { import = "nvcommunity.motion.neoscroll" },
     { import = "nvcommunity.tools.telescope-fzf-native" },
     { import = "nvcommunity.file-explorer.oil-nvim"},
-    { import = "nvcommunity.lsp.barbecue"},
     { import = "nvcommunity.lsp.barbecue"},
     { import = "nvcommunity.completion.codeium"},
   },

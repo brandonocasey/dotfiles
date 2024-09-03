@@ -95,7 +95,7 @@
 
 [merge]
   # three panes for merge
-  tool = nvimdiff3
+  tool = nvimdiff
   # three diff markers for conflicts
   conflictstyle = zdiff3
 

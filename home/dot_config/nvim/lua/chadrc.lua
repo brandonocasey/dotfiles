@@ -14,8 +14,6 @@ M.ui = {
   statusline = {
     theme = "vscode_colored",
     overriden_modules = function(modules)
-      -- remove branch
-      table.remove(modules, 3)
       -- remove utf8
       table.remove(modules, 9)
 
