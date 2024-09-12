@@ -9,13 +9,13 @@ echo "Writings settings"
 # dock
 ##
 
-# Set to the right
-defaults write com.apple.dock "orientation" -string "bottom"
+# Set to the left
+defaults write com.apple.dock "orientation" -string "left"
 
 # Set dock icon size
 defaults write com.apple.dock "tilesize" -int "75"
 
-# autohide 
+# autohide
 defaults write com.apple.dock "autohide" -bool "true"
 
 # autohide instantly
@@ -52,7 +52,7 @@ defaults write com.apple.Safari WebKitInitialTimedLayoutDelay 0.25
 ##
 
 # Always show file extensions
-defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true" 
+defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true"
 
 # Don't show hidden files
 defaults write com.apple.finder "AppleShowAllFiles" -bool "false"
