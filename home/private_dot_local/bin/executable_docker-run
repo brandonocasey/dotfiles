@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-echo "volume is $(pwd):/data"
+echo "NOTE: current directory will be mounted as $PWD"
 docker run --rm -it \
-  -v "$(pwd):/data" \
-  -e PUID="$(id -u)" \
-  -e PGID="$(id -g)" \
+  --privileged \
+  --network=host \
+  --userns=host \
+  -v "$PWD" \
+  -w "$PWD" \
   "$@"
