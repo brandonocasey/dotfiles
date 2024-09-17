@@ -22,6 +22,9 @@ vim.opt.ssop:remove { 'blank' }
 -- Drop unused spaces at the end of lines
 vim.opt.shiftround = true
 
+vim.opt.undofile = true
+vim.opt.undolevels = 1000000
+
 -- Use Unix as the standard file format
 vim.opt.fileformats = { 'unix', 'dos', 'mac' }
 
@@ -108,7 +111,9 @@ vim.cmd([[
 --" tab to indent in
 --nmap <Tab> >>_<esc>
 --vmap <Tab> >><esc>
---
---
---
 
+local api = vim.api
+
+api.nvim_command("autocmd TermOpen * startinsert")             -- starts in insert mode
+api.nvim_command("autocmd TermOpen * setlocal nonumber")       -- no numbers
+api.nvim_command("autocmd TermEnter * setlocal signcolumn=no") -- no sign column

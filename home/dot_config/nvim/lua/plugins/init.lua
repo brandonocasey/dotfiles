@@ -172,7 +172,47 @@ return {
     { import = "nvcommunity.tools.telescope-fzf-native" },
     { import = "nvcommunity.file-explorer.oil-nvim"},
     { import = "nvcommunity.lsp.barbecue"},
-    { import = "nvcommunity.completion.codeium"},
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    config = function(_, opts)
+      table.insert(opts.sources, { name = "copilot" })
+      require("cmp").setup(opts)
+    end,
+    dependencies = { "zbirenbaum/copilot-cmp" }
+  },
+  {
+    "zbirenbaum/copilot.lua",
+    opts = {
+      suggestion = { enabled = false },
+      panel = { enabled = false },
+    }
+  },
+
+  {
+    "zbirenbaum/copilot-cmp",
+    dependencies = { "zbirenbaum/copilot.lua" }
+  },
+
+  {
+    "kevinhwang91/nvim-fundo",
+    dependencies = { "kevinhwang91/promise-async" },
+    event = "VeryLazy",
+    opts = {},
+    build = function()
+      require("fundo").install()
+    end,
+  },
+
+  {
+    "zbirenbaum/copilot.lua",
+    event = { "InsertEnter" },
+    cmd = { "Copilot" },
+    opts = {
+      suggestion = {
+        auto_trigger = true,
+      }
+    }
   },
   {
     "wsdjeg/vim-fetch",

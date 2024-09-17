@@ -38,7 +38,6 @@ lspconfig.vale_ls.setup({
 })
 
 lspconfig.stylelint_lsp.setup({
-  root_dir = lspconfig.util.root_pattern(".git", "package.json"),
   filetypes = { "css", "scss", "less" },
   on_attach = on_attach,
   capabilities = capabilities,
@@ -51,18 +50,30 @@ lspconfig.stylelint_lsp.setup({
 })
 
 lspconfig.eslint.setup({
-  root_dir = require("lspconfig").util.root_pattern(".git", "package.json"),
   on_attach = on_attach,
   capabilities = capabilities,
   on_init = on_init
 })
 
---- show diagnostics in a hover window instead of virtual text
-vim.diagnostic.config({ virtual_text = false })
-vim.o.updatetime = 250
-vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-  group = vim.api.nvim_create_augroup("float_diagnostic_cursor", { clear = true }),
-  callback = function ()
-    vim.diagnostic.open_float(nil, {focus=false, scope="cursor"})
+-- show diagnostics in a float window if there isn't already one open
+vim.api.nvim_create_autocmd({ "CursorHold" }, {
+  pattern = "*",
+  callback = function()
+    for _, winid in pairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_get_config(winid).zindex then
+        return
+      end
+    end
+    vim.diagnostic.open_float({
+      scope = "cursor",
+      focusable = false,
+      close_events = {
+        "CursorMoved",
+        "CursorMovedI",
+        "BufHidden",
+        "InsertCharPre",
+        "WinLeave",
+      },
+    })
   end
 })

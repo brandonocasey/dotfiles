@@ -4,7 +4,7 @@ local M = {}
 M.ui = {
   theme = 'onedark',
   lsp_semantic_tokens = true,
-  transparency = true,
+  transparency = false,
 
   hl_override = {
     Comment = {
