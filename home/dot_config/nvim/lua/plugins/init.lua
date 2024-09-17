@@ -142,6 +142,13 @@ return {
     }
   },
 
+  {
+    "windwp/nvim-autopairs",
+    opts = {
+      check_ts = true
+    }
+  },
+
   -- Install a plugin
   {
     'nvimtools/none-ls.nvim',
@@ -204,16 +211,6 @@ return {
     end,
   },
 
-  {
-    "zbirenbaum/copilot.lua",
-    event = { "InsertEnter" },
-    cmd = { "Copilot" },
-    opts = {
-      suggestion = {
-        auto_trigger = true,
-      }
-    }
-  },
   {
     "wsdjeg/vim-fetch",
     lazy = false
