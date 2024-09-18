@@ -70,6 +70,11 @@ if status is-interactive
     nvim -c "cd $cwd" -c "Telescope live_grep"
   end
 
+  function export-anthropic-api-key --description "use bitwarden cli to export ANTHROPIC_API_KEY"
+    set -l BW_SESSION (bw unlock --raw)
+    set -gx ANTHROPIC_API_KEY (bw get notes '0d3338a8-f482-41bf-ace4-b1ef012fe643')
+  end
+
   # * keybinds
   # * CTRL-h -> fzf Change directory
   bind \ch '_zi'
