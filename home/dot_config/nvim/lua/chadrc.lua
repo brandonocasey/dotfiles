@@ -1,4 +1,3 @@
----@type ChadrcConfig
 local M = {}
 
 M.ui = {
@@ -13,15 +12,47 @@ M.ui = {
   },
   statusline = {
     theme = "vscode_colored",
-    overriden_modules = function(modules)
-      -- remove utf8
-      table.remove(modules, 9)
-
-    end,
   }
-  --hl_add = {
-  --  NvimTreeOpenedFolderName = { fg = "green", bold = true },
-  --}
+}
+
+M.mason = {
+  pkgs = {
+    -- spelling
+    "typos-lsp",
+
+    -- lua stuff
+    "lua-language-server",
+    -- "stylua",
+
+    -- shell
+    "shellcheck",
+    "bash-language-server",
+
+    -- markdown
+    "vale",
+    "vale-ls",
+    "markdownlint-cli2",
+
+    -- web dev stuff
+    "css-lsp",
+    "html-lsp",
+    "eslint-lsp",
+    "stylelint-lsp",
+    -- "eslint_d",
+    "typescript-language-server",
+
+    -- github actions
+    "actionlint",
+
+    -- docker
+    "hadolint",
+
+    -- json
+    "json-lsp",
+
+    -- yaml
+    "yaml-language-server",
+  }
 }
 
 return M

@@ -12,7 +12,7 @@ local servers = {
   "lua_ls",
   "yamlls",
   "bashls",
-  "tsserver"
+  "ts_ls"
 }
 
 -- lsps with default config
