@@ -93,6 +93,7 @@ brew 'htmlq'
 brew 'yq'
 brew 'moreutils'
 brew 'curl'
+brew 'aider'
 
 tap 'jdx/tap'
 brew 'jdx/tap/usage'
