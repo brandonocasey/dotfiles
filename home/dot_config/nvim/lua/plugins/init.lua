@@ -140,6 +140,7 @@ return {
     { import = "nvcommunity.tools.telescope-fzf-native" },
     { import = "nvcommunity.file-explorer.oil-nvim"},
     { import = "nvcommunity.lsp.barbecue"},
+    { import = "nvcommunity.git.diffview"},
   },
 
 
