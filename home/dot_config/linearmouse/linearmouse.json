@@ -8,97 +8,97 @@
       "buttons" : {
         "mappings" : [
           {
-            "shift" : false,
             "option" : false,
-            "control" : false,
             "action" : "missionControl",
+            "button" : 2,
+            "shift" : false,
             "command" : false,
-            "button" : 2
+            "control" : false
           },
           {
-            "shift" : false,
             "button" : 3,
-            "control" : false,
-            "action" : "missionControl.spaceLeft",
+            "shift" : false,
             "option" : false,
-            "command" : false
+            "command" : false,
+            "control" : false,
+            "action" : "missionControl.spaceLeft"
           },
           {
-            "button" : 4,
-            "option" : false,
-            "control" : false,
-            "action" : "missionControl.spaceRight",
             "shift" : false,
-            "command" : false
+            "control" : false,
+            "button" : 4,
+            "command" : false,
+            "action" : "missionControl.spaceRight",
+            "option" : false
           }
         ],
         "universalBackForward" : true
       },
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "vendorID" : "0x46d",
+          "productID" : "0xc52b",
+          "productName" : "USB Receiver"
+        }
+      },
       "scrolling" : {
         "reverse" : {
           "vertical" : true
+        },
+        "distance" : {
+          "vertical" : "auto"
         },
         "acceleration" : {
           "vertical" : 1
         },
         "speed" : {
           "vertical" : 0
-        },
-        "distance" : {
-          "vertical" : "auto"
-        }
-      },
-      "if" : {
-        "device" : {
-          "productID" : "0xc52b",
-          "category" : "mouse",
-          "vendorID" : "0x46d",
-          "productName" : "USB Receiver"
         }
       }
     },
     {
       "scrolling" : {
-        "reverse" : {
-          "vertical" : true
-        },
         "speed" : {
           "vertical" : 1.19
         },
         "acceleration" : {
           "vertical" : 2
+        },
+        "reverse" : {
+          "vertical" : true
         }
       },
       "if" : {
         "device" : {
-          "category" : "mouse",
-          "productName" : "USB Gaming Mouse",
           "productID" : "0xc049",
-          "vendorID" : "0x46d"
+          "productName" : "USB Gaming Mouse",
+          "vendorID" : "0x46d",
+          "category" : "mouse"
         }
       },
       "buttons" : {
         "mappings" : [
           {
-            "control" : false,
-            "shift" : false,
+            "button" : 2,
             "command" : false,
             "option" : false,
+            "control" : false,
             "action" : "missionControl",
-            "button" : 2
+            "shift" : false
           },
           {
-            "shift" : false,
-            "option" : false,
-            "control" : false,
+            "command" : false,
             "button" : 3,
-            "command" : false,
-            "action" : "missionControl.spaceLeft"
+            "shift" : false,
+            "action" : "missionControl.spaceLeft",
+            "control" : false,
+            "option" : false
           },
           {
-            "button" : 4,
             "command" : false,
             "option" : false,
+            "button" : 4,
             "action" : "missionControl.spaceRight",
             "shift" : false,
             "control" : false

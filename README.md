@@ -1,5 +1,6 @@
 # Dotfiles
 
+
 ## Install
 ### Linux/Mac
 `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin`
@@ -14,30 +15,26 @@
     * lazygit
     * forgit
     * lazydocker
-    * https://formulae.brew.sh/formula/felinks
+    * https://github.com/dlvhdr/diffnav
+    * https://proxyman.io/
 * nvim extensions
     * https://github.com/akinsho/toggleterm.nvim
     * https://github.com/ggandor/leap.nvim
     * https://github.com/gbprod/cutlass.nvim
-    * Copilot or chatgpt
-    * https://github.com/iamcco/markdown-preview.
     * https://github.com/David-Kunz/treesitter-unit
     * Vim-expand-region
     * Refactoring https://github.com/ThePrimeagen/refactoring.nvim
     * https://github.com/mfussenegger/nvim-dap
     * https://github.com/rcarriga/nvim-dap-ui
     * https://github.com/sindrets/diffview.nvim
-* get a global find-replace keybind
 
 # Low Priorities
 * fix regular vim
 
 # Interesting Binaries
-> install these if they are added to homebrew
+> install these if they ever get added to homebrew
 
 * https://github.com/qarmin/czkawka
-* https://github.com/facebookincubator/fastmod
-* https://github.com/marcosnils/bin/
 * https://github.com/reemus-dev/gitnr
 * https://github.com/cezaraugusto/mklicense
 
