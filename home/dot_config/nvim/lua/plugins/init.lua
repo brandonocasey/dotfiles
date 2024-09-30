@@ -51,7 +51,6 @@ return {
     }
   },
 
-
   {
     "nvim-treesitter/nvim-treesitter",
     opts = {
@@ -135,6 +134,7 @@ return {
     { import = "nvcommunity.editor.rainbowdelimiters" },
     { import = "nvcommunity.editor.treesittercontext" },
     { import = "nvcommunity.editor.telescope-undo" },
+    { import = "nvcommunity.editor.illuminate" },
     { import = "nvcommunity.diagnostics.trouble" },
     { import = "nvcommunity.motion.neoscroll" },
     { import = "nvcommunity.tools.telescope-fzf-native" },
@@ -209,19 +209,38 @@ return {
   },
   {
     "MeanderingProgrammer/render-markdown.nvim",
-    event = { "BufReadPost", "BufNewFile" },
+    ft = { "markdown", "norg", "rmd", "org" },
+    opts = {
+      file_types = { "markdown", "norg", "rmd", "org" },
+      code = {
+        sign = false,
+        width = "block",
+        right_pad = 1,
+      },
+      heading = {
+        sign = false,
+        icons = {},
+      },
+    },
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
   },
 
   {
-    "nvim-pack/nvim-spectre",
-    build = false,
-    cmd = "Spectre",
-    opts = { open_cmd = "noswapfile vnew" },
-    -- stylua: ignore
-    keys = {
-      { "<leader>sr", function() require("spectre").open() end, desc = "Replace in files (Spectre)" },
-    },
+    "willothy/flatten.nvim",
+    config = true,
+    -- or pass configuration with
+    -- opts = {  }
+    -- Ensure that it runs first to minimize delay when opening file from terminal
+    lazy = false,
+    priority = 1001,
+  },
+
+
+  {
+    "MagicDuck/grug-far.nvim",
+    opts = { headerMaxWidth = 80 },
+    cmd = "GrugFar",
+    event = "VeryLazy",
   },
 
   {
