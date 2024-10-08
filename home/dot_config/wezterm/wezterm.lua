@@ -97,6 +97,15 @@ config.keys = {
   },
 }
 
+-- 4 mouse clicks to select between prompts
+config.mouse_bindings = {
+  {
+    event = { Down = { streak = 4, button = 'Left' } },
+    action = wezterm.action.SelectTextAtMouseCursor 'SemanticZone',
+    mods = 'NONE',
+  },
+}
+
 local wsl_domains = wezterm.default_wsl_domains()
 
 if next(wsl_domains) ~= nil then

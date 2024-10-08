@@ -149,6 +149,8 @@ return {
     config = function(_, opts)
       table.insert(opts.sources, { name = "copilot" })
       table.insert(opts.sources, { name = "supermaven" })
+      table.insert(opts.sources, { name = "cmdline" })
+      opts.experimental = { ghost_text = true }
       require("cmp").setup(opts)
     end,
     dependencies = {
@@ -175,6 +177,36 @@ return {
           require("supermaven-nvim").setup({disable_inline_completion = true})
         end
       },
+      {
+        "hrsh7th/cmp-cmdline",
+        event = { "CmdLineEnter" },
+        opts = { history = true, updateevents = "CmdlineEnter,CmdlineChanged" },
+        config = function()
+          local cmp = require "cmp"
+
+          cmp.setup.cmdline("/", {
+            mapping = cmp.mapping.preset.cmdline(),
+            sources = {
+              { name = "buffer" },
+            },
+          })
+
+          -- `:` cmdline setup.
+          cmp.setup.cmdline(":", {
+            mapping = cmp.mapping.preset.cmdline(),
+            sources = cmp.config.sources({
+              { name = "path" },
+            }, {
+              {
+                name = "cmdline",
+                option = {
+                  ignore_cmds = { "Man", "!" },
+                },
+              },
+            }),
+          })
+        end
+      }
     }
   },
 
