@@ -55,6 +55,21 @@ lspconfig.eslint.setup({
   on_init = on_init
 })
 
+lspconfig.ltex.setup({
+  on_attach = on_attach,
+  capabilities = capabilities,
+  on_init = on_init,
+  settings = {
+    ltex = {
+      language = "en",
+      additionalRules = {
+        languageModel = "~/.local/share/ngrams"
+      }
+    }
+  }
+})
+
+
 -- show diagnostics in a float window if there isn't already one open
 vim.api.nvim_create_autocmd({ "CursorHold" }, {
   pattern = "*",

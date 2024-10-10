@@ -50,6 +50,8 @@ M.mason = {
     -- json
     "json-lsp",
 
+    "ltex-ls",
+
     -- yaml
     "yaml-language-server",
   }

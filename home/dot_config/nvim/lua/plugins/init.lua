@@ -150,7 +150,7 @@ return {
       table.insert(opts.sources, { name = "copilot" })
       table.insert(opts.sources, { name = "supermaven" })
       table.insert(opts.sources, { name = "cmdline" })
-      opts.experimental = { ghost_text = true }
+      -- opts.experimental = { ghost_text = true }
       require("cmp").setup(opts)
     end,
     dependencies = {
@@ -251,8 +251,9 @@ return {
       },
       heading = {
         sign = false,
-        icons = {},
+        icons = {}
       },
+      quote = {icon = '>'}
     },
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
   },
