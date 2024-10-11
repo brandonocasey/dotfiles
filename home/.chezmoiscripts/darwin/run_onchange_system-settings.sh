@@ -225,9 +225,20 @@ killall Safari
 killall Rectangle
 killall Hammerspoon
 killall Karabiner-Elements
-open /Applications/Hammerspoon.app/
-open /Applications/Karabiner-Elements.app/
-open /Applications/Rectangle.app/
+killall LinearMouse
+open /Applications/Hammerspoon.app
+open /Applications/Karabiner-Elements.app
+open /Applications/Rectangle.app
+open /Applications/LinearMouse.app
+
+osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Hammerspoon.app", hidden:false}'
+
+osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Karabiner-Elements.app", hidden:false}'
+
+osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/LinearMouse.app", hidden:false}'
+
+
+osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Rectangle.app", hidden:false}'
 
 echo "Settings:"
 echo "Night shift and 1 min Do not Disturb"
