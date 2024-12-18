@@ -5,6 +5,6 @@ docker run --rm -it \
   --privileged \
   --network=host \
   --userns=host \
-  -v "$PWD" \
+  -v "$PWD:$PWD" \
   -w "$PWD" \
   "$@"
