@@ -70,11 +70,12 @@ if status is-interactive
     nvim -c "cd $cwd" -c "Telescope live_grep"
   end
 
-  function aider-sonnet --description "use bitwarden to set ANTHROPIC_API_KEY (if unset) and launch aider"
-    if not set -q ANTHROPIC_API_KEY
-      set -gx ANTHROPIC_API_KEY (bw get notes '0d3338a8-f482-41bf-ace4-b1ef012fe643')
+  function aider-open-router --description "use bitwarden to set OPENROUTER_API_KEY (if unset) and launch aider"
+    if not set -q OPENROUTER_API_KEY
+      set -gx OPENROUTER_API_KEY (bw get notes '3f6c4ea6-aa0e-46c9-939f-b1f50160647e')
     end
-    aider --cache-prompts --dark-mode --no-auto-commits --sonnet
+    aider --cache-prompts --dark-mode --no-auto-commits $argv
+    set -ue OPENROUTER_API_KEY
   end
 
   # * keybinds
