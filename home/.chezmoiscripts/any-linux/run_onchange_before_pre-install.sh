@@ -176,17 +176,12 @@ echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
 brew cleanup
 
 if cmd_exists fish; then
-  if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
-    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
-  fi
-  fish -c "source $HOME/.config/fish/conf.d/1-env.fish && fish_update_completions"
   fish_loc="$(which fish)"
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
     echo "$fish_loc" | $SUDO_ME tee -a '/etc/shells'
     sudo chsh -s "$fish_loc" "$(whoami)"
   fi
-
 fi
 
 if cmd_exists tldr; then
