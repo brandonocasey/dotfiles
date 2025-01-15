@@ -103,8 +103,8 @@ brew 'jdx/tap/usage'
 tap 'wader/tap'
 brew 'wader/tap/fq'
 
-tap 'doron-cohen/tap'
-brew 'doron-cohen/tap/antidot'
+# tap 'doron-cohen/tap'
+# brew 'doron-cohen/tap/antidot'
 
 EOF
 )
@@ -168,10 +168,8 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
 
 if cmd_exists fish; then
-  fish -c "fish_update_completions" 2>/dev/null 1>/dev/null &
-  disown
-  fish -c "fisher update" 2>/dev/null 1>/dev/null &
-  disown
+  fish -c "fish_update_completions"
+  fish -c "fisher update"
   fish_loc="$(which fish)"
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
