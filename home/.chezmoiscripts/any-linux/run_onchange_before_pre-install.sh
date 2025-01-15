@@ -17,7 +17,7 @@ fi
 install_linux_pkg() {
   if [ "$UNAME" = "Linux" ]; then
     if cmd_exists apt-get; then
-      $SUDO_ME apt-get update && $SUDO_ME apt-get install -y "$@"
+      $SUDO_ME apt-get -y update && $SUDO_ME apt-get install -y "$@"
     elif cmd_exists yum; then
       $SUDO_ME yum install -y "$@"
     elif cmd_exists pacman; then
@@ -40,7 +40,7 @@ fi
 # install brew if not installed
 if ! cmd_exists brew; then
   echo "Installing Brew"
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
 BUNDLE=$(cat <<EOF
