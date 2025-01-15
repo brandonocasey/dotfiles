@@ -45,18 +45,18 @@ if ! cmd_exists brew; then
 fi
 
 BUNDLE=$(cat <<EOF
-brew 'gcc'
-brew 'make'
+# brew 'gcc'
+# brew 'make'
 # brew 'act'
 brew 'bat'
-brew 'bitwarden-cli'
+# brew 'bitwarden-cli'
 brew 'chezmoi'
 # brew 'choose'
 brew 'ctop'
 brew 'curl'
 brew 'curlie'
-# brew 'duf'
-# brew 'dust'
+brew 'duf'
+brew 'dust'
 brew 'entr'
 brew 'eza'
 brew 'fd'
@@ -173,7 +173,7 @@ fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
-brew cleanup
+brew cleanup --prune=all
 
 if cmd_exists fish; then
   fish_loc="$(which fish)"

@@ -2,6 +2,8 @@
 export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 export NODE_OPTIONS="--no-deprecation"
 
+brew install bitwarden-cli
+
 echo "Setting up ssh keys via bitwarden"
 bw login
 bw sync

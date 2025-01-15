@@ -12,6 +12,11 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $UNAME
 WORKDIR /home/$UNAME
 
-RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin/chezmoi && rmdir bin
+RUN mkdir -p /home/$UNAME/.local/share
+
+COPY . "/home/$UNAME/.local/share/chezmoi"
+RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; rm -rf ./bin/chezmoi && rmdir bin
+RUN sudo apt-get -y clean
+RUN rm -rf /home/$UNAME/.cache
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]
