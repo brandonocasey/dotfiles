@@ -172,6 +172,7 @@ fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
 echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
+brew cleanup
 
 if cmd_exists fish; then
   fish -c "fish_update_completions"
