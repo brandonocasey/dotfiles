@@ -9,14 +9,19 @@ cmd_exists() {
   return 1
 }
 
+SUDO_ME=""
+if cmd_exists sudo; then
+  SUDO_ME="sudo"
+fi
+
 install_linux_pkg() {
   if [ "$UNAME" = "Linux" ]; then
     if cmd_exists apt-get; then
-      sudo apt-get update && sudo apt-get install -y "$@"
+      $SUDO_ME apt-get update && $SUDO_ME apt-get install -y "$@"
     elif cmd_exists yum; then
-      sudo yum install -y "$@"
+      $SUDO_ME yum install -y "$@"
     elif cmd_exists pacman; then
-      sudo pacman -S --no-confirm "$@"
+      $SUDO_ME pacman -S --no-confirm "$@"
     fi
   fi
 }
@@ -168,7 +173,7 @@ if cmd_exists fish; then
   fish_loc="$(which fish)"
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
-    echo "$fish_loc" | sudo tee -a '/etc/shells'
+    echo "$fish_loc" | $SUDO_ME tee -a '/etc/shells'
     chsh -s "$fish_loc"
   fi
 
