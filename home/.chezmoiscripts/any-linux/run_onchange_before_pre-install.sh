@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 UNAME="$(uname)"
 export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+export MANPATH="$MANPATH:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
 cmd_exists() {
   if command -v "$1" 2>/dev/null 1>/dev/null; then
     return 0
@@ -44,8 +45,8 @@ if ! cmd_exists brew; then
 fi
 
 BUNDLE=$(cat <<EOF
-# brew 'gcc'
-# brew 'make'
+brew 'gcc'
+brew 'make'
 # brew 'act'
 brew 'bat'
 brew 'bitwarden-cli'
@@ -175,8 +176,10 @@ echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
 brew cleanup
 
 if cmd_exists fish; then
-  fish -c "fish_update_completions"
-  fish -c "fisher update"
+  if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
+    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
+  fi
+  fish -c "source $HOME/.config/fish/conf.d/1-env.fish && fish_update_completions"
   fish_loc="$(which fish)"
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
