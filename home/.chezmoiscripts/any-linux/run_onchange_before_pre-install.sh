@@ -44,65 +44,71 @@ if ! cmd_exists brew; then
 fi
 
 BUNDLE=$(cat <<EOF
-brew 'gcc'
-brew 'make'
-brew 'act'
+# brew 'gcc'
+# brew 'make'
+# brew 'act'
 brew 'bat'
 brew 'bitwarden-cli'
 brew 'chezmoi'
-brew 'choose'
+# brew 'choose'
 brew 'ctop'
 brew 'curl'
 brew 'curlie'
-brew 'dasel'
-brew 'duf'
-brew 'dust'
+# brew 'duf'
+# brew 'dust'
 brew 'entr'
 brew 'eza'
 brew 'fd'
 brew 'fish'
-brew 'forgit'
-brew 'gh'
+# brew 'forgit'
+# brew 'gh'
 brew 'git'
 brew 'git-extras'
 brew 'git-delta'
 brew 'git-lfs'
-brew 'glow'
-brew 'grex'
-brew 'hyperfine'
-brew 'http-server'
-brew 'lazygit'
+# brew 'glow'
+# brew 'grex'
+# brew 'hyperfine'
+# brew 'http-server'
+# brew 'lazygit'
 brew 'neovim'
 brew 'ripgrep'
 brew 'tealdeer'
-brew 's-search'
+# brew 's-search'
 brew 'sd'
 brew 'sad'
 brew 'vivid'
 brew 'wget'
-brew 'xh'
+# brew 'xh'
 brew 'zoxide'
 brew 'wget2'
 brew 'mosh'
-brew 'bottom'
-brew 'lazydocker'
-brew 'age'
-brew 'python-setuptools'
+# brew 'bottom'
+# brew 'lazydocker'
+# brew 'age'
+# brew 'python-setuptools'
 brew 'bash'
 brew 'tmux'
 brew 'mise'
-brew 'htmlq'
-brew 'yq'
-brew 'moreutils'
-brew 'curl'
+# brew 'moreutils'
 brew 'aider'
 
-tap 'jdx/tap'
-brew 'jdx/tap/usage'
+# tap 'jdx/tap'
+# brew 'jdx/tap/usage'
 
-tap 'wader/tap'
-brew 'wader/tap/fq'
+## JSON, YAML, XML, CSV, TOML manipulation
+# brew 'dasel'
+# or
+# brew 'yq'
 
+## Binary parsing on the cli
+# tap 'wader/tap'
+# brew 'wader/tap/fq'
+
+## html parsing on the cli
+# brew 'htmlq'
+
+## dot file cleanup utility
 # tap 'doron-cohen/tap'
 # brew 'doron-cohen/tap/antidot'
 
@@ -174,7 +180,7 @@ if cmd_exists fish; then
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
     echo "$fish_loc" | $SUDO_ME tee -a '/etc/shells'
-    chsh -s "$fish_loc"
+    sudo chsh -s "$fish_loc" "$(whoami)"
   fi
 
 fi

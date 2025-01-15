@@ -12,10 +12,6 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $UNAME
 WORKDIR /home/$UNAME
 
-RUN curl -fsLS get.chezmoi.io -o chezmoi-install.sh && \
-  /bin/bash chezmoi-install.sh -b /tmp/chezmoi-bin && \
-  /tmp/chezmoi-bin/chezmoi init --apply brandonocasey && \
-  rm -rf /tmp/chezmoi-bin ./chezmoi-install.sh
-
+RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]

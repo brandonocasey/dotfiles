@@ -1,4 +1,3 @@
-
 if test -z "$UNAME"
   set -gx UNAME $(uname)
 end
@@ -59,6 +58,12 @@ for brew_location in "/usr/local" "/opt/homebrew" "/home/linuxbrew/.linuxbrew"
     end
     break;
   end
+end
+
+for man_loc in "/usr/local/main" "/usr/share/man" "/usr/local/share/man"
+    if ! contains "$man_loc" $MANPATH
+      set -gx MANPATH "$man_loc" $MANPATH
+    end
 end
 
 fish_add_path -a "$HOME/.local/bin"

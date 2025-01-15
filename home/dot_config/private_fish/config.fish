@@ -1,8 +1,8 @@
-if status is-interactive
-  if ! type -q fisher
-    curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update
-  end
+if ! type -q fisher
+  curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update
+end
 
+if status is-interactive
   if type -q tide && ! $tide_right_prompt_frame_enabled
     tide configure --auto --style=Classic --prompt_colors='True color' --classic_prompt_color=Darkest --show_time='12-hour format' --classic_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=Yes --prompt_connection_andor_frame_color=Darkest --prompt_spacing=Compact --icons='Few icons' --transient=Yes
   end
@@ -48,9 +48,6 @@ if status is-interactive
   end
 
 
-  function fish_greeting
-  end
-
   function _zi
     zi
     clear
@@ -75,7 +72,7 @@ if status is-interactive
       set -gx OPENROUTER_API_KEY (bw get notes '3f6c4ea6-aa0e-46c9-939f-b1f50160647e')
     end
     aider --cache-prompts --dark-mode --no-auto-commits $argv
-    set -ue OPENROUTER_API_KEY
+    set -u OPENROUTER_API_KEY
   end
 
   # * keybinds
@@ -98,6 +95,8 @@ if status is-interactive
     end
   end
 
-  add_all_ssh_identities
+  function fish_greeting
+    echo "if ssh keys aren't working run: setup-bw-ssh-keys && add_all_ssh_identities"
+  end
 
 end
