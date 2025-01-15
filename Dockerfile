@@ -12,6 +12,6 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $UNAME
 WORKDIR /home/$UNAME
 
-RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey
+RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin/chezmoi && rmdir bin
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]

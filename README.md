@@ -3,7 +3,7 @@
 
 ## Install
 ### Linux/Mac
-`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --purge-binary --apply brandonocasey`
+`sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin/chezmoi && rmdir bin`
 
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
