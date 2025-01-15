@@ -2,6 +2,7 @@ FROM debian:stable-slim
 ARG UNAME=brandonocasey
 ARG UID=1000
 ARG GID=1000
+ARG BRANCH=main
 RUN apt-get -y update && apt-get install -y curl sudo
 
 RUN groupadd -g $GID -o $UNAME
@@ -14,7 +15,7 @@ WORKDIR /home/$UNAME
 RUN curl -fsLS get.chezmoi.io -o chezmoi-install.sh && \
   /bin/bash chezmoi-install.sh -b /tmp/chezmoi-bin && \
   /tmp/chezmoi-bin/chezmoi init --apply brandonocasey && \
-  rm -rf /tmp/chezmoi-bin
+  rm -rf /tmp/chezmoi-bin ./chezmoi-install.sh
 
 
-CMD ["login"]
+CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]
