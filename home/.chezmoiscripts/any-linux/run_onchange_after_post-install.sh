@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
+UNAME="$(uname)"
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+export MANPATH="$MANPATH:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+cmd_exists() {
+  if command -v "$1" 2>/dev/null 1>/dev/null; then
+    return 0
+  fi
 
-if command -v fish 2>/dev/null 1>/dev/null; then
+  return 1
+}
+
+if cmd_exists "fish"; then
   echo "Updating fisher plugins"
   if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
     fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
@@ -8,28 +18,28 @@ if command -v fish 2>/dev/null 1>/dev/null; then
   fish -c "fish_update_completions"
 fi
 
-if command -v nvim 2>/dev/null >/dev/null; then
+if cmd_exists nvim; then
   echo "updating nvim"
   if [ ! -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
     git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$HOME/.local/share/nvim/lazy/lazy.nvim"
   fi
 
-  fish -c 'nvim --headless "+Lazy! sync" +qa'
-  fish -c 'nvim --headless "+MasonUpdateAll" +qa'
+  nvim --headless "+Lazy! sync" +qa
+  nvim --headless "+MasonUpdateAll" +qa
 fi
 
-if command -v tldr 2>/dev/null >/dev/null; then
+if cmd_exists tldr; then
   echo "updating tldr"
-  fish -c "tldr --update"
+  tldr --update
 fi
 
 
-if command -v mise 2>/dev/null >/dev/null; then
+if cmd_exists mise; then
   echo "installing mise"
-  fish -c "mise install"
+  mise install
 fi
 
-if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ] && cmd_exist chezmoi; then
   echo "fixing chezmoi config"
-  fish -c "chezmoi init"
+  chezmoi init
 fi
