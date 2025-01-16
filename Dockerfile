@@ -1,4 +1,4 @@
-FROM lscr.io/linuxserver/webtop:debian-kde
+FROM debian:stable-slim
 ARG UNAME=brandonocasey
 ARG UID=1000
 ARG GID=1000
