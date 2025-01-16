@@ -8,13 +8,11 @@ RUN apt-get -y update && \
   groupadd -g $GID -o $UNAME && \
   useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME && \
   usermod -aG sudo $UNAME && \
-  echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-  mkdir -p /home/$UNAME/.local/share && \
-  chown -R $UID:$PID /home/$UNAME
+  echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers 
   
 USER $UNAME
 WORKDIR /home/$UNAME
-
+RUN mkdir -p /home/$UNAME/.local/share 
 COPY . "/home/$UNAME/.local/share/chezmoi"
 RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; \
    rm -rf ./bin/chezmoi && \
