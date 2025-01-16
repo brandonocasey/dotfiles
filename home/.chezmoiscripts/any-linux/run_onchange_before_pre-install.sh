@@ -48,7 +48,6 @@ BUNDLE=$(cat <<EOF
 brew 'bat'
 brew 'chezmoi'
 brew 'ctop'
-brew 'curl'
 brew 'curlie'
 brew 'duf'
 brew 'dust'
