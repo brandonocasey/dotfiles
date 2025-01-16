@@ -18,13 +18,13 @@ if command -v nvim 2>/dev/null >/dev/null; then
   fish -c 'nvim --headless "+MasonUpdateAll" +qa'
 fi
 
-if cmd_exists tldr; then
+if command -v tldr 2>/dev/null >/dev/null; then
   echo "updating tldr"
   fish -c "tldr --update"
 fi
 
 
-if cmd_exists mise; then
+if command -v mise 2>/dev/null >/dev/null; then
   echo "installing mise"
   fish -c "mise install"
 fi
