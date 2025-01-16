@@ -2,9 +2,6 @@ FROM debian:stable-slim
 ARG UNAME=brandonocasey
 ARG UID=1000
 ARG GID=1000
-ARG BRANCH=main
-ENV BREW_PREFIX="/home/linuxbrew/.linuxbrew"
-
 
 RUN apt-get -y update && \
   apt-get install -y curl sudo git && \
@@ -12,8 +9,9 @@ RUN apt-get -y update && \
   useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME && \
   usermod -aG sudo $UNAME && \
   echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-  mkdir -p /home/$UNAME/.local/share
+  mkdir -p /home/$UNAME/.local/share && \
   chown -R $UID:$PID /home/$UNAME
+  
 USER $UNAME
 WORKDIR /home/$UNAME
 
