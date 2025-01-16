@@ -117,10 +117,6 @@ fi
 if [ "$(uname)" = "Darwin" ]; then
 BUNDLE+=$(cat <<EOF
 
-tap 'homebrew/cask-fonts'
-cask 'font-iosevka-term-slab-nerd-font'
-
-brew 'sijanc147/formulas/macprefs'
 brew 'mas'
 brew 'mist-cli'
 
@@ -154,10 +150,9 @@ cask 'speedcrunch'
 cask 'spotify'
 cask 'sublime-text'
 cask 'vlc'
-cask 'vscodium'
+cask 'vscode'
 cask 'wezterm'
 cask 'wireshark'
-cask 'zoom'
 
 # App Store applications
 mas 'Xcode', id: 497799835
