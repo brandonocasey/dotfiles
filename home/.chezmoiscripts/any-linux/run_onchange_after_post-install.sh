@@ -6,5 +6,8 @@ if command -v fish 2>/dev/null 1>/dev/null; then
     fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
   fi
   fish -c "fish_update_completions"
+fi
 
+if command -v nvim 2>/dev/null >/dev/null; then
+  nvim --headless "+Lazy! sync" +qa
 fi
