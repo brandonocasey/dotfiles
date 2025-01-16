@@ -10,6 +10,10 @@ fi
 
 if command -v nvim 2>/dev/null >/dev/null; then
   echo "updating nvim"
+  if [ ! -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
+    git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$HOME/.local/share/nvim/lazy/lazy.nvim"
+  fi
+
   fish -c 'nvim --headless "+Lazy! sync" +qa'
   fish -c 'nvim --headless "+MasonUpdateAll" +qa'
 fi
