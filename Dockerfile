@@ -13,6 +13,7 @@ RUN apt-get -y update && \
   usermod -aG sudo $UNAME && \
   echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
   mkdir -p /home/$UNAME/.local/share
+  chown -R $UID:$PID /home/$UNAME
 USER $UNAME
 WORKDIR /home/$UNAME
 
@@ -22,7 +23,7 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; \
    rmdir --ignore-fail-on-non-empty ./bin && \
    sudo apt-get -y clean && \
    rm -rf /home/$UNAME/.cache && \
-   rm -rf "$(/home/linuxbrew/.linuxbrew/brew --cache)" && \ 
+   sudo rm -rf "$(/home/linuxbrew/.linuxbrew/brew --cache)" && \ 
    brew rm gcc
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]
