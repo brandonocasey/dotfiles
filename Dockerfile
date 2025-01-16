@@ -20,6 +20,7 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; \
    sudo apt-get -y clean && \
    sudo rm -rf /home/$UNAME/.cache && \
    sudo rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --cache)" && \ 
-   /home/linuxbrew/.linuxbrew/bin/brew uninstall --ignore-dependencies gcc binutils
+   sudo rm -rf /tmp/* && \
+   /home/linuxbrew/.linuxbrew/bin/brew uninstall --ignore-dependencies gcc binutils 
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]
