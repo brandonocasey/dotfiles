@@ -10,22 +10,28 @@ cmd_exists() {
   return 1
 }
 
+if cmd_exists mise; then
+  echo "installing mise"
+  mise install
+  eval "$(~/.local/bin/mise activate bash)"
+fi
+
 if cmd_exists "fish"; then
   echo "Updating fisher plugins"
   if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
-    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update"
+    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update" 1>/dev/null
   fi
-  fish -c "fish_update_completions"
+  fish -c "fish_update_completions" 1>/dev/null
 fi
 
 if cmd_exists nvim; then
   echo "updating nvim"
   if [ ! -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
-    git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$HOME/.local/share/nvim/lazy/lazy.nvim"
+    git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$HOME/.local/share/nvim/lazy/lazy.nvim" 1>/dev/null
   fi
 
-  nvim --headless "+Lazy! sync" +qa
-  nvim --headless "+MasonUpdateAll" +qa
+  nvim --headless "+Lazy! sync" +qa 1>/dev/null
+  nvim --headless "+MasonUpdateAll" +qa 1>/dev/null
 fi
 
 if cmd_exists tldr; then
@@ -34,12 +40,9 @@ if cmd_exists tldr; then
 fi
 
 
-if cmd_exists mise; then
-  echo "installing mise"
-  mise install
-fi
-
-if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ] && cmd_exist chezmoi; then
-  echo "fixing chezmoi config"
-  chezmoi init
+if cmd_exists chezmoi; then
+  if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+    echo "fixing chezmoi config"
+    chezmoi init
+  fi
 fi

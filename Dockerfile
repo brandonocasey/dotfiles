@@ -1,8 +1,11 @@
-FROM debian:stable-slim
+FROM lscr.io/linuxserver/webtop:debian-kde
 ARG UNAME=brandonocasey
 ARG UID=1000
 ARG GID=1000
 ENV RUNNING_IN_DOCKER=true
+ENV PATH="${PATH}:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+ENV MANPATH="${MANPATH}:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+
 RUN apt-get -y update && \
   apt-get install -y curl sudo procps gcc binutils && \
   groupadd -g $GID -o $UNAME && \
