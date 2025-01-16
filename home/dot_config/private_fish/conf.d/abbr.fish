@@ -73,11 +73,6 @@ else
   alias la "$lsbin -lha --color=auto"
 end
 
-if type -q s
-  abbr --add s s --provider duckduckgo
-  abbr --add web-search s --provider duckduckgo
-end
-
 if type -q curlie
   abbr --add curl curlie
 end
