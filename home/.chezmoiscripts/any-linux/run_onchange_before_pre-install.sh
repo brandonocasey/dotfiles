@@ -180,15 +180,17 @@ if cmd_exists fish; then
 fi
 
 if cmd_exists tldr; then
-  tldr --update 2>/dev/null 1>/dev/null &
-  disown
+  echo "updating tldr"
+  tldr --update
 fi
 
 
 if cmd_exists mise; then
-  mise install 2>/dev/null 1>/dev/null
+  echo "installing mise"
+  mise install
 fi
 
 if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+  echo "fixing chezmoi config"
   chezmoi init
 fi
