@@ -13,14 +13,6 @@ RUN apt-get -y update && \
   usermod -aG sudo $UNAME && \
   echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
   mkdir -p /home/$UNAME/.local/share
-
-
-RUN echo "Installing Homebrew with shallow clone..." && \
-  mkdir -p "${BREW_PREFIX}" && \
-  git clone --depth 1 https://github.com/Homebrew/brew "${BREW_PREFIX}/Homebrew" && \
-  mkdir -p "${BREW_PREFIX}/Homebrew/Library/Taps/homebrew" && \
-  git clone --depth 1 https://github.com/Homebrew/homebrew-core "${BREW_PREFIX}/Homebrew/Library/Taps/homebrew/homebrew-core"
-
 USER $UNAME
 WORKDIR /home/$UNAME
 
