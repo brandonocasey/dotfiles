@@ -9,5 +9,22 @@ if command -v fish 2>/dev/null 1>/dev/null; then
 fi
 
 if command -v nvim 2>/dev/null >/dev/null; then
-  nvim --headless "+Lazy! sync" +qa
+  echo "updating nvim"
+  fish -c 'nvim --headless "+Lazy! sync" +qa' 1>/dev/null 2>/deb/null
+fi
+
+if cmd_exists tldr; then
+  echo "updating tldr"
+  fish -c "tldr --update"
+fi
+
+
+if cmd_exists mise; then
+  echo "installing mise"
+  fish -c "mise install"
+fi
+
+if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+  echo "fixing chezmoi config"
+  fish -c "chezmoi init"
 fi

@@ -78,6 +78,7 @@ EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
 BUNDLE+=$(cat <<EOF
+
 brew 'gcc'
 brew 'make'
 brew 'act'
@@ -179,18 +180,3 @@ if cmd_exists fish; then
   fi
 fi
 
-if cmd_exists tldr; then
-  echo "updating tldr"
-  tldr --update
-fi
-
-
-if cmd_exists mise; then
-  echo "installing mise"
-  mise install
-fi
-
-if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
-  echo "fixing chezmoi config"
-  chezmoi init
-fi
