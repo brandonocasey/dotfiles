@@ -172,7 +172,7 @@ EOF
 fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
-echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin --display-times
+echo "$BUNDLE" | brew bundle --no-lock --file=/dev/stdin
 brew cleanup --prune=all
 
 if cmd_exists fish; then
