@@ -45,13 +45,8 @@ if ! cmd_exists brew; then
 fi
 
 BUNDLE=$(cat <<EOF
-# brew 'gcc'
-# brew 'make'
-# brew 'act'
 brew 'bat'
-# brew 'bitwarden-cli'
 brew 'chezmoi'
-# brew 'choose'
 brew 'ctop'
 brew 'curl'
 brew 'curlie'
@@ -61,61 +56,62 @@ brew 'entr'
 brew 'eza'
 brew 'fd'
 brew 'fish'
-# brew 'forgit'
-# brew 'gh'
 brew 'git'
 brew 'git-extras'
 brew 'git-delta'
 brew 'git-lfs'
-# brew 'glow'
-# brew 'grex'
-# brew 'hyperfine'
-# brew 'http-server'
-# brew 'lazygit'
 brew 'neovim'
 brew 'ripgrep'
 brew 'tealdeer'
-# brew 's-search'
 brew 'sd'
 brew 'sad'
 brew 'vivid'
-brew 'wget'
-# brew 'xh'
 brew 'zoxide'
 brew 'wget2'
 brew 'mosh'
-# brew 'bottom'
-# brew 'lazydocker'
-# brew 'age'
-# brew 'python-setuptools'
+brew 'bottom'
 brew 'bash'
 brew 'tmux'
 brew 'mise'
-# brew 'moreutils'
 brew 'aider'
 
-# tap 'jdx/tap'
-# brew 'jdx/tap/usage'
+EOF
+)
+if [ "$RUNNING_IN_DOCKER" != "true" ]; then
+BUNDLE+=$(cat <<EOF
+brew 'gcc'
+brew 'make'
+brew 'act'
+brew 'bat'
+brew 'bitwarden-cli'
+brew 'wget'
+brew 'ctop'
+brew 'curl'
+brew 'gh'
+brew 'grex'
+brew 'http-server'
+
+brew 's-search'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
-# brew 'dasel'
+brew 'dasel'
 # or
 # brew 'yq'
 
 ## Binary parsing on the cli
-# tap 'wader/tap'
-# brew 'wader/tap/fq'
+tap 'wader/tap'
+brew 'wader/tap/fq'
 
 ## html parsing on the cli
-# brew 'htmlq'
+brew 'htmlq'
 
 ## dot file cleanup utility
-# tap 'doron-cohen/tap'
-# brew 'doron-cohen/tap/antidot'
+tap 'doron-cohen/tap'
+brew 'doron-cohen/tap/antidot'
 
 EOF
 )
-
+fi
 
 # additional packages for mac only
 if [ "$(uname)" = "Darwin" ]; then
