@@ -10,7 +10,8 @@ fi
 
 if command -v nvim 2>/dev/null >/dev/null; then
   echo "updating nvim"
-  fish -c 'nvim --headless "+Lazy! sync" +qa' 1>/dev/null 2>/deb/null
+  fish -c 'nvim --headless "+Lazy! sync" +qa'
+  fish -c 'nvim --headless "+MasonUpdateAll" +qa'
 fi
 
 if cmd_exists tldr; then
