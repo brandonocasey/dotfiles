@@ -2,7 +2,7 @@ FROM debian:stable-slim
 ARG UNAME=brandonocasey
 ARG UID=1000
 ARG GID=1000
-
+ENV RUNNING_IN_DOCKER=true
 RUN apt-get -y update && \
   apt-get install -y curl sudo git && \
   groupadd -g $GID -o $UNAME && \
