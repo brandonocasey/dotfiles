@@ -15,7 +15,7 @@ WORKDIR /home/$UNAME
 
 COPY . "/home/$UNAME/.local/share/chezmoi"
 RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; \
-   rm -rf ./bin/chezmoi && 
+   rm -rf ./bin/chezmoi && \
    rmdir --ignore-fail-on-non-empty ./bin && \
    sudo apt-get -y clean && \
    rm -rf /home/$UNAME/.cache && \
