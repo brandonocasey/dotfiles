@@ -31,7 +31,7 @@ if cmd_exists nvim; then
   fi
 
   nvim --headless "+Lazy! sync" +qa 1>/dev/null
-  nvim --headless "+MasonUpdateAll" +qa 1>/dev/null
+  nvim --headless "+MasonToolsInstallSync" +qall 1>/dev/null
 fi
 
 if cmd_exists tldr; then

@@ -259,17 +259,16 @@ return {
   },
 
   {
-    "williamboman/mason.nvim",
-    dependencies = { "Zeioth/mason-extra-cmds", opts = {} },
-    cmd = {
-      "Mason",
-      "MasonInstall",
-      "MasonUninstall",
-      "MasonUninstallAll",
-      "MasonLog",
-      "MasonUpdate",
-      "MasonUpdateAll", -- this cmd is provided by mason-extra-cmds
-    },
+    "WhoIsSethDaniel/mason-tool-installer.nvim",
+    lazy = false,
+    config = function()
+      local pkgs = require('chadrc').mason.pkgs
+      require('mason-tool-installer').setup({
+        ensure_installed = pkgs,
+        auto_update = false,
+        run_on_start = false,
+      })
+    end
   },
 
   {
