@@ -19,7 +19,7 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply; \
    rmdir --ignore-fail-on-non-empty ./bin && \
    sudo apt-get -y clean && \
    rm -rf /home/$UNAME/.cache && \
-   sudo rm -rf "$(/home/linuxbrew/.linuxbrew/brew --cache)" && \ 
-   brew rm gcc
+   sudo rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --cache)" && \ 
+   /home/linuxbrew/.linuxbrew/bin/brew rm gcc
 
 CMD ["/home/linuxbrew/.linuxbrew/bin/fish"]
