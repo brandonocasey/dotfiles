@@ -39,7 +39,7 @@ if cmd_exists nvim; then
   nvim --headless "+MasonToolsUpdateSync" +qall 1>$OUTPUT
 fi
 
-if cmd_exists tldr; then
+if cmd_exists tldro; then
   echo "updating tldr"
   tldr --update
 fi
@@ -50,4 +50,29 @@ if cmd_exists chezmoi; then
     FILE="$(chezmoi execute-template < "$(chezmoi source-path)/.chezmoi.toml.tmpl")"
     echo "$FILE" > "$HOME/.config/chezmoi/chezmoi.toml"
   fi
+
+  CM_PATH="$(dirname "$(chezmoi source-path)")"
+  _cmgit() {
+    git -C "$CM_PATH" "$@"
+    return $?
+  }
+  GIT_ORIGIN="$(_cmgit config --get remote.origin.url)"
+  if ! echo "$GIT_ORIGIN" | grep -q ssh; then
+    echo "changing chezmoi origin to ssh"
+    _cmgit remote remove origin
+    _cmgit remote add origin "$(echo "$GIT_ORIGIN" | sed 's~https://github.com/~git@github.com:~')"
+  fi
+  USER_NAME="$(_cmgit config --get user.name)"
+  USER_EMAIL="$(_cmgit config --get user.email)"
+
+  if [ -z "$USER_NAME" ]; then
+    echo "Setting chezmoi git user.name"
+    _cmgit config user.name "Brandon Casey"
+  fi
+
+  if [ -z "$USER_EMAIL" ]; then
+    echo "Setting chezmoi git user.email"
+    _cmgit config user.email "brandonocasey@gmail.com"
+  fi
+
 fi

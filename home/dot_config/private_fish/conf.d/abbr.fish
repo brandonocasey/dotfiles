@@ -28,6 +28,7 @@ abbr --add fim $EDITOR
 abbr --add gim $EDITOR
 abbr --add vi $EDITOR
 abbr --add v $EDITOR
+alias vim $EDITOR
 
 if [ $EDITOR = 'nvim' ]
   abbr --add vimdiff nvim -d

@@ -8,8 +8,9 @@
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
-fialoe
-artn
+## Backup
+Run `bash ./backup-settings.sh`
+
 # Priorities
 * https://languagetool.org/download/ngram-data/
 * remove no longer needed spelling lsp due to ltex
