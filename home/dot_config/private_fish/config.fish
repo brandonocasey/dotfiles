@@ -86,8 +86,10 @@ if status is-interactive
     end
   end
 
+  # suppress welcome to fish
   function fish_greeting
-    echo "if ssh keys aren't working run: setup-bw-ssh-keys && add_all_ssh_identities"
   end
+
+  add_all_ssh_identities
 
 end
