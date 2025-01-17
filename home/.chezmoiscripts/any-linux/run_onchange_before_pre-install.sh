@@ -55,6 +55,7 @@ brew 'entr'
 brew 'eza'
 brew 'fd'
 brew 'fish'
+brew 'fzf'
 brew 'git'
 brew 'git-extras'
 brew 'git-delta'
@@ -106,8 +107,9 @@ brew 'wader/tap/fq'
 brew 'htmlq'
 
 ## dot file cleanup utility
-tap 'doron-cohen/tap'
-brew 'doron-cohen/tap/antidot'
+## unsupported on arm
+#tap 'doron-cohen/tap'
+#brew 'doron-cohen/tap/antidot'
 
 EOF
 )
@@ -119,8 +121,13 @@ BUNDLE+=$(cat <<EOF
 
 cask 'font-iosevka-term-nerd-font'
 
+brew 'dockutil'
 brew 'mas'
 brew 'mist-cli'
+brew 'trash'
+
+tap 'OJFord/formulae'
+brew 'loginitems'
 
 # Applications
 # tap 'homebrew/cask'
@@ -151,9 +158,10 @@ cask 'speedcrunch'
 cask 'spotify'
 cask 'sublime-text'
 cask 'vlc'
-cask 'vscode'
+cask 'visual-studio-code'
 cask 'wezterm'
 cask 'wireshark'
+cask 'openinterminal'
 
 # App Store applications
 mas 'Xcode', id: 497799835

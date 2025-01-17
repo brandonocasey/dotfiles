@@ -148,7 +148,7 @@ return {
     "hrsh7th/nvim-cmp",
     config = function(_, opts)
       table.insert(opts.sources, { name = "copilot" })
-      table.insert(opts.sources, { name = "supermaven" })
+      -- table.insert(opts.sources, { name = "supermaven" })
       table.insert(opts.sources, { name = "cmdline" })
       -- opts.experimental = { ghost_text = true }
       require("cmp").setup(opts)
@@ -168,13 +168,6 @@ return {
         },
         config = function()
           require("copilot_cmp").setup()
-        end
-      },
-      {
-        "supermaven-inc/supermaven-nvim",
-        event = "InsertEnter",
-        config = function()
-          require("supermaven-nvim").setup({disable_inline_completion = true})
         end
       },
       {

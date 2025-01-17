@@ -1,0 +1,6 @@
+font-family="PragmataPro Mono"
+font-size="17"
+scrollback-limit=1000000
+window-theme="dark"
+macos-titlebar-style="tabs"
+theme=OneHalfDark

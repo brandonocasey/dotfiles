@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
 # prevent annoying "Login Item" Notifications
-sfltool resetbtm
+sudo sfltool resetbtm
+
+##
+# setup computer name
+##
+sudo scutil --set HostName bcasey-macbook
+sudo scutil --set LocalHostName bcasey-macbook
+sudo scutil --set ComputerName bcasey-macbook
+
 
 echo "Writings settings"
 
@@ -35,33 +43,24 @@ defaults write com.apple.dock "no-bouncing" -bool "true"
 defaults write com.apple.dock "launchanim" -bool "false"
 
 ##
-# Safari
-##
-
-# Show full website url
-defaults write com.apple.Safari "ShowFullURLInSmartSearchField" -bool "true"
-
-# Enable Safari’s debug menu
-defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
-
-# Disable webkit rendering delay
-defaults write com.apple.Safari WebKitInitialTimedLayoutDelay 0.25
-
-##
 # Finder
 ##
 
-# Always show file extensions
-defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true"
+# Settings > advanced > show all filename extensions
+defaults write .GlobalPreferences AppleShowAllExtensions -bool true
 
-# Don't show hidden files
-defaults write com.apple.finder "AppleShowAllFiles" -bool "false"
+# Settings > advanced > show warning before changing an extension: false
+defaults write com.apple.finder FXEnableExtensionChangeWarning -bool false
 
-# Show the "path" bar
-defaults write com.apple.finder "ShowPathbar" -bool "true"
+# View > as list
+defaults write com.apple.finder FXPreferredViewStyle -string "nlsv"
 
-# list view by default
-defaults write com.apple.finder "FXPreferredViewStyle" -string "Nlsv"
+# View > show path bar
+defaults write com.apple.finder ShowPathbar -bool true
+# View > show status bar
+defaults write com.apple.finder ShowStatusBar -bool true
+# Show all hidden files (cmd+shift+.)
+defaults write com.apple.finder AppleShowAllFiles true
 
 # Search in the current folder, not the entire mac
 defaults write com.apple.finder "FXDefaultSearchScope" -string "SCcf"
@@ -81,9 +80,6 @@ defaults write com.apple.finder "QuitMenuItem" -bool "true"
 
 # Disable animation opening finder info
 defaults write com.apple.finder "DisableAllAnimations" -bool "true"
-
-
-
 
 ##
 # Activity monitor
@@ -206,19 +202,53 @@ defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 # Bottom right screen corner -> Start screen saver
 defaults write com.apple.dock wvous-br-corner -int 5
 
+# ***** Settings > Control Center *****
+# Bluetooth: always show in menu bar
+defaults -currentHost write com.apple.controlcenter Bluetooth -int 18
+# Sound: always show in menu bar
+defaults -currentHost write com.apple.controlcenter Sound -int 18
+# Battery - show percentage
+defaults -currentHost write com.apple.controlcenter BatteryShowPercentage -bool true
+
+# automatic dark/light mode
+defaults write -g AppleInterfaceStyleSwitchesAutomatically -bool true
+
 ##
 # apps
 ##
 
-# Specify the preferences directory
-defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "$HOME/.config/.iterm2"
-
-# Tell iTerm2 to use the custom preferences in the directory
-defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -bool true
-
 # tell hammerspoon to use this as the config directory
 defaults write org.hammerspoon.Hammerspoon MJConfigFile "$HOME/.config/hammerspoon/init.lua"
 
+##
+# Setup login Items
+##
+loginitems -l | while read -r item; do
+  loginitems -d "$item"
+done
+
+loginitems -a "Hammerspoon" -p "/Applications/Hammerspoon.app/"
+loginitems -a "Karabiner" -p "/Applications/Karabiner-Elements.app/"
+loginitems -a "LinearMouse" -p "/Applications/LinearMouse.app/"
+loginitems -a "Rectangle" -p "/Applications/Rectangle.app/"
+loginitems -a "Open In Terminal" -p "/Applications/OpenInTerminal.app/"
+
+##
+# setup dock
+##
+dockutil --remove all --no-restart
+dockutil --add "/System/Library/CoreServices/Finder.app" --no-restart
+dockutil --add "/Applications/Brave Browser.app" --no-restart
+dockutil --add "/System/Applications/System Settings.app" --no-restart
+dockutil --add "/System/Applications/Utilities/Activity Monitor.app" --no-restart
+dockutil --add "/Applications/Spotify.app" --no-restart
+dockutil --add "/Applications/Sublime Text.app" --no-restart
+dockutil --add "/Applications/Wezterm.app" --no-restart
+dockutil --add "$HOME/Downloads/" --display stack
+
+##
+# Reset Everything
+##
 killall Dock
 killall Finder
 killall Safari
@@ -226,38 +256,18 @@ killall Rectangle
 killall Hammerspoon
 killall Karabiner-Elements
 killall LinearMouse
-open /Applications/Hammerspoon.app
-open /Applications/Karabiner-Elements.app
-open /Applications/Rectangle.app
-open /Applications/LinearMouse.app
+open --hide --background /Applications/Hammerspoon.app
+open --hide --background /Applications/Karabiner-Elements.app
+open --hide --background /Applications/Rectangle.app
+open --hide --background /Applications/LinearMouse.app
 
-osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Hammerspoon.app", hidden:false}'
-
-osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Karabiner-Elements.app", hidden:false}'
-
-osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/LinearMouse.app", hidden:false}'
-
-
-osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Rectangle.app", hidden:false}'
-
-echo "Settings:"
-echo "Night shift and 1 min Do not Disturb"
-echo "Setup touch id"
-echo "Show battery percentage in bar"
-echo "Add sound icon to menu bar"
-echo "Add Path to finder toolbar"
-echo "Add Favorites"
-echo "Change computer name via System Preferences -> Sharing -> Computer Name: "
-echo "System appearance to dark always"
-echo "bottom bar: "
-echo "- finder"
-echo "- brave"
-echo "- system settings"
-echo "- spotify"
-echo "- speedcrunch"
-echo "- devutils"
-echo "- activity monitor"
-echo "- browserstack local"
-
-echo "Install Epson printer utils"
-
+cat <<EOF
+# System Settings:
+## Display
+- Display scale
+## Finder
+  - Add HOME directory to left bar
+  - Add Projects directory to left bar
+  - Add Path to finder toolbar
+  - Setup Touch id
+EOF
