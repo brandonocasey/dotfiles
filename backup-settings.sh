@@ -21,8 +21,11 @@ _rsync() {
 }
 
 mkdir -p "$BACKUP_DIR/.local/share/fish"
+mkdir -p "$BACKUP_DIR/.config/git"
 _rsync ~/.local/share/zoxide "$BACKUP_DIR/.local/share/"
 _rsync ~/.local/share/fish/fish_history "$BACKUP_DIR/.local/share/fish/fish_history"
+_rsync ~/.ssh "$BACKUP_DIR/.ssh"
+_rsync ~/.config/git/local "$BACKUP_DIR/.config/git/local"
 
 find ~/Projects -name node_modules -type d -prune -exec trash {} +
 _rsync ~/Projects "$BACKUP_DIR/"
