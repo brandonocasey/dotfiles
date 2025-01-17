@@ -74,6 +74,7 @@ brew 'bash'
 brew 'tmux'
 brew 'mise'
 brew 'aider'
+brew 'rsync'
 
 EOF
 )
@@ -83,7 +84,6 @@ BUNDLE+=$(cat <<EOF
 brew 'gcc'
 brew 'make'
 brew 'act'
-brew 'bat'
 brew 'bitwarden-cli'
 brew 'wget'
 brew 'ctop'

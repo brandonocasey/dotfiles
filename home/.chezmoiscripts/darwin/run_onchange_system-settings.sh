@@ -59,6 +59,7 @@ defaults write com.apple.finder FXPreferredViewStyle -string "nlsv"
 defaults write com.apple.finder ShowPathbar -bool true
 # View > show status bar
 defaults write com.apple.finder ShowStatusBar -bool true
+
 # Show all hidden files (cmd+shift+.)
 defaults write com.apple.finder AppleShowAllFiles true
 
@@ -237,7 +238,6 @@ loginitems -a "Open In Terminal" -p "/Applications/OpenInTerminal.app/"
 # setup dock
 ##
 dockutil --remove all --no-restart
-dockutil --add "/System/Library/CoreServices/Finder.app" --no-restart
 dockutil --add "/Applications/Brave Browser.app" --no-restart
 dockutil --add "/System/Applications/System Settings.app" --no-restart
 dockutil --add "/System/Applications/Utilities/Activity Monitor.app" --no-restart
@@ -264,11 +264,9 @@ open --hide --background /Applications/LinearMouse.app
 
 cat <<EOF
 # System Settings:
-## Display
 - Display scale
-## Finder
-  - Add HOME directory to left bar
-  - Add Projects directory to left bar
-  - Add Path to finder toolbar
-  - Setup Touch id
+- Add HOME directory to left bar
+- Add Projects directory to left bar
+- Add Path to finder toolbar
+- Setup Touch id
 EOF
