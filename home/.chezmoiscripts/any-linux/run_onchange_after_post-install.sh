@@ -44,7 +44,6 @@ if cmd_exists tldr; then
   tldr --update
 fi
 
-
 if cmd_exists chezmoi; then
   if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
     echo "writing chezmoi config"

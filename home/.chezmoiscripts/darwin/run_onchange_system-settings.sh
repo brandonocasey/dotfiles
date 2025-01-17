@@ -243,7 +243,7 @@ dockutil --add "/System/Applications/System Settings.app" --no-restart
 dockutil --add "/System/Applications/Utilities/Activity Monitor.app" --no-restart
 dockutil --add "/Applications/Spotify.app" --no-restart
 dockutil --add "/Applications/Sublime Text.app" --no-restart
-dockutil --add "/Applications/Wezterm.app" --no-restart
+dockutil --add "/Applications/Ghostty.app" --no-restart
 dockutil --add "$HOME/Downloads/" --display stack
 
 ##

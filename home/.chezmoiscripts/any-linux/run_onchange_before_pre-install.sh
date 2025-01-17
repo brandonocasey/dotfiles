@@ -160,6 +160,7 @@ cask 'sublime-text'
 cask 'vlc'
 cask 'visual-studio-code'
 cask 'wezterm'
+cask 'ghostty'
 cask 'wireshark'
 cask 'openinterminal'
 
