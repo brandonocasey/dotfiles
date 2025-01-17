@@ -117,7 +117,7 @@ fi
 if [ "$(uname)" = "Darwin" ]; then
 BUNDLE+=$(cat <<EOF
 
-cask 'font-iosevka-term-slab-nerd-font'
+cask 'font-iosevka-term-nerd-font'
 
 brew 'mas'
 brew 'mist-cli'
@@ -175,4 +175,3 @@ if cmd_exists fish; then
     sudo chsh -s "$fish_loc" "$(whoami)"
   fi
 fi
-

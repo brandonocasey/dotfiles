@@ -37,7 +37,7 @@ local font_size = 17
 config.line_height = 1
 --config.line_height = 0.9 for iosevka
 local font = wezterm.font_with_fallback({
-  { family = 'PragmataProMonoLiga Nerd Font', harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } },
+  { family = 'PragmataPro Mono', harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } },
   { family = 'IosevkaTerm Nerd Font Propo', harfbuzz_features = { 'calt=0', 'clig=0', 'liga=0' } },
   { family = 'Inconsolata Nerd Font Propo' },
   { family = 'JetBrains Mono' },
