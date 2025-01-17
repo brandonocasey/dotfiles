@@ -117,6 +117,8 @@ fi
 if [ "$(uname)" = "Darwin" ]; then
 BUNDLE+=$(cat <<EOF
 
+cask 'font-iosevka-term-slab-nerd-font'
+
 brew 'mas'
 brew 'mist-cli'
 
@@ -134,7 +136,6 @@ cask 'google-chrome'
 cask 'grandperspective'
 cask 'hammerspoon'
 cask 'hex-fiend'
-cask 'heynote'
 cask 'imageoptim'
 cask 'karabiner-elements'
 cask 'keka'
