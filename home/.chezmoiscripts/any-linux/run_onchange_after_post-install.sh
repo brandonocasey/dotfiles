@@ -3,7 +3,7 @@ UNAME="$(uname)"
 export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 export MANPATH="$MANPATH:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
 OUTPUT=/dev/stdout
-if [[ $- == *i* ]]; then
+if [ -n "$RUNNING_IN_DOCKER" ]; then
   OUTPUT=/dev/null
 fi
 cmd_exists() {
