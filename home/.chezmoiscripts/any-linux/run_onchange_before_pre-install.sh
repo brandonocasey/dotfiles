@@ -47,7 +47,6 @@ fi
 BUNDLE=$(cat <<EOF
 brew 'bat'
 brew 'chezmoi'
-brew 'ctop'
 brew 'curlie'
 brew 'duf'
 brew 'dust'
@@ -62,25 +61,24 @@ brew 'git-delta'
 brew 'git-lfs'
 brew 'neovim'
 brew 'ripgrep'
-brew 'tealdeer'
 brew 'sd'
 brew 'sad'
 brew 'vivid'
 brew 'zoxide'
 brew 'wget2'
-brew 'mosh'
-brew 'bottom'
-brew 'bash'
 brew 'tmux'
 brew 'mise'
-brew 'aider'
 brew 'rsync'
 
 EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
 BUNDLE+=$(cat <<EOF
-
+brew 'tealdeer'
+brew 'mosh'
+brew 'bottom'
+brew 'bash'
+brew 'aider'
 brew 'gcc'
 brew 'make'
 brew 'act'
@@ -91,6 +89,7 @@ brew 'curl'
 brew 'gh'
 brew 'grex'
 brew 'http-server'
+brew 'ctop'
 
 brew 's-search'
 
