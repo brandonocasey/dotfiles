@@ -39,7 +39,7 @@ if cmd_exists nvim; then
   nvim --headless "+MasonToolsUpdateSync" +qall 1>$OUTPUT
 fi
 
-if cmd_exists tldro; then
+if cmd_exists tldr; then
   echo "updating tldr"
   tldr --update
 fi
