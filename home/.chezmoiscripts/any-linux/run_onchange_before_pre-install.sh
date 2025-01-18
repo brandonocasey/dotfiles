@@ -74,6 +74,7 @@ EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
 BUNDLE+=$(cat <<EOF
+
 brew 'tealdeer'
 brew 'mosh'
 brew 'bottom'
@@ -90,7 +91,6 @@ brew 'gh'
 brew 'grex'
 brew 'http-server'
 brew 'ctop'
-
 brew 's-search'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
