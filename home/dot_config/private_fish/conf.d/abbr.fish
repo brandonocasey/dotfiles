@@ -78,6 +78,11 @@ if type -q curlie
   abbr --add curl curlie
 end
 
+if type -q bat
+  abbr --add cat bat
+end
+
+
 if type -q duf
   abbr --add disk-info duf
   abbr --add disc-info duf

@@ -288,6 +288,8 @@ echo "
     <dict>
         <key>OLLAMA_HOST</key>
         <string>0.0.0.0:11434</string>
+        <key>OLLAMA_ORIGINS</key>
+        <string>*</string>
     </dict>
     <key>ProgramArguments</key>
     <array>
@@ -305,4 +307,4 @@ echo "
     <key>KeepAlive</key>
     <true />
   </dict>
-</plist>" | sudo tee /Library/LaunchDaemons/ollama.plist
+</plist>" | sudo tee /Library/LaunchDaemons/ollama.plist >/dev/null
