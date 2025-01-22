@@ -162,6 +162,7 @@ cask 'wezterm'
 cask 'ghostty'
 cask 'wireshark'
 cask 'openinterminal'
+cask 'ollama'
 
 # App Store applications
 mas 'Xcode', id: 497799835

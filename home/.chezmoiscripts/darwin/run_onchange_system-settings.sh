@@ -233,6 +233,8 @@ loginitems -a "Karabiner" -p "/Applications/Karabiner-Elements.app/"
 loginitems -a "LinearMouse" -p "/Applications/LinearMouse.app/"
 loginitems -a "Rectangle" -p "/Applications/Rectangle.app/"
 loginitems -a "Open In Terminal" -p "/Applications/OpenInTerminal.app/"
+loginitems -a "Ollama" -p "/Applications/Ollama.app/"
+loginitems -a "Docker" -p "/Applications/Docker.app/"
 
 ##
 # setup dock
