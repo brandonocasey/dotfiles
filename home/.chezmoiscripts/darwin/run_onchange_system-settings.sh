@@ -272,3 +272,37 @@ cat <<EOF
 - Add Path to finder toolbar
 - Setup Touch id
 EOF
+
+echo "
+<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+  <dict>
+    <key>Label</key>
+    <string>ollama</string>
+    <key>StandardOutPath</key>
+    <string>$HOME/.ollama/launchd.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>$HOME/.ollama/launchd.stderr.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>OLLAMA_HOST</key>
+        <string>0.0.0.0:11434</string>
+    </dict>
+    <key>ProgramArguments</key>
+    <array>
+      <string>/opt/homebrew/bin/ollama</string>
+      <string>serve</string>
+    </array>
+    <key>UserName</key>
+    <string>$(id -un)</string>
+    <key>GroupName</key>
+    <string>$(id -gn)</string>
+    <key>ExitTimeOut</key>
+    <integer>30</integer>
+    <key>Disabled</key>
+    <false />
+    <key>KeepAlive</key>
+    <true />
+  </dict>
+</plist>" | sudo tee /Library/LaunchDaemons/ollama.plist

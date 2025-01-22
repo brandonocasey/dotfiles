@@ -119,6 +119,11 @@ alias docker-compose-update 'docker-compose pull && docker-compose up --force-re
 
 abbr --add cdroot cd "$(find-root)"
 
+if [ (uname) = 'Darwin' ]
+  alias ollama:start='sudo launchctl load /Library/LaunchDaemons/ollama.plist'
+  alias ollama:stop='sudo launchctl unload /Library/LaunchDaemons/ollama.plist'
+end
+
 #
 # # keep env when going sudo
 # abbr --add sudo sudo --preserve-env'
