@@ -6,4 +6,4 @@ macos-titlebar-style="tabs"
 theme="OneHalfDark"
 window-padding-x = 0,0
 window-padding-y = 0,0
-minimum-contrast=2.2
+minimum-contrast=1.1

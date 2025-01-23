@@ -16,6 +16,7 @@ cmd_exists() {
 
 if cmd_exists mise; then
   echo "installing mise"
+  mkdir -p "$HOME/.local/share/gnupg"
   mise install
   eval "$(mise activate bash)"
 fi
