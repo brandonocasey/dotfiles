@@ -1,9 +1,9 @@
 local M = {}
 
-M.ui = {
+M.base46 = {
   theme = 'onedark',
   lsp_semantic_tokens = true,
-  transparency = false,
+  transparency = true,
 
   hl_override = {
     Comment = {
