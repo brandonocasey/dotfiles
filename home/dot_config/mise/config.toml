@@ -1,6 +1,7 @@
 [tools]
 node = ['20']
 python = ['system']
+go = ['latest']
 
 [settings]
 experimental = true

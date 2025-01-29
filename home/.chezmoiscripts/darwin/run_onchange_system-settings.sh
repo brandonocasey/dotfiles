@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# use https://github.com/catilac/plistwatch to automate
+
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+export MANPATH="$MANPATH:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+cmd_exists() {
+  if command -v "$1" 2>/dev/null 1>/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
 # prevent annoying "Login Item" Notifications
 sudo sfltool resetbtm
 
@@ -81,6 +93,9 @@ defaults write com.apple.finder "QuitMenuItem" -bool "true"
 
 # Disable animation opening finder info
 defaults write com.apple.finder "DisableAllAnimations" -bool "true"
+
+# close tags in sidebar
+defaults write "com.apple.finder" "SidebarTagsSctionDisclosedState" '0'
 
 ##
 # Activity monitor
@@ -212,7 +227,8 @@ defaults -currentHost write com.apple.controlcenter Sound -int 18
 defaults -currentHost write com.apple.controlcenter BatteryShowPercentage -bool true
 
 # automatic dark/light mode
-defaults write -g AppleInterfaceStyleSwitchesAutomatically -bool true
+defaults delete "Apple Global Domain" "AppleInterfaceStyleSwitchesAutomatically"
+defaults write "Apple Global Domain" "AppleInterfaceStyle" 'Dark'
 
 ##
 # apps
@@ -249,6 +265,16 @@ dockutil --add "/Applications/Sublime Text.app" --no-restart
 dockutil --add "/Applications/Ghostty.app" --no-restart
 dockutil --add "$HOME/Downloads/" --display stack
 
+# turn on OpenInTerminal finder extension
+pluginkit -e "use" -u "wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension"
+# customize finder toolbar
+defaults write "com.apple.finder" "NSToolbar Configuration Browser" '{"TB Default Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.SWCH",NSToolbarSpaceItem,"com.apple.finder.ARNG","com.apple.finder.SHAR","com.apple.finder.LABL","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Display Mode"=1;"TB Icon Size Mode"=1;"TB Is Shown"=1;"TB Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.PATH","com.apple.finder.SWCH",NSToolbarSpaceItem,"wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension","com.apple.finder.SHAR","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Size Mode"=1;}'
+
+if cmd_exists nvim; then
+  defaults write "$HOME/Library/Group Containers/group.wang.jianing.app.OpenInTerminal/Library/Preferences/group.wang.jianing.app.OpenInTerminal.plist" NeovimCommand "open -na Ghostty --args start /opt/homebrew/bin/nvim PATH"
+fi
+
+
 ##
 # Reset Everything
 ##
@@ -269,7 +295,6 @@ cat <<EOF
 - Display scale
 - Add HOME directory to left bar
 - Add Projects directory to left bar
-- Add Path to finder toolbar
 - Setup Touch id
 EOF
 
