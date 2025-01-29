@@ -130,6 +130,15 @@ return {
   },
 
   {
+    "sphamba/smear-cursor.nvim",
+    lazy = false,
+    opts = {
+      legacy_computing_symbols_support = true,
+      transparent_bg_fallback_color = "#303030",
+    }
+  },
+
+  {
     "NvChad/nvcommunity",
     { import = "nvcommunity.editor.rainbowdelimiters" },
     { import = "nvcommunity.editor.treesittercontext" },
