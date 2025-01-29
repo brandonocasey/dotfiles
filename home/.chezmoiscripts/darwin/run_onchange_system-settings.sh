@@ -271,9 +271,10 @@ pluginkit -e "use" -u "wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExten
 defaults write "com.apple.finder" "NSToolbar Configuration Browser" '{"TB Default Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.SWCH",NSToolbarSpaceItem,"com.apple.finder.ARNG","com.apple.finder.SHAR","com.apple.finder.LABL","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Display Mode"=1;"TB Icon Size Mode"=1;"TB Is Shown"=1;"TB Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.PATH","com.apple.finder.SWCH",NSToolbarSpaceItem,"wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension","com.apple.finder.SHAR","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Size Mode"=1;}'
 
 if cmd_exists nvim; then
-  defaults write "$HOME/Library/Group Containers/group.wang.jianing.app.OpenInTerminal/Library/Preferences/group.wang.jianing.app.OpenInTerminal.plist" NeovimCommand "open -na Ghostty --args start /opt/homebrew/bin/nvim PATH"
+  if cmd_exists mise; then
+    defaults write "$HOME/Library/Group Containers/group.wang.jianing.app.OpenInTerminal/Library/Preferences/group.wang.jianing.app.OpenInTerminal.plist" NeovimCommand "open -na Ghostty --args -e '$(which mise) x -- $(which nvim) PATH'"
+  fi
 fi
-
 
 ##
 # Reset Everything
