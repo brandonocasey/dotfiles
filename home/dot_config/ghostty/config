@@ -11,3 +11,4 @@ minimum-contrast=1.1
 cursor-style-blink=false
 clipboard-read=allow
 clipboard-write=allow
+copy-on-select=true
