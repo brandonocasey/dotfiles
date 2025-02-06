@@ -54,7 +54,7 @@ if cmd_exists nvim; then
   nvim --headless "+Lazy! sync" +qa 1>$OUTPUT
   nvim --headless "+MasonToolsInstallSync" +qall 1>$OUTPUT
   nvim --headless "+MasonToolsUpdateSync" +qall 1>$OUTPUT
-
+  nvim --headless "+!vale sync" +qall 1>$OUTPUT
 fi
 
 if cmd_exists tldr; then
@@ -69,9 +69,8 @@ if cmd_exists chezmoi; then
     echo "$FILE" > "$HOME/.config/chezmoi/chezmoi.toml"
   fi
 
-  CM_PATH="$(dirname "$(chezmoi source-path)")"
   _cmgit() {
-    git -C "$CM_PATH" "$@"
+    git -C "$CHEZMOI_SOURCE_DIR" "$@"
     return $?
   }
   GIT_ORIGIN="$(_cmgit config --get remote.origin.url)"
