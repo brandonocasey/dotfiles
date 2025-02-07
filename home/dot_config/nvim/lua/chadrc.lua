@@ -2,7 +2,6 @@ local M = {
   base46 = {
     theme = 'onedark',
     lsp_semantic_tokens = true,
-    transparency = true,
 
     hl_override = {
       Comment = {
