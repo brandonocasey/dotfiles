@@ -1,5 +1,4 @@
 {
-  "$schema" : "https:\/\/schema.linearmouse.app\/0.10.0",
   "schemes" : [
     {
       "pointer" : {
@@ -7,13 +6,45 @@
       },
       "if" : {
         "device" : {
-          "vendorID" : "0x46d",
           "category" : "mouse",
-          "productID" : "0xc52b",
-          "productName" : "USB Receiver"
+          "productName" : "USB Receiver",
+          "vendorID" : "0x46d",
+          "productID" : "0xc52b"
         }
       },
+      "buttons" : {
+        "universalBackForward" : true,
+        "mappings" : [
+          {
+            "button" : 2,
+            "command" : false,
+            "action" : "missionControl",
+            "shift" : false,
+            "control" : false,
+            "option" : false
+          },
+          {
+            "option" : false,
+            "control" : false,
+            "action" : "missionControl.spaceLeft",
+            "command" : false,
+            "shift" : false,
+            "button" : 3
+          },
+          {
+            "option" : false,
+            "button" : 4,
+            "shift" : false,
+            "command" : false,
+            "control" : false,
+            "action" : "missionControl.spaceRight"
+          }
+        ]
+      },
       "scrolling" : {
+        "reverse" : {
+          "vertical" : true
+        },
         "acceleration" : {
           "vertical" : 1
         },
@@ -22,55 +53,10 @@
         },
         "distance" : {
           "vertical" : "auto"
-        },
-        "reverse" : {
-          "vertical" : true
         }
-      },
-      "buttons" : {
-        "mappings" : [
-          {
-            "action" : "missionControl",
-            "command" : false,
-            "button" : 2,
-            "control" : false,
-            "shift" : false,
-            "option" : false
-          },
-          {
-            "option" : false,
-            "action" : "missionControl.spaceLeft",
-            "command" : false,
-            "shift" : false,
-            "button" : 3,
-            "control" : false
-          },
-          {
-            "command" : false,
-            "option" : false,
-            "action" : "missionControl.spaceRight",
-            "shift" : false,
-            "button" : 4,
-            "control" : false
-          }
-        ],
-        "universalBackForward" : true
       }
     },
     {
-      "if" : {
-        "device" : {
-          "productName" : "USB Gaming Mouse",
-          "vendorID" : "0x46d",
-          "productID" : "0xc049",
-          "category" : "mouse"
-        }
-      },
-      "pointer" : {
-        "speed" : 0.4211,
-        "disableAcceleration" : false,
-        "acceleration" : 0
-      },
       "scrolling" : {
         "reverse" : {
           "vertical" : true
@@ -85,32 +71,46 @@
       "buttons" : {
         "mappings" : [
           {
+            "command" : false,
             "shift" : false,
             "button" : 2,
-            "control" : false,
-            "action" : "missionControl",
             "option" : false,
-            "command" : false
+            "control" : false,
+            "action" : "missionControl"
           },
           {
-            "control" : false,
             "option" : false,
-            "action" : "missionControl.spaceLeft",
             "command" : false,
-            "button" : 3,
-            "shift" : false
+            "control" : false,
+            "action" : "missionControl.spaceLeft",
+            "shift" : false,
+            "button" : 3
           },
           {
             "action" : "missionControl.spaceRight",
-            "button" : 4,
+            "shift" : false,
             "control" : false,
+            "button" : 4,
             "command" : false,
-            "option" : false,
-            "shift" : false
+            "option" : false
           }
         ],
         "universalBackForward" : true
+      },
+      "if" : {
+        "device" : {
+          "productID" : "0xc049",
+          "category" : "mouse",
+          "productName" : "USB Gaming Mouse",
+          "vendorID" : "0x46d"
+        }
+      },
+      "pointer" : {
+        "acceleration" : 0,
+        "speed" : 0.4211,
+        "disableAcceleration" : false
       }
     }
-  ]
+  ],
+  "$schema" : "https:\/\/schema.linearmouse.app\/0.10.0"
 }

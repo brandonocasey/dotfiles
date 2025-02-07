@@ -1,3 +1,4 @@
+local nvconfig = require("nvconfig")
 local highlight = {
   "RainbowRed",
   "RainbowYellow",
@@ -21,6 +22,11 @@ hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
   vim.api.nvim_set_hl(0, "RainbowCyan", { fg = "#56B6C2" })
 end)
 
+local function set_theme(new_theme)
+  nvconfig.base46.theme = new_theme
+  require('base46').load_all_highlights()
+end
+
 return {
 
   { "lukas-reineke/indent-blankline.nvim",
@@ -30,6 +36,20 @@ return {
         highlight = highlight
       }
     }
+  },
+
+  {
+    "f-person/auto-dark-mode.nvim",
+    event = "VeryLazy",
+    config = {
+      update_interval = 1000,
+      set_dark_mode = function()
+        set_theme('onedark')
+      end,
+      set_light_mode = function()
+        set_theme('one_light')
+      end,
+    },
   },
 
   { "folke/neodev.nvim", opts = {}, lazy = false },
@@ -128,6 +148,15 @@ return {
       })
     end
   },
+
+  {
+    "max397574/better-escape.nvim",
+    config = function()
+      require("better_escape").setup()
+    end,
+  },
+
+  { "nvzone/volt" , lazy = true },
 
   {
     "sphamba/smear-cursor.nvim",

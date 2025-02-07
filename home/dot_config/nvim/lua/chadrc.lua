@@ -1,59 +1,60 @@
-local M = {}
+local M = {
+  base46 = {
+    theme = 'onedark',
+    lsp_semantic_tokens = true,
+    transparency = true,
 
-M.base46 = {
-  theme = 'onedark',
-  lsp_semantic_tokens = true,
-  transparency = true,
-
-  hl_override = {
-    Comment = {
-      italic = true,
+    hl_override = {
+      Comment = {
+        italic = true,
+      },
     },
   },
-  statusline = {
-    theme = "vscode_colored",
-  }
-}
+  ui = {
+    statusline = {
+      theme = "vscode_colored",
+    }
+  },
+  mason = {
+    pkgs = {
+      -- spelling
+      "typos-lsp",
 
-M.mason = {
-  pkgs = {
-    -- spelling
-    "typos-lsp",
+      -- lua stuff
+      "lua-language-server",
+      -- "stylua",
 
-    -- lua stuff
-    "lua-language-server",
-    -- "stylua",
+      -- shell
+      "shellcheck",
+      "bash-language-server",
 
-    -- shell
-    "shellcheck",
-    "bash-language-server",
+      -- markdown
+      "vale",
+      "vale-ls",
+      "markdownlint-cli2",
 
-    -- markdown
-    "vale",
-    "vale-ls",
-    "markdownlint-cli2",
+      -- web dev stuff
+      "css-lsp",
+      "html-lsp",
+      "eslint-lsp",
+      "stylelint-lsp",
+      -- "eslint_d",
+      "typescript-language-server",
 
-    -- web dev stuff
-    "css-lsp",
-    "html-lsp",
-    "eslint-lsp",
-    "stylelint-lsp",
-    -- "eslint_d",
-    "typescript-language-server",
+      -- github actions
+      "actionlint",
 
-    -- github actions
-    "actionlint",
+      -- docker
+      "hadolint",
 
-    -- docker
-    "hadolint",
+      -- json
+      "json-lsp",
 
-    -- json
-    "json-lsp",
+      "ltex-ls",
 
-    "ltex-ls",
-
-    -- yaml
-    "yaml-language-server",
+      -- yaml
+      "yaml-language-server",
+    }
   }
 }
 
