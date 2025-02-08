@@ -1,6 +1,7 @@
 local M = {
   base46 = {
     theme = 'onedark',
+    theme_toggle = { "onedark", "one_light" },
     lsp_semantic_tokens = true,
 
     hl_override = {
