@@ -186,6 +186,7 @@ if [ "$UNAME" = 'Darwin' ]
   else
     set -Ux OS_APPEARANCE "LIGHT"
   end
+  update_theme
 end
 
 # Don't mangle escaped characters with less

@@ -10,6 +10,7 @@ window-padding-balance = true
 cursor-style-blink=false
 clipboard-read=allow
 clipboard-write=allow
+clipboard-paste-protection=false
 copy-on-select=clipboard
 cursor-invert-fg-bg=true
 bold-is-bright=true

@@ -196,22 +196,22 @@ return {
       require("cmp").setup(opts)
     end,
     dependencies = {
-      {
-        "zbirenbaum/copilot-cmp",
-        dependencies = {
-          "zbirenbaum/copilot.lua",
-          event = { "InsertEnter" },
-          cmd = {"Copilot"},
-          opts = {
-            suggestion = { enabled = false},
-            panel = { enabled = false },
-            filetypes = { markdown = true }
-          }
-        },
-        config = function()
-          require("copilot_cmp").setup()
-        end
-      },
+      -- {
+      --   "zbirenbaum/copilot-cmp",
+      --   dependencies = {
+      --     "zbirenbaum/copilot.lua",
+      --     event = { "InsertEnter" },
+      --     cmd = {"Copilot"},
+      --     opts = {
+      --       suggestion = { enabled = false},
+      --       panel = { enabled = false },
+      --       filetypes = { markdown = true }
+      --     }
+      --   },
+      --   config = function()
+      --     require("copilot_cmp").setup()
+      --   end
+      -- },
       {
         "hrsh7th/cmp-cmdline",
         event = { "CmdLineEnter" },
