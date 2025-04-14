@@ -61,6 +61,7 @@ brew 'git-delta'
 brew 'git-lfs'
 brew 'neovim'
 brew 'ripgrep'
+brew 'ripgrep-all'
 brew 'sd'
 brew 'sad'
 brew 'vivid'
@@ -69,7 +70,6 @@ brew 'wget2'
 brew 'tmux'
 brew 'mise'
 brew 'rsync'
-
 EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
