@@ -184,7 +184,23 @@ return {
     { import = "nvcommunity.lsp.barbecue"},
     { import = "nvcommunity.git.diffview"},
   },
-
+  {
+    "wuelnerdotexe/vim-astro",
+    ft = { "astro" },
+  },
+  {
+    'MagicDuck/grug-far.nvim',
+    -- Note (lazy loading): grug-far.lua defers all it's requires so it's lazy by default
+    -- additional lazy config to defer loading is not really needed...
+    config = function()
+      -- optional setup call to override plugin options
+      -- alternatively you can set options with vim.g.grug_far = { ... }
+      require('grug-far').setup({
+        -- options, see Configuration section below
+        -- there are no required options atm
+      });
+    end
+  },
 
   {
     "hrsh7th/nvim-cmp",
@@ -195,54 +211,54 @@ return {
       -- opts.experimental = { ghost_text = true }
       require("cmp").setup(opts)
     end,
-    dependencies = {
-      -- {
-      --   "zbirenbaum/copilot-cmp",
-      --   dependencies = {
-      --     "zbirenbaum/copilot.lua",
-      --     event = { "InsertEnter" },
-      --     cmd = {"Copilot"},
-      --     opts = {
-      --       suggestion = { enabled = false},
-      --       panel = { enabled = false },
-      --       filetypes = { markdown = true }
-      --     }
-      --   },
-      --   config = function()
-      --     require("copilot_cmp").setup()
-      --   end
-      -- },
-      {
-        "hrsh7th/cmp-cmdline",
-        event = { "CmdLineEnter" },
-        opts = { history = true, updateevents = "CmdlineEnter,CmdlineChanged" },
-        config = function()
-          local cmp = require "cmp"
-
-          cmp.setup.cmdline("/", {
-            mapping = cmp.mapping.preset.cmdline(),
-            sources = {
-              { name = "buffer" },
-            },
-          })
-
-          -- `:` cmdline setup.
-          cmp.setup.cmdline(":", {
-            mapping = cmp.mapping.preset.cmdline(),
-            sources = cmp.config.sources({
-              { name = "path" },
-            }, {
-              {
-                name = "cmdline",
-                option = {
-                  ignore_cmds = { "Man", "!" },
-                },
-              },
-            }),
-          })
-        end
-      }
-    }
+    -- dependencies = {
+    --   -- {
+    --   --   "zbirenbaum/copilot-cmp",
+    --   --   dependencies = {
+    --   --     "zbirenbaum/copilot.lua",
+    --   --     event = { "InsertEnter" },
+    --   --     cmd = {"Copilot"},
+    --   --     opts = {
+    --   --       suggestion = { enabled = false},
+    --   --       panel = { enabled = false },
+    --   --       filetypes = { markdown = true }
+    --   --     }
+    --   --   },
+    --   --   config = function()
+    --   --     require("copilot_cmp").setup()
+    --   --   end
+    --   -- },
+    --   {
+    --     "hrsh7th/cmp-cmdline",
+    --     event = { "CmdLineEnter" },
+    --     opts = { history = true, updateevents = "CmdlineEnter,CmdlineChanged" },
+    --     config = function()
+    --       local cmp = require "cmp"
+    --
+    --       cmp.setup.cmdline("/", {
+    --         mapping = cmp.mapping.preset.cmdline(),
+    --         sources = {
+    --           { name = "buffer" },
+    --         },
+    --       })
+    --
+    --       -- `:` cmdline setup.
+    --       cmp.setup.cmdline(":", {
+    --         mapping = cmp.mapping.preset.cmdline(),
+    --         sources = cmp.config.sources({
+    --           { name = "path" },
+    --         }, {
+    --           {
+    --             name = "cmdline",
+    --             option = {
+    --               ignore_cmds = { "Man", "!" },
+    --             },
+    --           },
+    --         }),
+    --       })
+    --     end
+    --   }
+    -- }
   },
 
   {

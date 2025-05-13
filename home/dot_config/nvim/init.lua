@@ -10,6 +10,8 @@ if not vim.loop.fs_stat(lazypath) then
 end
 
 vim.opt.rtp:prepend(lazypath)
+vim.g.maplocalleader = " "
+vim.g.mapleader = " "
 
 local lazy_config = require "configs.lazy"
 
