@@ -99,6 +99,7 @@ brew 'ctop'
 brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
+brew 'imagemagick'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
@@ -181,7 +182,7 @@ EOF
 fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
-echo "$BUNDLE" | brew bundle --cleanup --no-lock --file=/dev/stdin
+echo "$BUNDLE" | brew bundle --cleanup --file=/dev/stdin
 brew cleanup --prune=all
 
 if cmd_exists fish; then
