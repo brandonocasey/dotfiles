@@ -1,31 +1,10 @@
 return {
-  -- ondark theme
-  {
-    "navarasu/onedark.nvim",
-    priority = 1000, -- make sure to load this before all the other start plugins
-    config = function()
-      require("onedark").setup({
-        style = "deep",
-      })
-      -- Enable theme
-      require("onedark").load()
-    end,
-  },
-
-  -- Configure LazyVim to load onedark
-  {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "onedark",
-    },
-  },
-
   -- Make the home key go to ^ or 0 in a smart way similar to most IDEs
   {
     "bwpge/homekey.nvim",
     event = "VeryLazy",
   },
-  -- rememeber the last line that was being edited in a file
+  -- remember the last line that was being edited in a file
   {
     "farmergreg/vim-lastplace",
     lazy = false,
@@ -94,5 +73,16 @@ return {
       highlight = true,
       trim_last_line = false,
     },
+  },
+
+  -- edit the file system in a vim-like manor
+  {
+    "stevearc/oil.nvim",
+    opts = {},
+    -- Optional dependencies
+    dependencies = { { "echasnovski/mini.icons", opts = {} } },
+    -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
+    -- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
+    lazy = false,
   },
 }
