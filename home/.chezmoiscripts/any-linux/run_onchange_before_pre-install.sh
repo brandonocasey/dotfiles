@@ -71,6 +71,9 @@ brew 'wget2'
 brew 'tmux'
 brew 'mise'
 brew 'rsync'
+brew 'ast-grep'
+brew 'luajit'
+
 EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
@@ -94,7 +97,8 @@ brew 'grex'
 brew 'http-server'
 brew 'ctop'
 brew 's-search'
-brew 'ast-grep'
+brew 'lazygit'
+brew 'lazydocker'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
