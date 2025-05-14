@@ -10,6 +10,15 @@ return {
     lazy = false,
   },
 
+  {
+    "saghen/blink.cmp",
+    opts = {
+      completion = {
+        keyword = { rande = "full" },
+      },
+    },
+  },
+
   -- faster escape key usage
   {
     "max397574/better-escape.nvim",
