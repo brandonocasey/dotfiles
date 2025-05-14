@@ -81,7 +81,9 @@ return {
   -- edit the file system in a vim-like manor
   {
     "stevearc/oil.nvim",
-    opts = {},
+    opts = {
+      skip_confirm_for_simple_edits = true,
+    },
     -- Optional dependencies
     dependencies = { { "echasnovski/mini.icons", opts = {} } },
     -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
