@@ -32,7 +32,7 @@ if [ "$UNAME" = "Darwin" ]; then
   # Wait until XCode Command Line Tools installation has finished.
   until xcode-select -p 1>/dev/null 2>/dev/null; do
     echo "Waiting for xcode command line tools to finish installing"
-    sleep 5;
+    sleep 5
   done
 else
   install_linux_pkg curl git build-essential
@@ -44,7 +44,8 @@ if ! cmd_exists brew; then
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
 
-BUNDLE=$(cat <<EOF
+BUNDLE=$(
+  cat <<EOF
 brew 'bat'
 brew 'chezmoi'
 brew 'curlie'
@@ -73,7 +74,8 @@ brew 'rsync'
 EOF
 )
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
-BUNDLE+=$(cat <<EOF
+  BUNDLE+=$(
+    cat <<EOF
 
 brew 'tealdeer'
 brew 'mosh'
@@ -92,6 +94,7 @@ brew 'grex'
 brew 'http-server'
 brew 'ctop'
 brew 's-search'
+brew 'ast-grep'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
@@ -111,12 +114,13 @@ brew 'htmlq'
 #brew 'doron-cohen/tap/antidot'
 
 EOF
-)
+  )
 fi
 
 # additional packages for mac only
 if [ "$(uname)" = "Darwin" ]; then
-BUNDLE+=$(cat <<EOF
+  BUNDLE+=$(
+    cat <<EOF
 
 cask 'font-iosevka-term-nerd-font'
 
@@ -169,7 +173,7 @@ mas 'Xcode', id: 497799835
 mas 'WireGuard', id: 1451685025
 
 EOF
-)
+  )
 fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
