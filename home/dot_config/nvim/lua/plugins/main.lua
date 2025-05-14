@@ -68,7 +68,10 @@ return {
   -- automatically trim bad whitespace
   {
     "cappyzawa/trim.nvim",
-    lazy = false,
+    cond = function()
+      return not string.match(vim.bo.filetype, "snacks_dashboard")
+    end,
+    event = "VeryLazy",
     opts = {
       highlight = true,
       trim_last_line = false,
@@ -84,5 +87,15 @@ return {
     -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
     -- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
     lazy = false,
+  },
+
+  -- access any of the edits in the undo tree!
+  {
+    "jiaoshijie/undotree",
+    dependencies = "nvim-lua/plenary.nvim",
+    config = true,
+    keys = { -- load the plugin only when using it's keybinding:
+      { "<leader>u", "<cmd>lua require('undotree').toggle()<cr>" },
+    },
   },
 }
