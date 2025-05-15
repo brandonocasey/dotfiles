@@ -109,4 +109,14 @@ return {
       { "<leader>u", "<cmd>lua require('undotree').toggle()<cr>" },
     },
   },
+
+  -- automatically indent to the correct location using tab
+  {
+    "vidocqh/auto-indent.nvim",
+    opts = {
+      indentexpr = function(lnum)
+        return require("nvim-treesitter.indent").get_indent(lnum)
+      end,
+    },
+  },
 }

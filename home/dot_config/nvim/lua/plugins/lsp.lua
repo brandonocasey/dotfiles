@@ -31,6 +31,16 @@ return {
             },
           },
         },
+        vtsls = {
+          settings = {
+            typescript = {
+              format = {
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces = false,
+              },
+            },
+          },
+        },
+        -- eslint **must** override defaults in vtsls
         eslint = {},
       },
     },
