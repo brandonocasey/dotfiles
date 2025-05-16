@@ -13,5 +13,6 @@ clipboard-write=allow
 clipboard-paste-protection=false
 copy-on-select=clipboard
 cursor-invert-fg-bg=true
+cursor-style=block
 bold-is-bright=true
 # adjust-cursor-thickness=

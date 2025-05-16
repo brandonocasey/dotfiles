@@ -1,20 +1,24 @@
 return {
   -- Make the home key go to ^ or 0 in a smart way similar to most IDEs
-  {
-    "bwpge/homekey.nvim",
-    event = "VeryLazy",
-  },
+  { "bwpge/homekey.nvim", event = "VeryLazy" },
   -- remember the last line that was being edited in a file
+  { "farmergreg/vim-lastplace", lazy = false },
+  -- onedark theme
+  { "olimorris/onedarkpro.nvim", priority = 1000 },
+
+  -- Configure LazyVim to load onedark
   {
-    "farmergreg/vim-lastplace",
-    lazy = false,
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "onedark",
+    },
   },
 
   {
     "saghen/blink.cmp",
     opts = {
       completion = {
-        keyword = { rande = "full" },
+        keyword = { range = "full" },
       },
     },
   },
@@ -70,7 +74,7 @@ return {
     "nmac427/guess-indent.nvim",
     lazy = false,
     config = function()
-      require("guess-indent").setup()
+      require("guess-indent").setup({})
     end,
   },
 
