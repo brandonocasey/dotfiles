@@ -80,4 +80,4 @@ vim.opt.shortmess:append("c")
 -- use system clipboard
 -- vim.opt.clipboard = 'unnamedplus'
 -- Relative line numbers
-vim.opt.relativenumber = false
+-- vim.opt.relativenumber = false

@@ -1,8 +1,7 @@
 return {
-
   {
     "mason-org/mason.nvim",
-    opts = { ensure_installed = { "ltex-ls-plus", "gh-actions-language-server" } },
+    opts = { ensure_installed = { "ltex-ls-plus", "gh-actions-language-server", "markdownlint-cli2" } },
   },
 
   {
@@ -61,6 +60,15 @@ return {
             typescript = {
               format = {
                 insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces = false,
+                insertSpaceAfterFunctionKeywordForAnonymousFunctions = false,
+              },
+              inlayHints = {
+                enumMemberValues = { enabled = false },
+                functionLikeReturnTypes = { enabled = false },
+                parameterNames = { enabled = false },
+                parameterTypes = { enabled = false },
+                propertyDeclarationTypes = { enabled = false },
+                variableTypes = { enabled = false },
               },
             },
           },
