@@ -30,77 +30,76 @@ abbr --add vi $EDITOR
 abbr --add v $EDITOR
 alias vim $EDITOR
 
-if [ $EDITOR = 'nvim' ]
-  abbr --add vimdiff nvim -d
-  abbr --add nvimdiff nvim -d
+if [ $EDITOR = nvim ]
+    abbr --add vimdiff nvim -d
+    abbr --add nvimdiff nvim -d
 end
 
 if type -q s
-  abbr --add s s --provider duckduckgo
-  abbr --add web-search s --provider duckduckgo
+    abbr --add s s --provider duckduckgo
+    abbr --add web-search s --provider duckduckgo
 end
 
 if type -q chezmoi
-  abbr --add cm chezmoi
+    abbr --add cm chezmoi
 end
 
 # use eza if it exists
 if type -q eza
-  alias ls 'eza'
-  alias ll 'ls -l --git --icons --time-style=long-iso'
-  alias la 'll -ahoH'
+    alias ls eza
+    alias ll 'ls -l --git --icons --time-style=long-iso'
+    alias la 'll -ahoH'
 
-  alias la-size 'la --total-size'
-  alias ll-size 'll --total-size'
-  alias lh 'la-size'
+    alias la-size 'la --total-size'
+    alias ll-size 'll --total-size'
+    alias lh la-size
 
-  alias la-tree 'la --tree'
-  alias ll-tree 'll --tree'
+    alias la-tree 'la --tree'
+    alias ll-tree 'll --tree'
 
-  alias tree 'ls-tree'
-  alias ls-tree 'eza --tree'
+    alias tree ls-tree
+    alias ls-tree 'eza --tree'
 else
-  set -l lsbin ls
-  # use coreutils ls if it exists
-  if type -q gls
-    set lsbin gls
-  end
+    set -l lsbin ls
+    # use coreutils ls if it exists
+    if type -q gls
+        set lsbin gls
+    end
 
-  # ls with color
-  alias ls "$lsbin --color=auto"
-  # Show me all files and info about them
-  alias ll "ls -lh --color=auto"
-  # Show me all files, including .dotfiles, and all info about them
-  alias la "$lsbin -lha --color=auto"
+    # ls with color
+    alias ls "$lsbin --color=auto"
+    # Show me all files and info about them
+    alias ll "ls -lh --color=auto"
+    # Show me all files, including .dotfiles, and all info about them
+    alias la "$lsbin -lha --color=auto"
 end
 
 if type -q curlie
-  abbr --add curl curlie
+    abbr --add curl curlie
 end
 
 if type -q bat
-  abbr --add cat bat
+    abbr --add cat bat
 end
 
-
 if type -q duf
-  abbr --add disk-info duf
-  abbr --add disc-info duf
+    abbr --add disk-info duf
+    abbr --add disc-info duf
 end
 
 if type -q dust
-  abbr --add file-sizes dust
-  abbr --add sizes dust
-  abbr --add tree-size dust
+    abbr --add file-sizes dust
+    abbr --add sizes dust
+    abbr --add tree-size dust
 end
 
 if type -q btm
-  abbr --add htop btm -b
-  abbr --add top btm -b
+    abbr --add htop btm -b
+    abbr --add top btm -b
 end
 
 if type -q wget2
-  abbr --add wget wget2
+    abbr --add wget wget2
 end
 
 #abbr --add brewup brew update; brew upgrade; brew cleanup; brew doctor'
@@ -119,15 +118,23 @@ end
 #
 # node module bs
 
-
 alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 
 abbr --add cdroot cd "$(find-root)"
 
-if [ (uname) = 'Darwin' ]
-  alias ollama:start='sudo launchctl load /Library/LaunchDaemons/ollama.plist'
-  alias ollama:stop='sudo launchctl unload /Library/LaunchDaemons/ollama.plist'
+if [ (uname) = Darwin ]
+    alias ollama:start='sudo launchctl load /Library/LaunchDaemons/ollama.plist'
+    alias ollama:stop='sudo launchctl unload /Library/LaunchDaemons/ollama.plist'
 end
+
+abbr --add aider-btr aider --cache-prompts \
+    --dark-mode \
+    --no-auto-commits \
+    --restore-chat-history \
+    --no-suggest-shell-commands \
+    --yes-always \
+    --no-detect-urls \
+    --map-tokens 2048
 
 #
 # # keep env when going sudo
