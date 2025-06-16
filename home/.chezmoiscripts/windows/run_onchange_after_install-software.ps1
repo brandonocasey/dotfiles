@@ -20,7 +20,6 @@ if (-Not $ChocoInstalled) {
 
 
 $Packages = '7zip',
-'autohotkey.portable',
 'bitwarden',
 'brave',
 'chezmoi',
@@ -70,3 +69,6 @@ choco install wsl2 --params "/Version:2 /Retry:true" -y
 @"
 Install instructions here
 "@
+
+wsl2 --install Ubuntu
+wsl2 --set-default Ubuntu
