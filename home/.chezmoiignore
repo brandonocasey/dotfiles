@@ -19,8 +19,8 @@ Library/
 .chezmoiscripts/windows/**
 # ignore these files only on windows
 {{- else }}
-.config
-!.config/wezterm
+.config/*
+!.config/wezterm/**
 .envrc
 .telnetrc
 .tool-versions
