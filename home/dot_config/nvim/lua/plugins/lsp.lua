@@ -1,7 +1,7 @@
 return {
   {
     "mason-org/mason.nvim",
-    opts = { ensure_installed = { "ltex-ls-plus", "gh-actions-language-server", "markdownlint-cli2" } },
+    opts = { ensure_installed = { "ltex-ls-plus", "gh-actions-language-server", "markdownlint-cli2", "vacuum" } },
   },
 
   {
@@ -14,6 +14,7 @@ return {
         docker_compose_language_service = {},
         dockerls = {},
         gh_actions_ls = {},
+        vacuum = {}
         vale_ls = {
           settings = {
             initializationParams = {
@@ -95,3 +96,5 @@ return {
     },
   },
 }
+
+

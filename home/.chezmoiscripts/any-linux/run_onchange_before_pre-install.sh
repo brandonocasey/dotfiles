@@ -35,7 +35,7 @@ if [ "$UNAME" = "Darwin" ]; then
     sleep 5
   done
 else
-  install_linux_pkg curl git build-essential
+  install_linux_pkg curl git build-essential xsel
 fi
 
 # install brew if not installed
@@ -129,6 +129,7 @@ if [ "$(uname)" = "Darwin" ]; then
 
 cask 'font-iosevka-term-nerd-font'
 
+brew 'reattach-to-user-namespace'
 brew 'dockutil'
 brew 'mas'
 brew 'mist-cli'

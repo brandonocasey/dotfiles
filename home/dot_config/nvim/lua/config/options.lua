@@ -82,3 +82,12 @@ vim.opt.shortmess:append("c")
 -- vim.opt.clipboard = 'unnamedplus'
 -- Relative line numbers
 -- vim.opt.relativenumber = false
+--
+vim.filetype.add({
+  pattern = {
+    ["openapi.*%.ya?ml"] = "yaml.openapi",
+    ["swagger.*%.ya?ml"] = "yaml.openapi",
+    ["openapi.*%.json"] = "json.openapi",
+    ["swagger.*%.json"] = "json.openapi",
+  },
+})

@@ -62,6 +62,15 @@ return {
     lazy = false,
   },
 
+  -- yank over ssh or in tmux to the clipboard that is expected
+  {
+    "ibhagwan/smartyank.nvim",
+    lazy = false,
+    config = function()
+      require("smartyank").setup({})
+    end,
+  },
+
   -- pipe to nvim and open as a buffer
   {
     "willothy/flatten.nvim",
