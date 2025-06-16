@@ -14,7 +14,7 @@ return {
         docker_compose_language_service = {},
         dockerls = {},
         gh_actions_ls = {},
-        vacuum = {}
+        vacuum = {},
         vale_ls = {
           settings = {
             initializationParams = {
@@ -96,5 +96,3 @@ return {
     },
   },
 }
-
-

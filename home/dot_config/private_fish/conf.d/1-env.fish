@@ -118,6 +118,7 @@ set -gx VALE_CONFIG_PATH "$XDG_CONFIG_HOME/vale/.vale.ini"
 set -gx VALE_STYLES_PATH "$XDG_DATA_HOME/vale/styles"
 set -gx AWS_SHARED_CREDENTIALS_FILE "$XDG_CONFIG_HOME/aws/credentials"
 set -gx AWS_CONFIG_FILE "$XDG_CONFIG_HOME/aws/config"
+set -gx VACUUM "$XDG_CONFIG_HOME/vacuum/config.yaml"
 
 # set -gx GVIMINIT 'let $MYGVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/gvimrc" : "$XDG_CONFIG_HOME/nvim/init.gvim" | so $MYGVIMRC'
 set -gx VIMINIT 'let $MYVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/vimrc" : "$XDG_CONFIG_HOME/nvim/init.lua" | so $MYVIMRC'

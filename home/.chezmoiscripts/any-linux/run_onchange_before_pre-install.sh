@@ -100,6 +100,7 @@ brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
 brew 'imagemagick'
+brew 'ffmpeg'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
