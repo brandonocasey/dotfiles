@@ -64,6 +64,7 @@ vim.opt.pumheight = 10
 -- do not write backups
 vim.opt.writebackup = false
 
+vim.opt.shell = "/usr/bin/env bash"
 -- handled by nvchad
 vim.opt.showcmd = false
 -- handled by nvchad
