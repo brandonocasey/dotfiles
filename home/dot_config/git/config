@@ -127,20 +127,44 @@
 [hub]
   protocol = ssh
 
-# include a local config
+# include a local config defaults
 [include]
   path = ~/.config/git/local
 
 # config as described in https://superuser.com/a/1664624
-# if in ~/Projects/brandonocasey
 [includeIf "gitdir:~/Projects/brandonocasey/"]
   path = ~/.config/git/brandonocasey
 
 [includeIf "gitdir:~/projects/brandonocasey/"]
   path = ~/.config/git/brandonocasey
 
+[includeIf "gitdir:~/projects/jwplayer/"]
+  path = ~/.config/git/jwbrandon
+
 [includeIf "gitdir:~/Projects/jwplayer/"]
   path = ~/.config/git/jwbrandon
 
-[includeIf "gitdir:~/projects/jwplayer/"]
+[includeIf "hasconfig:remote.*.url:git@github.com:brandonocasey/**"]
+  path = ~/.config/git/brandonocasey
+
+[includeIf "hasconfig:remote.*.url:https://github.com/brandonocasey/**"]
+  path = ~/.config/git/brandonocasey
+
+[includeIf "hasconfig:remote.*.url:git@github.com:videojs/**"]
+  path = ~/.config/git/brandonocasey
+
+[includeIf "hasconfig:remote.*.url:https://github.com/videojs/**"]
+  path = ~/.config/git/brandonocasey
+
+[includeIf "hasconfig:remote.*.url:git@github.com:jwplayer/**"]
   path = ~/.config/git/jwbrandon
+
+[includeIf "hasconfig:remote.*.url:https://github.com/jwplayer/**"]
+  path = ~/.config/git/jwbrandon
+
+[includeIf "hasconfig:remote.*.url:git@github.com:jwbrandon/**"]
+  path = ~/.config/git/jwbrandon
+
+[includeIf "hasconfig:remote.*.url:https://github.com/jwbrandon/**"]
+  path = ~/.config/git/jwbrandon
+
