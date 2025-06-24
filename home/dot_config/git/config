@@ -133,15 +133,14 @@
 
 # config as described in https://superuser.com/a/1664624
 # if in ~/Projects/brandonocasey
-[includeIf "hasconfig:remote.*.url:git@github.com:brandonocasey/**"]
+[includeIf "gitdir:~/Projects/brandonocasey/"]
   path = ~/.config/git/brandonocasey
 
-[includeIf "hasconfig:remote.*.url:git@github.com:videojs/**"]
+[includeIf "gitdir:~/projects/brandonocasey/"]
   path = ~/.config/git/brandonocasey
 
-[includeIf "hasconfig:remote.*.url:git@github.com:jwplayer/**"]
+[includeIf "gitdir:~/Projects/jwplayer/"]
   path = ~/.config/git/jwbrandon
 
-[includeIf "hasconfig:remote.*.url:git@github.com:jwbrandon/**"]
+[includeIf "gitdir:~/projects/jwplayer/"]
   path = ~/.config/git/jwbrandon
-
