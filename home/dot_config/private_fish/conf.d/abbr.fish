@@ -134,7 +134,8 @@ abbr --add aider-btr aider --cache-prompts \
     --no-suggest-shell-commands \
     --yes-always \
     --no-detect-urls \
-    --map-tokens 2048
+    --map-tokens 0 \
+    --analytics-disable
 
 #
 # # keep env when going sudo
