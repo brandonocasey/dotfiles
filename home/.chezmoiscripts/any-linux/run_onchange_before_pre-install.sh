@@ -99,6 +99,7 @@ brew 'ctop'
 brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
+brew 'docker-buildx'
 brew 'imagemagick'
 brew 'ffmpeg'
 

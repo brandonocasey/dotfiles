@@ -130,7 +130,6 @@ end
 abbr --add aider-btr aider --cache-prompts \
     --dark-mode \
     --no-auto-commits \
-    --restore-chat-history \
     --no-suggest-shell-commands \
     --yes-always \
     --no-detect-urls \
