@@ -138,9 +138,6 @@
 [includeIf "gitdir:~/projects/brandonocasey/"]
   path = ~/.config/git/brandonocasey
 
-[includeIf "gitdir:~/projects/"]
-  path = ~/.config/git/brandonocasey
-
 [includeIf "gitdir:~/projects/jwplayer/"]
   path = ~/.config/git/jwbrandon
 
