@@ -2,3 +2,8 @@
 type = "git-repo"
 url = "https://github.com/tmux-plugins/tpm"
 refreshPeriod = "168h"
+
+[".claude/commands/plugins/tpm"]
+type = "file"
+url = "https://raw.githubusercontent.com/evmts/tevm-monorepo/refs/heads/main/.claude/commands/commit.md"
+refreshPeriod = "168h"
