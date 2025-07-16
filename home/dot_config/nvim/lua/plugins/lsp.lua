@@ -1,35 +1,3 @@
--- The configuration assumes that you've installed and
--- enabled the Biome LSP.
-
--- Whenever an LSP attaches
-vim.api.nvim_create_autocmd("LspAttach", {
-  callback = function(args)
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-
-    if not client then
-      return
-    end
-
-    -- When the client is Biome, add an automatic event on
-    -- save that runs Biome's "source.fixAll.biome" code action.
-    -- This takes care of things like JSX props sorting and
-    -- removing unused imports.
-    if client.name == "biome" then
-      vim.api.nvim_create_autocmd("BufWritePre", {
-        group = vim.api.nvim_create_augroup("BiomeFixAll", { clear = true }),
-        callback = function()
-          vim.lsp.buf.code_action({
-            context = {
-              only = { "source.fixAll.biome" },
-              diagnostics = {},
-            },
-            apply = true,
-          })
-        end,
-      })
-    end
-  end,
-})
 return {
   {
     "mason-org/mason.nvim",
@@ -45,7 +13,6 @@ return {
 
         marksman = {},
         typos_lsp = {},
-        biome = {},
         docker_compose_language_service = {},
         dockerls = {},
         gh_actions_ls = {},
@@ -94,10 +61,7 @@ return {
         vtsls = {
           settings = {
             typescript = {
-              format = {
-                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces = false,
-                insertSpaceAfterFunctionKeywordForAnonymousFunctions = false,
-              },
+              format = false,
               inlayHints = {
                 enumMemberValues = { enabled = false },
                 functionLikeReturnTypes = { enabled = false },
@@ -125,6 +89,11 @@ return {
           },
           settings = {
             useFlatConfig = true,
+          },
+        },
+        biome = {
+          settings = {
+            format = true,
           },
         },
       },

@@ -9,9 +9,6 @@ fi
 
 echo "Setting up ssh keys via bitwarden"
 bw login
-bw sync
-export BW_SESSION="$(bw unlock --raw)"
-echo "$BW_SESSION"
 
 TEMP="$(mktemp -d)"
 mkdir -p "$TEMP"
