@@ -1,0 +1,59 @@
+#!/bin/sh
+set -e
+
+# Check if feature name is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <feature-name>"
+    exit 1
+fi
+
+FEATURE_NAME="$1"
+
+# Get the current git directory
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: Not in a git repository"
+    exit 1
+fi
+
+# Get the root of the git repository
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+REPO_NAME="$(basename "$GIT_ROOT")"
+PARENT_DIR="$(dirname "$GIT_ROOT")"
+
+# Create worktree directory path
+WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+
+# Create the worktree
+echo "Creating worktree at: $WORKTREE_DIR"
+git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
+
+# Copy gitignored files
+echo "Copying gitignored files..."
+cd "$GIT_ROOT"
+
+# Get list of gitignored files (excluding .git directory)
+git status --ignored --porcelain | grep '^!!' | sed 's/^!! //' | while IFS= read -r ignored_path; do
+    # Skip .git directory
+    case "$ignored_path" in
+    .git/* | .git) continue ;;
+    esac
+
+    # Create parent directory if needed
+    if [ -e "$ignored_path" ]; then
+        target_dir="$(dirname "$WORKTREE_DIR/$ignored_path")"
+        mkdir -p "$target_dir"
+
+        # Copy the ignored file/directory
+        if [ -d "$ignored_path" ]; then
+            cp -r "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
+        else
+            cp "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
+        fi
+    fi
+done
+
+# Change to worktree directory and run claude
+echo "Launching claude in worktree..."
+cd "$WORKTREE_DIR"
+exec claude
+
