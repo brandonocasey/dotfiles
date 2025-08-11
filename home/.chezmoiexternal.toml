@@ -7,8 +7,3 @@ refreshPeriod = "168h"
 type = "file"
 url = "https://raw.githubusercontent.com/evmts/tevm-monorepo/refs/heads/main/.claude/commands/commit.md"
 refreshPeriod = "168h"
-
-[".config/fish/conf.d/base16-onedark-fzf.fish"]
-type = "file"
-url = "https://raw.githubusercontent.com/tinted-theming/tinted-fzf/refs/heads/main/fish/base16-onedark.fish"
-refreshPeriod = "168h"
