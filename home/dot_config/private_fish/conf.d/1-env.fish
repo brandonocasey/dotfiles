@@ -141,57 +141,7 @@ else
     set -gx LSCOLORS GxFxCxDxBxegedabagaced
 end
 
-function update_theme --on-variable OS_APPEARANCE
-    if [ "$OS_APPEARANCE" = DARK ]
-        set -gx BAT_THEME OneHalfDark
-        if type -q vivid
-            set -gx LS_COLORS "$(vivid generate one-dark)"
-        end
-        # https://github.com/tinted-theming/tinted-fzf/blob/main/fish/base24-one-dark.fish
-        set -l FZF_NON_COLOR_OPTS
-
-        for arg in (echo $FZF_DEFAULT_OPTS | tr " " "\n")
-            if not string match -q -- "--color*" $arg
-                set -a FZF_NON_COLOR_OPTS $arg
-            end
-        end
-
-        set -Ux FZF_DEFAULT_OPTS "$FZF_NON_COLOR_OPTS" \
-            " --color=bg:#282c34,fg:#abb2bf,hl:#d18f52" \
-            " --color=bg+:#4f5666,fg+:#a5e075,hl+:#f0a45d" \
-            " --color=info:#c162de,border:#c162de,prompt:#8cc265" \
-            " --color=pointer:#4aa5f0,marker:#ff616e,spinner:#ff616e,header:#e05561"
-    else if [ "$OS_APPEARANCE" = LIGHT ]
-        set -gx BAT_THEME OneHalfLight
-        if type -q vivid
-            set -gx LS_COLORS "$(vivid generate one-light)"
-        end
-
-        # https://github.com/tinted-theming/tinted-fzf/blob/main/fish/base24-one-light.fish
-        set -l FZF_NON_COLOR_OPTS
-
-        for arg in (echo $FZF_DEFAULT_OPTS | tr " " "\n")
-            if not string match -q -- "--color*" $arg
-                set -a FZF_NON_COLOR_OPTS $arg
-            end
-        end
-
-        set -Ux FZF_DEFAULT_OPTS "$FZF_NON_COLOR_OPTS" \
-            " --color=bg:#e7e7e9,fg:#383a42,hl:#c18401" \
-            " --color=bg+:#cacace,fg+:#6db76c,hl+:#f4a701" \
-            " --color=info:#a626a4,border:#a626a4,prompt:#50a14f" \
-            " --color=pointer:#4078f2,marker:#ec2258,spinner:#ec2258,header:#ca1243"
-    end
-end
-
-if [ "$UNAME" = Darwin ]
-    if defaults read -g AppleInterfaceStyle 1>/dev/null 2>/dev/null
-        set -Ux OS_APPEARANCE DARK
-    else
-        set -Ux OS_APPEARANCE LIGHT
-    end
-    update_theme
-end
+set -gx BAT_THEME OneHalfDark
 
 # Don't mangle escaped characters with less
 set -gx LESS -R
