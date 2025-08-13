@@ -81,7 +81,7 @@ return {
         },
         biome = {
           settings = {
-            format = false,
+            require_config_file = true,
           },
         },
         eslint = {

@@ -1,20 +1,3 @@
-local supported = {
-  "astro",
-  "css",
-  "graphql",
-  -- "html",
-  "javascript",
-  "javascriptreact",
-  "json",
-  "jsonc",
-  -- "markdown",
-  "svelte",
-  "typescript",
-  "typescriptreact",
-  "vue",
-  -- "yaml",
-}
-
 return {
   -- Make the home key go to ^ or 0 in a smart way similar to most IDEs
   { "bwpge/homekey.nvim", event = "VeryLazy" },
@@ -29,22 +12,6 @@ return {
     opts = {
       colorscheme = "onedark",
     },
-  },
-
-  {
-    "stevearc/conform.nvim",
-    opts = function(_, opts)
-      opts.formatters_by_ft = opts.formatters_by_ft or {}
-      for _, ft in ipairs(supported) do
-        opts.formatters_by_ft[ft] = opts.formatters_by_ft[ft] or {}
-        table.insert(opts.formatters_by_ft[ft], "biome-check")
-      end
-
-      opts.formatters = opts.formatters or {}
-      opts.formatters.biome_check = {
-        require_cwd = true,
-      }
-    end,
   },
 
   {
