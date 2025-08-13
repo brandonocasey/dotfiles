@@ -79,6 +79,11 @@ return {
             },
           },
         },
+        biome = {
+          settings = {
+            format = false,
+          },
+        },
         eslint = {
           filetypes = {
             "markdown",
@@ -95,11 +100,6 @@ return {
           },
           settings = {
             useFlatConfig = true,
-          },
-        },
-        biome = {
-          settings = {
-            format = false,
           },
         },
       },
