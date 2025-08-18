@@ -28,30 +28,28 @@ echo "Creating worktree at: $WORKTREE_DIR"
 git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
 
 # Copy gitignored files in background
-{
-    cd "$GIT_ROOT"
-    
-    # Get list of gitignored files (excluding .git directory)
-    git status --ignored --porcelain | grep '^!!' | sed 's/^!! //' | while IFS= read -r ignored_path; do
-        # Skip .git directory
-        case "$ignored_path" in
-        .git/* | .git) continue ;;
-        esac
+cd "$GIT_ROOT"
 
-        # Create parent directory if needed
-        if [ -e "$ignored_path" ]; then
-            target_dir="$(dirname "$WORKTREE_DIR/$ignored_path")"
-            mkdir -p "$target_dir"
+# Get list of gitignored files (excluding .git directory)
+git status --ignored --porcelain | grep '^!!' | sed 's/^!! //' | while IFS= read -r ignored_path; do
+    # Skip .git directory
+    case "$ignored_path" in
+    .git/* | .git) continue ;;
+    esac
 
-            # Copy the ignored file/directory
-            if [ -d "$ignored_path" ]; then
-                cp -r "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
-            else
-                cp "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
-            fi
+    # Create parent directory if needed
+    if [ -e "$ignored_path" ]; then
+        target_dir="$(dirname "$WORKTREE_DIR/$ignored_path")"
+        mkdir -p "$target_dir"
+
+        # Copy the ignored file/directory
+        if [ -d "$ignored_path" ]; then
+            cp -r "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
+        else
+            cp "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
         fi
-    done
-} &
+    fi
+done
 
 # Change to worktree directory and run claude
 echo "Launching claude in worktree..."
@@ -71,43 +69,42 @@ printf "Do you want to merge branch '$FEATURE_NAME' into main and delete the wor
 read -r response
 
 case "$response" in
-    [yY]|[yY][eE][sS])
-        # Go back to original repo to merge
-        cd "$GIT_ROOT"
-        
-        # Check if we're on main/master
-        current_branch=$(git symbolic-ref --short HEAD)
-        if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
-            # Try to switch to main, fall back to master
-            git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
-                echo "Error: Could not switch to main/master branch"
-                exit 1
-            }
-        fi
-        
-        echo "Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
-        if git merge "$FEATURE_NAME"; then
-            echo "Merge successful!"
-            
-            # Delete the branch
-            echo "Deleting branch '$FEATURE_NAME'..."
-            git branch -d "$FEATURE_NAME"
-            
-            # Remove the worktree
-            echo "Removing worktree at '$WORKTREE_DIR'..."
-            git worktree remove "$WORKTREE_DIR"
-            
-            echo "Cleanup complete!"
-        else
-            echo "Merge conflicts detected. Please resolve them manually."
-            echo "Worktree preserved at: $WORKTREE_DIR"
-            echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
-        fi
-        ;;
-    *)
-        echo "Worktree preserved at: $WORKTREE_DIR"
-        echo "To merge later: git merge '$FEATURE_NAME'"
-        echo "To clean up: git worktree remove '$WORKTREE_DIR'"
-        ;;
-esac
+[yY] | [yY][eE][sS])
+    # Go back to original repo to merge
+    cd "$GIT_ROOT"
 
+    # Check if we're on main/master
+    current_branch=$(git symbolic-ref --short HEAD)
+    if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
+        # Try to switch to main, fall back to master
+        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+            echo "Error: Could not switch to main/master branch"
+            exit 1
+        }
+    fi
+
+    echo "Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
+    if git merge "$FEATURE_NAME"; then
+        echo "Merge successful!"
+
+        # Delete the branch
+        echo "Deleting branch '$FEATURE_NAME'..."
+        git branch -d "$FEATURE_NAME"
+
+        # Remove the worktree
+        echo "Removing worktree at '$WORKTREE_DIR'..."
+        git worktree remove "$WORKTREE_DIR"
+
+        echo "Cleanup complete!"
+    else
+        echo "Merge conflicts detected. Please resolve them manually."
+        echo "Worktree preserved at: $WORKTREE_DIR"
+        echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+    fi
+    ;;
+*)
+    echo "Worktree preserved at: $WORKTREE_DIR"
+    echo "To merge later: git merge '$FEATURE_NAME'"
+    echo "To clean up: git worktree remove '$WORKTREE_DIR'"
+    ;;
+esac
