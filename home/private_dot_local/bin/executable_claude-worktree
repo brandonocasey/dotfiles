@@ -1,95 +1,108 @@
 #!/bin/sh
 set -e
 
-# Parse arguments
-CLEAN_MODE=false
-FEATURE_NAME=""
-
-while [ $# -gt 0 ]; do
-    case $1 in
-        -h|--help)
-            echo "Usage: $0 <feature-name>"
-            echo "       $0 --clean <feature-name>"
-            echo ""
-            echo "Creates a git worktree for feature development with Claude"
-            echo ""
-            echo "Arguments:"
-            echo "  feature-name    Name of the feature branch to create/clean"
-            echo ""
-            echo "Options:"
-            echo "  -h, --help     Show this help message"
-            echo "  --clean        Remove worktree, branch, and localias for feature"
-            echo ""
-            echo "The script will:"
-            echo "  1. Create a worktree in a sibling directory"
-            echo "  2. Create or checkout the feature branch"
-            echo "  3. Install dependencies if package files are found"
-            echo "  4. Set up localias with random port (<feature>.test)"
-            echo "  5. Set terminal/window title"
-            echo "  6. Launch Claude"
-            echo "  7. After Claude exits, offer to merge and cleanup"
-            exit 0
-            ;;
-        --clean)
-            CLEAN_MODE=true
-            shift
-            ;;
-        -*)
-            echo "Unknown option: $1"
-            echo "Use -h or --help for more information"
-            exit 1
-            ;;
-        *)
-            if [ -z "$FEATURE_NAME" ]; then
-                FEATURE_NAME="$1"
-            else
-                echo "Too many arguments"
-                echo "Use -h or --help for more information"
-                exit 1
-            fi
-            shift
-            ;;
-    esac
-done
-
-# Check if feature name is provided
-if [ -z "$FEATURE_NAME" ]; then
+# Show help message
+show_help() {
     echo "Usage: $0 <feature-name>"
     echo "       $0 --clean <feature-name>"
-    echo "Use -h or --help for more information"
-    exit 1
-fi
+    echo ""
+    echo "Creates a git worktree for feature development with Claude"
+    echo ""
+    echo "Arguments:"
+    echo "  feature-name    Name of the feature branch to create/clean"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo "  --clean        Remove worktree, branch, and localias for feature"
+    echo ""
+    echo "The script will:"
+    echo "  1. Create a worktree in a sibling directory"
+    echo "  2. Create or checkout the feature branch"
+    echo "  3. Install dependencies if package files are found"
+    echo "  4. Set up localias with random port (<feature>.localhost)"
+    echo "  5. Set terminal/window title"
+    echo "  6. Launch Claude"
+    echo "  7. After Claude exits, offer to merge and cleanup"
+}
 
-# Check if running in tmux
-if [ -z "$TMUX" ]; then
-    echo "Error: This script must be run from within tmux"
-    echo "Start tmux first: tmux new-session"
-    exit 1
-fi
+# Parse command line arguments
+parse_arguments() {
+    CLEAN_MODE=false
+    FEATURE_NAME=""
 
-# Get the current git directory
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-    echo "Error: Not in a git repository"
-    exit 1
-fi
+    while [ $# -gt 0 ]; do
+        case $1 in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            --clean)
+                CLEAN_MODE=true
+                shift
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                echo "Use -h or --help for more information"
+                exit 1
+                ;;
+            *)
+                if [ -z "$FEATURE_NAME" ]; then
+                    FEATURE_NAME="$1"
+                else
+                    echo "Too many arguments"
+                    echo "Use -h or --help for more information"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
 
-# Get the root of the git repository
-GIT_ROOT="$(git rev-parse --show-toplevel)"
-REPO_NAME="$(basename "$GIT_ROOT")"
-PARENT_DIR="$(dirname "$GIT_ROOT")"
+    # Check if feature name is provided
+    if [ -z "$FEATURE_NAME" ]; then
+        echo "Usage: $0 <feature-name>"
+        echo "       $0 --clean <feature-name>"
+        echo "Use -h or --help for more information"
+        exit 1
+    fi
+}
 
-# Create worktree directory path
-WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+# Validate environment and git repository
+validate_environment() {
+    # Check if running in tmux
+    if [ -z "$TMUX" ]; then
+        echo "Error: This script must be run from within tmux"
+        echo "Start tmux first: tmux new-session"
+        exit 1
+    fi
 
-# Handle clean mode
-if [ "$CLEAN_MODE" = true ]; then
+    # Get the current git directory
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "Error: Not in a git repository"
+        exit 1
+    fi
+
+    # Get the root of the git repository
+    GIT_ROOT="$(git rev-parse --show-toplevel)"
+    REPO_NAME="$(basename "$GIT_ROOT")"
+    PARENT_DIR="$(dirname "$GIT_ROOT")"
+
+    # Create worktree directory path
+    WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+}
+
+# Handle clean mode cleanup
+handle_clean_mode() {
     echo "🧹 Cleaning up feature: $FEATURE_NAME"
+    
+    # Kill any processes running in the worktree directory first
+    kill_worktree_processes
     
     # Remove localias if it exists
     if command -v localias >/dev/null 2>&1; then
-        if localias list | grep -q "${FEATURE_NAME}.test"; then
-            echo "🔗 Removing localias: ${FEATURE_NAME}.test"
-            localias remove "${FEATURE_NAME}.test"
+        if localias list | grep -q "${FEATURE_NAME}.localhost"; then
+            echo "🔗 Removing localias: ${FEATURE_NAME}.localhost"
+            localias remove "${FEATURE_NAME}.localhost"
         fi
     fi
     
@@ -111,18 +124,18 @@ if [ "$CLEAN_MODE" = true ]; then
     fi
     
     echo "✨ Cleanup complete for feature: $FEATURE_NAME"
-    exit 0
-fi
+}
 
-# Create the worktree
-echo "📁 Creating worktree at: $WORKTREE_DIR"
-echo "🌿 Branch: $FEATURE_NAME"
-git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
+# Create and setup worktree
+create_worktree() {
+    echo "📁 Creating worktree at: $WORKTREE_DIR"
+    echo "🌿 Branch: $FEATURE_NAME"
+    git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
 
-
-# Change to worktree directory and run claude
-echo "📂 Switching to worktree directory..."
-cd "$WORKTREE_DIR"
+    # Change to worktree directory
+    echo "📂 Switching to worktree directory..."
+    cd "$WORKTREE_DIR"
+}
 
 # Auto-install dependencies if package files exist
 auto_install_deps() {
@@ -175,7 +188,7 @@ setup_localias() {
         PORT=$((3000 + RANDOM % 6000))
     done
     
-    ALIAS="${FEATURE_NAME}.test"
+    ALIAS="${FEATURE_NAME}.localhost"
     
     echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
     localias start >/dev/null 2>&1 || true  # Start daemon if not running
@@ -184,7 +197,6 @@ setup_localias() {
     
     # Export environment variables for development
     export PORT
-    export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
     echo "📡 Development server port: $PORT"
     echo "🌐 Local alias: https://$ALIAS"
 }
@@ -219,14 +231,19 @@ set_terminal_title() {
 
 set_terminal_title "${REPO_NAME}-${FEATURE_NAME}"
 
-# Kill any processes running in the worktree directory
+# Kill any processes running in the worktree directory (except this script)
 kill_worktree_processes() {
     if [ -d "$WORKTREE_DIR" ]; then
         echo "🔪 Killing processes running in worktree directory..."
+        # Get our own PID to exclude it
+        script_pid=$$
+        
         # Find and kill processes with working directory in the worktree
         lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u | while read -r pid; do
-            if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-                echo "  Killing process $pid"
+            if [ -n "$pid" ] && [ "$pid" != "$script_pid" ] && kill -0 "$pid" 2>/dev/null; then
+                # Get process name for logging
+                process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
+                echo "  Killing process $pid ($process_name)"
                 kill "$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null
             fi
         done
@@ -265,39 +282,70 @@ launch_claude() {
     kill_worktree_processes
 }
 
-# Launch claude directly (already verified we're in tmux)
-launch_claude
+# Main execution function
+main() {
+    # Parse arguments and validate environment
+    parse_arguments "$@"
+    validate_environment
 
-# After claude exits, ask about merging and cleanup
-echo ""
-echo "✅ Claude session completed."
+    # Handle clean mode if requested (exit early)
+    if [ "$CLEAN_MODE" = true ]; then
+        handle_clean_mode
+        exit 0
+    fi
 
-# Ask about merging first
-while true; do
-    printf "Merge branch '$FEATURE_NAME' into main? (Y=squash, m=merge, n=no): "
-    read -r merge_response
-    
-    case "$merge_response" in
-    [yY] | [yY][eE][sS] | "")
-        merge_type="squash"
-        break
-        ;;
-    [mM] | [mM][eE][rR][gG][eE])
-        merge_type="merge"
-        break
-        ;;
-    [nN] | [nN][oO])
-        merge_type="no"
-        break
-        ;;
-    *)
-        echo "Please answer Y (squash), m (merge), or n (no)"
-        ;;
-    esac
-done
+    # Create worktree and setup environment
+    create_worktree
+    auto_install_deps
+    setup_localias
+    set_terminal_title "${REPO_NAME}-${FEATURE_NAME}"
 
-# Handle merging
-if [ "$merge_type" != "no" ]; then
+    # Launch Claude
+    launch_claude
+
+    # Post-Claude processing
+    echo ""
+    echo "✅ Claude session completed."
+
+    # Handle merge and cleanup
+    get_merge_preference
+    if [ "$merge_type" != "no" ]; then
+        handle_merge
+        handle_push
+        cleanup_after_merge
+    else
+        handle_no_merge_cleanup
+    fi
+}
+
+# Get merge preference from user
+get_merge_preference() {
+    while true; do
+        printf "Merge branch '$FEATURE_NAME' into main? (Y=squash, m=merge, n=no): "
+        read -r merge_response
+        
+        case "$merge_response" in
+        [yY] | [yY][eE][sS] | "")
+            merge_type="squash"
+            break
+            ;;
+        [mM] | [mM][eE][rR][gG][eE])
+            merge_type="merge"
+            break
+            ;;
+        [nN] | [nN][oO])
+            merge_type="no"
+            break
+            ;;
+        *)
+            echo "Please answer Y (squash), m (merge), or n (no)"
+            ;;
+        esac
+    done
+}
+
+# Handle the merge operation
+handle_merge() {
     # Go back to original repo to merge
     cd "$GIT_ROOT"
 
@@ -342,8 +390,10 @@ if [ "$merge_type" != "no" ]; then
             exit 1
         fi
     fi
+}
 
-    # Auto-push if no unstaged changes, otherwise ask
+# Handle pushing changes to remote
+handle_push() {
     if [ "$merge_successful" = true ]; then
         if git diff --quiet && git diff --cached --quiet; then
             echo "🚀 Auto-pushing to remote (no unstaged changes)..."
@@ -361,8 +411,10 @@ if [ "$merge_type" != "no" ]; then
             esac
         fi
     fi
+}
 
-    # Automatic cleanup after successful merge
+# Clean up worktree and branch after merge
+cleanup_after_merge() {
     # Check for unstaged changes in the worktree
     cd "$WORKTREE_DIR"
     if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
@@ -395,7 +447,7 @@ if [ "$merge_type" != "no" ]; then
 
     # Remove localias
     if command -v localias >/dev/null 2>&1; then
-        ALIAS="${FEATURE_NAME}.test"
+        ALIAS="${FEATURE_NAME}.localhost"
         if localias list | grep -q "$ALIAS"; then
             echo "🔗 Removing localias: $ALIAS"
             localias remove "$ALIAS"
@@ -415,7 +467,9 @@ if [ "$merge_type" != "no" ]; then
     fi
 
     echo "✨ Cleanup complete!"
-else
+}
+# Handle cleanup when no merge is performed
+handle_no_merge_cleanup() {
     echo "Skipping merge."
     
     # Ask about cleanup only if no merge
@@ -440,64 +494,13 @@ else
 
     # Handle cleanup
     if [ "$cleanup_response" = "y" ]; then
-        # Check for unstaged changes in the worktree
-        cd "$WORKTREE_DIR"
-        if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-            echo "Warning: The worktree has unstaged changes, staged changes, or untracked files."
-            git status --short
-            
-            while true; do
-                printf "Force remove the worktree anyway? (y/N): "
-                read -r force_response
-                
-                case "$force_response" in
-                [yY] | [yY][eE][sS])
-                    force_remove=true
-                    break
-                    ;;
-                [nN] | [nN][oO] | "")
-                    echo "Worktree preserved at: $WORKTREE_DIR"
-                    echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
-                    exit 0
-                    ;;
-                *)
-                    echo "Please answer y(es) or n(o)"
-                    ;;
-                esac
-            done
-        fi
-
-        # Go back to original repo for cleanup
-        cd "$GIT_ROOT"
-
-        # Remove localias
-        if command -v localias >/dev/null 2>&1; then
-            ALIAS="${FEATURE_NAME}.test"
-            if localias list | grep -q "$ALIAS"; then
-                echo "🔗 Removing localias: $ALIAS"
-                localias remove "$ALIAS"
-            fi
-        fi
-
-        # Go back to original repo for cleanup
-        cd "$GIT_ROOT"
-
-        # Delete the branch
-        echo "🗑️  Deleting branch '$FEATURE_NAME'..."
-        git branch -D "$FEATURE_NAME"
-
-        # Remove the worktree
-        echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
-        if [ "$force_remove" = true ]; then
-            git worktree remove --force "$WORKTREE_DIR"
-        else
-            git worktree remove "$WORKTREE_DIR"
-        fi
-
-        echo "✨ Cleanup complete!"
+        cleanup_after_merge  # Reuse the same cleanup function
     else
         echo "Worktree preserved at: $WORKTREE_DIR"
         echo "To merge later: git merge '$FEATURE_NAME'"
         echo "To clean up later: git worktree remove '$WORKTREE_DIR' && git branch -d '$FEATURE_NAME'"
     fi
-fi
+}
+
+# Execute main function with all arguments
+main "$@"
