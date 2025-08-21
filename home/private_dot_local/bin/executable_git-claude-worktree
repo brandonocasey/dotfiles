@@ -60,58 +60,28 @@ cd "$WORKTREE_DIR"
 auto_install_deps() {
     if [ -f "package.json" ]; then
         if command -v npm >/dev/null 2>&1; then
-            printf "Run npm install? (y/N): "
-            read -r install_response
-            case "$install_response" in
-            [yY] | [yY][eE][sS])
-                echo "📦 Installing npm dependencies..."
-                npm install
-                ;;
-            esac
+            echo "📦 Installing npm dependencies..."
+            npm install
         fi
     elif [ -f "yarn.lock" ] && [ -f "package.json" ]; then
         if command -v yarn >/dev/null 2>&1; then
-            printf "Run yarn install? (y/N): "
-            read -r install_response
-            case "$install_response" in
-            [yY] | [yY][eE][sS])
-                echo "🧶 Installing yarn dependencies..."
-                yarn install
-                ;;
-            esac
+            echo "🧶 Installing yarn dependencies..."
+            yarn install
         fi
     elif [ -f "Cargo.toml" ]; then
         if command -v cargo >/dev/null 2>&1; then
-            printf "Run cargo build? (y/N): "
-            read -r install_response
-            case "$install_response" in
-            [yY] | [yY][eE][sS])
-                echo "🦀 Building Rust project..."
-                cargo build
-                ;;
-            esac
+            echo "🦀 Building Rust project..."
+            cargo build
         fi
     elif [ -f "requirements.txt" ]; then
         if command -v pip >/dev/null 2>&1; then
-            printf "Run pip install -r requirements.txt? (y/N): "
-            read -r install_response
-            case "$install_response" in
-            [yY] | [yY][eE][sS])
-                echo "🐍 Installing Python dependencies..."
-                pip install -r requirements.txt
-                ;;
-            esac
+            echo "🐍 Installing Python dependencies..."
+            pip install -r requirements.txt
         fi
     elif [ -f "Gemfile" ]; then
         if command -v bundle >/dev/null 2>&1; then
-            printf "Run bundle install? (y/N): "
-            read -r install_response
-            case "$install_response" in
-            [yY] | [yY][eE][sS])
-                echo "💎 Installing Ruby dependencies..."
-                bundle install
-                ;;
-            esac
+            echo "💎 Installing Ruby dependencies..."
+            bundle install
         fi
     fi
 }
@@ -147,29 +117,41 @@ set_terminal_title() {
 set_terminal_title "${REPO_NAME}-${FEATURE_NAME}"
 
 # Launch Claude with error recovery
-if ! claude --trust; then
-    echo ""
-    echo "⚠️  Claude exited with an error or was interrupted."
-    
-    while true; do
-        printf "Continue with merge/cleanup options anyway? (y/N): "
-        read -r continue_response
+launch_claude() {
+    if ! claude; then
+        echo ""
+        echo "⚠️  Claude exited with an error or was interrupted."
         
-        case "$continue_response" in
-        [yY] | [yY][eE][sS])
-            break
-            ;;
-        [nN] | [nN][oO] | "")
-            echo "📁 Worktree preserved at: $WORKTREE_DIR"
-            echo "🌿 Branch '$FEATURE_NAME' available for later work"
-            echo "🧹 To clean up later: git worktree remove '$WORKTREE_DIR' && git branch -d '$FEATURE_NAME'"
-            exit 0
-            ;;
-        *)
-            echo "Please answer y(es) or n(o)"
-            ;;
-        esac
-    done
+        while true; do
+            printf "Continue with merge/cleanup options anyway? (y/N): "
+            read -r continue_response
+            
+            case "$continue_response" in
+            [yY] | [yY][eE][sS])
+                break
+                ;;
+            [nN] | [nN][oO] | "")
+                echo "📁 Worktree preserved at: $WORKTREE_DIR"
+                echo "🌿 Branch '$FEATURE_NAME' available for later work"
+                echo "🧹 To clean up later: git worktree remove '$WORKTREE_DIR' && git branch -d '$FEATURE_NAME'"
+                exit 0
+                ;;
+            *)
+                echo "Please answer y(es) or n(o)"
+                ;;
+            esac
+        done
+    fi
+}
+
+# Check if we're already in tmux
+if [ -z "$TMUX" ]; then
+    # Not in tmux, start a new session
+    echo "🖥️  Starting tmux session: ${REPO_NAME}-${FEATURE_NAME}"
+    exec tmux new-session -d -s "${REPO_NAME}-${FEATURE_NAME}" -c "$WORKTREE_DIR" \; send-keys "claude" Enter \; attach
+else
+    # Already in tmux, just launch claude
+    launch_claude
 fi
 
 # After claude exits, ask about merging and cleanup
