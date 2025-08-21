@@ -180,12 +180,13 @@ setup_localias() {
     echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
     localias start >/dev/null 2>&1 || true  # Start daemon if not running
     localias set "$ALIAS" "$PORT"
+    localias reload >/dev/null 2>&1 || true  # Reload configuration
     
     # Export environment variables for development
     export PORT
     export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
     echo "📡 Development server port: $PORT"
-    echo "🌐 Local alias: http://$ALIAS"
+    echo "🌐 Local alias: https://$ALIAS"
 }
 
 setup_localias
@@ -477,6 +478,13 @@ else
                 localias remove "$ALIAS"
             fi
         fi
+
+        # Go back to original repo for cleanup
+        cd "$GIT_ROOT"
+
+        # Delete the branch
+        echo "🗑️  Deleting branch '$FEATURE_NAME'..."
+        git branch -D "$FEATURE_NAME"
 
         # Remove the worktree
         echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
