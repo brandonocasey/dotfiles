@@ -119,6 +119,8 @@ brew 'htmlq'
 ## unsupported on arm
 #tap 'doron-cohen/tap'
 #brew 'doron-cohen/tap/antidot'
+tap 'peterldowns/tap'
+brew 'peterldowns/tap/localias'
 
 EOF
   )
