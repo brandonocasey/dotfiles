@@ -1,9 +1,32 @@
 #!/bin/sh
 set -e
 
+# Show help if requested
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo "Usage: $0 <feature-name>"
+    echo ""
+    echo "Creates a git worktree for feature development with Claude"
+    echo ""
+    echo "Arguments:"
+    echo "  feature-name    Name of the feature branch to create"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help     Show this help message"
+    echo ""
+    echo "The script will:"
+    echo "  1. Create a worktree in a sibling directory"
+    echo "  2. Create or checkout the feature branch"
+    echo "  3. Install dependencies if package files are found"
+    echo "  4. Set terminal/window title"
+    echo "  5. Launch Claude with --trust flag"
+    echo "  6. After Claude exits, offer to merge and cleanup"
+    exit 0
+fi
+
 # Check if feature name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <feature-name>"
+    echo "Use -h or --help for more information"
     exit 1
 fi
 
@@ -24,34 +47,134 @@ PARENT_DIR="$(dirname "$GIT_ROOT")"
 WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
 
 # Create the worktree
-echo "Creating worktree at: $WORKTREE_DIR"
+echo "📁 Creating worktree at: $WORKTREE_DIR"
+echo "🌿 Branch: $FEATURE_NAME"
 git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
 
 
 # Change to worktree directory and run claude
-echo "Launching claude in worktree..."
+echo "📂 Switching to worktree directory..."
 cd "$WORKTREE_DIR"
 
-# Run worktree setup script if it exists
-if [ -f "scripts/worktree-setup" ]; then
-    if [ -x "scripts/worktree-setup" ]; then
-        echo "Running worktree setup script..."
-        ./scripts/worktree-setup
-    else
-        echo "Warning: scripts/worktree-setup exists but is not executable"
+# Auto-install dependencies if package files exist
+auto_install_deps() {
+    if [ -f "package.json" ]; then
+        if command -v npm >/dev/null 2>&1; then
+            printf "Run npm install? (y/N): "
+            read -r install_response
+            case "$install_response" in
+            [yY] | [yY][eE][sS])
+                echo "📦 Installing npm dependencies..."
+                npm install
+                ;;
+            esac
+        fi
+    elif [ -f "yarn.lock" ] && [ -f "package.json" ]; then
+        if command -v yarn >/dev/null 2>&1; then
+            printf "Run yarn install? (y/N): "
+            read -r install_response
+            case "$install_response" in
+            [yY] | [yY][eE][sS])
+                echo "🧶 Installing yarn dependencies..."
+                yarn install
+                ;;
+            esac
+        fi
+    elif [ -f "Cargo.toml" ]; then
+        if command -v cargo >/dev/null 2>&1; then
+            printf "Run cargo build? (y/N): "
+            read -r install_response
+            case "$install_response" in
+            [yY] | [yY][eE][sS])
+                echo "🦀 Building Rust project..."
+                cargo build
+                ;;
+            esac
+        fi
+    elif [ -f "requirements.txt" ]; then
+        if command -v pip >/dev/null 2>&1; then
+            printf "Run pip install -r requirements.txt? (y/N): "
+            read -r install_response
+            case "$install_response" in
+            [yY] | [yY][eE][sS])
+                echo "🐍 Installing Python dependencies..."
+                pip install -r requirements.txt
+                ;;
+            esac
+        fi
+    elif [ -f "Gemfile" ]; then
+        if command -v bundle >/dev/null 2>&1; then
+            printf "Run bundle install? (y/N): "
+            read -r install_response
+            case "$install_response" in
+            [yY] | [yY][eE][sS])
+                echo "💎 Installing Ruby dependencies..."
+                bundle install
+                ;;
+            esac
+        fi
     fi
-fi
+}
 
-# Rename tmux window if we're in one
-if [ -n "$TMUX" ]; then
-    tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
-fi
+auto_install_deps
 
-claude
+# Set terminal/window title
+set_terminal_title() {
+    local title="$1"
+    
+    # tmux
+    if [ -n "$TMUX" ]; then
+        tmux rename-window "$title"
+    fi
+    
+    # iTerm2, Terminal.app, and other terminals that support OSC sequences
+    case "$TERM_PROGRAM" in
+        "iTerm.app"|"Apple_Terminal")
+            printf "\033]0;%s\007" "$title"
+            ;;
+        *)
+            # Generic terminal title setting (works with most modern terminals)
+            printf "\033]2;%s\033\\" "$title"
+            ;;
+    esac
+    
+    # GNU Screen
+    if [ -n "$STY" ]; then
+        screen -X title "$title"
+    fi
+}
+
+set_terminal_title "${REPO_NAME}-${FEATURE_NAME}"
+
+# Launch Claude with error recovery
+if ! claude --trust; then
+    echo ""
+    echo "⚠️  Claude exited with an error or was interrupted."
+    
+    while true; do
+        printf "Continue with merge/cleanup options anyway? (y/N): "
+        read -r continue_response
+        
+        case "$continue_response" in
+        [yY] | [yY][eE][sS])
+            break
+            ;;
+        [nN] | [nN][oO] | "")
+            echo "📁 Worktree preserved at: $WORKTREE_DIR"
+            echo "🌿 Branch '$FEATURE_NAME' available for later work"
+            echo "🧹 To clean up later: git worktree remove '$WORKTREE_DIR' && git branch -d '$FEATURE_NAME'"
+            exit 0
+            ;;
+        *)
+            echo "Please answer y(es) or n(o)"
+            ;;
+        esac
+    done
+fi
 
 # After claude exits, ask about merging and cleanup
 echo ""
-echo "Claude session ended."
+echo "✅ Claude session completed."
 
 # Ask about merging first
 while true; do
@@ -93,11 +216,11 @@ if [ "$merge_type" != "no" ]; then
     fi
 
     if [ "$merge_type" = "squash" ]; then
-        echo "Squash merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
+        echo "🔄 Squash merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
         if git merge --squash "$FEATURE_NAME"; then
             # Commit the squashed changes (opens editor)
             if git commit; then
-                echo "Squash merge successful!"
+                echo "✅ Squash merge successful!"
                 merge_successful=true
             else
                 echo "Commit cancelled or failed."
@@ -112,9 +235,9 @@ if [ "$merge_type" != "no" ]; then
             exit 1
         fi
     else
-        echo "Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
+        echo "🔀 Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
         if git merge "$FEATURE_NAME"; then
-            echo "Merge successful!"
+            echo "✅ Merge successful!"
             merge_successful=true
         else
             echo "Merge conflicts detected. Please resolve them manually."
@@ -122,6 +245,19 @@ if [ "$merge_type" != "no" ]; then
             echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
             exit 1
         fi
+    fi
+
+    # Offer to push to remote after successful merge
+    if [ "$merge_successful" = true ]; then
+        printf "Push changes to remote? (y/N): "
+        read -r push_response
+        case "$push_response" in
+        [yY] | [yY][eE][sS])
+            current_branch=$(git symbolic-ref --short HEAD)
+            echo "🚀 Pushing $current_branch to remote..."
+            git push
+            ;;
+        esac
     fi
 
     # Automatic cleanup after successful merge
@@ -156,18 +292,18 @@ if [ "$merge_type" != "no" ]; then
     cd "$GIT_ROOT"
 
     # Delete the branch
-    echo "Deleting branch '$FEATURE_NAME'..."
+    echo "🗑️  Deleting branch '$FEATURE_NAME'..."
     git branch -d "$FEATURE_NAME"
 
     # Remove the worktree
-    echo "Removing worktree at '$WORKTREE_DIR'..."
+    echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
     if [ "$force_remove" = true ]; then
         git worktree remove --force "$WORKTREE_DIR"
     else
         git worktree remove "$WORKTREE_DIR"
     fi
 
-    echo "Cleanup complete!"
+    echo "✨ Cleanup complete!"
 else
     echo "Skipping merge."
     
@@ -224,14 +360,14 @@ else
         cd "$GIT_ROOT"
 
         # Remove the worktree
-        echo "Removing worktree at '$WORKTREE_DIR'..."
+        echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
         if [ "$force_remove" = true ]; then
             git worktree remove --force "$WORKTREE_DIR"
         else
             git worktree remove "$WORKTREE_DIR"
         fi
 
-        echo "Cleanup complete!"
+        echo "✨ Cleanup complete!"
     else
         echo "Worktree preserved at: $WORKTREE_DIR"
         echo "To merge later: git merge '$FEATURE_NAME'"
