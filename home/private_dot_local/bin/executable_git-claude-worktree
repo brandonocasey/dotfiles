@@ -27,33 +27,20 @@ WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
 echo "Creating worktree at: $WORKTREE_DIR"
 git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
 
-# Copy gitignored files in background
-cd "$GIT_ROOT"
-
-# Get list of gitignored files (excluding .git directory)
-git status --ignored --porcelain | grep '^!!' | sed 's/^!! //' | while IFS= read -r ignored_path; do
-    # Skip .git directory
-    case "$ignored_path" in
-    .git/* | .git) continue ;;
-    esac
-
-    # Create parent directory if needed
-    if [ -e "$ignored_path" ]; then
-        target_dir="$(dirname "$WORKTREE_DIR/$ignored_path")"
-        mkdir -p "$target_dir"
-
-        # Copy the ignored file/directory
-        if [ -d "$ignored_path" ]; then
-            cp -r "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
-        else
-            cp "$ignored_path" "$WORKTREE_DIR/$ignored_path" 2>/dev/null || true
-        fi
-    fi
-done
 
 # Change to worktree directory and run claude
 echo "Launching claude in worktree..."
 cd "$WORKTREE_DIR"
+
+# Run worktree setup script if it exists
+if [ -f "scripts/worktree-setup" ]; then
+    if [ -x "scripts/worktree-setup" ]; then
+        echo "Running worktree setup script..."
+        ./scripts/worktree-setup
+    else
+        echo "Warning: scripts/worktree-setup exists but is not executable"
+    fi
+fi
 
 # Rename tmux window if we're in one
 if [ -n "$TMUX" ]; then
@@ -65,11 +52,33 @@ claude
 # After claude exits, ask about merging and cleanup
 echo ""
 echo "Claude session ended."
-printf "Do you want to merge branch '$FEATURE_NAME' into main and delete the worktree? (y/N): "
-read -r response
 
-case "$response" in
-[yY] | [yY][eE][sS])
+# Ask about merging first
+while true; do
+    printf "Merge branch '$FEATURE_NAME' into main? (Y=squash, m=merge, n=no): "
+    read -r merge_response
+    
+    case "$merge_response" in
+    [yY] | [yY][eE][sS] | "")
+        merge_type="squash"
+        break
+        ;;
+    [mM] | [mM][eE][rR][gG][eE])
+        merge_type="merge"
+        break
+        ;;
+    [nN] | [nN][oO])
+        merge_type="no"
+        break
+        ;;
+    *)
+        echo "Please answer Y (squash), m (merge), or n (no)"
+        ;;
+    esac
+done
+
+# Handle merging
+if [ "$merge_type" != "no" ]; then
     # Go back to original repo to merge
     cd "$GIT_ROOT"
 
@@ -83,28 +92,149 @@ case "$response" in
         }
     fi
 
-    echo "Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
-    if git merge "$FEATURE_NAME"; then
-        echo "Merge successful!"
+    if [ "$merge_type" = "squash" ]; then
+        echo "Squash merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
+        if git merge --squash "$FEATURE_NAME"; then
+            # Commit the squashed changes (opens editor)
+            if git commit; then
+                echo "Squash merge successful!"
+                merge_successful=true
+            else
+                echo "Commit cancelled or failed."
+                echo "Worktree preserved at: $WORKTREE_DIR"
+                echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+                exit 1
+            fi
+        else
+            echo "Squash merge conflicts detected. Please resolve them manually."
+            echo "Worktree preserved at: $WORKTREE_DIR"
+            echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+            exit 1
+        fi
+    else
+        echo "Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
+        if git merge "$FEATURE_NAME"; then
+            echo "Merge successful!"
+            merge_successful=true
+        else
+            echo "Merge conflicts detected. Please resolve them manually."
+            echo "Worktree preserved at: $WORKTREE_DIR"
+            echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+            exit 1
+        fi
+    fi
 
-        # Delete the branch
-        echo "Deleting branch '$FEATURE_NAME'..."
-        git branch -d "$FEATURE_NAME"
+    # Automatic cleanup after successful merge
+    # Check for unstaged changes in the worktree
+    cd "$WORKTREE_DIR"
+    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+        echo "Warning: The worktree has unstaged changes, staged changes, or untracked files."
+        git status --short
+        
+        while true; do
+            printf "Force remove the worktree anyway? (y/N): "
+            read -r force_response
+            
+            case "$force_response" in
+            [yY] | [yY][eE][sS])
+                force_remove=true
+                break
+                ;;
+            [nN] | [nN][oO] | "")
+                echo "Worktree preserved at: $WORKTREE_DIR"
+                echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+                exit 0
+                ;;
+            *)
+                echo "Please answer y(es) or n(o)"
+                ;;
+            esac
+        done
+    fi
+
+    # Go back to original repo for cleanup
+    cd "$GIT_ROOT"
+
+    # Delete the branch
+    echo "Deleting branch '$FEATURE_NAME'..."
+    git branch -d "$FEATURE_NAME"
+
+    # Remove the worktree
+    echo "Removing worktree at '$WORKTREE_DIR'..."
+    if [ "$force_remove" = true ]; then
+        git worktree remove --force "$WORKTREE_DIR"
+    else
+        git worktree remove "$WORKTREE_DIR"
+    fi
+
+    echo "Cleanup complete!"
+else
+    echo "Skipping merge."
+    
+    # Ask about cleanup only if no merge
+    while true; do
+        printf "Do you want to delete the worktree and branch '$FEATURE_NAME'? (y/N): "
+        read -r cleanup_response
+        
+        case "$cleanup_response" in
+        [yY] | [yY][eE][sS])
+            cleanup_response="y"
+            break
+            ;;
+        [nN] | [nN][oO] | "")
+            cleanup_response="n"
+            break
+            ;;
+        *)
+            echo "Please answer y(es) or n(o)"
+            ;;
+        esac
+    done
+
+    # Handle cleanup
+    if [ "$cleanup_response" = "y" ]; then
+        # Check for unstaged changes in the worktree
+        cd "$WORKTREE_DIR"
+        if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+            echo "Warning: The worktree has unstaged changes, staged changes, or untracked files."
+            git status --short
+            
+            while true; do
+                printf "Force remove the worktree anyway? (y/N): "
+                read -r force_response
+                
+                case "$force_response" in
+                [yY] | [yY][eE][sS])
+                    force_remove=true
+                    break
+                    ;;
+                [nN] | [nN][oO] | "")
+                    echo "Worktree preserved at: $WORKTREE_DIR"
+                    echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+                    exit 0
+                    ;;
+                *)
+                    echo "Please answer y(es) or n(o)"
+                    ;;
+                esac
+            done
+        fi
+
+        # Go back to original repo for cleanup
+        cd "$GIT_ROOT"
 
         # Remove the worktree
         echo "Removing worktree at '$WORKTREE_DIR'..."
-        git worktree remove "$WORKTREE_DIR"
+        if [ "$force_remove" = true ]; then
+            git worktree remove --force "$WORKTREE_DIR"
+        else
+            git worktree remove "$WORKTREE_DIR"
+        fi
 
         echo "Cleanup complete!"
     else
-        echo "Merge conflicts detected. Please resolve them manually."
         echo "Worktree preserved at: $WORKTREE_DIR"
-        echo "To clean up later: git worktree remove '$WORKTREE_DIR'"
+        echo "To merge later: git merge '$FEATURE_NAME'"
+        echo "To clean up later: git worktree remove '$WORKTREE_DIR' && git branch -d '$FEATURE_NAME'"
     fi
-    ;;
-*)
-    echo "Worktree preserved at: $WORKTREE_DIR"
-    echo "To merge later: git merge '$FEATURE_NAME'"
-    echo "To clean up: git worktree remove '$WORKTREE_DIR'"
-    ;;
-esac
+fi

@@ -5,7 +5,5 @@ go = ['latest']
 
 [settings]
 experimental = true
-trusted_config_paths = [
-    '~/Projects/',
-]
+trusted_config_paths = ['~/Projects/', '~/projects/']
 idiomatic_version_file_enable_tools = ["node"]
