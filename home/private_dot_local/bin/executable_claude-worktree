@@ -9,7 +9,7 @@ readonly PORT_RETRY_COUNT=5
 # Helper function to remove localias
 remove_localias() {
     if command -v localias >/dev/null 2>&1; then
-        local alias="${FEATURE_NAME}.localhost"
+        local alias="${FEATURE_NAME}.local"
         if localias list | grep -q "$alias"; then
             echo "🔗 Removing localias: $alias"
             localias remove "$alias"
@@ -134,7 +134,7 @@ show_help() {
     echo "  1. Create a worktree in a sibling directory"
     echo "  2. Create or checkout the feature branch"
     echo "  3. Install dependencies if package files are found"
-    echo "  4. Set up localias with random port (<feature>.localhost)"
+    echo "  4. Set up localias with random port (<feature>.local)"
     echo "  5. Set terminal/window title"
     echo "  6. Launch Claude"
     echo "  7. After Claude exits, offer to merge and cleanup"
@@ -302,26 +302,31 @@ setup_localias() {
         PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
     done
     
-    ALIAS="${FEATURE_NAME}.localhost"
+    ALIAS="${FEATURE_NAME}.local"
     
     echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
     
     # Check if localias daemon is running, start if needed
     if ! localias status >/dev/null 2>&1; then
-        echo "  Starting localias daemon..."
+        echo "  Running: localias start"
         localias start >/dev/null 2>&1 || true
+    else
+        echo "  Localias daemon already running"
     fi
     
     # Set the alias
-    localias set "$ALIAS" "$PORT"
+    echo "  Running: localias set $ALIAS $PORT"
+    localias set "$ALIAS" "$PORT" >/dev/null 2>&1
     
     # Reload configuration if daemon is running
     if localias status >/dev/null 2>&1; then
+        echo "  Running: localias reload"
         localias reload >/dev/null 2>&1 || true
     fi
     
     # Export environment variables for development
     export PORT
+    export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
     echo "📡 Development server port: $PORT"
     echo "🌐 Local alias: https://$ALIAS"
 }
