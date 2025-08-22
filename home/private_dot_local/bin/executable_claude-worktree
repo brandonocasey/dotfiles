@@ -450,16 +450,16 @@ main() {
 # Get merge preference from user
 get_merge_preference() {
     while true; do
-        printf "Merge branch '$FEATURE_NAME' into main? (Y=squash, m=merge, n=no): "
+        printf "Merge branch '$FEATURE_NAME' into main? (Y=merge, s=squash, n=no): "
         read -r merge_response
         
         case "$merge_response" in
         [yY] | [yY][eE][sS] | "")
-            merge_type="squash"
+            merge_type="merge"
             break
             ;;
-        [mM] | [mM][eE][rR][gG][eE])
-            merge_type="merge"
+        [sS] | [sS][qQ][uU][aA][sS][hH])
+            merge_type="squash"
             break
             ;;
         [nN] | [nN][oO])
@@ -467,7 +467,7 @@ get_merge_preference() {
             break
             ;;
         *)
-            echo "Please answer Y (squash), m (merge), or n (no)"
+            echo "Please answer Y (merge), s (squash), or n (no)"
             ;;
         esac
     done
@@ -502,7 +502,7 @@ handle_merge() {
         fi
     else
         echo "🔀 Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
-        if git merge "$FEATURE_NAME"; then
+        if git merge --no-edit "$FEATURE_NAME"; then
             echo "✅ Merge successful!"
             merge_successful=true
         else
