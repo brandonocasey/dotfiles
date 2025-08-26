@@ -92,6 +92,34 @@ setup_worktree() {
     install_dependencies
 }
 
+# Save environment variables to worktree directory
+save_env_variables() {
+    local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
+    echo "💾 Saving environment variables to $env_file"
+    
+    cat > "$env_file" << EOF
+# Claude-worktree environment variables
+# Generated on $(date)
+export PORT="$PORT"
+export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
+EOF
+}
+
+# Load environment variables from worktree directory
+load_env_variables() {
+    local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
+    
+    if [ -f "$env_file" ]; then
+        echo "📂 Loading saved environment variables from $env_file"
+        # Source the file to load variables
+        . "$env_file"
+        echo "📡 Restored development server port: $PORT"
+        if [ -n "$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS" ]; then
+            echo "🌐 Restored local alias: https://$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
+        fi
+    fi
+}
+
 # Setup localias with random port
 setup_localias() {
     if ! command -v localias >/dev/null 2>&1; then
@@ -115,9 +143,11 @@ setup_localias() {
     echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
 
     # Check if localias daemon is running, start if needed
+    local daemon_was_stopped=false
     if ! localias status >/dev/null 2>&1; then
         echo "  Running: localias start"
         localias start >/dev/null 2>&1 || true
+        daemon_was_stopped=true
     else
         echo "  Localias daemon already running"
     fi
@@ -126,11 +156,20 @@ setup_localias() {
     echo "  Running: localias set $ALIAS $PORT"
     localias set "$ALIAS" "$PORT" >/dev/null 2>&1
 
+    # Reload daemon if it was just started to pick up the new alias
+    if [ "$daemon_was_stopped" = true ]; then
+        echo "  Running: localias reload"
+        localias reload >/dev/null 2>&1 || true
+    fi
+
     # Export environment variables for development
     export PORT
     export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
     echo "📡 Development server port: $PORT"
     echo "🌐 Local alias: https://$ALIAS"
+    
+    # Save environment variables for --continue mode
+    save_env_variables
 }
 
 # Run Claude with optional initial prompt
@@ -271,6 +310,25 @@ execute_continue_operation() {
     # Change to worktree directory
     echo "📂 Switching to existing worktree directory..."
     cd "$WORKTREE_DIR"
+
+    # Load saved environment variables
+    load_env_variables
+
+    # Optionally re-setup localias if variables were loaded
+    if [ -n "$PORT" ] && [ -n "$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS" ]; then
+        # Extract feature name from the alias
+        local saved_alias="$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
+        if command -v localias >/dev/null 2>&1; then
+            echo "🔗 Re-establishing localias: $saved_alias -> localhost:$PORT"
+            # Ensure daemon is running
+            if ! localias status >/dev/null 2>&1; then
+                echo "  Running: localias start"
+                localias start >/dev/null 2>&1 || true
+            fi
+            # Set the alias again
+            localias set "$saved_alias" "$PORT" >/dev/null 2>&1
+        fi
+    fi
 
     # Launch Claude with --continue (skip initial prompt)
     echo "🚀 Resuming Claude session with --continue..."
