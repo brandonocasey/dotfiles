@@ -42,31 +42,28 @@ if [ "$STATUSLINE_DEBUG" = "1" ]; then
     echo "Extracted model_full: '$model_full'" >> "$debug_file"
 fi
 
-# Extract model name/version from display_name, with special handling for Sonnet 4
+# Extract model name/version from display_name, removing "Claude" prefix
 if [ -n "$model_full" ] && [ "$model_full" != "null" ] && [ "$model_full" != '""' ]; then
     [ "$STATUSLINE_DEBUG" = "1" ] && echo "Processing model_full: '$model_full'" >> "$debug_file"
     
-    # Special case for Sonnet 4: show just "4"
-    if echo "$model_full" | grep -qi "sonnet.*4"; then
-        model="4"
-        [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Sonnet 4, using '4'" >> "$debug_file"
-    else
-        # For other models, extract version number first, then fall back to model name
-        # Try to extract version like "3.5" or "3" from patterns like "Claude 3.5 Sonnet"
-        version=$(echo "$model_full" | sed -E 's/^.*Claude[[:space:]]+([0-9]+(\.[0-9]+)?)[[:space:]]+.*$/\1/' | head -1)
-        if [ "$version" != "$model_full" ] && [ -n "$version" ]; then
-            model="$version"
-            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Extracted version: '$model'" >> "$debug_file"
+    # Remove "Claude" prefix and extract the rest
+    # Handles various formats:
+    # "Claude Sonnet 4" -> "Sonnet 4"
+    # "Claude 3.5 Sonnet" -> "3.5 Sonnet"  
+    # "Claude Opus 4.1" -> "Opus 4.1"
+    model=$(echo "$model_full" | sed -E 's/^Claude[[:space:]]+//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//' | head -1)
+    [ "$STATUSLINE_DEBUG" = "1" ] && echo "After removing Claude prefix: '$model'" >> "$debug_file"
+    
+    # If the regex didn't match (no "Claude" prefix), use the original
+    if [ "$model" = "$model_full" ]; then
+        # Try extracting just the relevant parts if it's a different format
+        # Look for pattern like "Model Name Version" or "Version Model"
+        temp_model=$(echo "$model_full" | sed -E 's/^.*(Sonnet|Opus|Haiku)[[:space:]]*([0-9]+(\.[0-9]+)?)?.*$/\1 \2/' | sed 's/[[:space:]]*$//' | head -1)
+        if [ "$temp_model" != "$model_full" ] && [ -n "$temp_model" ]; then
+            model="$temp_model"
         else
-            # Fall back to extracting model name: "Claude 3.5 Sonnet" -> "Sonnet"
-            model=$(echo "$model_full" | sed -E 's/^.*Claude[[:space:]]+[0-9]+(\.[0-9]+)?[[:space:]]+([A-Za-z]+).*$/\2/' | head -1)
-            [ "$STATUSLINE_DEBUG" = "1" ] && echo "After regex extraction: '$model'" >> "$debug_file"
-            # If extraction failed, try a simpler pattern for just the last word
-            if [ "$model" = "$model_full" ] || [ -z "$model" ]; then
-                [ "$STATUSLINE_DEBUG" = "1" ] && echo "Regex failed, trying awk fallback" >> "$debug_file"
-                model=$(echo "$model_full" | awk '{print $NF}' | head -1)
-                [ "$STATUSLINE_DEBUG" = "1" ] && echo "After awk fallback: '$model'" >> "$debug_file"
-            fi
+            # Final fallback: use last few words or the full string if short
+            model=$(echo "$model_full" | awk '{if(NF<=3) print $0; else print $(NF-1)" "$NF}' | head -1)
         fi
     fi
 else
@@ -79,17 +76,37 @@ else
     fi
     [ "$STATUSLINE_DEBUG" = "1" ] && echo "Extracted model_id: '$model_id'" >> "$debug_file"
     if [ -n "$model_id" ] && [ "$model_id" != "null" ] && [ "$model_id" != '""' ]; then
-        # Special case for Sonnet 4: show just "4"
+        # Extract model name and version from ID patterns like:
+        # "claude-sonnet-4-20250514" -> "Sonnet 4"
+        # "claude-3-5-sonnet-20241022" -> "3.5 Sonnet"
+        # "claude-opus-4-1-20250101" -> "Opus 4.1"
+        
         if echo "$model_id" | grep -qi "sonnet.*4"; then
-            model="4"
-            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Sonnet 4 from model_id, using '4'" >> "$debug_file"
+            model="Sonnet 4"
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Sonnet 4 from model_id, using 'Sonnet 4'" >> "$debug_file"
+        elif echo "$model_id" | grep -qi "opus.*4"; then
+            # Handle Opus 4.x patterns
+            version=$(echo "$model_id" | sed -E 's/.*opus-([0-9]+(-[0-9]+)*).*/\1/' | tr '-' '.')
+            if [ "$version" != "$model_id" ]; then
+                model="Opus $version"
+            else
+                model="Opus 4"
+            fi
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Opus 4 from model_id, using '$model'" >> "$debug_file"
         else
-            # Extract model name from ID: "claude-3-5-sonnet-20241022" -> "Sonnet"
-            model=$(echo "$model_id" | sed -E 's/.*-(sonnet|opus|haiku)(-.*)?$/\1/' | sed 's/\b\w/\U&/g' | head -1)
-            [ "$STATUSLINE_DEBUG" = "1" ] && echo "After model_id extraction: '$model'" >> "$debug_file"
-            # If extraction failed, use the ID as-is
-            if [ "$model" = "$model_id" ] || [ -z "$model" ]; then
-                model="$model_id"
+            # Try to extract version and model name from patterns like "claude-3-5-sonnet"
+            temp_model=$(echo "$model_id" | sed -E 's/^claude-([0-9]+(-[0-9]+)*)?-?(sonnet|opus|haiku)(-.*)?$/\1 \3/' | tr '-' '.' | sed 's/\b\w/\U&/g' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            if [ "$temp_model" != "$model_id" ] && [ -n "$temp_model" ]; then
+                model="$temp_model"
+                [ "$STATUSLINE_DEBUG" = "1" ] && echo "Extracted from model_id pattern: '$model'" >> "$debug_file"
+            else
+                # Fallback: just extract the model name
+                model=$(echo "$model_id" | sed -E 's/.*-(sonnet|opus|haiku)(-.*)?$/\1/' | sed 's/\b\w/\U&/g' | head -1)
+                [ "$STATUSLINE_DEBUG" = "1" ] && echo "After model_id extraction: '$model'" >> "$debug_file"
+                # If extraction failed, use the ID as-is
+                if [ "$model" = "$model_id" ] || [ -z "$model" ]; then
+                    model="$model_id"
+                fi
             fi
         fi
     else
