@@ -110,8 +110,8 @@ setup_worktree() {
 save_env_variables() {
     local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
     echo "💾 Saving environment variables to $env_file"
-    
-    cat > "$env_file" << EOF
+
+    cat >"$env_file" <<EOF
 # Claude-worktree environment variables
 # Generated on $(date)
 export PORT="$PORT"
@@ -122,7 +122,7 @@ EOF
 # Load environment variables from worktree directory
 load_env_variables() {
     local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
-    
+
     if [ -f "$env_file" ]; then
         echo "📂 Loading saved environment variables from $env_file"
         # Source the file to load variables
@@ -156,24 +156,18 @@ setup_localias() {
     ALIAS="${FEATURE_NAME}.local"
     echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
 
-    # Check if localias daemon is running, start if needed
-    local daemon_was_stopped=false
-    if ! localias status >/dev/null 2>&1; then
-        echo "  Running: localias start"
-        localias start >/dev/null 2>&1 || true
-        daemon_was_stopped=true
-    else
-        echo "  Localias daemon already running"
-    fi
-
     # Set the alias
     echo "  Running: localias set $ALIAS $PORT"
     localias set "$ALIAS" "$PORT" >/dev/null 2>&1
 
-    # Reload daemon if it was just started to pick up the new alias
-    if [ "$daemon_was_stopped" = true ]; then
+    # Check if localias daemon is running, start if needed
+    if ! localias status >/dev/null 2>&1; then
+        echo "  Running: localias start"
+        localias start >/dev/null 2>&1 || true
+    else
         echo "  Running: localias reload"
         localias reload >/dev/null 2>&1 || true
+
     fi
 
     # Export environment variables for development
@@ -181,7 +175,7 @@ setup_localias() {
     export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
     echo "📡 Development server port: $PORT"
     echo "🌐 Local alias: https://$ALIAS"
-    
+
     # Save environment variables for --continue mode
     save_env_variables
 }
@@ -692,7 +686,7 @@ main() {
     # Parse arguments and validate environment
     parse_arguments "$@"
     setup_environment
-    
+
     # Request sudo permissions early for localias
     request_sudo_permissions
 
