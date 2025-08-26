@@ -42,17 +42,32 @@ if [ "$STATUSLINE_DEBUG" = "1" ]; then
     echo "Extracted model_full: '$model_full'" >> "$debug_file"
 fi
 
-# Extract just the model name (Sonnet, Opus, Haiku) from display_name
+# Extract model name/version from display_name, with special handling for Sonnet 4
 if [ -n "$model_full" ] && [ "$model_full" != "null" ] && [ "$model_full" != '""' ]; then
     [ "$STATUSLINE_DEBUG" = "1" ] && echo "Processing model_full: '$model_full'" >> "$debug_file"
-    # Extract model name: "Claude 3.5 Sonnet" -> "Sonnet", "Claude 3 Opus" -> "Opus", etc.
-    model=$(echo "$model_full" | sed -E 's/^.*Claude[[:space:]]+[0-9]+(\.[0-9]+)?[[:space:]]+([A-Za-z]+).*$/\2/' | head -1)
-    [ "$STATUSLINE_DEBUG" = "1" ] && echo "After regex extraction: '$model'" >> "$debug_file"
-    # If extraction failed, try a simpler pattern for just the last word
-    if [ "$model" = "$model_full" ] || [ -z "$model" ]; then
-        [ "$STATUSLINE_DEBUG" = "1" ] && echo "Regex failed, trying awk fallback" >> "$debug_file"
-        model=$(echo "$model_full" | awk '{print $NF}' | head -1)
-        [ "$STATUSLINE_DEBUG" = "1" ] && echo "After awk fallback: '$model'" >> "$debug_file"
+    
+    # Special case for Sonnet 4: show just "4"
+    if echo "$model_full" | grep -qi "sonnet.*4"; then
+        model="4"
+        [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Sonnet 4, using '4'" >> "$debug_file"
+    else
+        # For other models, extract version number first, then fall back to model name
+        # Try to extract version like "3.5" or "3" from patterns like "Claude 3.5 Sonnet"
+        version=$(echo "$model_full" | sed -E 's/^.*Claude[[:space:]]+([0-9]+(\.[0-9]+)?)[[:space:]]+.*$/\1/' | head -1)
+        if [ "$version" != "$model_full" ] && [ -n "$version" ]; then
+            model="$version"
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Extracted version: '$model'" >> "$debug_file"
+        else
+            # Fall back to extracting model name: "Claude 3.5 Sonnet" -> "Sonnet"
+            model=$(echo "$model_full" | sed -E 's/^.*Claude[[:space:]]+[0-9]+(\.[0-9]+)?[[:space:]]+([A-Za-z]+).*$/\2/' | head -1)
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "After regex extraction: '$model'" >> "$debug_file"
+            # If extraction failed, try a simpler pattern for just the last word
+            if [ "$model" = "$model_full" ] || [ -z "$model" ]; then
+                [ "$STATUSLINE_DEBUG" = "1" ] && echo "Regex failed, trying awk fallback" >> "$debug_file"
+                model=$(echo "$model_full" | awk '{print $NF}' | head -1)
+                [ "$STATUSLINE_DEBUG" = "1" ] && echo "After awk fallback: '$model'" >> "$debug_file"
+            fi
+        fi
     fi
 else
     [ "$STATUSLINE_DEBUG" = "1" ] && echo "No model_full found, trying model id fallback" >> "$debug_file"
@@ -64,12 +79,18 @@ else
     fi
     [ "$STATUSLINE_DEBUG" = "1" ] && echo "Extracted model_id: '$model_id'" >> "$debug_file"
     if [ -n "$model_id" ] && [ "$model_id" != "null" ] && [ "$model_id" != '""' ]; then
-        # Extract model name from ID: "claude-3-5-sonnet-20241022" -> "Sonnet"
-        model=$(echo "$model_id" | sed -E 's/.*-(sonnet|opus|haiku)(-.*)?$/\1/' | sed 's/\b\w/\U&/g' | head -1)
-        [ "$STATUSLINE_DEBUG" = "1" ] && echo "After model_id extraction: '$model'" >> "$debug_file"
-        # If extraction failed, use the ID as-is
-        if [ "$model" = "$model_id" ] || [ -z "$model" ]; then
-            model="$model_id"
+        # Special case for Sonnet 4: show just "4"
+        if echo "$model_id" | grep -qi "sonnet.*4"; then
+            model="4"
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "Detected Sonnet 4 from model_id, using '4'" >> "$debug_file"
+        else
+            # Extract model name from ID: "claude-3-5-sonnet-20241022" -> "Sonnet"
+            model=$(echo "$model_id" | sed -E 's/.*-(sonnet|opus|haiku)(-.*)?$/\1/' | sed 's/\b\w/\U&/g' | head -1)
+            [ "$STATUSLINE_DEBUG" = "1" ] && echo "After model_id extraction: '$model'" >> "$debug_file"
+            # If extraction failed, use the ID as-is
+            if [ "$model" = "$model_id" ] || [ -z "$model" ]; then
+                model="$model_id"
+            fi
         fi
     else
         model=""
@@ -98,37 +119,60 @@ user=$(whoami 2>/dev/null || echo "user")
 host=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "host")
 
 # Git information - check both cwd and PWD to ensure we find git repo
+# Handle both regular repos and worktrees
+working_dir=""
 git_dir=""
-if [ -n "$cwd" ] && [ -d "$cwd" ] && [ -d "$cwd/.git" ]; then
-    git_dir="$cwd"
-elif [ -d "$PWD/.git" ]; then
-    git_dir="$PWD"
-elif [ -n "$cwd" ] && [ -d "$cwd" ]; then
-    # Check if cwd is within a git repository
-    git_dir=$(cd "$cwd" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
+actual_git_dir=""
+
+# Determine working directory
+if [ -n "$cwd" ] && [ -d "$cwd" ]; then
+    working_dir="$cwd"
 elif [ -d "$PWD" ]; then
-    # Check if PWD is within a git repository
-    git_dir=$(git rev-parse --show-toplevel 2>/dev/null)
+    working_dir="$PWD"
 fi
 
-if [ -n "$git_dir" ] && [ -d "$git_dir" ]; then
-    # Try multiple methods to get the branch name, with longer timeout
+if [ -n "$working_dir" ]; then
+    # Check if working directory is within a git repository
+    git_dir=$(cd "$working_dir" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)
+    
+    if [ -n "$git_dir" ] && [ -d "$git_dir" ]; then
+        # Determine actual git directory (handles both regular repos and worktrees)
+        if [ -d "$git_dir/.git" ]; then
+            # Regular git repository
+            actual_git_dir="$git_dir/.git"
+        elif [ -f "$git_dir/.git" ]; then
+            # Git worktree - read the gitdir from the .git file
+            git_file_content=$(cat "$git_dir/.git" 2>/dev/null)
+            if [[ "$git_file_content" == gitdir:* ]]; then
+                actual_git_dir=$(echo "$git_file_content" | sed 's/^gitdir: *//' | tr -d '\n')
+                # Handle relative paths in .git file
+                if [[ "$actual_git_dir" != /* ]]; then
+                    actual_git_dir="$git_dir/$actual_git_dir"
+                fi
+            fi
+        fi
+    fi
+fi
+
+if [ -n "$actual_git_dir" ] && [ -d "$actual_git_dir" ]; then
+    # Try multiple methods to get the branch name, with worktree support
     branch=""
     
-    # Method 1: git branch --show-current (Git 2.22+)
+    # Method 1: git branch --show-current (Git 2.22+) - works well with worktrees
     if [ -z "$branch" ]; then
-        branch=$(cd "$git_dir" 2>/dev/null && timeout 1 git branch --show-current 2>/dev/null | tr -d '\n')
+        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git branch --show-current 2>/dev/null | tr -d '\n')
     fi
     
-    # Method 2: git symbolic-ref (works for most cases)
+    # Method 2: git symbolic-ref (works for most cases including worktrees)
     if [ -z "$branch" ]; then
-        branch=$(cd "$git_dir" 2>/dev/null && timeout 1 git symbolic-ref --short HEAD 2>/dev/null | tr -d '\n')
+        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git symbolic-ref --short HEAD 2>/dev/null | tr -d '\n')
     fi
     
-    # Method 3: Read .git/HEAD directly (fastest, most reliable)
-    if [ -z "$branch" ] && [ -f "$git_dir/.git/HEAD" ]; then
-        head_content=$(cat "$git_dir/.git/HEAD" 2>/dev/null)
+    # Method 3: Read HEAD file directly (fastest, supports worktrees)
+    if [ -z "$branch" ] && [ -f "$actual_git_dir/HEAD" ]; then
+        head_content=$(cat "$actual_git_dir/HEAD" 2>/dev/null)
         if [[ "$head_content" == ref:* ]]; then
+            # Extract branch name from ref
             branch=$(echo "$head_content" | sed 's|^ref: refs/heads/||' | tr -d '\n')
         else
             # Detached HEAD - get short commit hash
@@ -136,23 +180,51 @@ if [ -n "$git_dir" ] && [ -d "$git_dir" ]; then
         fi
     fi
     
-    # Method 4: git describe for detached HEAD
+    # Method 4: Check for worktree-specific HEAD reference
     if [ -z "$branch" ]; then
-        branch=$(cd "$git_dir" 2>/dev/null && timeout 1 git describe --contains --all HEAD 2>/dev/null | tr -d '\n')
+        # In worktrees, sometimes we need to check the commondir
+        common_dir="$actual_git_dir"
+        if [ -f "$actual_git_dir/commondir" ]; then
+            common_dir_path=$(cat "$actual_git_dir/commondir" 2>/dev/null | tr -d '\n')
+            if [[ "$common_dir_path" != /* ]]; then
+                common_dir="$actual_git_dir/$common_dir_path"
+            else
+                common_dir="$common_dir_path"
+            fi
+        fi
+        
+        # Try to read from the common git directory
+        if [ -f "$common_dir/HEAD" ]; then
+            head_content=$(cat "$common_dir/HEAD" 2>/dev/null)
+            if [[ "$head_content" == ref:* ]]; then
+                branch=$(echo "$head_content" | sed 's|^ref: refs/heads/||' | tr -d '\n')
+            fi
+        fi
     fi
     
-    # Method 5: git name-rev as last resort
+    # Method 5: git describe for detached HEAD
     if [ -z "$branch" ]; then
-        branch=$(cd "$git_dir" 2>/dev/null && timeout 1 git name-rev --name-only HEAD 2>/dev/null | tr -d '\n')
+        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git describe --contains --all HEAD 2>/dev/null | tr -d '\n')
+    fi
+    
+    # Method 6: git name-rev as last resort
+    if [ -z "$branch" ]; then
+        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git name-rev --name-only HEAD 2>/dev/null | tr -d '\n')
+    fi
+    
+    # Clean up branch name (remove any unwanted prefixes/suffixes)
+    if [ -n "$branch" ]; then
+        # Remove any trailing whitespace and common prefixes
+        branch=$(echo "$branch" | sed 's/^remotes\/[^\/]*\///' | sed 's/~[0-9]*$//' | tr -d '\n')
     fi
     
     # If still no branch found, show detached state
-    if [ -z "$branch" ]; then
+    if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
         branch="detached"
     fi
     
     # Check for changes with reasonable timeout
-    status_output=$(cd "$git_dir" 2>/dev/null && timeout 0.5 git status --porcelain --untracked-files=no 2>/dev/null)
+    status_output=$(cd "$working_dir" 2>/dev/null && timeout 0.5 git status --porcelain --untracked-files=no 2>/dev/null)
     if [ -n "$status_output" ]; then
         git_status=' ●'
     else

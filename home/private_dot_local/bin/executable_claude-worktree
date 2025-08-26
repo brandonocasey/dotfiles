@@ -135,11 +135,6 @@ setup_localias() {
 
 # Run Claude with optional initial prompt
 run_claude_session() {
-    # Set tmux session title
-    if [ -n "$TMUX" ]; then
-        tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
-    fi
-
     # Check for initial prompt file
     local initial_prompt=""
     if [ -f "./scripts/claude-worktree-initial-prompt" ]; then
@@ -277,11 +272,6 @@ execute_continue_operation() {
     echo "📂 Switching to existing worktree directory..."
     cd "$WORKTREE_DIR"
 
-    # Set tmux session title
-    if [ -n "$TMUX" ]; then
-        tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
-    fi
-
     # Launch Claude with --continue (skip initial prompt)
     echo "🚀 Resuming Claude session with --continue..."
     if ! claude --continue; then
@@ -308,11 +298,6 @@ execute_merge_operation() {
 
     # Kill any processes that might be running
     kill_worktree_processes
-
-    # Set tmux session title
-    if [ -n "$TMUX" ]; then
-        tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
-    fi
 
     # Jump to post-Claude processing (merge and cleanup logic)
     echo ""

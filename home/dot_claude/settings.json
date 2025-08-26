@@ -1,5 +1,4 @@
 {
-  "model": "sonnet",
   "permissions": {
     "allow": [
       "Bash",
@@ -23,8 +22,9 @@
     "ask": [],
     "defaultMode": "acceptEdits"
   },
+  "model": "opusplan",
   "statusLine": {
     "type": "command",
-    "command": "chmod +x ~/.claude/statusline-enhanced.sh && ~/.claude/statusline-enhanced.sh"
+    "command": "bash ~/.claude/statusline-enhanced.sh"
   }
 }
