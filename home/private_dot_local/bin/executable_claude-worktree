@@ -6,6 +6,20 @@ readonly PORT_MIN=3000
 readonly PORT_MAX=9000
 readonly PORT_RETRY_COUNT=5
 
+# Request sudo permissions early for localias
+request_sudo_permissions() {
+    if command -v localias >/dev/null 2>&1; then
+        echo "🔐 Requesting sudo permissions for localias..."
+        # Run a simple sudo command to cache credentials
+        sudo -v
+        if [ $? -eq 0 ]; then
+            echo "✅ Sudo permissions granted"
+        else
+            echo "⚠️  Sudo permissions denied - localias may require manual password entry"
+        fi
+    fi
+}
+
 # Helper function to remove localias
 remove_localias() {
     if command -v localias >/dev/null 2>&1; then
@@ -678,6 +692,9 @@ main() {
     # Parse arguments and validate environment
     parse_arguments "$@"
     setup_environment
+    
+    # Request sudo permissions early for localias
+    request_sudo_permissions
 
     # Handle clean mode if requested (exit early)
     if [ "$CLEAN_MODE" = true ]; then
