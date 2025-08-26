@@ -26,6 +26,8 @@ end
 # Complete options
 complete -c claude-worktree -s h -l help -d "Show help message"
 complete -c claude-worktree -l clean -d "Remove worktree, branch, and localias" -xa "(__claude_worktree_existing_branches)"
+complete -c claude-worktree -l merge -d "Skip to merge and cleanup (as if Claude just exited)" -xa "(__claude_worktree_existing_branches)"
+complete -c claude-worktree -l continue -d "Resume Claude session in existing worktree" -xa "(__claude_worktree_existing_branches)"
 
 # Complete feature names for the main argument
-complete -c claude-worktree -f -n "not __fish_seen_subcommand_from --clean" -xa "(__claude_worktree_all_branches)"
+complete -c claude-worktree -f -n "not __fish_seen_subcommand_from --clean --merge --continue" -xa "(__claude_worktree_all_branches)"
