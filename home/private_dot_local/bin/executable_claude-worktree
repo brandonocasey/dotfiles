@@ -24,6 +24,175 @@ print_cleanup_instructions() {
     echo "To clean up later: claude-worktree --clean '$FEATURE_NAME'"
 }
 
+# Auto-install dependencies based on detected package managers
+install_dependencies() {
+    # Define package managers with their detection files, commands, and emojis
+    local yarn_lock="yarn.lock"
+    local package_json="package.json"
+    
+    # Check for Node.js dependencies (prefer yarn over npm)
+    if [ -f "$yarn_lock" ] && [ -f "$package_json" ] && command -v yarn >/dev/null 2>&1; then
+        echo "🧶 Installing yarn dependencies..."
+        yarn install
+    elif [ -f "$package_json" ] && command -v npm >/dev/null 2>&1; then
+        echo "📦 Installing npm dependencies..."
+        npm install
+    fi
+
+    # Check other package managers
+    if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
+        echo "🦀 Building Rust project..."
+        cargo build
+    fi
+
+    if [ -f "requirements.txt" ] && command -v pip >/dev/null 2>&1; then
+        echo "🐍 Installing Python dependencies..."
+        pip install -r requirements.txt
+    fi
+
+    if [ -f "Gemfile" ] && command -v bundle >/dev/null 2>&1; then
+        echo "💎 Installing Ruby dependencies..."
+        bundle install
+    fi
+}
+
+# Validate environment and initialize globals
+setup_environment() {
+    # Check if running in tmux
+    if [ -z "$TMUX" ]; then
+        echo "Error: This script must be run from within tmux"
+        echo "Start tmux first: tmux new-session"
+        exit 1
+    fi
+
+    # Get the current git directory
+    if ! git rev-parse --git-dir >/dev/null 2>&1; then
+        echo "Error: Not in a git repository"
+        exit 1
+    fi
+
+    # Get the root of the git repository
+    GIT_ROOT="$(git rev-parse --show-toplevel)"
+    REPO_NAME="$(basename "$GIT_ROOT")"
+    PARENT_DIR="$(dirname "$GIT_ROOT")"
+    WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+}
+
+# Create and setup the worktree environment
+setup_worktree() {
+    echo "📁 Creating worktree at: $WORKTREE_DIR"
+    echo "🌿 Branch: $FEATURE_NAME"
+    git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
+
+    # Copy .claude directory if it exists in the original repo
+    if [ -d "$GIT_ROOT/.claude" ]; then
+        echo "📋 Copying .claude directory to worktree..."
+        cp -rf "$GIT_ROOT/.claude" "$WORKTREE_DIR/.claude"
+    fi
+
+    # Change to worktree directory
+    echo "📂 Switching to worktree directory..."
+    cd "$WORKTREE_DIR"
+
+    # Auto-install dependencies
+    install_dependencies
+}
+
+# Setup localias with random port
+setup_localias() {
+    if ! command -v localias >/dev/null 2>&1; then
+        echo "⚠️  localias not found, skipping local alias setup"
+        echo "   Install with: go install github.com/peterldowns/localias@latest"
+        return
+    fi
+    
+    # Generate random port between PORT_MIN-PORT_MAX
+    PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
+
+    # Check if port is already in use, try a few times
+    for i in $(seq 1 $PORT_RETRY_COUNT); do
+        if ! lsof -i :$PORT >/dev/null 2>&1; then
+            break
+        fi
+        PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
+    done
+
+    ALIAS="${FEATURE_NAME}.local"
+    echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
+
+    # Check if localias daemon is running, start if needed
+    if ! localias status >/dev/null 2>&1; then
+        echo "  Running: localias start"
+        localias start >/dev/null 2>&1 || true
+    else
+        echo "  Localias daemon already running"
+    fi
+
+    # Set the alias
+    echo "  Running: localias set $ALIAS $PORT"
+    localias set "$ALIAS" "$PORT" >/dev/null 2>&1
+
+    # Export environment variables for development
+    export PORT
+    export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
+    echo "📡 Development server port: $PORT"
+    echo "🌐 Local alias: https://$ALIAS"
+}
+
+# Run Claude with optional initial prompt
+run_claude_session() {
+    # Set tmux session title
+    if [ -n "$TMUX" ]; then
+        tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
+    fi
+
+    # Check for initial prompt file
+    local initial_prompt=""
+    if [ -f "./scripts/claude-worktree-initial-prompt" ]; then
+        echo "📝 Using initial prompt from ./scripts/claude-worktree-initial-prompt"
+        initial_prompt=$(cat "./scripts/claude-worktree-initial-prompt")
+    fi
+
+    if ! printf '%s' "$initial_prompt" | claude; then
+        handle_claude_exit
+    fi
+
+    # Kill processes after Claude exits
+    kill_worktree_processes
+
+    echo ""
+    echo "✅ Claude session completed."
+}
+
+# Handle Claude exit (error or interruption)
+handle_claude_exit() {
+    echo ""
+    echo "⚠️  Claude exited with an error or was interrupted."
+    
+    # Always kill processes after Claude exits
+    kill_worktree_processes
+    
+    if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
+        perform_cleanup
+        exit 0
+    else
+        print_cleanup_instructions
+        exit 0
+    fi
+}
+
+# Switch to main/master branch
+switch_to_main_branch() {
+    local current_branch
+    current_branch=$(git symbolic-ref --short HEAD)
+    if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
+        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+            echo "Error: Could not switch to main/master branch"
+            exit 1
+        }
+    fi
+}
+
 # Remove branch with force delete
 remove_branch() {
     if git show-ref --verify --quiet refs/heads/"$FEATURE_NAME"; then
@@ -64,16 +233,7 @@ get_merge_preference() {
 execute_merge() {
     # Go back to original repo to merge
     cd "$GIT_ROOT"
-
-    # Switch to main/master branch
-    current_branch=$(git symbolic-ref --short HEAD)
-    if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
-        # Try to switch to main, fall back to master
-        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
-            echo "Error: Could not switch to main/master branch"
-            exit 1
-        }
-    fi
+    switch_to_main_branch
 
     if [ "$merge_type" = "squash" ]; then
         echo "🔄 Squash merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
@@ -131,20 +291,7 @@ execute_continue_operation() {
     # Launch Claude with --continue (skip initial prompt)
     echo "🚀 Resuming Claude session with --continue..."
     if ! claude --continue; then
-        echo ""
-        echo "⚠️  Claude exited with an error or was interrupted."
-        
-        # Always kill processes after Claude exits
-        kill_worktree_processes
-        
-        if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
-            # Run cleanup like --clean mode
-            perform_cleanup
-            exit 0
-        else
-            print_cleanup_instructions
-            exit 0
-        fi
+        handle_claude_exit
     fi
     
     # Kill processes after Claude exits
@@ -477,16 +624,20 @@ kill_worktree_processes() {
     done
 }
 
-# Global variables - defined here for visibility near main function
-# These variables are set during script execution and used across multiple functions
+# Configuration constants
+readonly PORT_MIN=3000
+readonly PORT_MAX=9000
+readonly PORT_RETRY_COUNT=5
+
+# Global variables - set during script execution
 FEATURE_NAME=""       # Name of the feature branch being worked on
 WORKTREE_DIR=""       # Path to the worktree directory
 GIT_ROOT=""           # Root directory of the git repository
 REPO_NAME=""          # Name of the repository
 PARENT_DIR=""         # Parent directory containing the repository
-CLEAN_MODE=""         # Whether script is running in cleanup mode
-MERGE_MODE=""         # Whether script is running in merge mode
-CONTINUE_MODE=""      # Whether script is running in continue mode
+CLEAN_MODE=false      # Whether script is running in cleanup mode
+MERGE_MODE=false      # Whether script is running in merge mode
+CONTINUE_MODE=false   # Whether script is running in continue mode
 PROCESSES_KILLED=false # Whether we've already killed worktree processes
 FEATURE_VALIDATED=false # Whether we've already validated the existing feature
 
@@ -494,27 +645,7 @@ FEATURE_VALIDATED=false # Whether we've already validated the existing feature
 main() {
     # Parse arguments and validate environment
     parse_arguments "$@"
-
-    # Check if running in tmux
-    if [ -z "$TMUX" ]; then
-        echo "Error: This script must be run from within tmux"
-        echo "Start tmux first: tmux new-session"
-        exit 1
-    fi
-
-    # Get the current git directory
-    if ! git rev-parse --git-dir >/dev/null 2>&1; then
-        echo "Error: Not in a git repository"
-        exit 1
-    fi
-
-    # Get the root of the git repository
-    GIT_ROOT="$(git rev-parse --show-toplevel)"
-    REPO_NAME="$(basename "$GIT_ROOT")"
-    PARENT_DIR="$(dirname "$GIT_ROOT")"
-
-    # Create worktree directory path
-    WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+    setup_environment
 
     # Handle clean mode if requested (exit early)
     if [ "$CLEAN_MODE" = true ]; then
@@ -554,120 +685,12 @@ main() {
     fi
 
     # Create worktree and setup environment
-    echo "📁 Creating worktree at: $WORKTREE_DIR"
-    echo "🌿 Branch: $FEATURE_NAME"
-    git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
-
-    # Copy .claude directory if it exists in the original repo
-    if [ -d "$GIT_ROOT/.claude" ]; then
-        echo "📋 Copying .claude directory to worktree..."
-        cp -rf "$GIT_ROOT/.claude" "$WORKTREE_DIR/.claude"
-    fi
-
-    # Change to worktree directory
-    echo "📂 Switching to worktree directory..."
-    cd "$WORKTREE_DIR"
-
-    # Auto-install dependencies - check each package manager independently
-    if [ -f "yarn.lock" ] && [ -f "package.json" ] && command -v yarn >/dev/null 2>&1; then
-        echo "🧶 Installing yarn dependencies..."
-        yarn install
-    elif [ -f "package.json" ] && command -v npm >/dev/null 2>&1; then
-        echo "📦 Installing npm dependencies..."
-        npm install
-    fi
-
-    if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-        echo "🦀 Building Rust project..."
-        cargo build
-    fi
-
-    if [ -f "requirements.txt" ] && command -v pip >/dev/null 2>&1; then
-        echo "🐍 Installing Python dependencies..."
-        pip install -r requirements.txt
-    fi
-
-    if [ -f "Gemfile" ] && command -v bundle >/dev/null 2>&1; then
-        echo "💎 Installing Ruby dependencies..."
-        bundle install
-    fi
-
-    # Set up localias with random port
-    if ! command -v localias >/dev/null 2>&1; then
-        echo "⚠️  localias not found, skipping local alias setup"
-        echo "   Install with: go install github.com/peterldowns/localias@latest"
-    else
-        # Generate random port between PORT_MIN-PORT_MAX
-        PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
-
-        # Check if port is already in use, try a few times
-        for i in $(seq 1 $PORT_RETRY_COUNT); do
-            if ! lsof -i :$PORT >/dev/null 2>&1; then
-                break
-            fi
-            PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
-        done
-
-        ALIAS="${FEATURE_NAME}.local"
-
-        echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
-
-        # Check if localias daemon is running, start if needed
-        if ! localias status >/dev/null 2>&1; then
-            echo "  Running: localias start"
-            localias start >/dev/null 2>&1 || true
-        else
-            echo "  Localias daemon already running"
-        fi
-
-        # Set the alias
-        echo "  Running: localias set $ALIAS $PORT"
-        localias set "$ALIAS" "$PORT" >/dev/null 2>&1
-
-        # Export environment variables for development
-        export PORT
-        export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
-        echo "📡 Development server port: $PORT"
-        echo "🌐 Local alias: https://$ALIAS"
-    fi
-
-    # Set tmux session title
-    if [ -n "$TMUX" ]; then
-        tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
-    fi
-
-    # Launch Claude
-    # Check for initial prompt file
-    initial_prompt=""
-    if [ -f "./scripts/claude-worktree-initial-prompt" ]; then
-        echo "📝 Using initial prompt from ./scripts/claude-worktree-initial-prompt"
-        initial_prompt=$(cat "./scripts/claude-worktree-initial-prompt")
-    fi
-
-    if ! printf '%s' "$initial_prompt" | claude; then
-        echo ""
-        echo "⚠️  Claude exited with an error or was interrupted."
-
-        # Always kill processes after Claude exits
-        kill_worktree_processes
-
-        if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
-            # Run cleanup like --clean mode
-            perform_cleanup
-            exit 0
-        else
-            print_cleanup_instructions
-            exit 0
-        fi
-    fi
-
-    # Kill processes after Claude exits
-    kill_worktree_processes
-
-    # Post-Claude processing
-    echo ""
-    echo "✅ Claude session completed."
-
+    setup_worktree
+    setup_localias
+    
+    # Run Claude session
+    run_claude_session
+    
     # Handle merge and cleanup
     handle_merge_and_cleanup
 }
