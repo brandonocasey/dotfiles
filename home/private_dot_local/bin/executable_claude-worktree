@@ -29,14 +29,14 @@ install_dependencies() {
     # Define package managers with their detection files, commands, and emojis
     local yarn_lock="yarn.lock"
     local package_json="package.json"
-    
+
     # Check for Node.js dependencies (prefer yarn over npm)
     if [ -f "$yarn_lock" ] && [ -f "$package_json" ] && command -v yarn >/dev/null 2>&1; then
         echo "🧶 Installing yarn dependencies..."
-        yarn install
+        yarn install --frozen-lockfile
     elif [ -f "$package_json" ] && command -v npm >/dev/null 2>&1; then
         echo "📦 Installing npm dependencies..."
-        npm install
+        npm ci 2>/dev/null || npm install
     fi
 
     # Check other package managers
@@ -84,12 +84,6 @@ setup_worktree() {
     echo "🌿 Branch: $FEATURE_NAME"
     git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
 
-    # Copy .claude directory if it exists in the original repo
-    if [ -d "$GIT_ROOT/.claude" ]; then
-        echo "📋 Copying .claude directory to worktree..."
-        cp -rf "$GIT_ROOT/.claude" "$WORKTREE_DIR/.claude"
-    fi
-
     # Change to worktree directory
     echo "📂 Switching to worktree directory..."
     cd "$WORKTREE_DIR"
@@ -105,7 +99,7 @@ setup_localias() {
         echo "   Install with: go install github.com/peterldowns/localias@latest"
         return
     fi
-    
+
     # Generate random port between PORT_MIN-PORT_MAX
     PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
 
@@ -153,7 +147,7 @@ run_claude_session() {
         initial_prompt=$(cat "./scripts/claude-worktree-initial-prompt")
     fi
 
-    if ! printf '%s' "$initial_prompt" | claude; then
+    if ! claude "$initial_prompt"; then
         handle_claude_exit
     fi
 
@@ -168,10 +162,10 @@ run_claude_session() {
 handle_claude_exit() {
     echo ""
     echo "⚠️  Claude exited with an error or was interrupted."
-    
+
     # Always kill processes after Claude exits
     kill_worktree_processes
-    
+
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
         perform_cleanup
         exit 0
@@ -208,7 +202,7 @@ get_merge_preference() {
     while true; do
         printf "Merge branch '$FEATURE_NAME' into main? (Y=merge, s=squash, n=no): "
         read -r merge_response
-        
+
         case "$merge_response" in
         [yY] | [yY][eE][sS] | "")
             merge_type="merge"
@@ -275,32 +269,32 @@ execute_merge() {
 # Execute continue operation (resume Claude session)
 execute_continue_operation() {
     echo "🔄 Continue mode: resuming Claude session for feature '$FEATURE_NAME'"
-    
+
     # Validate that worktree/branch exists
     validate_existing_feature
-    
+
     # Change to worktree directory
     echo "📂 Switching to existing worktree directory..."
     cd "$WORKTREE_DIR"
-    
+
     # Set tmux session title
     if [ -n "$TMUX" ]; then
         tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
     fi
-    
+
     # Launch Claude with --continue (skip initial prompt)
     echo "🚀 Resuming Claude session with --continue..."
     if ! claude --continue; then
         handle_claude_exit
     fi
-    
+
     # Kill processes after Claude exits
     kill_worktree_processes
-    
+
     # Post-Claude processing
     echo ""
     echo "✅ Claude session completed."
-    
+
     # Handle merge and cleanup
     handle_merge_and_cleanup
 }
@@ -308,22 +302,22 @@ execute_continue_operation() {
 # Execute merge operation (skip to merge and cleanup)
 execute_merge_operation() {
     echo "🔀 Merge mode: skipping to merge and cleanup for feature '$FEATURE_NAME'"
-    
+
     # Validate that worktree/branch exists
     validate_existing_feature
-    
+
     # Kill any processes that might be running
     kill_worktree_processes
-    
+
     # Set tmux session title
     if [ -n "$TMUX" ]; then
         tmux rename-window "${REPO_NAME}-${FEATURE_NAME}"
     fi
-    
+
     # Jump to post-Claude processing (merge and cleanup logic)
     echo ""
     echo "✅ Starting merge process for feature '$FEATURE_NAME'"
-    
+
     # Handle merge and cleanup
     handle_merge_and_cleanup
 }
@@ -341,15 +335,15 @@ handle_existing_feature() {
     echo ""
     echo "What would you like to do?"
     echo "  1. Continue working on the feature (resume Claude session)"
-    echo "  2. Merge and cleanup the feature" 
+    echo "  2. Merge and cleanup the feature"
     echo "  3. Clean up the feature (remove worktree and branch)"
     echo "  4. Cancel (preserve existing worktree)"
     echo ""
-    
+
     while true; do
         printf "Choose an option (1-4): "
         read -r choice
-        
+
         case "$choice" in
         1)
             execute_continue_operation
@@ -379,16 +373,16 @@ handle_existing_feature() {
 handle_merge_and_cleanup() {
     # Get merge preference from user
     get_merge_preference
-    
+
     if [ "$merge_type" != "no" ]; then
         # Execute the merge
         execute_merge
-        
+
         # Clean up worktree and branch after merge
         perform_cleanup
     else
         echo "Skipping merge."
-        
+
         # Ask about cleanup only if no merge
         if prompt_yes_no "Do you want to delete the worktree and branch '$FEATURE_NAME'? (y/N): " "n"; then
             perform_cleanup
@@ -405,19 +399,19 @@ validate_existing_feature() {
     if [ "$FEATURE_VALIDATED" = true ]; then
         return
     fi
-    
+
     # Check if worktree exists
     if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
         echo "Error: No worktree found for feature '$FEATURE_NAME' at: $WORKTREE_DIR"
         exit 1
     fi
-    
+
     # Check if branch exists
     if ! git show-ref --verify --quiet refs/heads/"$FEATURE_NAME"; then
         echo "Error: Branch '$FEATURE_NAME' does not exist"
         exit 1
     fi
-    
+
     # Mark as validated
     FEATURE_VALIDATED=true
 }
@@ -481,7 +475,7 @@ perform_cleanup() {
                 exit 0
             fi
         fi
-        
+
         # Remove worktree (always remove if we reach here)
         echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
         git worktree remove --force "$WORKTREE_DIR"
@@ -576,11 +570,11 @@ kill_worktree_processes() {
     if [ "$PROCESSES_KILLED" = true ]; then
         return
     fi
-    
+
     if [ ! -d "$WORKTREE_DIR" ]; then
         return
     fi
-    
+
     echo "🔪 Killing processes in worktree directory..."
     PROCESSES_KILLED=true
 
@@ -624,21 +618,16 @@ kill_worktree_processes() {
     done
 }
 
-# Configuration constants
-readonly PORT_MIN=3000
-readonly PORT_MAX=9000
-readonly PORT_RETRY_COUNT=5
-
 # Global variables - set during script execution
-FEATURE_NAME=""       # Name of the feature branch being worked on
-WORKTREE_DIR=""       # Path to the worktree directory
-GIT_ROOT=""           # Root directory of the git repository
-REPO_NAME=""          # Name of the repository
-PARENT_DIR=""         # Parent directory containing the repository
-CLEAN_MODE=false      # Whether script is running in cleanup mode
-MERGE_MODE=false      # Whether script is running in merge mode
-CONTINUE_MODE=false   # Whether script is running in continue mode
-PROCESSES_KILLED=false # Whether we've already killed worktree processes
+FEATURE_NAME=""         # Name of the feature branch being worked on
+WORKTREE_DIR=""         # Path to the worktree directory
+GIT_ROOT=""             # Root directory of the git repository
+REPO_NAME=""            # Name of the repository
+PARENT_DIR=""           # Parent directory containing the repository
+CLEAN_MODE=false        # Whether script is running in cleanup mode
+MERGE_MODE=false        # Whether script is running in merge mode
+CONTINUE_MODE=false     # Whether script is running in continue mode
+PROCESSES_KILLED=false  # Whether we've already killed worktree processes
 FEATURE_VALIDATED=false # Whether we've already validated the existing feature
 
 # Main execution function
@@ -687,10 +676,10 @@ main() {
     # Create worktree and setup environment
     setup_worktree
     setup_localias
-    
+
     # Run Claude session
     run_claude_session
-    
+
     # Handle merge and cleanup
     handle_merge_and_cleanup
 }

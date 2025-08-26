@@ -22,5 +22,9 @@
     ],
     "ask": [],
     "defaultMode": "acceptEdits"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "chmod +x ~/.claude/statusline-enhanced.sh && ~/.claude/statusline-enhanced.sh"
   }
 }
