@@ -98,6 +98,12 @@ remove_worktree_and_branch() {
 perform_cleanup() {
     local check_changes="$1"  # "true" to check for changes, "false" to skip
     
+    # Verify worktree exists before attempting cleanup
+    if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
+        echo "No worktree found for '$FEATURE_NAME' - nothing to clean up"
+        return 0
+    fi
+    
     # Check for changes if requested
     force_remove=false
     if [ "$check_changes" = "true" ]; then
@@ -204,6 +210,22 @@ validate_environment() {
 
     # Create worktree directory path
     WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
+}
+
+# Check if worktree already exists and handle it
+check_existing_worktree() {
+    if [ -d "$WORKTREE_DIR" ] || git worktree list | grep -q "$WORKTREE_DIR"; then
+        echo "⚠️  A worktree for '$FEATURE_NAME' already exists at: $WORKTREE_DIR"
+        
+        if prompt_yes_no "Clean up the existing worktree before proceeding? (Y/n): " "y"; then
+            echo "🧹 Cleaning up existing worktree..."
+            perform_cleanup "false"
+            echo "✅ Existing worktree cleaned up"
+        else
+            echo "❌ Cancelled - existing worktree preserved"
+            exit 0
+        fi
+    fi
 }
 
 # Handle clean mode cleanup
@@ -422,6 +444,9 @@ main() {
         handle_clean_mode
         exit 0
     fi
+
+    # Check for existing worktree before creating
+    check_existing_worktree
 
     # Create worktree and setup environment
     create_worktree
