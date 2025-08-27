@@ -6,19 +6,6 @@ readonly PORT_MIN=3000
 readonly PORT_MAX=9000
 readonly PORT_RETRY_COUNT=5
 
-# Request sudo permissions early for localias
-request_sudo_permissions() {
-    if command -v localias >/dev/null 2>&1; then
-        echo "🔐 Requesting sudo permissions for localias..."
-        # Run a simple sudo command to cache credentials
-        sudo -v
-        if [ $? -eq 0 ]; then
-            echo "✅ Sudo permissions granted"
-        else
-            echo "⚠️  Sudo permissions denied - localias may require manual password entry"
-        fi
-    fi
-}
 
 # Helper function to remove localias
 remove_localias() {
@@ -101,6 +88,9 @@ setup_worktree() {
     # Change to worktree directory
     echo "📂 Switching to worktree directory..."
     cd "$WORKTREE_DIR"
+
+    # Setup localias first (before dependencies to get sudo approval when needed)
+    setup_localias
 
     # Auto-install dependencies
     install_dependencies
@@ -687,8 +677,6 @@ main() {
     parse_arguments "$@"
     setup_environment
 
-    # Request sudo permissions early for localias
-    request_sudo_permissions
 
     # Handle clean mode if requested (exit early)
     if [ "$CLEAN_MODE" = true ]; then
@@ -727,9 +715,8 @@ main() {
         fi
     fi
 
-    # Create worktree and setup environment
+    # Create worktree and setup environment (localias setup is now included)
     setup_worktree
-    setup_localias
 
     # Run Claude session
     run_claude_session
