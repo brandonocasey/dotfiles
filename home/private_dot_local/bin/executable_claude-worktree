@@ -18,6 +18,21 @@ remove_localias() {
     fi
 }
 
+# Verify localias daemon is still running after cleanup and restart if needed
+verify_localias_daemon() {
+    if command -v localias >/dev/null 2>&1; then
+        echo "🔍 Verifying localias daemon is running..."
+        if ! localias status >/dev/null 2>&1; then
+            echo "⚠️  localias daemon stopped, restarting..."
+            localias start >/dev/null 2>&1 || {
+                echo "Warning: Failed to restart localias daemon"
+            }
+        else
+            echo "✅ localias daemon is running"
+        fi
+    fi
+}
+
 # Print cleanup instructions
 print_cleanup_instructions() {
     echo "📁 Worktree preserved at: $WORKTREE_DIR"
@@ -500,6 +515,9 @@ perform_cleanup() {
 
     # Remove localias
     remove_localias
+
+    # Verify localias daemon is still running after removal
+    verify_localias_daemon
 
     # Verify worktree exists before attempting cleanup
     if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
