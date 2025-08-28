@@ -338,8 +338,8 @@ if [ -t 0 ]; then
     # No input available (terminal), use empty JSON
     input='{}'
 else
-    # Read from stdin with reasonable timeout
-    input=$(timeout 1 cat 2>/dev/null)
+    # Read from stdin with reduced timeout for better performance
+    input=$(timeout 0.5 cat 2>/dev/null)
     if [ $? -ne 0 ] || [ -z "$input" ]; then
         # Timeout or empty, try one more time without timeout but with limit
         input=$(head -c 10000 2>/dev/null || echo '{}')
@@ -655,9 +655,9 @@ if [ -n "$actual_git_dir" ] && [ -d "$actual_git_dir" ]; then
     if [ "$ENABLE_GIT_CACHE" = "1" ]; then
         git_cache_file="$CACHE_DIR/git_$(pwd | md5sum 2>/dev/null | cut -d' ' -f1 || echo 'default')"
         if [ -f "$git_cache_file" ]; then
-            # Check if cache is less than 3 seconds old
+            # Check if cache is less than 15 seconds old
             cache_age=$(($(date +%s) - $(stat -f %m "$git_cache_file" 2>/dev/null || stat -c %Y "$git_cache_file" 2>/dev/null || echo 0)))
-            if [ $cache_age -lt 3 ]; then
+            if [ $cache_age -lt 15 ]; then
                 git_info=$(cat "$git_cache_file" 2>/dev/null || echo "")
                 # Skip expensive git operations if we have recent cached data
                 if [ -n "$git_info" ]; then
@@ -674,62 +674,23 @@ if [ -n "$actual_git_dir" ] && [ -d "$actual_git_dir" ]; then
     
     # Only do expensive git operations if not using cached data
     if [ "$git_info_cached" != "1" ]; then
-        # Try multiple methods to get the branch name, with worktree support
+        # Simplified git branch detection - use only the fastest method
         branch=""
     
-    # Method 1: git branch --show-current (Git 2.22+) - works well with worktrees
-    if [ -z "$branch" ]; then
-        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git branch --show-current 2>/dev/null | tr -d '\n')
-    fi
-    
-    # Method 2: git symbolic-ref (works for most cases including worktrees)
-    if [ -z "$branch" ]; then
-        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git symbolic-ref --short HEAD 2>/dev/null | tr -d '\n')
-    fi
-    
-    # Method 3: Read HEAD file directly (fastest, supports worktrees)
-    if [ -z "$branch" ] && [ -f "$actual_git_dir/HEAD" ]; then
-        head_content=$(cat "$actual_git_dir/HEAD" 2>/dev/null)
-        if [[ "$head_content" == ref:* ]]; then
-            # Extract branch name from ref
-            branch=$(echo "$head_content" | sed 's|^ref: refs/heads/||' | tr -d '\n')
-        else
-            # Detached HEAD - get short commit hash
-            branch=$(echo "$head_content" | cut -c1-7)
-        fi
-    fi
-    
-    # Method 4: Check for worktree-specific HEAD reference
-    if [ -z "$branch" ]; then
-        # In worktrees, sometimes we need to check the commondir
-        common_dir="$actual_git_dir"
-        if [ -f "$actual_git_dir/commondir" ]; then
-            common_dir_path=$(cat "$actual_git_dir/commondir" 2>/dev/null | tr -d '\n')
-            if [[ "$common_dir_path" != /* ]]; then
-                common_dir="$actual_git_dir/$common_dir_path"
-            else
-                common_dir="$common_dir_path"
-            fi
-        fi
+        # Use git branch --show-current with reduced timeout (fastest and most reliable)
+        branch=$(cd "$working_dir" 2>/dev/null && timeout 0.5 git branch --show-current 2>/dev/null | tr -d '\n')
         
-        # Try to read from the common git directory
-        if [ -f "$common_dir/HEAD" ]; then
-            head_content=$(cat "$common_dir/HEAD" 2>/dev/null)
+        # If that fails, try reading HEAD file directly (no network/git command overhead)
+        if [ -z "$branch" ] && [ -f "$actual_git_dir/HEAD" ]; then
+            head_content=$(cat "$actual_git_dir/HEAD" 2>/dev/null)
             if [[ "$head_content" == ref:* ]]; then
+                # Extract branch name from ref
                 branch=$(echo "$head_content" | sed 's|^ref: refs/heads/||' | tr -d '\n')
+            else
+                # Detached HEAD - get short commit hash
+                branch=$(echo "$head_content" | cut -c1-7)
             fi
         fi
-    fi
-    
-    # Method 5: git describe for detached HEAD
-    if [ -z "$branch" ]; then
-        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git describe --contains --all HEAD 2>/dev/null | tr -d '\n')
-    fi
-    
-    # Method 6: git name-rev as last resort
-    if [ -z "$branch" ]; then
-        branch=$(cd "$working_dir" 2>/dev/null && timeout 1 git name-rev --name-only HEAD 2>/dev/null | tr -d '\n')
-    fi
     
     # Clean up branch name (remove any unwanted prefixes/suffixes)
     if [ -n "$branch" ]; then
@@ -742,22 +703,15 @@ if [ -n "$actual_git_dir" ] && [ -d "$actual_git_dir" ]; then
         branch="detached"
     fi
     
-    # Git status checking - show status icon only when there are uncommitted changes
+    # Simplified git status checking with reduced timeouts
     git_status=""
     
-    # Check for uncommitted changes (staged, modified, or untracked files)
-    if cd "$working_dir" 2>/dev/null && timeout 2 git diff --quiet HEAD 2>/dev/null; then
-        # No changes in working directory or index
-        if ! timeout 2 git diff --cached --quiet 2>/dev/null; then
-            # Has staged changes
-            git_status="●"
-        elif [ -n "$(timeout 2 git ls-files --others --exclude-standard 2>/dev/null)" ]; then
-            # Has untracked files
+    # Quick status check with reduced timeout - combine checks for better performance
+    if cd "$working_dir" 2>/dev/null; then
+        # Use single git status command instead of multiple diff commands (more efficient)
+        if timeout 0.5 git status --porcelain 2>/dev/null | head -1 | grep -q '.'; then
             git_status="●"
         fi
-    else
-        # Has working directory changes or git diff failed (assume changes)
-        git_status="●"
     fi
     
     # Initially format git info with branch name (normal display)

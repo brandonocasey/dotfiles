@@ -59,10 +59,12 @@ install_dependencies() {
 
 # Validate environment and initialize globals
 setup_environment() {
-    # Check if running in tmux
-    if [ -z "$TMUX" ]; then
+    # Check if running in tmux (only for modes that launch Claude)
+    if [ -z "$TMUX" ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ]; then
         echo "Error: This script must be run from within tmux"
         echo "Start tmux first: tmux new-session"
+        echo ""
+        echo "Note: --clean and --merge modes can be run outside tmux"
         exit 1
     fi
 
@@ -622,39 +624,68 @@ kill_worktree_processes() {
     # Get our script info for exclusion
     script_pid=$$
     script_name=$(basename "$0")
+    script_real_path=$(realpath "$0" 2>/dev/null || echo "$0")
 
     # Get all processes using files in the worktree directory
     pids=$(lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
 
     for pid in $pids; do
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-            # Skip our own process
+            # Skip our own process and any parent processes
             if [ "$pid" = "$script_pid" ]; then
                 echo "  Skipping claude-worktree script (PID $pid)"
                 continue
             fi
 
+            # Check if this PID is in our process tree
+            current_ppid=$script_pid
+            while [ "$current_ppid" -gt 1 ]; do
+                if [ "$pid" = "$current_ppid" ]; then
+                    echo "  Skipping parent process (PID $pid)"
+                    continue 2
+                fi
+                current_ppid=$(ps -o ppid= -p "$current_ppid" 2>/dev/null | tr -d ' ')
+                [ -z "$current_ppid" ] && break
+            done
+
             # Get process info
             process_cmd=$(ps -p "$pid" -o args= 2>/dev/null || echo "unknown")
+            process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
 
-            # Skip if it's claude-worktree related
+            # Enhanced exclusion checks for claude-worktree related processes
             case "$process_cmd" in
-            *"claude-worktree"* | *"$script_name"*)
+            *"claude-worktree"* | *"$script_name"* | *"$script_real_path"*)
                 echo "  Skipping claude-worktree process $pid: $process_cmd"
                 continue
                 ;;
             esac
 
-            process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
+            # Skip shell processes that might be running this script
+            case "$process_name" in
+            "bash" | "sh" | "zsh" | "fish")
+                # Check if the shell is running a claude-worktree command
+                if echo "$process_cmd" | grep -q "claude-worktree"; then
+                    echo "  Skipping shell running claude-worktree $pid: $process_cmd"
+                    continue
+                fi
+                ;;
+            esac
 
             # Skip unknown processes for safety
-            if [ "$process_name" = "unknown" ]; then
+            if [ "$process_name" = "unknown" ] || [ "$process_cmd" = "unknown" ]; then
                 echo "  Skipping unknown process $pid"
                 continue
             fi
 
             echo "  Killing process $pid ($process_name): $process_cmd"
-            kill "$pid" 2>/dev/null || kill -9 "$pid" 2>/dev/null
+            # Use SIGTERM first, then SIGKILL if needed
+            if kill "$pid" 2>/dev/null; then
+                # Wait a moment and check if process is still running
+                sleep 0.1
+                if kill -0 "$pid" 2>/dev/null; then
+                    kill -9 "$pid" 2>/dev/null
+                fi
+            fi
         fi
     done
 }
