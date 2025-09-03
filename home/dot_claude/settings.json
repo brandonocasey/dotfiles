@@ -21,7 +21,7 @@
     ],
     "defaultMode": "acceptEdits"
   },
-  "model": "opusplan",
+  "model": "sonnet",
   "statusLine": {
     "type": "command",
     "command": "STATUSLINE_REALTIME=1 bash ~/.claude/statusline-enhanced.sh"
