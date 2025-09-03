@@ -382,9 +382,7 @@ execute_merge_operation() {
 
 # Execute clean operation (remove worktree and branch)
 execute_clean_operation() {
-    echo "🧹 Cleaning up feature: $FEATURE_NAME"
     perform_cleanup
-    echo "✅ Cleanup complete!"
 }
 
 # Handle existing feature detection and user choice

@@ -16,10 +16,9 @@
       "WebSearch",
       "Write"
     ],
-    "deny": [
-      "Bash(rm*)"
+    "ask": [
+      "Bash(rm:*)"
     ],
-    "ask": [],
     "defaultMode": "acceptEdits"
   },
   "model": "opusplan",
