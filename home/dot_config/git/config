@@ -131,40 +131,36 @@
 [include]
   path = ~/.config/git/local
 
-# config as described in https://superuser.com/a/1664624
-[includeIf "gitdir:~/Projects/brandonocasey/"]
+# includeIf config as described in https://superuser.com/a/1664624
+#
+# brandonocasey (Github Public)
+#
+[includeIf "gitdir/i:~/projects/brandonocasey/**"]
+  path = ~/.config/git/brandonocasey
+[includeIf "hasconfig:remote.*.url:**github.com**brandonocasey/**"]
+  path = ~/.config/git/brandonocasey
+[includeIf "hasconfig:remote.*.url:**github.com**videojs/**"]
   path = ~/.config/git/brandonocasey
 
-[includeIf "gitdir:~/projects/brandonocasey/"]
-  path = ~/.config/git/brandonocasey
 
-[includeIf "gitdir:~/projects/jwplayer/"]
+#
+# jwbrandon (Github Public) jwplayer
+#
+[includeIf "gitdir/i:~/projects/jwplayer/**"]
+  path = ~/.config/git/jwbrandon
+[includeIf "hasconfig:remote.*.url:**github.com**jwplayer/**"]
+  path = ~/.config/git/jwbrandon
+[includeIf "hasconfig:remote.*.url:**github.com**jwbrandon/**"]
   path = ~/.config/git/jwbrandon
 
-[includeIf "gitdir:~/Projects/jwplayer/"]
-  path = ~/.config/git/jwbrandon
-
-[includeIf "hasconfig:remote.*.url:git@github.com:brandonocasey/**"]
-  path = ~/.config/git/brandonocasey
-
-[includeIf "hasconfig:remote.*.url:https://github.com/brandonocasey/**"]
-  path = ~/.config/git/brandonocasey
-
-[includeIf "hasconfig:remote.*.url:git@github.com:videojs/**"]
-  path = ~/.config/git/brandonocasey
-
-[includeIf "hasconfig:remote.*.url:https://github.com/videojs/**"]
-  path = ~/.config/git/brandonocasey
-
-[includeIf "hasconfig:remote.*.url:git@github.com:jwplayer/**"]
-  path = ~/.config/git/jwbrandon
-
-[includeIf "hasconfig:remote.*.url:https://github.com/jwplayer/**"]
-  path = ~/.config/git/jwbrandon
-
-[includeIf "hasconfig:remote.*.url:git@github.com:jwbrandon/**"]
-  path = ~/.config/git/jwbrandon
-
-[includeIf "hasconfig:remote.*.url:https://github.com/jwbrandon/**"]
-  path = ~/.config/git/jwbrandon
+#
+# bcasey1 gitlab private jwpconnatix
+#
+#
+[includeIf "gitdir/i:~/projects/jwpconnatix/**"]
+  path = ~/.config/git/bcasey1
+[includeIf "hasconfig:remote.*.url:**gitlab.com**jwpconnatix/**"]
+  path = ~/.config/git/bcasey1
+[includeIf "hasconfig:remote.*.url:**gitlab.com**bcasey1/**"]
+  path = ~/.config/git/bcasey1
 
