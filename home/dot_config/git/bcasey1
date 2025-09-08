@@ -1,0 +1,13 @@
+[commit]
+  gpgsign = true
+
+[user]
+  name = bcasey1
+  email = bcasey@jwplayer.com
+  signingkey = ~/.ssh/bcasey1-gitlab-auth-sign.pub
+
+[gpg]
+  format = ssh
+
+[core]
+  sshCommand = "ssh -i ~/.ssh/bcasey1-gitlab-auth-sign"
