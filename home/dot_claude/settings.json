@@ -24,6 +24,6 @@
   "model": "sonnet",
   "statusLine": {
     "type": "command",
-    "command": "STATUSLINE_REALTIME=1 bash ~/.claude/statusline-enhanced.sh"
+    "command": "STATUSLINE_REALTIME=0 bash ~/.claude/statusline-enhanced.sh"
   }
 }

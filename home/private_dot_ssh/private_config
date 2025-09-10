@@ -1,5 +1,4 @@
-Include ~/.ssh/local
+AddKeysToAgent 72h
+#IdentitiesOnly yes
 
-Host *
-  AddKeysToAgent 72h
-  #IdentitiesOnly yes
+Include ~/.ssh/local
