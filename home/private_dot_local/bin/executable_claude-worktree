@@ -1,38 +1,6 @@
 #!/bin/bash
 set -e
 
-# Configuration constants
-readonly PORT_MIN=3000
-readonly PORT_MAX=9000
-readonly PORT_RETRY_COUNT=5
-
-
-# Helper function to remove localias
-remove_localias() {
-    if command -v localias >/dev/null 2>&1; then
-        local alias="${FEATURE_NAME}.local"
-        if localias list | grep -q "$alias"; then
-            echo "🔗 Removing localias: $alias"
-            localias remove "$alias"
-        fi
-    fi
-}
-
-# Verify localias daemon is still running after cleanup and restart if needed
-verify_localias_daemon() {
-    if command -v localias >/dev/null 2>&1; then
-        echo "🔍 Verifying localias daemon is running..."
-        if ! localias status >/dev/null 2>&1; then
-            echo "⚠️  localias daemon stopped, restarting..."
-            localias start >/dev/null 2>&1 || {
-                echo "Warning: Failed to restart localias daemon"
-            }
-        else
-            echo "✅ localias daemon is running"
-        fi
-    fi
-}
-
 # Print cleanup instructions
 print_cleanup_instructions() {
     echo "📁 Worktree preserved at: $WORKTREE_DIR"
@@ -106,85 +74,8 @@ setup_worktree() {
     echo "📂 Switching to worktree directory..."
     cd "$WORKTREE_DIR"
 
-    # Setup localias first (before dependencies to get sudo approval when needed)
-    setup_localias
-
     # Auto-install dependencies
     install_dependencies
-}
-
-# Save environment variables to worktree directory
-save_env_variables() {
-    local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
-    echo "💾 Saving environment variables to $env_file"
-
-    cat >"$env_file" <<EOF
-# Claude-worktree environment variables
-# Generated on $(date)
-export PORT="$PORT"
-export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
-EOF
-}
-
-# Load environment variables from worktree directory
-load_env_variables() {
-    local env_file="$WORKTREE_DIR/.claude-worktree.local.env"
-
-    if [ -f "$env_file" ]; then
-        echo "📂 Loading saved environment variables from $env_file"
-        # Source the file to load variables
-        . "$env_file"
-        echo "📡 Restored development server port: $PORT"
-        if [ -n "$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS" ]; then
-            echo "🌐 Restored local alias: https://$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
-        fi
-    fi
-}
-
-# Setup localias with random port
-setup_localias() {
-    if ! command -v localias >/dev/null 2>&1; then
-        echo "⚠️  localias not found, skipping local alias setup"
-        echo "   Install with: go install github.com/peterldowns/localias@latest"
-        return
-    fi
-
-    # Generate random port between PORT_MIN-PORT_MAX
-    PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
-
-    # Check if port is already in use, try a few times
-    for i in $(seq 1 $PORT_RETRY_COUNT); do
-        if ! lsof -i :$PORT >/dev/null 2>&1; then
-            break
-        fi
-        PORT=$((PORT_MIN + RANDOM % (PORT_MAX - PORT_MIN)))
-    done
-
-    ALIAS="${FEATURE_NAME}.local"
-    echo "🔗 Setting up localias: $ALIAS -> localhost:$PORT"
-
-    # Set the alias
-    echo "  Running: localias set $ALIAS $PORT"
-    localias set "$ALIAS" "$PORT" >/dev/null 2>&1
-
-    # Check if localias daemon is running, start if needed
-    if ! localias status >/dev/null 2>&1; then
-        echo "  Running: localias start"
-        localias start >/dev/null 2>&1 || true
-    else
-        echo "  Running: localias reload"
-        localias reload >/dev/null 2>&1 || true
-
-    fi
-
-    # Export environment variables for development
-    export PORT
-    export __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS="$ALIAS"
-    echo "📡 Development server port: $PORT"
-    echo "🌐 Local alias: https://$ALIAS"
-
-    # Save environment variables for --continue mode
-    save_env_variables
 }
 
 # Run Claude with optional initial prompt
@@ -325,25 +216,6 @@ execute_continue_operation() {
     # Change to worktree directory
     echo "📂 Switching to existing worktree directory..."
     cd "$WORKTREE_DIR"
-
-    # Load saved environment variables
-    load_env_variables
-
-    # Optionally re-setup localias if variables were loaded
-    if [ -n "$PORT" ] && [ -n "$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS" ]; then
-        # Extract feature name from the alias
-        local saved_alias="$__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS"
-        if command -v localias >/dev/null 2>&1; then
-            echo "🔗 Re-establishing localias: $saved_alias -> localhost:$PORT"
-            # Ensure daemon is running
-            if ! localias status >/dev/null 2>&1; then
-                echo "  Running: localias start"
-                localias start >/dev/null 2>&1 || true
-            fi
-            # Set the alias again
-            localias set "$saved_alias" "$PORT" >/dev/null 2>&1
-        fi
-    fi
 
     # Launch Claude with --continue (skip initial prompt)
     echo "🚀 Resuming Claude session with --continue..."
@@ -511,12 +383,6 @@ perform_cleanup() {
     # Kill any processes running in the worktree directory first
     kill_worktree_processes
 
-    # Remove localias
-    remove_localias
-
-    # Verify localias daemon is still running after removal
-    verify_localias_daemon
-
     # Verify worktree exists before attempting cleanup
     if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
         echo "No worktree found for '$FEATURE_NAME' - nothing to clean up"
@@ -568,7 +434,7 @@ parse_arguments() {
             echo ""
             echo "Options:"
             echo "  -h, --help     Show this help message"
-            echo "  --clean        Remove worktree, branch, and localias for feature"
+            echo "  --clean        Remove worktree and branch for feature"
             echo "  --merge        Skip to merge and cleanup (as if Claude just exited)"
             echo "  --continue     Resume Claude session in existing worktree"
             echo ""
@@ -576,10 +442,8 @@ parse_arguments() {
             echo "  1. Create a worktree in a sibling directory"
             echo "  2. Create or checkout the feature branch"
             echo "  3. Install dependencies if package files are found"
-            echo "  4. Set up localias with random port (<feature>.local)"
-            echo "  5. Set terminal/window title"
-            echo "  6. Launch Claude"
-            echo "  7. After Claude exits, offer to merge and cleanup"
+            echo "  4. Launch Claude"
+            echo "  5. After Claude exits, offer to merge and cleanup"
             exit 0
             ;;
         --clean)

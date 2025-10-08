@@ -1,6 +1,8 @@
-Review all currently unstaged or untracked file changes in the repository.
+Perform a pull request style review of all currently unstaged or staged file changes in the repository.
 
-First, run `git status` and `git diff` to see all unstaged and untracked changes.
+IMPORTANT: Do NOT use GitHub CLI (gh) or any other CLI tools to view pull requests. Only review local git changes.
+
+First, run `git status` and `git diff` to see all unstaged and staged changes.
 
 Then, verify tests and linting:
 - Check for and run any test commands (e.g., `npm test`, `pytest`, `cargo test`, etc.)
