@@ -2,6 +2,11 @@ Review all currently unstaged or untracked file changes in the repository.
 
 First, run `git status` and `git diff` to see all unstaged and untracked changes.
 
+Then, verify tests and linting:
+- Check for and run any test commands (e.g., `npm test`, `pytest`, `cargo test`, etc.)
+- Check for and run any linting commands (e.g., `npm run lint`, `eslint`, `pylint`, `cargo clippy`, etc.)
+- Note: Look at package.json, Makefile, or other config files to determine the correct commands
+
 Then analyze the changes and provide a comprehensive code review covering:
 
 1. **Maintainability**: Are the changes easy to understand and modify in the future? Is there adequate separation of concerns?
@@ -13,6 +18,8 @@ Then analyze the changes and provide a comprehensive code review covering:
 4. **Possible Issues**: Identify potential bugs, edge cases, performance concerns, type safety issues, or security vulnerabilities.
 
 5. **Duplication**: Are there duplicate implementations or repeated code that could be refactored into shared utilities?
+
+6. **Tests and Linting**: Report the status of tests and linting. If tests fail or linting errors are found, include them as critical issues.
 
 For each finding, provide:
 - The file location (use `file_path:line_number` format)
