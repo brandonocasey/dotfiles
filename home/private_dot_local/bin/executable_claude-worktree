@@ -5,7 +5,144 @@ set -e
 print_cleanup_instructions() {
     echo "📁 Worktree preserved at: $WORKTREE_DIR"
     echo "🌿 Branch '$FEATURE_NAME' available for later work"
-    echo "To clean up later: claude-worktree --clean '$FEATURE_NAME'"
+    echo ""
+    echo "Options:"
+    echo "  claude-worktree --continue '$FEATURE_NAME'  # Resume work"
+    echo "  claude-worktree --merge '$FEATURE_NAME'     # Merge and cleanup"
+    echo "  claude-worktree --clean '$FEATURE_NAME'     # Remove worktree and branch"
+}
+
+# Create template config file with defaults
+init_config() {
+    local config_dir="$GIT_ROOT/.config"
+    local config_file="$config_dir/claude-worktree.sh"
+
+    # Create .config directory if it doesn't exist
+    if [ ! -d "$config_dir" ]; then
+        mkdir -p "$config_dir"
+        echo "📁 Created directory: $config_dir"
+    fi
+
+    # Check if config already exists
+    local config_exists=false
+    if [ -f "$config_file" ]; then
+        echo "✅ Config file already exists: $config_file"
+        config_exists=true
+    fi
+
+    # Write template config only if it doesn't exist
+    if [ "$config_exists" = false ]; then
+        cat > "$config_file" << 'EOF'
+#!/bin/bash
+# Claude Worktree Configuration
+# This file configures behavior for claude-worktree script
+
+# Initial prompt (inline text only)
+# Example: INITIAL_PROMPT="start a dev server in the background"
+INITIAL_PROMPT=""
+
+# Custom setup command function (optional)
+# Runs in worktree directory in the background after dependency installation
+# Receives two arguments: $1=start_dir (repo root), $2=workspace_dir (worktree path)
+# Example: npm run build:dev
+setup_command() {
+    local start_dir="$1"
+    local workspace_dir="$2"
+
+    # Your setup commands here
+}
+
+# Custom teardown command function (optional)
+# Runs before worktree is removed during cleanup
+# Receives two arguments: $1=start_dir (repo root), $2=workspace_dir (worktree path)
+# Example: save logs, backup data, etc.
+teardown_command() {
+    local start_dir="$1"
+    local workspace_dir="$2"
+
+    # Your teardown commands here
+}
+
+# Note: Dependencies are always auto-detected and installed in the background
+# Note: Session state (PORT) is automatically saved to .claude-worktree/local.env in worktree
+EOF
+
+        chmod +x "$config_file"
+        echo "✅ Created template config: $config_file"
+        echo ""
+    fi
+
+    # Check if .claude-worktree/ will be gitignored (always check, even if config exists)
+    local gitignore="$GIT_ROOT/.gitignore"
+    local needs_gitignore=true
+
+    if [ -f "$gitignore" ]; then
+        # Check if .claude-worktree directory is already ignored
+        if grep -q "\.claude-worktree" "$gitignore"; then
+            needs_gitignore=false
+            echo "✅ .claude-worktree/ is already in .gitignore"
+        fi
+    fi
+
+    if [ "$needs_gitignore" = true ]; then
+        echo "⚠️  .claude-worktree/ is not in .gitignore"
+        if prompt_yes_no "Add .claude-worktree/ to .gitignore? (Y/n): " "y"; then
+            echo ".claude-worktree/" >> "$gitignore"
+            echo "✅ Added .claude-worktree/ to .gitignore"
+        else
+            echo "⚠️  Warning: .claude-worktree/ should be added to .gitignore"
+        fi
+    fi
+
+    if [ "$config_exists" = false ]; then
+        echo ""
+        echo "Edit this file to customize your worktree setup."
+    fi
+}
+
+# Load configuration from config files
+load_config() {
+    # Set defaults
+    : "${INITIAL_PROMPT:=}"
+
+    # Load base config if it exists
+    local base_config="$GIT_ROOT/.config/claude-worktree.sh"
+    if [ -f "$base_config" ]; then
+        echo "📝 Loading config from $base_config"
+        set -a
+        # shellcheck disable=SC1090
+        source "$base_config"
+        set +a
+    fi
+}
+
+# Save session state (PORT) to local env file in worktree
+save_session_state() {
+    local worktree_dir="$WORKTREE_DIR/.claude-worktree"
+    local local_env="$worktree_dir/local.env"
+
+    # Create directory if it doesn't exist
+    mkdir -p "$worktree_dir"
+
+    # Save PORT (should always be set)
+    echo "PORT=$PORT" > "$local_env"
+}
+
+# Load session state (PORT) from local env file in worktree
+load_session_state() {
+    local local_env="$WORKTREE_DIR/.claude-worktree/local.env"
+
+    if [ -f "$local_env" ]; then
+        echo "📝 Loading session state from $local_env"
+        set -a
+        # shellcheck disable=SC1090
+        source "$local_env"
+        set +a
+
+        # Explicitly export PORT to ensure it's available
+        export PORT
+        echo "🔌 Restored PORT: $PORT"
+    fi
 }
 
 # Auto-install dependencies based on detected package managers
@@ -43,11 +180,11 @@ install_dependencies() {
 # Validate environment and initialize globals
 setup_environment() {
     # Check if running in tmux (only for modes that launch Claude)
-    if [ -z "$TMUX" ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ]; then
+    if [ -z "$TMUX" ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$INIT_MODE" = false ]; then
         echo "Error: This script must be run from within tmux"
         echo "Start tmux first: tmux new-session"
         echo ""
-        echo "Note: --clean and --merge modes can be run outside tmux"
+        echo "Note: --clean, --merge, and --init modes can be run outside tmux"
         exit 1
     fi
 
@@ -64,6 +201,59 @@ setup_environment() {
     WORKTREE_DIR="${PARENT_DIR}/${REPO_NAME}-${FEATURE_NAME}"
 }
 
+# Run setup tasks (dependencies and custom command)
+run_setup_tasks() {
+    local log_file="$1"
+
+    {
+        # Auto-install dependencies (always runs)
+        install_dependencies
+
+        # Run custom setup_command function if defined
+        if type -t setup_command >/dev/null 2>&1; then
+            echo "🔧 Running custom setup_command function"
+            # Pass start_dir and workspace_dir as arguments
+            setup_command "$GIT_ROOT" "$WORKTREE_DIR"
+        fi
+
+        echo "✅ Setup tasks completed at $(date)"
+    } >> "$log_file" 2>&1
+}
+
+# Check status of background setup tasks
+check_setup_status() {
+    local setup_pid_file="$WORKTREE_DIR/.claude-worktree/setup.pid"
+    local setup_log="$WORKTREE_DIR/.claude-worktree/setup.log"
+
+    if [ ! -f "$setup_pid_file" ]; then
+        return 0 # No background setup running
+    fi
+
+    local setup_pid
+    setup_pid=$(cat "$setup_pid_file" 2>/dev/null)
+
+    if [ -z "$setup_pid" ]; then
+        return 0
+    fi
+
+    # Check if process is still running
+    if kill -0 "$setup_pid" 2>/dev/null; then
+        echo "⚙️  Background setup still running (PID: $setup_pid)"
+        echo "📝 View progress: tail -f $setup_log"
+        return 1 # Still running
+    else
+        # Process completed, check if successful
+        if [ -f "$setup_log" ] && grep -q "✅ Setup tasks completed" "$setup_log"; then
+            echo "✅ Background setup completed successfully"
+        else
+            echo "⚠️  Background setup may have failed. Check: $setup_log"
+        fi
+        # Clean up PID file
+        rm -f "$setup_pid_file"
+        return 0
+    fi
+}
+
 # Create and setup the worktree environment
 setup_worktree() {
     echo "📁 Creating worktree at: $WORKTREE_DIR"
@@ -74,21 +264,63 @@ setup_worktree() {
     echo "📂 Switching to worktree directory..."
     cd "$WORKTREE_DIR"
 
-    # Auto-install dependencies
-    install_dependencies
+    # Create .claude-worktree directory for temporary files
+    mkdir -p "$WORKTREE_DIR/.claude-worktree"
+
+    # Load configuration
+    load_config
+
+    # Generate random port if not already set
+    if [ -z "$PORT" ]; then
+        # Use jot on macOS/BSD, shuf on Linux
+        if command -v jot >/dev/null 2>&1; then
+            PORT=$(jot -r 1 3000 9999)
+        elif command -v shuf >/dev/null 2>&1; then
+            PORT=$(shuf -i 3000-9999 -n 1)
+        else
+            # Fallback using bash's RANDOM
+            PORT=$((3000 + RANDOM % 7000))
+        fi
+        echo "🔌 Generated PORT: $PORT"
+    fi
+
+    # Export PORT to environment
+    export PORT
+
+    # Save session state (PORT)
+    save_session_state
+
+    # Always run setup tasks in background
+    local setup_log="$WORKTREE_DIR/.claude-worktree/setup.log"
+    local setup_pid_file="$WORKTREE_DIR/.claude-worktree/setup.pid"
+
+    echo "⚙️  Running setup tasks in background..."
+    echo "📝 Setup log: $setup_log"
+
+    # Run setup in background and store PID
+    run_setup_tasks "$setup_log" &
+    echo $! > "$setup_pid_file"
 }
 
 # Run Claude with optional initial prompt
 run_claude_session() {
-    # Check for initial prompt file
     local initial_prompt=""
-    if [ -f "./scripts/claude-worktree-initial-prompt" ]; then
-        echo "📝 Using initial prompt from ./scripts/claude-worktree-initial-prompt"
-        initial_prompt=$(cat "./scripts/claude-worktree-initial-prompt")
+
+    # Use inline initial prompt if configured
+    if [ -n "$INITIAL_PROMPT" ]; then
+        echo "📝 Using initial prompt from config"
+        initial_prompt="$INITIAL_PROMPT"
     fi
 
-    if ! claude "$initial_prompt"; then
-        handle_claude_exit
+    # Launch Claude with initial prompt (if configured)
+    if [ -n "$initial_prompt" ]; then
+        if ! claude "$initial_prompt"; then
+            handle_claude_exit
+        fi
+    else
+        if ! claude; then
+            handle_claude_exit
+        fi
     fi
 
     # Kill processes after Claude exits
@@ -217,10 +449,28 @@ execute_continue_operation() {
     echo "📂 Switching to existing worktree directory..."
     cd "$WORKTREE_DIR"
 
-    # Launch Claude with --continue (skip initial prompt)
+    # Load configuration to get INITIAL_PROMPT
+    load_config
+
+    # Load session state (PORT)
+    load_session_state
+
+    # Launch Claude with --continue and re-inject initial prompt
+    local initial_prompt=""
+    if [ -n "$INITIAL_PROMPT" ]; then
+        echo "📝 Re-injecting initial prompt from config"
+        initial_prompt="$INITIAL_PROMPT"
+    fi
+
     echo "🚀 Resuming Claude session with --continue..."
-    if ! claude --continue; then
-        handle_claude_exit
+    if [ -n "$initial_prompt" ]; then
+        if ! claude --continue "$initial_prompt"; then
+            handle_claude_exit
+        fi
+    else
+        if ! claude --continue; then
+            handle_claude_exit
+        fi
     fi
 
     # Kill processes after Claude exits
@@ -387,6 +637,20 @@ perform_cleanup() {
     if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
         echo "No worktree found for '$FEATURE_NAME' - nothing to clean up"
     else
+        # Load config to get teardown_command if defined
+        load_config
+
+        # Run teardown_command if defined
+        if type -t teardown_command >/dev/null 2>&1; then
+            echo "🔧 Running teardown_command..."
+            cd "$WORKTREE_DIR"
+            teardown_command "$GIT_ROOT" "$WORKTREE_DIR"
+            cd "$GIT_ROOT"
+        fi
+
+        # Remove setup tracking directory
+        rm -rf "$WORKTREE_DIR/.claude-worktree"
+
         # Check for uncommitted changes
         if ! git -C "$WORKTREE_DIR" diff --quiet || ! git -C "$WORKTREE_DIR" diff --cached --quiet || [ -n "$(git -C "$WORKTREE_DIR" ls-files --others --exclude-standard)" ]; then
             echo "Warning: The worktree has unstaged changes, staged changes, or untracked files."
@@ -417,12 +681,18 @@ parse_arguments() {
     CLEAN_MODE=false
     MERGE_MODE=false
     CONTINUE_MODE=false
+    INIT_MODE=false
     FEATURE_NAME=""
 
     while [ $# -gt 0 ]; do
         case $1 in
+        --init)
+            INIT_MODE=true
+            shift
+            ;;
         -h | --help)
             echo "Usage: $0 <feature-name>"
+            echo "       $0 --init"
             echo "       $0 --clean <feature-name>"
             echo "       $0 --merge <feature-name>"
             echo "       $0 --continue <feature-name>"
@@ -434,6 +704,7 @@ parse_arguments() {
             echo ""
             echo "Options:"
             echo "  -h, --help     Show this help message"
+            echo "  --init         Create template config file (.config/claude-worktree.sh)"
             echo "  --clean        Remove worktree and branch for feature"
             echo "  --merge        Skip to merge and cleanup (as if Claude just exited)"
             echo "  --continue     Resume Claude session in existing worktree"
@@ -441,9 +712,41 @@ parse_arguments() {
             echo "The script will:"
             echo "  1. Create a worktree in a sibling directory"
             echo "  2. Create or checkout the feature branch"
-            echo "  3. Install dependencies if package files are found"
-            echo "  4. Launch Claude"
-            echo "  5. After Claude exits, offer to merge and cleanup"
+            echo "  3. Load config from .config/claude-worktree.sh (if exists)"
+            echo "  4. Run setup tasks in background (dependencies + custom commands)"
+            echo "  5. Launch Claude immediately with optional initial prompt"
+            echo "  6. After Claude exits, offer to merge and cleanup"
+            echo ""
+            echo "Configuration:"
+            echo "  Create config with: $0 --init"
+            echo "  Config location: .config/claude-worktree.sh (project config)"
+            echo ""
+            echo "  Available config options:"
+            echo "    INITIAL_PROMPT=\"text\"    # Inline initial prompt for Claude"
+            echo ""
+            echo "    setup_command() {         # Custom setup function (runs in background)"
+            echo "      local start_dir=\"\$1\"    # Repo root directory"
+            echo "      local workspace_dir=\"\$2\" # Worktree directory"
+            echo "      # your commands here"
+            echo "    }"
+            echo ""
+            echo "    teardown_command() {      # Custom teardown function (runs before cleanup)"
+            echo "      local start_dir=\"\$1\"    # Repo root directory"
+            echo "      local workspace_dir=\"\$2\" # Worktree directory"
+            echo "      # your commands here"
+            echo "    }"
+            echo ""
+            echo "  Example .config/claude-worktree.sh:"
+            echo "    INITIAL_PROMPT=\"start a dev server in the background\""
+            echo "    setup_command() {"
+            echo "      npm run build:dev"
+            echo "    }"
+            echo "    teardown_command() {"
+            echo "      cp \"\$workspace_dir/build\" \"\$start_dir/backup\""
+            echo "    }"
+            echo ""
+            echo "  Note: Dependencies are always auto-detected and installed in background"
+            echo "  Note: Temporary files stored in .claude-worktree/ (add to .gitignore)"
             exit 0
             ;;
         --clean)
@@ -476,9 +779,10 @@ parse_arguments() {
         esac
     done
 
-    # Check if feature name is provided
-    if [ -z "$FEATURE_NAME" ]; then
+    # Check if feature name is provided (not required for --init)
+    if [ -z "$FEATURE_NAME" ] && [ "$INIT_MODE" != true ]; then
         echo "Usage: $0 <feature-name>"
+        echo "       $0 --init"
         echo "       $0 --clean <feature-name>"
         echo "       $0 --merge <feature-name>"
         echo "       $0 --continue <feature-name>"
@@ -500,6 +804,20 @@ kill_worktree_processes() {
 
     echo "🔪 Killing processes in worktree directory..."
     PROCESSES_KILLED=true
+
+    # Kill background setup process if it's still running
+    local setup_pid_file="$WORKTREE_DIR/.claude-worktree/setup.pid"
+    if [ -f "$setup_pid_file" ]; then
+        local setup_pid
+        setup_pid=$(cat "$setup_pid_file" 2>/dev/null)
+        if [ -n "$setup_pid" ] && kill -0 "$setup_pid" 2>/dev/null; then
+            echo "  Killing background setup process (PID $setup_pid)"
+            kill "$setup_pid" 2>/dev/null || true
+            sleep 0.1
+            kill -9 "$setup_pid" 2>/dev/null || true
+        fi
+        rm -f "$setup_pid_file"
+    fi
 
     # Get our script info for exclusion
     script_pid=$$
@@ -579,6 +897,7 @@ PARENT_DIR=""           # Parent directory containing the repository
 CLEAN_MODE=false        # Whether script is running in cleanup mode
 MERGE_MODE=false        # Whether script is running in merge mode
 CONTINUE_MODE=false     # Whether script is running in continue mode
+INIT_MODE=false         # Whether script is running in init mode
 PROCESSES_KILLED=false  # Whether we've already killed worktree processes
 FEATURE_VALIDATED=false # Whether we've already validated the existing feature
 
@@ -588,6 +907,11 @@ main() {
     parse_arguments "$@"
     setup_environment
 
+    # Handle init mode if requested (exit early)
+    if [ "$INIT_MODE" = true ]; then
+        init_config
+        exit 0
+    fi
 
     # Handle clean mode if requested (exit early)
     if [ "$CLEAN_MODE" = true ]; then
