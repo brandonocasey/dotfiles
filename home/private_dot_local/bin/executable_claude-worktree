@@ -116,7 +116,49 @@ load_config() {
     fi
 }
 
-# Save session state (PORT) to local env file in worktree
+# Validate feature name for tmux compatibility
+validate_feature_name() {
+    # Tmux session names have restrictions:
+    # - Can't contain colons (:)
+    # - Can't contain dots (.)
+    # - Can't contain spaces or most special chars
+    # Valid: alphanumeric, hyphens, underscores
+    if ! echo "$FEATURE_NAME" | grep -qE '^[a-zA-Z0-9_-]+$'; then
+        echo "Error: Feature name '$FEATURE_NAME' is invalid for tmux session names"
+        echo "Feature names must contain only: letters, numbers, hyphens (-), and underscores (_)"
+        exit 1
+    fi
+}
+
+# Rename tmux session based on feature name
+rename_tmux_session() {
+    # Get current session name
+    local current_session
+    current_session=$(tmux display-message -p '#S')
+
+    # Save original session name if not already saved
+    if [ -z "$ORIGINAL_TMUX_SESSION" ]; then
+        ORIGINAL_TMUX_SESSION="$current_session"
+        echo "💾 Saving original tmux session name: $ORIGINAL_TMUX_SESSION"
+    fi
+
+    # Rename session to feature name
+    echo "🏷️  Renaming tmux session to: $FEATURE_NAME"
+    tmux rename-session "$FEATURE_NAME"
+}
+
+# Restore original tmux session name
+restore_tmux_session() {
+    # Only restore if we have an original name saved
+    if [ -z "$ORIGINAL_TMUX_SESSION" ]; then
+        return
+    fi
+
+    echo "🔄 Restoring original tmux session name: $ORIGINAL_TMUX_SESSION"
+    tmux rename-session "$ORIGINAL_TMUX_SESSION"
+}
+
+# Save session state (PORT, ORIGINAL_TMUX_SESSION) to local env file in worktree
 save_session_state() {
     local worktree_dir="$WORKTREE_DIR/.claude-worktree"
     local local_env="$worktree_dir/local.env"
@@ -124,11 +166,16 @@ save_session_state() {
     # Create directory if it doesn't exist
     mkdir -p "$worktree_dir"
 
-    # Save PORT (should always be set)
-    echo "PORT=$PORT" > "$local_env"
+    # Save PORT and ORIGINAL_TMUX_SESSION
+    {
+        echo "PORT=$PORT"
+        if [ -n "$ORIGINAL_TMUX_SESSION" ]; then
+            echo "ORIGINAL_TMUX_SESSION=$ORIGINAL_TMUX_SESSION"
+        fi
+    } > "$local_env"
 }
 
-# Load session state (PORT) from local env file in worktree
+# Load session state (PORT, ORIGINAL_TMUX_SESSION) from local env file in worktree
 load_session_state() {
     local local_env="$WORKTREE_DIR/.claude-worktree/local.env"
 
@@ -139,9 +186,14 @@ load_session_state() {
         source "$local_env"
         set +a
 
-        # Explicitly export PORT to ensure it's available
+        # Explicitly export variables to ensure they're available
         export PORT
         echo "🔌 Restored PORT: $PORT"
+
+        if [ -n "$ORIGINAL_TMUX_SESSION" ]; then
+            export ORIGINAL_TMUX_SESSION
+            echo "💾 Restored original tmux session: $ORIGINAL_TMUX_SESSION"
+        fi
     fi
 }
 
@@ -193,6 +245,9 @@ setup_environment() {
         echo "Error: Not in a git repository"
         exit 1
     fi
+
+    # Validate feature name for tmux compatibility (required for session renaming)
+    validate_feature_name
 
     # Get the root of the git repository
     GIT_ROOT="$(git rev-parse --show-toplevel)"
@@ -287,7 +342,10 @@ setup_worktree() {
     # Export PORT to environment
     export PORT
 
-    # Save session state (PORT)
+    # Rename tmux session to feature name
+    rename_tmux_session
+
+    # Save session state (PORT, ORIGINAL_TMUX_SESSION)
     save_session_state
 
     # Always run setup tasks in background
@@ -326,6 +384,9 @@ run_claude_session() {
     # Kill processes after Claude exits
     kill_worktree_processes
 
+    # Restore original tmux session name
+    restore_tmux_session
+
     echo ""
     echo "✅ Claude session completed."
 }
@@ -337,6 +398,9 @@ handle_claude_exit() {
 
     # Always kill processes after Claude exits
     kill_worktree_processes
+
+    # Restore original tmux session name
+    restore_tmux_session
 
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
         perform_cleanup
@@ -452,8 +516,11 @@ execute_continue_operation() {
     # Load configuration to get INITIAL_PROMPT
     load_config
 
-    # Load session state (PORT)
+    # Load session state (PORT, ORIGINAL_TMUX_SESSION)
     load_session_state
+
+    # Rename tmux session to feature name
+    rename_tmux_session
 
     # Launch Claude with --continue and re-inject initial prompt
     local initial_prompt=""
@@ -476,6 +543,9 @@ execute_continue_operation() {
     # Kill processes after Claude exits
     kill_worktree_processes
 
+    # Restore original tmux session name
+    restore_tmux_session
+
     # Post-Claude processing
     echo ""
     echo "✅ Claude session completed."
@@ -491,8 +561,14 @@ execute_merge_operation() {
     # Validate that worktree/branch exists
     validate_existing_feature
 
+    # Load session state to get ORIGINAL_TMUX_SESSION
+    load_session_state
+
     # Kill any processes that might be running
     kill_worktree_processes
+
+    # Restore original tmux session name
+    restore_tmux_session
 
     # Jump to post-Claude processing (merge and cleanup logic)
     echo ""
@@ -639,6 +715,12 @@ perform_cleanup() {
     else
         # Load config to get teardown_command if defined
         load_config
+
+        # Load session state to get ORIGINAL_TMUX_SESSION
+        load_session_state
+
+        # Restore original tmux session name before cleanup
+        restore_tmux_session
 
         # Run teardown_command if defined
         if type -t teardown_command >/dev/null 2>&1; then
