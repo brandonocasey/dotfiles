@@ -1,8 +1,6 @@
-Perform a pull request style review of all currently unstaged or staged file changes in the repository.
+Perform a pull request style review of the code using a command like: `git diff $(git merge-base --fork-point main dev)..dev` where `main` is the main branch for this repository and `dev` is the current branch.
 
 IMPORTANT: Do NOT use GitHub CLI (gh) or any other CLI tools to view pull requests. Only review local git changes.
-
-First, run `git status` and `git diff` to see all unstaged and staged changes.
 
 Then, verify tests and linting:
 - Check for and run any test commands (e.g., `npm test`, `pytest`, `cargo test`, etc.)

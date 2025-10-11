@@ -18,7 +18,6 @@ Desktop.ini
 .vscode/
 
 # Logs
-logs
 *.log
 npm-debug.log*
 

@@ -64,7 +64,7 @@ teardown_command() {
 }
 
 # Note: Dependencies are always auto-detected and installed in the background
-# Note: Session state (PORT) is automatically saved to .claude-worktree/local.env in worktree
+# Note: Session state (PORT) is saved to .claude-worktree/local.env in worktree
 EOF
 
         chmod +x "$config_file"
@@ -132,33 +132,12 @@ validate_feature_name() {
 
 # Rename tmux session based on feature name
 rename_tmux_session() {
-    # Get current session name
-    local current_session
-    current_session=$(tmux display-message -p '#S')
-
-    # Save original session name if not already saved
-    if [ -z "$ORIGINAL_TMUX_SESSION" ]; then
-        ORIGINAL_TMUX_SESSION="$current_session"
-        echo "💾 Saving original tmux session name: $ORIGINAL_TMUX_SESSION"
-    fi
-
     # Rename session to feature name
     echo "🏷️  Renaming tmux session to: $FEATURE_NAME"
     tmux rename-session "$FEATURE_NAME"
 }
 
-# Restore original tmux session name
-restore_tmux_session() {
-    # Only restore if we have an original name saved
-    if [ -z "$ORIGINAL_TMUX_SESSION" ]; then
-        return
-    fi
-
-    echo "🔄 Restoring original tmux session name: $ORIGINAL_TMUX_SESSION"
-    tmux rename-session "$ORIGINAL_TMUX_SESSION"
-}
-
-# Save session state (PORT, ORIGINAL_TMUX_SESSION) to local env file in worktree
+# Save session state (PORT) to local env file in worktree
 save_session_state() {
     local worktree_dir="$WORKTREE_DIR/.claude-worktree"
     local local_env="$worktree_dir/local.env"
@@ -166,16 +145,11 @@ save_session_state() {
     # Create directory if it doesn't exist
     mkdir -p "$worktree_dir"
 
-    # Save PORT and ORIGINAL_TMUX_SESSION
-    {
-        echo "PORT=$PORT"
-        if [ -n "$ORIGINAL_TMUX_SESSION" ]; then
-            echo "ORIGINAL_TMUX_SESSION=$ORIGINAL_TMUX_SESSION"
-        fi
-    } > "$local_env"
+    # Save PORT
+    echo "PORT=$PORT" > "$local_env"
 }
 
-# Load session state (PORT, ORIGINAL_TMUX_SESSION) from local env file in worktree
+# Load session state (PORT) from local env file in worktree
 load_session_state() {
     local local_env="$WORKTREE_DIR/.claude-worktree/local.env"
 
@@ -189,11 +163,6 @@ load_session_state() {
         # Explicitly export variables to ensure they're available
         export PORT
         echo "🔌 Restored PORT: $PORT"
-
-        if [ -n "$ORIGINAL_TMUX_SESSION" ]; then
-            export ORIGINAL_TMUX_SESSION
-            echo "💾 Restored original tmux session: $ORIGINAL_TMUX_SESSION"
-        fi
     fi
 }
 
@@ -345,7 +314,7 @@ setup_worktree() {
     # Rename tmux session to feature name
     rename_tmux_session
 
-    # Save session state (PORT, ORIGINAL_TMUX_SESSION)
+    # Save session state (PORT)
     save_session_state
 
     # Always run setup tasks in background
@@ -384,9 +353,6 @@ run_claude_session() {
     # Kill processes after Claude exits
     kill_worktree_processes
 
-    # Restore original tmux session name
-    restore_tmux_session
-
     echo ""
     echo "✅ Claude session completed."
 }
@@ -398,9 +364,6 @@ handle_claude_exit() {
 
     # Always kill processes after Claude exits
     kill_worktree_processes
-
-    # Restore original tmux session name
-    restore_tmux_session
 
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
         perform_cleanup
@@ -516,7 +479,7 @@ execute_continue_operation() {
     # Load configuration to get INITIAL_PROMPT
     load_config
 
-    # Load session state (PORT, ORIGINAL_TMUX_SESSION)
+    # Load session state (PORT)
     load_session_state
 
     # Rename tmux session to feature name
@@ -543,9 +506,6 @@ execute_continue_operation() {
     # Kill processes after Claude exits
     kill_worktree_processes
 
-    # Restore original tmux session name
-    restore_tmux_session
-
     # Post-Claude processing
     echo ""
     echo "✅ Claude session completed."
@@ -561,14 +521,8 @@ execute_merge_operation() {
     # Validate that worktree/branch exists
     validate_existing_feature
 
-    # Load session state to get ORIGINAL_TMUX_SESSION
-    load_session_state
-
     # Kill any processes that might be running
     kill_worktree_processes
-
-    # Restore original tmux session name
-    restore_tmux_session
 
     # Jump to post-Claude processing (merge and cleanup logic)
     echo ""
@@ -715,12 +669,6 @@ perform_cleanup() {
     else
         # Load config to get teardown_command if defined
         load_config
-
-        # Load session state to get ORIGINAL_TMUX_SESSION
-        load_session_state
-
-        # Restore original tmux session name before cleanup
-        restore_tmux_session
 
         # Run teardown_command if defined
         if type -t teardown_command >/dev/null 2>&1; then
