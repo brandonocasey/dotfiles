@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell",
+      "Edit",
+      "Glob", 
+      "Grep",
+      "LS",
+      "MultiEdit",
+      "NotebookEdit",
+      "NotebookRead",
+      "Read",
+      "Task",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
+    "ask": [
+      "Shell(rm:*)"
+    ],
+    "deny": []
+  },
+  "version": 1,
+  "editor": {
+    "vimMode": false
+  },
+  "hasChangedDefaultModel": false,
+  "network": {
+    "useHttp1ForAgent": false
+  },
+  "approvalMode": "acceptEdits",
+  "sandbox": {
+    "mode": "disabled",
+    "networkAccess": "allowlist"
+  },
+  "privacyCache": {
+    "ghostMode": true,
+    "privacyMode": 2,
+    "updatedAt": 1760553834465
+  }
+}
