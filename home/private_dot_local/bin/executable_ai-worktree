@@ -21,6 +21,103 @@ print_cleanup_instructions() {
     echo "  ai-worktree --clean '$FEATURE_NAME'              # Remove worktree and branch"
 }
 
+# Install shell completions
+install_completions() {
+    echo "🔧 Installing shell completions for ai-worktree"
+    echo ""
+
+    # Detect shell
+    local shell_name
+    shell_name=$(basename "${SHELL:-bash}")
+
+    case "$shell_name" in
+    fish)
+        local fish_completions_dir="$HOME/.config/fish/completions"
+        local completion_file="$fish_completions_dir/ai-worktree.fish"
+
+        # Create directory if it doesn't exist
+        if [ ! -d "$fish_completions_dir" ]; then
+            mkdir -p "$fish_completions_dir"
+            echo "📁 Created directory: $fish_completions_dir"
+        fi
+
+        # Check if completion file already exists
+        if [ -f "$completion_file" ]; then
+            echo "⚠️  Fish completion file already exists: $completion_file"
+            if ! prompt_yes_no "Overwrite existing completion file? (y/N): " "n"; then
+                echo "Skipped Fish completions installation"
+                return
+            fi
+        fi
+
+        # Write Fish completion file
+        cat > "$completion_file" << 'EOF'
+# Fish completion for ai-worktree
+
+# Complete branch names for --clean, --merge, --continue (only existing worktrees/branches)
+function __ai_worktree_existing_branches
+    # Get branches that have corresponding worktrees
+    if git rev-parse --git-dir >/dev/null 2>&1
+        set repo_name (basename (git rev-parse --show-toplevel))
+        set parent_dir (dirname (git rev-parse --show-toplevel))
+
+        for branch in (git branch --format='%(refname:short)' 2>/dev/null)
+            set worktree_dir "$parent_dir/$repo_name-$branch"
+            if test -d "$worktree_dir"
+                echo $branch
+            end
+        end
+    end
+end
+
+# Complete feature names (any valid branch name or new feature name)
+function __ai_worktree_all_branches
+    if git rev-parse --git-dir >/dev/null 2>&1
+        git branch --format='%(refname:short)' 2>/dev/null
+    end
+end
+
+# Complete AI providers
+function __ai_worktree_providers
+    echo claude
+    echo openai
+    echo cursor
+end
+
+# Complete options
+complete -c ai-worktree -s h -l help -d "Show help message"
+complete -c ai-worktree -l init -d "Create template config file"
+complete -c ai-worktree -l list -d "List all active ai-worktree sessions"
+complete -c ai-worktree -l install-completions -d "Install shell completions"
+complete -c ai-worktree -l clean -d "Remove worktree and branch" -xa "(__ai_worktree_existing_branches)"
+complete -c ai-worktree -l merge -d "Skip to merge and cleanup" -xa "(__ai_worktree_existing_branches)"
+complete -c ai-worktree -l continue -d "Resume AI session in existing worktree" -xa "(__ai_worktree_existing_branches)"
+complete -c ai-worktree -l ai -d "Select AI provider" -xa "(__ai_worktree_providers)"
+
+# Complete feature names for the main argument (when not using special modes)
+complete -c ai-worktree -f -n "not __fish_seen_subcommand_from --clean --merge --continue --init --list --install-completions" -xa "(__ai_worktree_all_branches)"
+EOF
+
+        echo "✅ Installed Fish completions: $completion_file"
+        echo ""
+        echo "Completions will be available in new Fish shell sessions."
+        echo "To use immediately, run: source $completion_file"
+        ;;
+    bash)
+        echo "⚠️  Bash completions not yet implemented"
+        echo "Consider contributing at: https://github.com/your-repo/ai-worktree"
+        ;;
+    zsh)
+        echo "⚠️  Zsh completions not yet implemented"
+        echo "Consider contributing at: https://github.com/your-repo/ai-worktree"
+        ;;
+    *)
+        echo "⚠️  Shell '$shell_name' not supported for completions"
+        echo "Supported shells: fish"
+        ;;
+    esac
+}
+
 # Create template config file with defaults
 init_config() {
     local config_dir="$GIT_ROOT/.config"
@@ -187,7 +284,7 @@ ensure_tmux_session() {
         return
     fi
 
-    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$INIT_MODE" = true ] || [ "$LIST_MODE" = true ]; then
+    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$INIT_MODE" = true ] || [ "$LIST_MODE" = true ] || [ "$INSTALL_COMPLETIONS_MODE" = true ]; then
         return
     fi
 
@@ -574,13 +671,18 @@ install_dependencies() {
 
 # Validate environment and initialize globals
 setup_environment() {
-    # Validate feature name before tmux handling
-    if [ "$INIT_MODE" = false ] && [ "$LIST_MODE" = false ]; then
+    # Validate feature name before tmux handling (skip for modes that don't need it)
+    if [ "$INIT_MODE" = false ] && [ "$LIST_MODE" = false ] && [ "$INSTALL_COMPLETIONS_MODE" = false ]; then
         validate_feature_name
     fi
 
     # Start tmux session automatically when required
     ensure_tmux_session
+
+    # Skip git validation for --install-completions
+    if [ "$INSTALL_COMPLETIONS_MODE" = true ]; then
+        return
+    fi
 
     # Get the current git directory
     if ! git rev-parse --git-dir >/dev/null 2>&1; then
@@ -783,6 +885,8 @@ get_merge_preference() {
 
 # Execute merge operation based on merge_type
 execute_merge() {
+    local merge_successful=false
+
     # Go back to original repo to merge
     cd "$GIT_ROOT"
     switch_to_main_branch
@@ -1289,6 +1393,7 @@ parse_arguments() {
     CONTINUE_MODE=false
     INIT_MODE=false
     LIST_MODE=false
+    INSTALL_COMPLETIONS_MODE=false
     FEATURE_NAME=""
     AI_PROVIDER=""
     CLI_AI_PROVIDER=""
@@ -1297,6 +1402,10 @@ parse_arguments() {
         case $1 in
         --init)
             INIT_MODE=true
+            shift
+            ;;
+        --install-completions)
+            INSTALL_COMPLETIONS_MODE=true
             shift
             ;;
         --list)
@@ -1335,10 +1444,11 @@ parse_arguments() {
             echo "  feature-name    Name of the feature branch to create/clean"
             echo ""
             echo "Options:"
-            echo "  -h, --help     Show this help message"
-            echo "  --init         Create template config file (.config/ai-worktree.sh)"
-            echo "  --list         List all active ai-worktree sessions"
-            echo "  --clean        Remove worktree and branch for feature"
+            echo "  -h, --help              Show this help message"
+            echo "  --init                  Create template config file (.config/ai-worktree.sh)"
+            echo "  --list                  List all active ai-worktree sessions"
+            echo "  --install-completions   Install shell completions (Fish supported)"
+            echo "  --clean                 Remove worktree and branch for feature"
             echo "  --merge        Skip to merge and cleanup (post-session workflow)"
             echo "  --continue     Resume AI session in existing worktree"
             echo "  --ai <name>    Select provider (claude, openai, cursor)"
@@ -1417,15 +1527,15 @@ parse_arguments() {
         esac
     done
 
-    # Check if feature name is provided (not required for --init or --list)
-    if [ -z "$FEATURE_NAME" ] && [ "$INIT_MODE" != true ] && [ "$LIST_MODE" != true ]; then
+    # Check if feature name is provided (not required for --init, --list, or --install-completions)
+    if [ -z "$FEATURE_NAME" ] && [ "$INIT_MODE" != true ] && [ "$LIST_MODE" != true ] && [ "$INSTALL_COMPLETIONS_MODE" != true ]; then
         echo "Error: Feature name is required."
         echo "Use -h or --help for more information"
         exit 1
     fi
 
     # Require AI provider for modes that launch a session
-    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$LIST_MODE" = false ]; then
+    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$LIST_MODE" = false ] && [ "$INSTALL_COMPLETIONS_MODE" = false ]; then
         if [ -z "$AI_PROVIDER" ]; then
             echo "Error: Specify an AI provider with '--ai claude|openai|cursor'."
             exit 1
@@ -1560,18 +1670,19 @@ kill_worktree_processes() {
 }
 
 # Global variables - set during script execution
-FEATURE_NAME=""         # Name of the feature branch being worked on
-WORKTREE_DIR=""         # Path to the worktree directory
-GIT_ROOT=""             # Root directory of the git repository
-REPO_NAME=""            # Name of the repository
-PARENT_DIR=""           # Parent directory containing the repository
-CLEAN_MODE=false        # Whether script is running in cleanup mode
-MERGE_MODE=false        # Whether script is running in merge mode
-CONTINUE_MODE=false     # Whether script is running in continue mode
-INIT_MODE=false         # Whether script is running in init mode
-LIST_MODE=false         # Whether script is running in list mode
-PROCESSES_KILLED=false  # Whether we've already killed worktree processes
-FEATURE_VALIDATED=false # Whether we've already validated the existing feature
+FEATURE_NAME=""                # Name of the feature branch being worked on
+WORKTREE_DIR=""                # Path to the worktree directory
+GIT_ROOT=""                    # Root directory of the git repository
+REPO_NAME=""                   # Name of the repository
+PARENT_DIR=""                  # Parent directory containing the repository
+CLEAN_MODE=false               # Whether script is running in cleanup mode
+MERGE_MODE=false               # Whether script is running in merge mode
+CONTINUE_MODE=false            # Whether script is running in continue mode
+INIT_MODE=false                # Whether script is running in init mode
+LIST_MODE=false                # Whether script is running in list mode
+INSTALL_COMPLETIONS_MODE=false # Whether script is running in install-completions mode
+PROCESSES_KILLED=false         # Whether we've already killed worktree processes
+FEATURE_VALIDATED=false        # Whether we've already validated the existing feature
 
 # Main execution function
 main() {
@@ -1586,6 +1697,12 @@ main() {
     # Handle init mode if requested (exit early)
     if [ "$INIT_MODE" = true ]; then
         init_config
+        exit 0
+    fi
+
+    # Handle install-completions mode if requested (exit early)
+    if [ "$INSTALL_COMPLETIONS_MODE" = true ]; then
+        install_completions
         exit 0
     fi
 
