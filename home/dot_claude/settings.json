@@ -1,5 +1,5 @@
 {
-  "model": "claude-sonnet",
+  "model": "sonnet",
   "permissions": {
     "allow": [
       "Bash",
