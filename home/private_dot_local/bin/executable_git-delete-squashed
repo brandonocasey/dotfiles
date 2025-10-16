@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 
-baseBranch='main'
+# Automatically determine the main branch from remote HEAD
+baseBranch=$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+
+if [ -z "$baseBranch" ]; then
+  echo "Error: Could not determine default branch."
+  echo "Run: git remote set-head origin --auto"
+  exit 1
+fi
 
 if [ "$1" != "--delete" ]; then
   echo "doing dry run. Pass --delete to delete local branches"
+  echo "Using base branch: $baseBranch"
 fi
 
 git checkout -q "$baseBranch"

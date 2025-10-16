@@ -187,7 +187,7 @@ ensure_tmux_session() {
         return
     fi
 
-    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$INIT_MODE" = true ]; then
+    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$INIT_MODE" = true ] || [ "$LIST_MODE" = true ]; then
         return
     fi
 
@@ -575,7 +575,7 @@ install_dependencies() {
 # Validate environment and initialize globals
 setup_environment() {
     # Validate feature name before tmux handling
-    if [ "$INIT_MODE" = false ]; then
+    if [ "$INIT_MODE" = false ] && [ "$LIST_MODE" = false ]; then
         validate_feature_name
     fi
 
@@ -588,7 +588,7 @@ setup_environment() {
         exit 1
     fi
 
-    if [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$INIT_MODE" = false ]; then
+    if [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$INIT_MODE" = false ] && [ "$LIST_MODE" = false ]; then
         validate_ai_cli
     fi
 
@@ -715,9 +715,6 @@ run_ai_session() {
     dispatch_provider_command "launch" "$initial_prompt"
     post_session_update
 
-    # Kill processes after AI exits
-    kill_worktree_processes
-
     echo ""
     echo "✅ $AI_NAME session completed."
 }
@@ -726,9 +723,6 @@ run_ai_session() {
 handle_ai_exit() {
     echo ""
     echo "⚠️  $AI_NAME exited with an error or was interrupted."
-
-    # Always kill processes after AI exits
-    kill_worktree_processes
 
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
         perform_cleanup
@@ -858,9 +852,6 @@ execute_continue_operation() {
     dispatch_provider_command "resume" "$initial_prompt"
     post_session_update
 
-    # Kill processes after AI exits
-    kill_worktree_processes
-
     # Post-AI processing
     echo ""
     echo "✅ $AI_NAME session completed."
@@ -876,10 +867,8 @@ execute_merge_operation() {
     # Validate that worktree/branch exists
     validate_existing_feature
 
-    # Kill any processes that might be running
-    kill_worktree_processes
-
     # Jump to post-AI processing (merge and cleanup logic)
+    # Note: Process killing happens in async cleanup, not here
     echo ""
     echo "✅ Starting merge process for feature '$FEATURE_NAME'"
 
@@ -1009,56 +998,288 @@ prompt_yes_no() {
     done
 }
 
-# Unified cleanup function - always forces removal but asks about uncommitted changes
+# Start async cleanup and track it
+start_async_cleanup() {
+    local feature_name="$1"
+    local worktree_dir="$2"
+    local git_root="$3"
+
+    # Create cleanup tracking directory
+    local cleanup_tracking_dir="$git_root/.ai-worktree/cleanups"
+    mkdir -p "$cleanup_tracking_dir"
+
+    # Create unique cleanup ID
+    local cleanup_id
+    cleanup_id="${feature_name}-$$-$(date +%s)"
+    local cleanup_log="$cleanup_tracking_dir/${cleanup_id}.log"
+    local cleanup_pid_file="$cleanup_tracking_dir/${cleanup_id}.pid"
+
+    echo "🧹 Starting background cleanup for feature: $feature_name"
+    echo "📝 Cleanup log: $cleanup_log"
+
+    # Run cleanup in background, immune to terminal closure
+    (
+        # Protect against SIGHUP when terminal closes
+        trap '' HUP
+
+        # Close stdin and redirect stdout/stderr to log
+        exec 0</dev/null
+
+        {
+            echo "=== Cleanup started at $(date) ==="
+            echo "Feature: $feature_name"
+            echo "Worktree: $worktree_dir"
+            echo "PID: $$"
+            echo ""
+
+            # Run teardown_command if defined
+            if type -t teardown_command >/dev/null 2>&1; then
+                echo "🔧 Running teardown_command..."
+                cd "$worktree_dir" 2>/dev/null || true
+                teardown_command "$git_root" "$worktree_dir" || true
+                cd "$git_root"
+            fi
+
+            # Kill any processes running in the worktree directory
+            if [ -d "$worktree_dir" ]; then
+                echo "🔪 Killing processes in worktree..."
+
+                # Use timeout for lsof to avoid hangs
+                if command -v timeout >/dev/null 2>&1; then
+                    pids=$(timeout 5 lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
+                elif command -v gtimeout >/dev/null 2>&1; then
+                    pids=$(gtimeout 5 lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
+                else
+                    pids=$(lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
+                fi
+
+                for pid in $pids; do
+                    echo "  Killing process $pid"
+                    kill "$pid" 2>/dev/null || true
+                    sleep 0.1
+                    kill -9 "$pid" 2>/dev/null || true
+                done
+            fi
+
+            # Remove setup tracking directory
+            echo "🗑️  Removing .ai-worktree tracking directory..."
+            rm -rf "$worktree_dir/.ai-worktree" 2>/dev/null || true
+
+            # Remove worktree
+            echo "🧹 Removing worktree..."
+            if [ -d "$worktree_dir" ] || git -C "$git_root" worktree list | grep -q "$worktree_dir"; then
+                if command -v timeout >/dev/null 2>&1; then
+                    timeout 30 git -C "$git_root" worktree remove --force "$worktree_dir" || {
+                        echo "⚠️  Worktree removal timed out, forcing with rm..."
+                        rm -rf "$worktree_dir" 2>/dev/null || true
+                        git -C "$git_root" worktree prune 2>/dev/null || true
+                    }
+                elif command -v gtimeout >/dev/null 2>&1; then
+                    gtimeout 30 git -C "$git_root" worktree remove --force "$worktree_dir" || {
+                        echo "⚠️  Worktree removal timed out, forcing with rm..."
+                        rm -rf "$worktree_dir" 2>/dev/null || true
+                        git -C "$git_root" worktree prune 2>/dev/null || true
+                    }
+                else
+                    git -C "$git_root" worktree remove --force "$worktree_dir" || {
+                        echo "⚠️  Worktree removal failed, forcing with rm..."
+                        rm -rf "$worktree_dir" 2>/dev/null || true
+                        git -C "$git_root" worktree prune 2>/dev/null || true
+                    }
+                fi
+            fi
+
+            # Remove branch
+            echo "🌿 Removing branch..."
+            if git -C "$git_root" show-ref --verify --quiet refs/heads/"$feature_name"; then
+                git -C "$git_root" branch -D "$feature_name" 2>/dev/null || echo "⚠️  Could not remove branch"
+            fi
+
+            echo ""
+            echo "✨ Cleanup completed at $(date)"
+        } >> "$cleanup_log" 2>&1
+
+        # Remove PID file on completion
+        rm -f "$cleanup_pid_file"
+    ) &
+
+    local cleanup_pid=$!
+    echo "$cleanup_pid" > "$cleanup_pid_file"
+    disown "$cleanup_pid" 2>/dev/null || true
+
+    echo "✅ Background cleanup started (PID: $cleanup_pid)"
+    echo "   Check status with: ai-worktree --list"
+    echo "   View log: tail -f $cleanup_log"
+}
+
+# Unified cleanup function - checks for uncommitted changes, then runs async cleanup
 perform_cleanup() {
-    echo "🧹 Cleaning up feature: $FEATURE_NAME"
-
     cd "$GIT_ROOT"
-
-    # Kill any processes running in the worktree directory first
-    kill_worktree_processes
 
     # Verify worktree exists before attempting cleanup
     if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
         echo "No worktree found for '$FEATURE_NAME' - nothing to clean up"
-    else
-        # Load config to get teardown_command if defined
-        load_config
-
-        # Run teardown_command if defined
-        if type -t teardown_command >/dev/null 2>&1; then
-            echo "🔧 Running teardown_command..."
-            cd "$WORKTREE_DIR"
-            teardown_command "$GIT_ROOT" "$WORKTREE_DIR"
-            cd "$GIT_ROOT"
-        fi
-
-        # Remove setup tracking directory
-        rm -rf "$WORKTREE_DIR/.ai-worktree"
-
-        # Check for uncommitted changes
-        if ! git -C "$WORKTREE_DIR" diff --quiet || ! git -C "$WORKTREE_DIR" diff --cached --quiet || [ -n "$(git -C "$WORKTREE_DIR" ls-files --others --exclude-standard)" ]; then
-            echo "Warning: The worktree has unstaged changes, staged changes, or untracked files."
-            git status --short
-
-            # Ask user for confirmation before proceeding
-            if prompt_yes_no "Force remove the worktree anyway? (y/N): " "n"; then
-                echo "Proceeding with removal of uncommitted changes..."
-            else
-                print_cleanup_instructions
-                exit 0
-            fi
-        fi
-
-        # Remove worktree (always remove if we reach here)
-        echo "🧹 Removing worktree at '$WORKTREE_DIR'..."
-        git worktree remove --force "$WORKTREE_DIR"
+        # Still try to remove the branch if it exists
+        remove_branch
+        return
     fi
 
-    # Remove branch
-    remove_branch
+    # Load config to get teardown_command if defined
+    load_config
 
-    echo "✨ Cleanup complete!"
+    # Check for uncommitted changes
+    if ! git -C "$WORKTREE_DIR" diff --quiet || ! git -C "$WORKTREE_DIR" diff --cached --quiet || [ -n "$(git -C "$WORKTREE_DIR" ls-files --others --exclude-standard)" ]; then
+        echo "⚠️  Warning: The worktree has unstaged changes, staged changes, or untracked files."
+
+        cd "$WORKTREE_DIR"
+        git status --short
+        cd "$GIT_ROOT"
+
+        # Ask user for confirmation before proceeding
+        if ! prompt_yes_no "Start background cleanup anyway? This will remove uncommitted changes. (y/N): " "n"; then
+            print_cleanup_instructions
+            return
+        fi
+
+        echo "✅ Proceeding with cleanup of uncommitted changes..."
+    fi
+
+    # Start async cleanup - this returns immediately
+    start_async_cleanup "$FEATURE_NAME" "$WORKTREE_DIR" "$GIT_ROOT"
+}
+
+# List all ai-worktree sessions
+list_worktrees() {
+    echo "🔍 Active ai-worktree sessions:"
+    echo ""
+
+    local found_any=false
+    local git_root
+    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+    if [ -z "$git_root" ]; then
+        echo "Error: Not in a git repository"
+        exit 1
+    fi
+
+    # Get all worktrees for this repo (using process substitution to avoid subshell)
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^worktree ]]; then
+            local worktree_path="${line#worktree }"
+            local branch="" commit="" provider="" port="" setup_status=""
+
+            # Read additional lines for this worktree
+            while IFS= read -r info_line; do
+                if [[ "$info_line" =~ ^branch ]]; then
+                    branch="${info_line#branch refs/heads/}"
+                elif [[ "$info_line" =~ ^HEAD ]]; then
+                    commit="${info_line#HEAD }"
+                    commit="${commit:0:7}"
+                elif [[ -z "$info_line" ]]; then
+                    # Empty line indicates end of this worktree entry
+                    break
+                fi
+            done
+
+            # Check if this is an ai-worktree session
+            if [ -f "$worktree_path/.ai-worktree/local.env" ]; then
+                found_any=true
+
+                # Load session state
+                provider=""
+                port=""
+                if [ -r "$worktree_path/.ai-worktree/local.env" ]; then
+                    # shellcheck disable=SC1090
+                    source "$worktree_path/.ai-worktree/local.env" 2>/dev/null || true
+                fi
+
+                # Check setup status
+                if [ -f "$worktree_path/.ai-worktree/setup.pid" ]; then
+                    local setup_pid
+                    setup_pid=$(cat "$worktree_path/.ai-worktree/setup.pid" 2>/dev/null)
+                    if [ -n "$setup_pid" ] && kill -0 "$setup_pid" 2>/dev/null; then
+                        setup_status="⚙️  (setup running)"
+                    elif [ -f "$worktree_path/.ai-worktree/setup.log" ] && grep -q "✅ Setup tasks completed" "$worktree_path/.ai-worktree/setup.log" 2>/dev/null; then
+                        setup_status="✅ (setup complete)"
+                    else
+                        setup_status="⚠️  (setup status unknown)"
+                    fi
+                else
+                    setup_status="✅ (ready)"
+                fi
+
+                # Display the worktree info
+                echo "📁 Branch: $branch"
+                echo "   Path: $worktree_path"
+                echo "   Provider: ${provider:-unknown}"
+                echo "   Port: ${port:-none}"
+                echo "   Status: $setup_status"
+
+                # Show session IDs if available
+                if [ -n "$OPENAI_SESSION_ID" ] && [ "$provider" = "openai" ]; then
+                    echo "   OpenAI Session: $OPENAI_SESSION_ID"
+                fi
+                if [ -n "$CURSOR_CHAT_ID" ] && [ "$provider" = "cursor" ]; then
+                    echo "   Cursor Chat: $CURSOR_CHAT_ID"
+                fi
+
+                echo ""
+            fi
+        fi
+    done < <(git worktree list --porcelain)
+
+    if [ "$found_any" = false ]; then
+        echo "No active ai-worktree sessions found."
+        echo ""
+        echo "Create one with: ai-worktree --ai <claude|openai|cursor> <feature-name>"
+    fi
+
+    # Check for running cleanup operations
+    local cleanup_dir="$git_root/.ai-worktree/cleanups"
+    if [ -d "$cleanup_dir" ]; then
+        local found_cleanups=false
+
+        for pid_file in "$cleanup_dir"/*.pid; do
+            [ -e "$pid_file" ] || continue
+
+            local cleanup_pid
+            cleanup_pid=$(cat "$pid_file" 2>/dev/null)
+
+            if [ -n "$cleanup_pid" ] && kill -0 "$cleanup_pid" 2>/dev/null; then
+                if [ "$found_cleanups" = false ]; then
+                    echo ""
+                    echo "🧹 Running cleanup operations:"
+                    echo ""
+                    found_cleanups=true
+                fi
+
+                local cleanup_id
+                cleanup_id=$(basename "$pid_file" .pid)
+                local feature_name="${cleanup_id%%-*}"
+                local log_file="$cleanup_dir/${cleanup_id}.log"
+
+                echo "🔄 Feature: $feature_name"
+                echo "   PID: $cleanup_pid"
+                echo "   Log: $log_file"
+
+                # Show last few lines of log if available
+                if [ -f "$log_file" ] && [ -r "$log_file" ]; then
+                    local last_line
+                    last_line=$(tail -n 1 "$log_file" 2>/dev/null)
+                    if [ -n "$last_line" ]; then
+                        echo "   Status: $last_line"
+                    fi
+                fi
+                echo ""
+            else
+                # PID file exists but process is dead, clean it up
+                rm -f "$pid_file" 2>/dev/null || true
+            fi
+        done
+
+        # Clean up old log files (older than 7 days)
+        find "$cleanup_dir" -name "*.log" -mtime +7 -delete 2>/dev/null || true
+    fi
 }
 
 # Parse command line arguments
@@ -1067,6 +1288,7 @@ parse_arguments() {
     MERGE_MODE=false
     CONTINUE_MODE=false
     INIT_MODE=false
+    LIST_MODE=false
     FEATURE_NAME=""
     AI_PROVIDER=""
     CLI_AI_PROVIDER=""
@@ -1075,6 +1297,10 @@ parse_arguments() {
         case $1 in
         --init)
             INIT_MODE=true
+            shift
+            ;;
+        --list)
+            LIST_MODE=true
             shift
             ;;
         --ai)
@@ -1100,6 +1326,7 @@ parse_arguments() {
             echo "       $0 --continue --ai <claude|openai|cursor> <feature-name>"
             echo "       $0 --merge <feature-name>"
             echo "       $0 --clean <feature-name>"
+            echo "       $0 --list"
             echo "       $0 --init"
             echo ""
             echo "Creates a git worktree for feature development with an AI assistant session"
@@ -1110,6 +1337,7 @@ parse_arguments() {
             echo "Options:"
             echo "  -h, --help     Show this help message"
             echo "  --init         Create template config file (.config/ai-worktree.sh)"
+            echo "  --list         List all active ai-worktree sessions"
             echo "  --clean        Remove worktree and branch for feature"
             echo "  --merge        Skip to merge and cleanup (post-session workflow)"
             echo "  --continue     Resume AI session in existing worktree"
@@ -1189,15 +1417,15 @@ parse_arguments() {
         esac
     done
 
-    # Check if feature name is provided (not required for --init)
-    if [ -z "$FEATURE_NAME" ] && [ "$INIT_MODE" != true ]; then
+    # Check if feature name is provided (not required for --init or --list)
+    if [ -z "$FEATURE_NAME" ] && [ "$INIT_MODE" != true ] && [ "$LIST_MODE" != true ]; then
         echo "Error: Feature name is required."
         echo "Use -h or --help for more information"
         exit 1
     fi
 
     # Require AI provider for modes that launch a session
-    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ]; then
+    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$LIST_MODE" = false ]; then
         if [ -z "$AI_PROVIDER" ]; then
             echo "Error: Specify an AI provider with '--ai claude|openai|cursor'."
             exit 1
@@ -1238,8 +1466,27 @@ kill_worktree_processes() {
     script_name=$(basename "$0")
     script_real_path=$(realpath "$0" 2>/dev/null || echo "$0")
 
-    # Get all processes using files in the worktree directory
-    pids=$(lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u)
+    # Get all processes using files in the worktree directory (with timeout)
+    # Use timeout command if available, otherwise use a background job with timeout
+    if command -v timeout >/dev/null 2>&1; then
+        # GNU timeout or compatible
+        pids=$(timeout 5 lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
+    elif command -v gtimeout >/dev/null 2>&1; then
+        # GNU timeout on macOS (from coreutils)
+        pids=$(gtimeout 5 lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
+    else
+        # Fallback: run lsof with manual timeout
+        pids=$(
+            {
+                lsof +D "$WORKTREE_DIR" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u &
+                lsof_pid=$!
+                sleep 5
+                if kill -0 "$lsof_pid" 2>/dev/null; then
+                    kill "$lsof_pid" 2>/dev/null || true
+                fi
+            } || true
+        )
+    fi
 
     for pid in $pids; do
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
@@ -1322,6 +1569,7 @@ CLEAN_MODE=false        # Whether script is running in cleanup mode
 MERGE_MODE=false        # Whether script is running in merge mode
 CONTINUE_MODE=false     # Whether script is running in continue mode
 INIT_MODE=false         # Whether script is running in init mode
+LIST_MODE=false         # Whether script is running in list mode
 PROCESSES_KILLED=false  # Whether we've already killed worktree processes
 FEATURE_VALIDATED=false # Whether we've already validated the existing feature
 
@@ -1338,6 +1586,12 @@ main() {
     # Handle init mode if requested (exit early)
     if [ "$INIT_MODE" = true ]; then
         init_config
+        exit 0
+    fi
+
+    # Handle list mode if requested (exit early)
+    if [ "$LIST_MODE" = true ]; then
+        list_worktrees
         exit 0
     fi
 
