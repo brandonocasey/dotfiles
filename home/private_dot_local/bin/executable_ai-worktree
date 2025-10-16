@@ -8,6 +8,75 @@ CURSOR_CHAT_ID=""
 CLI_AI_PROVIDER=""
 ORIGINAL_ARGS=("$@")
 
+# Helper to call git-worktree-helper
+call_git_worktree_helper() {
+    if ! command -v git-worktree-helper >/dev/null 2>&1; then
+        echo "Error: git-worktree-helper not found in PATH"
+        exit 1
+    fi
+    git-worktree-helper "$@"
+}
+
+# Reuse utility functions from git-worktree-helper by calling it
+prompt_yes_no() {
+    local prompt="$1"
+    local default="$2"
+
+    while true; do
+        printf "%s" "$prompt"
+        read -r response
+
+        case "$response" in
+        [yY]|[yY][eE][sS])
+            return 0
+            ;;
+        [nN]|[nN][oO])
+            return 1
+            ;;
+        "")
+            if [ "$default" = "y" ]; then
+                return 0
+            else
+                return 1
+            fi
+            ;;
+        *)
+            echo "Please answer y(es) or n(o)"
+            ;;
+        esac
+    done
+}
+
+switch_to_main_branch() {
+    local current_branch
+    current_branch=$(git symbolic-ref --short HEAD)
+    if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
+        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+            echo "Error: Could not switch to main/master branch"
+            exit 1
+        }
+    fi
+}
+
+remove_branch() {
+    if git show-ref --verify --quiet refs/heads/"$FEATURE_NAME"; then
+        echo "🌿 Removing branch: $FEATURE_NAME"
+        git branch -D "$FEATURE_NAME" 2>/dev/null || {
+            echo "Warning: Could not remove branch '$FEATURE_NAME'"
+        }
+    fi
+}
+
+sanitize_tmux_component() {
+    local value="$1"
+    value=$(printf '%s' "${value:-session}" | tr -c '[:alnum:]_-' '-')
+    value=$(printf '%s' "$value" | sed -E 's/-+/-/g; s/^-//; s/-$//')
+    if [ -z "$value" ]; then
+        value="session"
+    fi
+    printf '%s' "$value"
+}
+
 # Print cleanup instructions
 print_cleanup_instructions() {
     echo "📁 Worktree preserved at: $WORKTREE_DIR"
@@ -17,6 +86,7 @@ print_cleanup_instructions() {
     echo "  ai-worktree --continue --ai claude '$FEATURE_NAME'  # Resume with Claude"
     echo "  ai-worktree --continue --ai openai '$FEATURE_NAME'  # Resume with OpenAI"
     echo "  ai-worktree --continue --ai cursor '$FEATURE_NAME'  # Resume with Cursor"
+    echo "  git-worktree-helper --update '$FEATURE_NAME'        # Update with latest from main"
     echo "  ai-worktree --merge '$FEATURE_NAME'              # Merge and cleanup"
     echo "  ai-worktree --clean '$FEATURE_NAME'              # Remove worktree and branch"
 }
@@ -89,13 +159,14 @@ complete -c ai-worktree -s h -l help -d "Show help message"
 complete -c ai-worktree -l init -d "Create template config file"
 complete -c ai-worktree -l list -d "List all active ai-worktree sessions"
 complete -c ai-worktree -l install-completions -d "Install shell completions"
+complete -c ai-worktree -l update -d "Update feature branch with main" -xa "(__ai_worktree_existing_branches)"
 complete -c ai-worktree -l clean -d "Remove worktree and branch" -xa "(__ai_worktree_existing_branches)"
 complete -c ai-worktree -l merge -d "Skip to merge and cleanup" -xa "(__ai_worktree_existing_branches)"
 complete -c ai-worktree -l continue -d "Resume AI session in existing worktree" -xa "(__ai_worktree_existing_branches)"
 complete -c ai-worktree -l ai -d "Select AI provider" -xa "(__ai_worktree_providers)"
 
 # Complete feature names for the main argument (when not using special modes)
-complete -c ai-worktree -f -n "not __fish_seen_subcommand_from --clean --merge --continue --init --list --install-completions" -xa "(__ai_worktree_all_branches)"
+complete -c ai-worktree -f -n "not __fish_seen_subcommand_from --clean --merge --continue --update --init --list --install-completions" -xa "(__ai_worktree_all_branches)"
 EOF
 
         echo "✅ Installed Fish completions: $completion_file"
@@ -118,97 +189,39 @@ EOF
     esac
 }
 
-# Create template config file with defaults
+# Add AI-specific variables to config
 init_config() {
-    local config_dir="$GIT_ROOT/.config"
-    local config_file="$config_dir/ai-worktree.sh"
+    local config_file="$GIT_ROOT/.config/git-worktree-helper.sh"
 
-    # Create .config directory if it doesn't exist
-    if [ ! -d "$config_dir" ]; then
-        mkdir -p "$config_dir"
-        echo "📁 Created directory: $config_dir"
+    # Config should already exist from git-worktree-helper --init
+    if [ ! -f "$config_file" ]; then
+        echo "Error: Config file not found. git-worktree-helper --init should have created it."
+        exit 1
     fi
 
-    # Check if config already exists
-    local config_exists=false
-    if [ -f "$config_file" ]; then
-        echo "✅ Config file already exists: $config_file"
-        config_exists=true
+    # Check if AI prompts are already in the config
+    if grep -q "CLAUDE_INITIAL_PROMPT" "$config_file"; then
+        echo "✅ AI prompt variables already present in config"
+        return
     fi
 
-    # Write template config only if it doesn't exist
-    if [ "$config_exists" = false ]; then
-        cat > "$config_file" << 'EOF'
-#!/bin/bash
-# AI Worktree Configuration
-# This file configures behavior for ai-worktree script
+    echo "📝 Adding AI provider prompts to config..."
 
-# Provider-specific initial prompts (inline text only)
+    # Append AI prompts to the end of the config file
+    cat >> "$config_file" << 'EOF'
+
+# AI provider initial prompts (used by ai-worktree)
+# These are sent to the AI when starting a new session
 # Examples:
-# CLAUDE_INITIAL_PROMPT="start a dev server in the background"
-# OPENAI_INITIAL_PROMPT="run tests before coding"
-# CURSOR_INITIAL_PROMPT="open the docs"
+#   CLAUDE_INITIAL_PROMPT="start a dev server in the background"
+#   OPENAI_INITIAL_PROMPT="run tests before coding"
+#   CURSOR_INITIAL_PROMPT="open the docs"
 CLAUDE_INITIAL_PROMPT=""
 OPENAI_INITIAL_PROMPT=""
 CURSOR_INITIAL_PROMPT=""
-
-# Custom setup command function (optional)
-# Runs in worktree directory in the background after dependency installation
-# Receives two arguments: $1=start_dir (repo root), $2=workspace_dir (worktree path)
-# Example: npm run build:dev
-setup_command() {
-    local start_dir="$1"
-    local workspace_dir="$2"
-
-    # Your setup commands here
-}
-
-# Custom teardown command function (optional)
-# Runs before worktree is removed during cleanup
-# Receives two arguments: $1=start_dir (repo root), $2=workspace_dir (worktree path)
-# Example: save logs, backup data, etc.
-teardown_command() {
-    local start_dir="$1"
-    local workspace_dir="$2"
-
-    # Your teardown commands here
-}
-
-# Note: Dependencies are always auto-detected and installed in the background
-# Note: Session state (PORT) is saved to .ai-worktree/local.env in worktree
 EOF
 
-        chmod +x "$config_file"
-        echo "✅ Created template config: $config_file"
-        echo ""
-    fi
-
-    # Check if .ai-worktree/ will be gitignored (always check, even if config exists)
-    local gitignore="$GIT_ROOT/.gitignore"
-    local needs_gitignore=true
-
-    if [ -f "$gitignore" ]; then
-        # Check if .ai-worktree directory is already ignored
-        if grep -q "\.ai-worktree" "$gitignore"; then
-            needs_gitignore=false
-            echo "✅ .ai-worktree/ is already in .gitignore"
-        fi
-    fi
-
-    if [ "$needs_gitignore" = true ]; then
-        echo "⚠️  .ai-worktree/ is not in .gitignore"
-        if prompt_yes_no "Add .ai-worktree/ to .gitignore? (Y/n): " "y"; then
-            echo ".ai-worktree/" >> "$gitignore"
-            echo "✅ Added .ai-worktree/ to .gitignore"
-        else
-            echo "⚠️  Warning: .ai-worktree/ should be added to .gitignore"
-        fi
-    fi
-
-    if [ "$config_exists" = false ]; then
-        echo ""
-        echo "Edit this file to customize your worktree setup."
-    fi
+    echo "✅ Added AI prompt variables to $config_file"
 }
 
 # Load configuration from config files
@@ -218,13 +231,13 @@ load_config() {
     : "${OPENAI_INITIAL_PROMPT:=}"
     : "${CURSOR_INITIAL_PROMPT:=}"
 
-    # Load base config if it exists
-    local base_config="$GIT_ROOT/.config/ai-worktree.sh"
-    if [ -f "$base_config" ]; then
-        echo "📝 Loading config from $base_config"
+    # Load unified config if it exists
+    local config_file="$GIT_ROOT/.config/git-worktree-helper.sh"
+    if [ -f "$config_file" ]; then
+        echo "📝 Loading config from $config_file"
         set -a
         # shellcheck disable=SC1090
-        source "$base_config"
+        source "$config_file"
         set +a
     fi
 }
@@ -284,7 +297,7 @@ ensure_tmux_session() {
         return
     fi
 
-    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$INIT_MODE" = true ] || [ "$LIST_MODE" = true ] || [ "$INSTALL_COMPLETIONS_MODE" = true ]; then
+    if [ "$CLEAN_MODE" = true ] || [ "$MERGE_MODE" = true ] || [ "$UPDATE_MODE" = true ] || [ "$INIT_MODE" = true ] || [ "$LIST_MODE" = true ] || [ "$INSTALL_COMPLETIONS_MODE" = true ]; then
         return
     fi
 
@@ -503,16 +516,6 @@ ensure_cursor_chat() {
     fi
 }
 
-sanitize_tmux_component() {
-    local value="$1"
-    value=$(printf '%s' "${value:-session}" | tr -c '[:alnum:]_-' '-')
-    value=$(printf '%s' "$value" | sed -E 's/-+/-/g; s/^-//; s/-$//')
-    if [ -z "$value" ]; then
-        value="session"
-    fi
-    printf '%s' "$value"
-}
-
 # Rename tmux session based on feature name
 rename_tmux_session() {
     local feature_component port_component session_name
@@ -573,16 +576,15 @@ keep_tmux_session_alive() {
     exit "$exit_status"
 }
 
-# Save session state (PORT) to local env file in worktree
+# Save session state to .env.local
 save_session_state() {
-    local worktree_dir="$WORKTREE_DIR/.ai-worktree"
-    local local_env="$worktree_dir/local.env"
-
-    # Create directory if it doesn't exist
-    mkdir -p "$worktree_dir"
+    local env_file="$WORKTREE_DIR/.env.local"
 
     {
+        echo "# Generated by ai-worktree on $(date)"
         echo "PORT=$PORT"
+        echo "FEATURE_NAME=$FEATURE_NAME"
+        echo "CREATED_AT=$(date +%s)"
         echo "AI_PROVIDER=$AI_PROVIDER"
         if [ -n "$OPENAI_SESSION_ID" ]; then
             echo "OPENAI_SESSION_ID=$OPENAI_SESSION_ID"
@@ -590,19 +592,28 @@ save_session_state() {
         if [ -n "$CURSOR_CHAT_ID" ]; then
             echo "CURSOR_CHAT_ID=$CURSOR_CHAT_ID"
         fi
-    } > "$local_env"
+
+        # Add custom environment variables from config
+        if [ ${#ENV_VARS[@]} -gt 0 ]; then
+            echo ""
+            echo "# Custom environment variables"
+            for var in "${ENV_VARS[@]}"; do
+                echo "$var"
+            done
+        fi
+    } > "$env_file"
 }
 
-# Load session state (PORT) from local env file in worktree
+# Load session state from .env.local
 load_session_state() {
-    local local_env="$WORKTREE_DIR/.ai-worktree/local.env"
+    local env_file="$WORKTREE_DIR/.env.local"
 
-    if [ -f "$local_env" ]; then
-        echo "📝 Loading session state from $local_env"
+    if [ -f "$env_file" ]; then
+        echo "📝 Loading session state from $env_file"
         local previous_ai_provider="$AI_PROVIDER"
         set -a
         # shellcheck disable=SC1090
-        source "$local_env"
+        source "$env_file"
         set +a
 
         # Explicitly export variables to ensure they're available
@@ -637,37 +648,7 @@ load_session_state() {
     fi
 }
 
-# Auto-install dependencies based on detected package managers
-install_dependencies() {
-    # Define package managers with their detection files, commands, and emojis
-    local yarn_lock="yarn.lock"
-    local package_json="package.json"
-
-    # Check for Node.js dependencies (prefer yarn over npm)
-    if [ -f "$yarn_lock" ] && [ -f "$package_json" ] && command -v yarn >/dev/null 2>&1; then
-        echo "🧶 Installing yarn dependencies..."
-        yarn install --frozen-lockfile
-    elif [ -f "$package_json" ] && command -v npm >/dev/null 2>&1; then
-        echo "📦 Installing npm dependencies..."
-        npm ci 2>/dev/null || npm install
-    fi
-
-    # Check other package managers
-    if [ -f "Cargo.toml" ] && command -v cargo >/dev/null 2>&1; then
-        echo "🦀 Building Rust project..."
-        cargo build
-    fi
-
-    if [ -f "requirements.txt" ] && command -v pip >/dev/null 2>&1; then
-        echo "🐍 Installing Python dependencies..."
-        pip install -r requirements.txt
-    fi
-
-    if [ -f "Gemfile" ] && command -v bundle >/dev/null 2>&1; then
-        echo "💎 Installing Ruby dependencies..."
-        bundle install
-    fi
-}
+# install_dependencies - delegated to git-worktree-helper
 
 # Validate environment and initialize globals
 setup_environment() {
@@ -703,110 +684,40 @@ setup_environment() {
     fi
 }
 
-# Run setup tasks (dependencies and custom command)
-run_setup_tasks() {
-    local log_file="$1"
+# run_setup_tasks - delegated to git-worktree-helper
 
-    {
-        # Auto-install dependencies (always runs)
-        install_dependencies
-
-        # Run custom setup_command function if defined
-        if type -t setup_command >/dev/null 2>&1; then
-            echo "🔧 Running custom setup_command function"
-            # Pass start_dir and workspace_dir as arguments
-            setup_command "$GIT_ROOT" "$WORKTREE_DIR"
-        fi
-
-        echo "✅ Setup tasks completed at $(date)"
-    } >> "$log_file" 2>&1
-}
-
-# Check status of background setup tasks
-check_setup_status() {
-    local setup_pid_file="$WORKTREE_DIR/.ai-worktree/setup.pid"
-    local setup_log="$WORKTREE_DIR/.ai-worktree/setup.log"
-
-    if [ ! -f "$setup_pid_file" ]; then
-        return 0 # No background setup running
-    fi
-
-    local setup_pid
-    setup_pid=$(cat "$setup_pid_file" 2>/dev/null)
-
-    if [ -z "$setup_pid" ]; then
-        return 0
-    fi
-
-    # Check if process is still running
-    if kill -0 "$setup_pid" 2>/dev/null; then
-        echo "⚙️  Background setup still running (PID: $setup_pid)"
-        echo "📝 View progress: tail -f $setup_log"
-        return 1 # Still running
-    else
-        # Process completed, check if successful
-        if [ -f "$setup_log" ] && grep -q "✅ Setup tasks completed" "$setup_log"; then
-            echo "✅ Background setup completed successfully"
-        else
-            echo "⚠️  Background setup may have failed. Check: $setup_log"
-        fi
-        # Clean up PID file
-        rm -f "$setup_pid_file"
-        return 0
-    fi
-}
+# check_setup_status - delegated to git-worktree-helper
 
 # Create and setup the worktree environment
 setup_worktree() {
-    echo "📁 Creating worktree at: $WORKTREE_DIR"
-    echo "🌿 Branch: $FEATURE_NAME"
-    git worktree add "$WORKTREE_DIR" -b "$FEATURE_NAME" 2>/dev/null || git worktree add "$WORKTREE_DIR" "$FEATURE_NAME"
+    echo "🚀 Creating worktree using git-worktree-helper..."
+
+    # Delegate to git-worktree-helper with --no-tmux (we're already in a tmux session)
+    # This handles: worktree creation, PORT generation, .env.local, dependency installation, setup hooks
+    call_git_worktree_helper --no-tmux "$FEATURE_NAME"
 
     # Change to worktree directory
-    echo "📂 Switching to worktree directory..."
     cd "$WORKTREE_DIR"
 
-    # Create .ai-worktree directory for temporary files
-    mkdir -p "$WORKTREE_DIR/.ai-worktree"
-
-    # Load configuration
-    load_config
-
-    # Generate random port if not already set
-    if [ -z "$PORT" ]; then
-        # Use jot on macOS/BSD, shuf on Linux
-        if command -v jot >/dev/null 2>&1; then
-            PORT=$(jot -r 1 3000 9999)
-        elif command -v shuf >/dev/null 2>&1; then
-            PORT=$(shuf -i 3000-9999 -n 1)
-        else
-            # Fallback using bash's RANDOM
-            PORT=$((3000 + RANDOM % 7000))
-        fi
-        echo "🔌 Generated PORT: $PORT"
+    # Load the .env.local that git-worktree-helper created
+    if [ -f "$WORKTREE_DIR/.env.local" ]; then
+        set -a
+        source "$WORKTREE_DIR/.env.local"
+        set +a
+        export PORT
+        echo "🔌 Using PORT: $PORT"
     fi
 
-    # Export PORT to environment
-    export PORT
+    # Load configuration for AI-specific settings
+    load_config
 
-    # Rename tmux session to feature name
+    # Rename our tmux session to include the feature name
     rename_tmux_session
 
-    # Save session state (PORT)
+    # Add AI-specific state to .env.local
     save_session_state
 
-    # Always run setup tasks in background
-    local setup_log="$WORKTREE_DIR/.ai-worktree/setup.log"
-    local setup_pid_file="$WORKTREE_DIR/.ai-worktree/setup.pid"
-
-    echo "⚙️  Running setup tasks in background..."
-    echo "📝 Setup log: $setup_log"
-
-    # Run setup in background and store PID
-    run_setup_tasks "$setup_log" &
-    local setup_pid=$!
-    disown "$setup_pid" 2>/dev/null || true
-    echo "$setup_pid" > "$setup_pid_file"
+    echo "✅ Worktree ready with AI session at: $WORKTREE_DIR"
 }
 
 # Run AI with optional initial prompt
@@ -827,33 +738,11 @@ handle_ai_exit() {
     echo "⚠️  $AI_NAME exited with an error or was interrupted."
 
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
-        perform_cleanup
+        call_git_worktree_helper --clean "$FEATURE_NAME"
         exit 1
     else
         print_cleanup_instructions
         exit 1
-    fi
-}
-
-# Switch to main/master branch
-switch_to_main_branch() {
-    local current_branch
-    current_branch=$(git symbolic-ref --short HEAD)
-    if [ "$current_branch" != "main" ] && [ "$current_branch" != "master" ]; then
-        git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
-            echo "Error: Could not switch to main/master branch"
-            exit 1
-        }
-    fi
-}
-
-# Remove branch with force delete
-remove_branch() {
-    if git show-ref --verify --quiet refs/heads/"$FEATURE_NAME"; then
-        echo "🌿 Removing branch: $FEATURE_NAME"
-        git branch -D "$FEATURE_NAME" 2>/dev/null || {
-            echo "Warning: Could not remove branch '$FEATURE_NAME'"
-        }
     fi
 }
 
@@ -926,51 +815,14 @@ get_merge_and_cleanup_choice() {
     trap - INT
 }
 
-# Execute merge operation based on merge_type
+# execute_merge - delegated to git-worktree-helper
+# Note: Merge logic is in git-worktree-helper, but ai-worktree needs to call it with proper context
 execute_merge() {
     local merge_type="$1"  # "merge" or "squash"
-    local merge_successful=false
 
-    # Go back to original repo to merge
-    cd "$GIT_ROOT"
-    switch_to_main_branch
-
-    if [ "$merge_type" = "squash" ]; then
-        echo "🔄 Squash merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
-        if git merge --squash "$FEATURE_NAME"; then
-            # Commit the squashed changes (opens editor)
-            if git commit; then
-                echo "✅ Squash merge successful!"
-                merge_successful=true
-            else
-                echo "❌ Commit cancelled or failed."
-                print_cleanup_instructions
-                exit 1
-            fi
-        else
-            echo "❌ Squash merge conflicts detected. Please resolve them manually."
-            print_cleanup_instructions
-            exit 1
-        fi
-    else
-        echo "🔀 Merging '$FEATURE_NAME' into $(git symbolic-ref --short HEAD)..."
-        if git merge --no-edit "$FEATURE_NAME"; then
-            echo "✅ Merge successful!"
-            merge_successful=true
-        else
-            echo "❌ Merge conflicts detected. Please resolve them manually."
-            print_cleanup_instructions
-            exit 1
-        fi
-    fi
-
-    # Push to remote
-    if [ "$merge_successful" = true ]; then
-        echo "🚀 Pushing to remote..."
-        local current_branch
-        current_branch=$(git symbolic-ref --short HEAD)
-        git push
-    fi
+    # Delegate to git-worktree-helper for merge
+    # Note: git-worktree-helper --merge handles the full merge flow
+    call_git_worktree_helper --merge "$FEATURE_NAME"
 }
 
 # Execute continue operation (resume AI session)
@@ -1027,7 +879,15 @@ execute_merge_operation() {
 
 # Execute clean operation (remove worktree and branch)
 execute_clean_operation() {
-    perform_cleanup
+    # Delegate to git-worktree-helper for actual worktree cleanup
+    # (it will clean up .env.local which contains AI state)
+    call_git_worktree_helper --clean "$FEATURE_NAME"
+}
+
+# Execute update operation (merge base branch into feature branch)
+execute_update_operation() {
+    # Delegate to git-worktree-helper to update the feature branch
+    call_git_worktree_helper --update "$FEATURE_NAME"
 }
 
 # Handle existing feature detection and user choice
@@ -1063,7 +923,7 @@ handle_existing_feature() {
             # Clean up and restart
             echo ""
             echo "→ Cleaning up and restarting with fresh worktree..."
-            perform_cleanup
+            call_git_worktree_helper --clean "$FEATURE_NAME"
             echo ""
             echo "✅ Cleanup complete. Creating fresh worktree..."
             # Don't exit - continue to create new worktree and run AI session
@@ -1090,24 +950,24 @@ handle_merge_and_cleanup() {
     merge-clean)
         echo ""
         echo "→ Merging and cleaning up..."
-        execute_merge "merge"
-        perform_cleanup
+        # Use composable flags: --merge --clean
+        call_git_worktree_helper --merge --clean "$FEATURE_NAME"
         ;;
     squash-clean)
         echo ""
         echo "→ Squash merging and cleaning up..."
-        execute_merge "squash"
-        perform_cleanup
+        # Use composable flags: --squash --clean
+        call_git_worktree_helper --squash --clean "$FEATURE_NAME"
         ;;
     throw-away)
         echo ""
         echo "→ Throwing away changes and cleaning up..."
-        perform_cleanup
+        call_git_worktree_helper --clean "$FEATURE_NAME"
         ;;
     merge-keep)
         echo ""
         echo "→ Merging and keeping worktree..."
-        execute_merge "merge"
+        call_git_worktree_helper --merge "$FEATURE_NAME"
         echo ""
         echo "✅ Merge complete. Worktree and branch preserved."
         print_cleanup_instructions
@@ -1115,7 +975,8 @@ handle_merge_and_cleanup() {
     squash-keep)
         echo ""
         echo "→ Squash merging and keeping worktree..."
-        execute_merge "squash"
+        # Use --squash alone to squash merge and keep worktree
+        call_git_worktree_helper --squash "$FEATURE_NAME"
         echo ""
         echo "✅ Squash merge complete. Worktree and branch preserved."
         print_cleanup_instructions
@@ -1155,210 +1016,7 @@ validate_existing_feature() {
     FEATURE_VALIDATED=true
 }
 
-# Generic yes/no prompt handler
-prompt_yes_no() {
-    local prompt="$1"
-    local default="$2" # "y" or "n"
-
-    while true; do
-        printf "%s" "$prompt"
-        read -r response
-
-        case "$response" in
-        [yY] | [yY][eE][sS])
-            return 0 # yes
-            ;;
-        [nN] | [nN][oO])
-            return 1 # no
-            ;;
-        "")
-            if [ "$default" = "y" ]; then
-                return 0
-            else
-                return 1
-            fi
-            ;;
-        *)
-            echo "Please answer y(es) or n(o)"
-            ;;
-        esac
-    done
-}
-
-# Start async cleanup and track it
-start_async_cleanup() {
-    local feature_name="$1"
-    local worktree_dir="$2"
-    local git_root="$3"
-
-    # Create cleanup tracking directory
-    local cleanup_tracking_dir="$git_root/.ai-worktree/cleanups"
-    mkdir -p "$cleanup_tracking_dir"
-
-    # Create unique cleanup ID
-    local cleanup_id
-    cleanup_id="${feature_name}-$$-$(date +%s)"
-    local cleanup_log="$cleanup_tracking_dir/${cleanup_id}.log"
-    local cleanup_pid_file="$cleanup_tracking_dir/${cleanup_id}.pid"
-
-    echo "🧹 Starting background cleanup for feature: $feature_name"
-    echo "📝 Cleanup log: $cleanup_log"
-
-    # Run cleanup in background, immune to terminal closure
-    (
-        # Protect against SIGHUP when terminal closes
-        trap '' HUP
-
-        # Close stdin and redirect stdout/stderr to log
-        exec 0</dev/null
-
-        {
-            echo "=== Cleanup started at $(date) ==="
-            echo "Feature: $feature_name"
-            echo "Worktree: $worktree_dir"
-            echo "PID: $$"
-            echo ""
-
-            # Run teardown_command if defined
-            if type -t teardown_command >/dev/null 2>&1; then
-                echo "🔧 Running teardown_command..."
-                cd "$worktree_dir" 2>/dev/null || true
-                teardown_command "$git_root" "$worktree_dir" || true
-                cd "$git_root"
-            fi
-
-            # Kill any processes running in the worktree directory
-            if [ -d "$worktree_dir" ]; then
-                echo "🔪 Killing processes in worktree..."
-
-                # Use timeout for lsof to avoid hangs
-                if command -v timeout >/dev/null 2>&1; then
-                    pids=$(timeout 5 lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
-                elif command -v gtimeout >/dev/null 2>&1; then
-                    pids=$(gtimeout 5 lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
-                else
-                    pids=$(lsof +D "$worktree_dir" 2>/dev/null | awk 'NR>1 {print $2}' | sort -u || true)
-                fi
-
-                for pid in $pids; do
-                    echo "  Killing process $pid"
-                    kill "$pid" 2>/dev/null || true
-                    sleep 0.1
-                    kill -9 "$pid" 2>/dev/null || true
-                done
-
-                # Give processes time to fully exit and release file handles
-                echo "⏳ Waiting for processes to fully exit..."
-                sleep 1
-            fi
-
-            # Backup non-gitignored files to git root (compressed)
-            echo "💾 Backing up non-gitignored files..."
-            local backup_dir="$git_root/.ai-worktree/backups"
-            local backup_file="$backup_dir/$feature_name-$(date +%Y%m%d-%H%M%S).tar.gz"
-            mkdir -p "$backup_dir"
-
-            # Use git ls-files to get tracked files (respects .gitignore) and create compressed archive
-            if [ -d "$worktree_dir" ]; then
-                cd "$worktree_dir" 2>/dev/null || true
-                # Get all files that are tracked or would be tracked (not ignored), excluding .git
-                git ls-files --cached --others --exclude-standard 2>/dev/null | \
-                    tar czf "$backup_file" -T - 2>/dev/null || true
-                cd "$git_root"
-                if [ -f "$backup_file" ] && [ -s "$backup_file" ]; then
-                    echo "✅ Backed up files to: $backup_file"
-                else
-                    echo "⚠️  No files to backup or backup failed"
-                    rm -f "$backup_file" 2>/dev/null || true
-                fi
-            fi
-
-            # Remove setup tracking directory
-            echo "🗑️  Removing .ai-worktree tracking directory..."
-            rm -rf "$worktree_dir/.ai-worktree" 2>/dev/null || true
-
-            # Remove worktree
-            echo "🧹 Removing worktree..."
-            if [ -d "$worktree_dir" ] || git -C "$git_root" worktree list | grep -q "$worktree_dir"; then
-                if command -v timeout >/dev/null 2>&1; then
-                    timeout 30 git -C "$git_root" worktree remove --force "$worktree_dir" || {
-                        echo "⚠️  Worktree removal timed out, forcing with rm..."
-                        rm -rf "$worktree_dir" 2>/dev/null || true
-                        git -C "$git_root" worktree prune 2>/dev/null || true
-                    }
-                elif command -v gtimeout >/dev/null 2>&1; then
-                    gtimeout 30 git -C "$git_root" worktree remove --force "$worktree_dir" || {
-                        echo "⚠️  Worktree removal timed out, forcing with rm..."
-                        rm -rf "$worktree_dir" 2>/dev/null || true
-                        git -C "$git_root" worktree prune 2>/dev/null || true
-                    }
-                else
-                    git -C "$git_root" worktree remove --force "$worktree_dir" || {
-                        echo "⚠️  Worktree removal failed, forcing with rm..."
-                        rm -rf "$worktree_dir" 2>/dev/null || true
-                        git -C "$git_root" worktree prune 2>/dev/null || true
-                    }
-                fi
-            fi
-
-            # Remove branch
-            echo "🌿 Removing branch..."
-            if git -C "$git_root" show-ref --verify --quiet refs/heads/"$feature_name"; then
-                git -C "$git_root" branch -D "$feature_name" 2>/dev/null || echo "⚠️  Could not remove branch"
-            fi
-
-            echo ""
-            echo "✨ Cleanup completed at $(date)"
-        } >> "$cleanup_log" 2>&1
-
-        # Remove PID file on completion
-        rm -f "$cleanup_pid_file"
-    ) &
-
-    local cleanup_pid=$!
-    echo "$cleanup_pid" > "$cleanup_pid_file"
-    disown "$cleanup_pid" 2>/dev/null || true
-
-    echo "✅ Background cleanup started (PID: $cleanup_pid)"
-    echo "   Check status with: ai-worktree --list"
-    echo "   View log: tail -f $cleanup_log"
-}
-
-# Unified cleanup function - checks for uncommitted changes, then runs async cleanup
-perform_cleanup() {
-    cd "$GIT_ROOT"
-
-    # Verify worktree exists before attempting cleanup
-    if [ ! -d "$WORKTREE_DIR" ] && ! git worktree list | grep -q "$WORKTREE_DIR"; then
-        echo "No worktree found for '$FEATURE_NAME' - nothing to clean up"
-        # Still try to remove the branch if it exists
-        remove_branch
-        return
-    fi
-
-    # Load config to get teardown_command if defined
-    load_config
-
-    # Check for uncommitted changes
-    if ! git -C "$WORKTREE_DIR" diff --quiet || ! git -C "$WORKTREE_DIR" diff --cached --quiet || [ -n "$(git -C "$WORKTREE_DIR" ls-files --others --exclude-standard)" ]; then
-        echo "⚠️  Warning: The worktree has unstaged changes, staged changes, or untracked files."
-
-        cd "$WORKTREE_DIR"
-        git status --short
-        cd "$GIT_ROOT"
-
-        # Ask user for confirmation before proceeding
-        if ! prompt_yes_no "Start background cleanup anyway? This will remove uncommitted changes. (y/N): " "n"; then
-            print_cleanup_instructions
-            return
-        fi
-
-        echo "✅ Proceeding with cleanup of uncommitted changes..."
-    fi
-
-    # Start async cleanup - this returns immediately
-    start_async_cleanup "$FEATURE_NAME" "$WORKTREE_DIR" "$GIT_ROOT"
-}
+# Cleanup is delegated to git-worktree-helper
 
 # List all ai-worktree sessions
 list_worktrees() {
@@ -1393,25 +1051,33 @@ list_worktrees() {
                 fi
             done
 
-            # Check if this is an ai-worktree session
-            if [ -f "$worktree_path/.ai-worktree/local.env" ]; then
-                found_any=true
-
-                # Load session state
-                provider=""
-                port=""
-                if [ -r "$worktree_path/.ai-worktree/local.env" ]; then
+            # Check if this is an ai-worktree session (has AI_PROVIDER in .env.local)
+            if [ -f "$worktree_path/.env.local" ]; then
+                # Load session state to check if it's an AI worktree
+                AI_PROVIDER=""
+                PORT=""
+                if [ -r "$worktree_path/.env.local" ]; then
                     # shellcheck disable=SC1090
-                    source "$worktree_path/.ai-worktree/local.env" 2>/dev/null || true
+                    source "$worktree_path/.env.local" 2>/dev/null || true
+                fi
+
+                # Only list if it has AI_PROVIDER set
+                if [ -n "$AI_PROVIDER" ]; then
+                    found_any=true
+                    provider="$AI_PROVIDER"
+                    port="$PORT"
+                else
+                    # Not an AI worktree, skip it
+                    continue
                 fi
 
                 # Check setup status
-                if [ -f "$worktree_path/.ai-worktree/setup.pid" ]; then
+                if [ -f "$worktree_path/.git-worktree-helper/setup.pid" ]; then
                     local setup_pid
-                    setup_pid=$(cat "$worktree_path/.ai-worktree/setup.pid" 2>/dev/null)
+                    setup_pid=$(cat "$worktree_path/.git-worktree-helper/setup.pid" 2>/dev/null)
                     if [ -n "$setup_pid" ] && kill -0 "$setup_pid" 2>/dev/null; then
                         setup_status="⚙️  (setup running)"
-                    elif [ -f "$worktree_path/.ai-worktree/setup.log" ] && grep -q "✅ Setup tasks completed" "$worktree_path/.ai-worktree/setup.log" 2>/dev/null; then
+                    elif [ -f "$worktree_path/.git-worktree-helper/setup.log" ] && grep -q "✅ Setup tasks completed" "$worktree_path/.git-worktree-helper/setup.log" 2>/dev/null; then
                         setup_status="✅ (setup complete)"
                     else
                         setup_status="⚠️  (setup status unknown)"
@@ -1499,6 +1165,7 @@ parse_arguments() {
     CLEAN_MODE=false
     MERGE_MODE=false
     CONTINUE_MODE=false
+    UPDATE_MODE=false
     INIT_MODE=false
     LIST_MODE=false
     INSTALL_COMPLETIONS_MODE=false
@@ -1539,70 +1206,21 @@ parse_arguments() {
             shift 2
             ;;
         -h | --help)
-            echo "Usage: $0 --ai <claude|openai|cursor> <feature-name>"
-            echo "       $0 --continue --ai <claude|openai|cursor> <feature-name>"
-            echo "       $0 --merge <feature-name>"
-            echo "       $0 --clean <feature-name>"
-            echo "       $0 --list"
-            echo "       $0 --init"
+            echo "Usage: ai-worktree --ai <claude|openai|cursor> [options] <feature-name>"
             echo ""
-            echo "Creates a git worktree for feature development with an AI assistant session"
-            echo ""
-            echo "Arguments:"
-            echo "  feature-name    Name of the feature branch to create/clean"
+            echo "Git worktree with AI assistant integration"
             echo ""
             echo "Options:"
             echo "  -h, --help              Show this help message"
-            echo "  --init                  Create template config file (.config/ai-worktree.sh)"
-            echo "  --list                  List all active ai-worktree sessions"
-            echo "  --install-completions   Install shell completions (Fish supported)"
-            echo "  --clean                 Remove worktree and branch for feature"
-            echo "  --merge        Skip to merge and cleanup (post-session workflow)"
-            echo "  --continue     Resume AI session in existing worktree"
-            echo "  --ai <name>    Select provider (claude, openai, cursor)"
+            echo "  --init                  Create config file"
+            echo "  --list                  List all active sessions"
+            echo "  --install-completions   Install shell completions"
+            echo "  --update                Update feature branch with latest from main"
+            echo "  --clean                 Remove worktree and branch"
+            echo "  --merge                 Merge and cleanup"
+            echo "  --continue              Resume AI session"
+            echo "  --ai <name>             Select provider (claude, openai, cursor)"
             echo ""
-            echo "The script will:"
-            echo "  1. Create a worktree in a sibling directory"
-            echo "  2. Create or checkout the feature branch"
-            echo "  3. Load config from .config/ai-worktree.sh (if exists)"
-            echo "  4. Run setup tasks in background (dependencies + custom commands)"
-            echo "  5. Launch the selected AI assistant with optional provider-specific prompt"
-            echo "  6. After the AI session exits, offer to merge and cleanup"
-            echo ""
-            echo "Configuration:"
-            echo "  Create config with: $0 --init"
-            echo "  Config location: .config/ai-worktree.sh (project config)"
-            echo ""
-            echo "  Available config options:"
-            echo "    CLAUDE_INITIAL_PROMPT=\"text\"  # Optional inline prompt when using --ai claude"
-            echo "    OPENAI_INITIAL_PROMPT=\"text\"  # Optional inline prompt when using --ai openai"
-            echo "    CURSOR_INITIAL_PROMPT=\"text\"  # Optional inline prompt when using --ai cursor"
-            echo ""
-            echo "    setup_command() {         # Custom setup function (runs in background)"
-            echo "      local start_dir=\"\$1\"    # Repo root directory"
-            echo "      local workspace_dir=\"\$2\" # Worktree directory"
-            echo "      # your commands here"
-            echo "    }"
-            echo ""
-            echo "    teardown_command() {      # Custom teardown function (runs before cleanup)"
-            echo "      local start_dir=\"\$1\"    # Repo root directory"
-            echo "      local workspace_dir=\"\$2\" # Worktree directory"
-            echo "      # your commands here"
-            echo "    }"
-            echo ""
-            echo "  Example .config/ai-worktree.sh:"
-            echo "    CLAUDE_INITIAL_PROMPT=\"start a dev server in the background\""
-            echo "    OPENAI_INITIAL_PROMPT=\"run tests before coding\""
-            echo "    CURSOR_INITIAL_PROMPT=\"open the docs\""
-            echo "    setup_command() {"
-            echo "      npm run build:dev"
-            echo "    }"
-            echo "    teardown_command() {"
-            echo "      cp \"\$workspace_dir/build\" \"\$start_dir/backup\""
-            echo "    }"
-            echo ""
-            echo "  Note: Dependencies are always auto-detected and installed in background"
-            echo "  Note: Temporary files stored in .ai-worktree/ (add to .gitignore)"
             exit 0
             ;;
         --clean)
@@ -1615,6 +1233,10 @@ parse_arguments() {
             ;;
         --continue)
             CONTINUE_MODE=true
+            shift
+            ;;
+        --update)
+            UPDATE_MODE=true
             shift
             ;;
         -*)
@@ -1643,7 +1265,7 @@ parse_arguments() {
     fi
 
     # Require AI provider for modes that launch a session
-    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$LIST_MODE" = false ] && [ "$INSTALL_COMPLETIONS_MODE" = false ]; then
+    if [ "$INIT_MODE" = false ] && [ "$CLEAN_MODE" = false ] && [ "$MERGE_MODE" = false ] && [ "$UPDATE_MODE" = false ] && [ "$LIST_MODE" = false ] && [ "$INSTALL_COMPLETIONS_MODE" = false ]; then
         if [ -z "$AI_PROVIDER" ]; then
             echo "Error: Specify an AI provider with '--ai claude|openai|cursor'."
             exit 1
@@ -1786,6 +1408,7 @@ PARENT_DIR=""                  # Parent directory containing the repository
 CLEAN_MODE=false               # Whether script is running in cleanup mode
 MERGE_MODE=false               # Whether script is running in merge mode
 CONTINUE_MODE=false            # Whether script is running in continue mode
+UPDATE_MODE=false              # Whether script is running in update mode
 INIT_MODE=false                # Whether script is running in init mode
 LIST_MODE=false                # Whether script is running in list mode
 INSTALL_COMPLETIONS_MODE=false # Whether script is running in install-completions mode
@@ -1804,6 +1427,8 @@ main() {
 
     # Handle init mode if requested (exit early)
     if [ "$INIT_MODE" = true ]; then
+        # Use git-worktree-helper to create base config, then add AI prompts
+        call_git_worktree_helper --init
         init_config
         exit 0
     fi
@@ -1823,6 +1448,12 @@ main() {
     # Handle clean mode if requested (exit early)
     if [ "$CLEAN_MODE" = true ]; then
         execute_clean_operation
+        exit 0
+    fi
+
+    # Handle update mode if requested (update feature branch with main)
+    if [ "$UPDATE_MODE" = true ]; then
+        execute_update_operation
         exit 0
     fi
 
@@ -1848,7 +1479,7 @@ main() {
             echo "⚠️  A worktree exists at '$WORKTREE_DIR' but branch '$FEATURE_NAME' is missing."
             if prompt_yes_no "Clean up the incomplete worktree? (Y/n): " "y"; then
                 echo "🧹 Cleaning up incomplete worktree..."
-                perform_cleanup
+                call_git_worktree_helper --clean "$FEATURE_NAME"
                 echo "✅ Incomplete worktree cleaned up"
             else
                 echo "❌ Cancelled - incomplete worktree preserved"
