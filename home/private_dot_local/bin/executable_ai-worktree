@@ -857,34 +857,78 @@ remove_branch() {
     fi
 }
 
-# Get merge preference from user
-get_merge_preference() {
-    while true; do
-        printf "Merge branch '$FEATURE_NAME' into main? (Y=merge, s=squash, n=no): "
-        read -r merge_response
+# Get merge and cleanup preference from user with menu
+get_merge_and_cleanup_choice() {
+    # Set up trap to catch Ctrl+C and ESC
+    trap 'echo ""; echo "❌ Cancelled - preserving worktree"; print_cleanup_instructions; exit 0' INT
 
-        case "$merge_response" in
-        [yY] | [yY][eE][sS] | "")
-            merge_type="merge"
-            break
-            ;;
-        [sS] | [sS][qQ][uU][aA][sS][hH])
-            merge_type="squash"
-            break
-            ;;
-        [nN] | [nN][oO])
-            merge_type="no"
-            break
-            ;;
-        *)
-            echo "Please answer Y (merge), s (squash), or n (no)"
-            ;;
-        esac
+    local selected=1
+    local options=(
+        "Merge + Clean       [DEFAULT] - Merge into main and remove worktree/branch"
+        "Squash + Clean                - Squash merge into main and remove worktree/branch"
+        "Throw Away                    - Remove worktree and branch without merging"
+        "Merge (Keep)                  - Merge into main but keep worktree/branch"
+        "Squash (Keep)                 - Squash merge into main but keep worktree/branch"
+        "Do Nothing                    - Preserve worktree and branch for later"
+    )
+    local actions=("merge-clean" "squash-clean" "throw-away" "merge-keep" "squash-keep" "do-nothing")
+
+    # Simple number selection menu
+    echo ""
+    echo "What would you like to do with branch '$FEATURE_NAME'?"
+    echo ""
+    for i in "${!options[@]}"; do
+        printf "  %d. %s\n" "$((i + 1))" "${options[$i]}"
     done
+    echo ""
+
+    while true; do
+        printf "Choose an option [1-6] (default=1, ESC or Ctrl+C to cancel): "
+
+        # Read single character or line
+        if read -r choice 2>/dev/null; then
+            : # Successfully read input
+        else
+            # Read failed (Ctrl+C or Ctrl+D)
+            echo ""
+            echo "❌ Cancelled - preserving worktree"
+            print_cleanup_instructions
+            exit 0
+        fi
+
+        # Handle ESC key (might come through as empty or special char)
+        if [[ "$choice" == $'\x1b' ]] || [[ "$choice" == "q" ]]; then
+            echo ""
+            echo "❌ Cancelled - preserving worktree"
+            print_cleanup_instructions
+            exit 0
+        fi
+
+        # Handle empty input (Enter key) - default to option 1
+        if [ -z "$choice" ]; then
+            selected=1
+            break
+        fi
+
+        # Validate input
+        if [[ "$choice" =~ ^[1-6]$ ]]; then
+            selected=$choice
+            break
+        else
+            echo "Invalid choice. Please enter a number from 1 to 6."
+        fi
+    done
+
+    # Set the action based on selection
+    merge_action="${actions[$((selected - 1))]}"
+
+    # Reset trap
+    trap - INT
 }
 
 # Execute merge operation based on merge_type
 execute_merge() {
+    local merge_type="$1"  # "merge" or "squash"
     local merge_successful=false
 
     # Go back to original repo to merge
@@ -899,12 +943,12 @@ execute_merge() {
                 echo "✅ Squash merge successful!"
                 merge_successful=true
             else
-                echo "Commit cancelled or failed."
+                echo "❌ Commit cancelled or failed."
                 print_cleanup_instructions
                 exit 1
             fi
         else
-            echo "Squash merge conflicts detected. Please resolve them manually."
+            echo "❌ Squash merge conflicts detected. Please resolve them manually."
             print_cleanup_instructions
             exit 1
         fi
@@ -914,7 +958,7 @@ execute_merge() {
             echo "✅ Merge successful!"
             merge_successful=true
         else
-            echo "Merge conflicts detected. Please resolve them manually."
+            echo "❌ Merge conflicts detected. Please resolve them manually."
             print_cleanup_instructions
             exit 1
         fi
@@ -923,6 +967,7 @@ execute_merge() {
     # Push to remote
     if [ "$merge_successful" = true ]; then
         echo "🚀 Pushing to remote..."
+        local current_branch
         current_branch=$(git symbolic-ref --short HEAD)
         git push
     fi
@@ -993,11 +1038,12 @@ handle_existing_feature() {
     echo "  1. Continue working on the feature (resume AI session)"
     echo "  2. Merge and cleanup the feature"
     echo "  3. Clean up the feature (remove worktree and branch)"
-    echo "  4. Cancel (preserve existing worktree)"
+    echo "  4. Clean up and restart (remove and create fresh worktree)"
+    echo "  5. Cancel (preserve existing worktree)"
     echo ""
 
     while true; do
-        printf "Choose an option (1-4): "
+        printf "Choose an option (1-5): "
         read -r choice
 
         case "$choice" in
@@ -1014,12 +1060,22 @@ handle_existing_feature() {
             exit 0
             ;;
         4)
+            # Clean up and restart
+            echo ""
+            echo "→ Cleaning up and restarting with fresh worktree..."
+            perform_cleanup
+            echo ""
+            echo "✅ Cleanup complete. Creating fresh worktree..."
+            # Don't exit - continue to create new worktree and run AI session
+            return
+            ;;
+        5)
             echo "❌ Cancelled - existing worktree preserved at: $WORKTREE_DIR"
             print_cleanup_instructions
             exit 0
             ;;
         *)
-            echo "Invalid choice. Please enter 1, 2, 3, or 4."
+            echo "Invalid choice. Please enter 1, 2, 3, 4, or 5."
             ;;
         esac
     done
@@ -1027,26 +1083,53 @@ handle_existing_feature() {
 
 # Handle merge and cleanup flow
 handle_merge_and_cleanup() {
-    # Get merge preference from user
-    get_merge_preference
+    # Get user's choice from menu
+    get_merge_and_cleanup_choice
 
-    if [ "$merge_type" != "no" ]; then
-        # Execute the merge
-        execute_merge
-
-        # Clean up worktree and branch after merge
+    case "$merge_action" in
+    merge-clean)
+        echo ""
+        echo "→ Merging and cleaning up..."
+        execute_merge "merge"
         perform_cleanup
-    else
-        echo "Skipping merge."
-
-        # Ask about cleanup only if no merge
-        if prompt_yes_no "Do you want to delete the worktree and branch '$FEATURE_NAME'? (y/N): " "n"; then
-            perform_cleanup
-        else
-            echo "To merge later: git merge '$FEATURE_NAME'"
-            print_cleanup_instructions
-        fi
-    fi
+        ;;
+    squash-clean)
+        echo ""
+        echo "→ Squash merging and cleaning up..."
+        execute_merge "squash"
+        perform_cleanup
+        ;;
+    throw-away)
+        echo ""
+        echo "→ Throwing away changes and cleaning up..."
+        perform_cleanup
+        ;;
+    merge-keep)
+        echo ""
+        echo "→ Merging and keeping worktree..."
+        execute_merge "merge"
+        echo ""
+        echo "✅ Merge complete. Worktree and branch preserved."
+        print_cleanup_instructions
+        ;;
+    squash-keep)
+        echo ""
+        echo "→ Squash merging and keeping worktree..."
+        execute_merge "squash"
+        echo ""
+        echo "✅ Squash merge complete. Worktree and branch preserved."
+        print_cleanup_instructions
+        ;;
+    do-nothing)
+        echo ""
+        echo "→ Doing nothing - preserving worktree and branch"
+        print_cleanup_instructions
+        ;;
+    *)
+        echo "Error: Unknown merge action '$merge_action'"
+        exit 1
+        ;;
+    esac
 }
 
 # Validate that worktree and branch exist for modes that require them
@@ -1163,6 +1246,31 @@ start_async_cleanup() {
                     sleep 0.1
                     kill -9 "$pid" 2>/dev/null || true
                 done
+
+                # Give processes time to fully exit and release file handles
+                echo "⏳ Waiting for processes to fully exit..."
+                sleep 1
+            fi
+
+            # Backup non-gitignored files to git root (compressed)
+            echo "💾 Backing up non-gitignored files..."
+            local backup_dir="$git_root/.ai-worktree/backups"
+            local backup_file="$backup_dir/$feature_name-$(date +%Y%m%d-%H%M%S).tar.gz"
+            mkdir -p "$backup_dir"
+
+            # Use git ls-files to get tracked files (respects .gitignore) and create compressed archive
+            if [ -d "$worktree_dir" ]; then
+                cd "$worktree_dir" 2>/dev/null || true
+                # Get all files that are tracked or would be tracked (not ignored), excluding .git
+                git ls-files --cached --others --exclude-standard 2>/dev/null | \
+                    tar czf "$backup_file" -T - 2>/dev/null || true
+                cd "$git_root"
+                if [ -f "$backup_file" ] && [ -s "$backup_file" ]; then
+                    echo "✅ Backed up files to: $backup_file"
+                else
+                    echo "⚠️  No files to backup or backup failed"
+                    rm -f "$backup_file" 2>/dev/null || true
+                fi
             fi
 
             # Remove setup tracking directory
