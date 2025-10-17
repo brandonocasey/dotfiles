@@ -7,25 +7,44 @@ Then, verify tests and linting:
 - Check for and run any linting commands (e.g., `npm run lint`, `eslint`, `pylint`, `cargo clippy`, etc.)
 - Note: Look at package.json, Makefile, or other config files to determine the correct commands
 
-Then analyze the changes and provide a comprehensive code review covering:
+## Code Review Best Practices
 
-1. **Maintainability**: Are the changes easy to understand and modify in the future? Is there adequate separation of concerns?
+**Keep reviews BRIEF and focused on ACTIONABLE items.** Do NOT praise or explain things done correctly in detail. Focus on identifying issues and providing specific, detailed suggestions for improvement.
 
-2. **Consistency**: Do the changes follow existing code patterns, naming conventions, and project standards (check CLAUDE.md for project-specific conventions)?
+**Review priority:** Focus on the most important issues first:
+1. Critical bugs, security vulnerabilities, and logic errors
+2. Architectural/design problems and complexity issues
+3. Performance concerns and edge cases
+4. Minor improvements and style suggestions
 
-3. **Simplicity**: Can the implementation be simplified? Are there unnecessary abstractions or overly complex logic?
-
-4. **Possible Issues**: Identify potential bugs, edge cases, performance concerns, type safety issues, or security vulnerabilities.
-
-5. **Duplication**: Are there duplicate implementations or repeated code that could be refactored into shared utilities?
-
-6. **Tests and Linting**: Report the status of tests and linting. If tests fail or linting errors are found, include them as critical issues.
-
-For each finding, provide:
+**For each issue found**, provide detailed feedback including:
 - The file location (use `file_path:line_number` format)
-- A clear explanation of the issue
-- A specific, actionable suggestion for improvement
+- A clear explanation of WHY it's an issue
+- A specific, actionable suggestion with code examples or concrete steps
+- The impact if not addressed
 
-Prioritize findings by severity (critical issues first, then suggestions for improvement).
+**Areas to examine:**
 
-If the changes look good overall, confirm this and highlight any particularly well-implemented aspects.
+1. **Functionality & Logic**: Bugs, edge cases not handled, incorrect business logic
+
+2. **Architecture & Design**: Poor separation of concerns, tight coupling, violations of design principles
+
+3. **Complexity**: Overly complex logic that could be simplified, unnecessary abstractions
+
+4. **Security**: Vulnerabilities, input validation issues, authentication/authorization problems
+
+5. **Performance**: Inefficient algorithms, N+1 queries, memory leaks, blocking operations
+
+6. **Maintainability**: Hard to understand code, poor naming, inadequate error handling
+
+7. **Consistency**: Deviations from project patterns and conventions (check CLAUDE.md)
+
+8. **Duplication**: Repeated code that should be refactored into shared utilities
+
+9. **Tests and Linting**: Report test/lint failures as critical issues
+
+**Output format:**
+
+Group findings by severity. For each issue, provide detailed explanation and concrete solutions. At the end, include a brief summary with a small list of key action items.
+
+Do NOT include lengthy praise or detailed explanations of correct implementations. If no issues found, simply state: "No issues found. Changes are ready to merge."
