@@ -33,8 +33,8 @@ Create a git commit by following these steps:
 - **Atomic commits**: Each commit should contain related changes that serve a single purpose
 - **Conventional commit format**: Use the format `<type>(<scope>): <description>` or `<type>: <description>`
   - **Type** (required): feat, fix, docs, visual, refactor, perf, test, chore, ci, revert, ops
-  - **Scope** (optional): Contextual information (e.g., `feat(api):`, `fix(auth):`, `visual(header):`)
-  - **Breaking changes**: Add `!` before colon (e.g., `feat!:`, `feat(api)!:`)
+  - **Scope** (optional): Contextual information (e.g., `feat(api):` or `fix(auth):` or `visual(header):`)
+  - **Breaking changes**: Add exclamation mark before colon, like feat! or feat(api)!
 - **Present tense, imperative mood**: "add feature" not "added" or "adds"
 - **Message quality**:
   - Focus on "why" not "what" - explain why the change was necessary
