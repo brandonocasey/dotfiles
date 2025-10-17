@@ -1,4 +1,6 @@
-Perform a pull request style review of the code using a command like: `git diff $(git merge-base --fork-point main dev)..dev` where `main` is the main branch for this repository and `dev` is the current branch.
+**Review Target:**
+- If a parameter is provided in plain language (e.g., `/review the authentication module`, `/review my last commit`, `/review the last 3 commits`, `/review the changes in src/api`), interpret what the user wants reviewed and use appropriate git commands or file reads to review that target
+- If no parameter is provided, perform a pull request style review using: `git diff $(git merge-base --fork-point main dev)..dev` where `main` is the main branch and `dev` is the current branch
 
 IMPORTANT: Do NOT use GitHub CLI (gh) or any other CLI tools to view pull requests. Only review local git changes.
 

@@ -7,6 +7,12 @@ if status is-interactive
         abbr --add cd z
     end
 
+    # Worktree abbreviations
+    abbr --add gwt git-worktree-helper
+    abbr --add cwt 'ai-worktree --ai claude'
+    abbr --add owt 'ai-worktree --ai openai'
+    abbr --add uwt 'ai-worktree --ai cursor'
+
     if type -q fzf
         if type -q fd
             set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix'
