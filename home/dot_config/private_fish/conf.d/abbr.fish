@@ -48,6 +48,10 @@ if type -q worktree
     abbr --add wt worktree
 end
 
+if type -q vibetree
+    abbr --add vt vibetree
+end
+
 # use eza if it exists
 if type -q eza
     alias ls eza
