@@ -10,6 +10,11 @@
     "vimMode": false
   },
   "hasChangedDefaultModel": false,
+  "privacyCache": {
+    "ghostMode": true,
+    "privacyMode": 2,
+    "updatedAt": 1760837947896
+  },
   "network": {
     "useHttp1ForAgent": false
   },
@@ -17,10 +22,5 @@
   "sandbox": {
     "mode": "disabled",
     "networkAccess": "allowlist"
-  },
-  "privacyCache": {
-    "ghostMode": true,
-    "privacyMode": 2,
-    "updatedAt": 1760557062195
   }
 }

@@ -8,16 +8,16 @@ CURSOR_CHAT_ID=""
 CLI_AI_PROVIDER=""
 ORIGINAL_ARGS=("$@")
 
-# Helper to call git-worktree-helper
-call_git_worktree_helper() {
-    if ! command -v git-worktree-helper >/dev/null 2>&1; then
-        echo "Error: git-worktree-helper not found in PATH"
+# Helper to call worktree-helper
+call_worktree_helper() {
+    if ! command -v worktree-helper >/dev/null 2>&1; then
+        echo "Error: worktree-helper not found in PATH"
         exit 1
     fi
-    git-worktree-helper "$@"
+    worktree-helper "$@"
 }
 
-# Reuse utility functions from git-worktree-helper by calling it
+# Reuse utility functions from worktree-helper by calling it
 prompt_yes_no() {
     local prompt="$1"
     local default="$2"
@@ -86,7 +86,7 @@ print_cleanup_instructions() {
     echo "  ai-worktree --continue --ai claude '$FEATURE_NAME'  # Resume with Claude"
     echo "  ai-worktree --continue --ai openai '$FEATURE_NAME'  # Resume with OpenAI"
     echo "  ai-worktree --continue --ai cursor '$FEATURE_NAME'  # Resume with Cursor"
-    echo "  git-worktree-helper --update '$FEATURE_NAME'        # Update with latest from main"
+    echo "  worktree-helper --update '$FEATURE_NAME'        # Update with latest from main"
     echo "  ai-worktree --merge '$FEATURE_NAME'              # Merge and cleanup"
     echo "  ai-worktree --clean '$FEATURE_NAME'              # Remove worktree and branch"
 }
@@ -191,11 +191,11 @@ EOF
 
 # Add AI-specific variables to config
 init_config() {
-    local config_file="$GIT_ROOT/.config/git-worktree-helper.sh"
+    local config_file="$GIT_ROOT/.config/worktree-helper.sh"
 
-    # Config should already exist from git-worktree-helper --init
+    # Config should already exist from worktree-helper --init
     if [ ! -f "$config_file" ]; then
-        echo "Error: Config file not found. git-worktree-helper --init should have created it."
+        echo "Error: Config file not found. worktree-helper --init should have created it."
         exit 1
     fi
 
@@ -232,7 +232,7 @@ load_config() {
     : "${CURSOR_INITIAL_PROMPT:=}"
 
     # Load unified config if it exists
-    local config_file="$GIT_ROOT/.config/git-worktree-helper.sh"
+    local config_file="$GIT_ROOT/.config/worktree-helper.sh"
     if [ -f "$config_file" ]; then
         echo "📝 Loading config from $config_file"
         set -a
@@ -648,7 +648,7 @@ load_session_state() {
     fi
 }
 
-# install_dependencies - delegated to git-worktree-helper
+# install_dependencies - delegated to worktree-helper
 
 # Validate environment and initialize globals
 setup_environment() {
@@ -684,22 +684,22 @@ setup_environment() {
     fi
 }
 
-# run_setup_tasks - delegated to git-worktree-helper
+# run_setup_tasks - delegated to worktree-helper
 
-# check_setup_status - delegated to git-worktree-helper
+# check_setup_status - delegated to worktree-helper
 
 # Create and setup the worktree environment
 setup_worktree() {
-    echo "🚀 Creating worktree using git-worktree-helper..."
+    echo "🚀 Creating worktree using worktree-helper..."
 
-    # Delegate to git-worktree-helper with --no-tmux (we're already in a tmux session)
+    # Delegate to worktree-helper with --no-tmux (we're already in a tmux session)
     # This handles: worktree creation, PORT generation, .env.local, dependency installation, setup hooks
-    call_git_worktree_helper --no-tmux "$FEATURE_NAME"
+    call_worktree_helper --no-tmux "$FEATURE_NAME"
 
     # Change to worktree directory
     cd "$WORKTREE_DIR"
 
-    # Load the .env.local that git-worktree-helper created
+    # Load the .env.local that worktree-helper created
     if [ -f "$WORKTREE_DIR/.env.local" ]; then
         set -a
         source "$WORKTREE_DIR/.env.local"
@@ -738,7 +738,7 @@ handle_ai_exit() {
     echo "⚠️  $AI_NAME exited with an error or was interrupted."
 
     if prompt_yes_no "Do you want to remove the worktree still? (y/N): " "n"; then
-        call_git_worktree_helper --clean "$FEATURE_NAME"
+        call_worktree_helper --clean "$FEATURE_NAME"
         exit 1
     else
         print_cleanup_instructions
@@ -815,14 +815,14 @@ get_merge_and_cleanup_choice() {
     trap - INT
 }
 
-# execute_merge - delegated to git-worktree-helper
-# Note: Merge logic is in git-worktree-helper, but ai-worktree needs to call it with proper context
+# execute_merge - delegated to worktree-helper
+# Note: Merge logic is in worktree-helper, but ai-worktree needs to call it with proper context
 execute_merge() {
     local merge_type="$1"  # "merge" or "squash"
 
-    # Delegate to git-worktree-helper for merge
-    # Note: git-worktree-helper --merge handles the full merge flow
-    call_git_worktree_helper --merge "$FEATURE_NAME"
+    # Delegate to worktree-helper for merge
+    # Note: worktree-helper --merge handles the full merge flow
+    call_worktree_helper --merge "$FEATURE_NAME"
 }
 
 # Execute continue operation (resume AI session)
@@ -879,15 +879,15 @@ execute_merge_operation() {
 
 # Execute clean operation (remove worktree and branch)
 execute_clean_operation() {
-    # Delegate to git-worktree-helper for actual worktree cleanup
+    # Delegate to worktree-helper for actual worktree cleanup
     # (it will clean up .env.local which contains AI state)
-    call_git_worktree_helper --clean "$FEATURE_NAME"
+    call_worktree_helper --clean "$FEATURE_NAME"
 }
 
 # Execute update operation (merge base branch into feature branch)
 execute_update_operation() {
-    # Delegate to git-worktree-helper to update the feature branch
-    call_git_worktree_helper --update "$FEATURE_NAME"
+    # Delegate to worktree-helper to update the feature branch
+    call_worktree_helper --update "$FEATURE_NAME"
 }
 
 # Handle existing feature detection and user choice
@@ -923,7 +923,7 @@ handle_existing_feature() {
             # Clean up and restart
             echo ""
             echo "→ Cleaning up and restarting with fresh worktree..."
-            call_git_worktree_helper --clean "$FEATURE_NAME"
+            call_worktree_helper --clean "$FEATURE_NAME"
             echo ""
             echo "✅ Cleanup complete. Creating fresh worktree..."
             # Don't exit - continue to create new worktree and run AI session
@@ -951,23 +951,23 @@ handle_merge_and_cleanup() {
         echo ""
         echo "→ Merging and cleaning up..."
         # Use composable flags: --merge --clean
-        call_git_worktree_helper --merge --clean "$FEATURE_NAME"
+        call_worktree_helper --merge --clean "$FEATURE_NAME"
         ;;
     squash-clean)
         echo ""
         echo "→ Squash merging and cleaning up..."
         # Use composable flags: --squash --clean
-        call_git_worktree_helper --squash --clean "$FEATURE_NAME"
+        call_worktree_helper --squash --clean "$FEATURE_NAME"
         ;;
     throw-away)
         echo ""
         echo "→ Throwing away changes and cleaning up..."
-        call_git_worktree_helper --clean "$FEATURE_NAME"
+        call_worktree_helper --clean "$FEATURE_NAME"
         ;;
     merge-keep)
         echo ""
         echo "→ Merging and keeping worktree..."
-        call_git_worktree_helper --merge "$FEATURE_NAME"
+        call_worktree_helper --merge "$FEATURE_NAME"
         echo ""
         echo "✅ Merge complete. Worktree and branch preserved."
         print_cleanup_instructions
@@ -976,7 +976,7 @@ handle_merge_and_cleanup() {
         echo ""
         echo "→ Squash merging and keeping worktree..."
         # Use --squash alone to squash merge and keep worktree
-        call_git_worktree_helper --squash "$FEATURE_NAME"
+        call_worktree_helper --squash "$FEATURE_NAME"
         echo ""
         echo "✅ Squash merge complete. Worktree and branch preserved."
         print_cleanup_instructions
@@ -1016,7 +1016,7 @@ validate_existing_feature() {
     FEATURE_VALIDATED=true
 }
 
-# Cleanup is delegated to git-worktree-helper
+# Cleanup is delegated to worktree-helper
 
 # List all ai-worktree sessions
 list_worktrees() {
@@ -1072,12 +1072,12 @@ list_worktrees() {
                 fi
 
                 # Check setup status
-                if [ -f "$worktree_path/.git-worktree-helper/setup.pid" ]; then
+                if [ -f "$worktree_path/.worktree-helper/setup.pid" ]; then
                     local setup_pid
-                    setup_pid=$(cat "$worktree_path/.git-worktree-helper/setup.pid" 2>/dev/null)
+                    setup_pid=$(cat "$worktree_path/.worktree-helper/setup.pid" 2>/dev/null)
                     if [ -n "$setup_pid" ] && kill -0 "$setup_pid" 2>/dev/null; then
                         setup_status="⚙️  (setup running)"
-                    elif [ -f "$worktree_path/.git-worktree-helper/setup.log" ] && grep -q "✅ Setup tasks completed" "$worktree_path/.git-worktree-helper/setup.log" 2>/dev/null; then
+                    elif [ -f "$worktree_path/.worktree-helper/setup.log" ] && grep -q "✅ Setup tasks completed" "$worktree_path/.worktree-helper/setup.log" 2>/dev/null; then
                         setup_status="✅ (setup complete)"
                     else
                         setup_status="⚠️  (setup status unknown)"
@@ -1427,8 +1427,8 @@ main() {
 
     # Handle init mode if requested (exit early)
     if [ "$INIT_MODE" = true ]; then
-        # Use git-worktree-helper to create base config, then add AI prompts
-        call_git_worktree_helper --init
+        # Use worktree-helper to create base config, then add AI prompts
+        call_worktree_helper --init
         init_config
         exit 0
     fi
@@ -1479,7 +1479,7 @@ main() {
             echo "⚠️  A worktree exists at '$WORKTREE_DIR' but branch '$FEATURE_NAME' is missing."
             if prompt_yes_no "Clean up the incomplete worktree? (Y/n): " "y"; then
                 echo "🧹 Cleaning up incomplete worktree..."
-                call_git_worktree_helper --clean "$FEATURE_NAME"
+                call_worktree_helper --clean "$FEATURE_NAME"
                 echo "✅ Incomplete worktree cleaned up"
             else
                 echo "❌ Cancelled - incomplete worktree preserved"

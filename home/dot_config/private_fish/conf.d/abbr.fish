@@ -44,6 +44,10 @@ if type -q chezmoi
     abbr --add cm chezmoi
 end
 
+if type -q worktree
+    abbr --add wt worktree
+end
+
 # use eza if it exists
 if type -q eza
     alias ls eza
