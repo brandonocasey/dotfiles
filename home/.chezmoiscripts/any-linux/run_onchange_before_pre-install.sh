@@ -138,6 +138,7 @@ brew 'dockutil'
 brew 'mas'
 brew 'mist-cli'
 brew 'trash'
+brew 'coreutils'
 
 tap 'OJFord/formulae'
 brew 'loginitems'
