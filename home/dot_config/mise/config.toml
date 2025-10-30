@@ -2,6 +2,7 @@
 node = ['22']
 python = ['system']
 go = ['latest']
+uv = ['latest']
 
 [settings]
 experimental = true
