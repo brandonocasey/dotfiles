@@ -37,11 +37,6 @@ if status is-interactive
         echo -en "\e]133;A\e\\"
     end
 
-    function _zi
-        zi
-        clear
-    end
-
     function fzf-fd-nvim -a cwd --description "Open nvm to Telescope find_files selector"
         if [ -z "$cwd" ] || [ ! -d "$cwd" ]
             set cwd "$(find-root)"
@@ -58,7 +53,7 @@ if status is-interactive
 
     # * keybinds
     # * CTRL-h -> fzf Change directory
-    bind \ch _zi
+    bind \ch zi
     # * CTRL-f -> fzf search for file and nvim
     bind \cf fzf-fd-nvim
     # * CTRL-s -> fzf search for text and nvim
