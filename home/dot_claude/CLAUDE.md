@@ -26,7 +26,6 @@
 
 ## Logging
 
-- Use the consola based logger rather than console.log.
 - Always include appropriate trace, debug, info, error, and warning logs.
 - Trace level logs are especially important and should always be added when possible for LLM debugging
 
@@ -39,6 +38,7 @@
 - Avoid nested ternaries and yoda expressions
 - Always provide error messages in Error constructors
 - No nested `else` blocks when unnecessary (use early returns)
+- Components should be broken up when one component starts to take on too much complexity
 
 ## File Organization
 
