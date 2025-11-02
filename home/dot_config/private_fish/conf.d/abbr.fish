@@ -44,10 +44,6 @@ if type -q chezmoi
     abbr --add cm chezmoi
 end
 
-if type -q worktree
-    abbr --add wt worktree
-end
-
 if type -q vibetree
     abbr --add vt vibetree
 end
