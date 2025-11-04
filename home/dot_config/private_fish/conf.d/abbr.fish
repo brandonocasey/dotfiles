@@ -46,6 +46,8 @@ end
 
 if type -q vibetree
     abbr --add vt vibetree
+    abbr --add vtcd vibetree-cd
+    abbr --add vtopen vibetree-open
 end
 
 # use eza if it exists
