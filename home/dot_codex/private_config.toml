@@ -5,3 +5,9 @@ sandbox_workspace_write.network_access = true
 
 [projects."/Users/bcasey/Projects/brandonocasey/vibetree"]
 trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/npm-verify-pkg"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/vibe-skel"]
+trust_level = "trusted"
