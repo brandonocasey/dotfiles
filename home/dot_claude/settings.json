@@ -25,5 +25,5 @@
     "type": "command",
     "command": "STATUSLINE_REALTIME=0 bash ~/.claude/statusline-enhanced.sh"
   },
-  "alwaysThinkingEnabled": true
+  "alwaysThinkingEnabled": false
 }
