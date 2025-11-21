@@ -1,50 +1,58 @@
-Perform a pull request style review of the code using a command like: `git diff $(git merge-base --fork-point main dev)..dev` where `main` is the main branch for this repository and `dev` is the current branch.
+# Automated Review Loop
 
-IMPORTANT: Do NOT use GitHub CLI (gh) or any other CLI tools to view pull requests. Only review local git changes.
+This command performs an automated review-fix loop until all issues are resolved.
 
-Then, verify tests and linting:
-- Check for and run any test commands (e.g., `npm test`, `pytest`, `cargo test`, etc.)
-- Check for and run any linting commands (e.g., `npm run lint`, `eslint`, `pylint`, `cargo clippy`, etc.)
-- Note: Look at package.json, Makefile, or other config files to determine the correct commands
+## Workflow
 
-## Code Review Best Practices
+1. **Launch code-reviewer agent** to review changes
+2. **If issues found**: Launch fix-agent to address them
+3. **Repeat** until no issues remain or max iterations reached
+4. **Report final status** to user
 
-**Keep reviews BRIEF and focused on ACTIONABLE items.** Do NOT praise or explain things done correctly in detail. Focus on identifying issues and providing specific, detailed suggestions for improvement.
+## Execution Steps
 
-**Review priority:** Focus on the most important issues first:
-1. Critical bugs, security vulnerabilities, and logic errors
-2. Architectural/design problems and complexity issues
-3. Performance concerns and edge cases
-4. Minor improvements and style suggestions
+### Step 1: Initial Review
 
-**For each issue found**, provide detailed feedback including:
-- The file location (use `file_path:line_number` format)
-- A clear explanation of WHY it's an issue
-- A specific, actionable suggestion with code examples or concrete steps
-- The impact if not addressed
+Launch the code-reviewer agent using the Task tool:
+```
+Task(
+  description: "Review code changes",
+  subagent_type: "code-reviewer",
+  prompt: "Review the current branch changes against the base branch. Report all issues found."
+)
+```
 
-**Areas to examine:**
+### Step 2: Review-Fix Loop
 
-1. **Functionality & Logic**: Bugs, edge cases not handled, incorrect business logic
+**Loop configuration:**
+- Maximum iterations: 5
+- Exit conditions: No issues found OR max iterations reached
 
-2. **Architecture & Design**: Poor separation of concerns, tight coupling, violations of design principles
+**For each iteration:**
 
-3. **Complexity**: Overly complex logic that could be simplified, unnecessary abstractions
+1. Parse the review output for actionable issues
+2. If no issues found, exit loop with success
+3. If issues found, launch fix-agent:
+   ```
+   Task(
+     description: "Fix review issues",
+     subagent_type: "fix-agent",
+     prompt: "Fix the following issues from code review:\n\n[LIST OF ISSUES]\n\nMake minimal, targeted fixes. Run tests after fixes."
+   )
+   ```
+4. After fixes complete, launch code-reviewer agent again
+5. Increment iteration counter and continue loop
 
-4. **Security**: Vulnerabilities, input validation issues, authentication/authorization problems
+### Step 3: Final Report
 
-5. **Performance**: Inefficient algorithms, N+1 queries, memory leaks, blocking operations
+After loop exits, report to user:
+- **Success**: "No issues found. Changes are ready to merge."
+- **Max iterations reached**: List remaining unresolved issues and ask user how to proceed
 
-6. **Maintainability**: Hard to understand code, poor naming, inadequate error handling
+## Important Notes
 
-7. **Consistency**: Deviations from project patterns and conventions (check CLAUDE.md)
-
-8. **Duplication**: Repeated code that should be refactored into shared utilities
-
-9. **Tests and Linting**: Report test/lint failures as critical issues
-
-**Output format:**
-
-Group findings by severity. For each issue, provide detailed explanation and concrete solutions. At the end, include a brief summary with a small list of key action items.
-
-Do NOT include lengthy praise or detailed explanations of correct implementations. If no issues found, simply state: "No issues found. Changes are ready to merge."
+- **No user interaction** during the review-fix loop
+- **Track iteration count** and report progress
+- **Preserve all changes** made by fix-agent
+- Run tests and linting as part of each review cycle
+- If fix-agent introduces new issues, they will be caught in the next review cycle

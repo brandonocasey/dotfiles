@@ -40,48 +40,43 @@ This command orchestrates the complete development cycle: plan → implement →
      ```
    - Wait for the agent to complete and report results
 
-### Step 3: Review Phase
+### Step 3: Automated Review-Fix Loop
 
-1. After implementation completes, perform a code review following review.md:
-   - Run git diff to see all changes
-   - Check for bugs, security issues, performance problems
-   - Run tests and linting
-   - Verify the plan was fully implemented
-   - Keep review brief and focused on actionable items
+After implementation completes, run the automated review-fix loop (no user interaction):
 
-2. Present review results to the user with three options:
-   - **Accept**: Changes are good, proceed to commit
-   - **Fix**: Launch fix agent to address review feedback
-   - **Iterate**: Discuss and manually adjust
+1. **Launch code-reviewer agent**:
+   ```
+   Task(
+     description: "Review code changes",
+     subagent_type: "code-reviewer",
+     prompt: "Review the current branch changes against the base branch. Report all issues found."
+   )
+   ```
 
-### Step 4: Fix Phase (if needed)
-
-1. If user chooses "Fix", launch the fix-agent to address review feedback:
-   - Use the Task tool with subagent_type: "general-purpose"
-   - Pass the review feedback as the prompt
-   - The agent will follow instructions from .claude/agents/fix-agent.md
-   - Example Task call:
+2. **Review-Fix Loop** (max 5 iterations):
+   - Parse review output for actionable issues
+   - If no issues found, exit loop and proceed to commit
+   - If issues found, launch fix-agent:
      ```
      Task(
-       description: "Fix review feedback",
-       subagent_type: "general-purpose",
-       prompt: "You are the fix-agent. [Full review feedback here]"
+       description: "Fix review issues",
+       subagent_type: "fix-agent",
+       prompt: "Fix the following issues from code review:\n\n[LIST OF ISSUES]\n\nMake minimal, targeted fixes. Run tests after fixes."
      )
      ```
-   - Wait for the agent to complete and report results
+   - After fixes, run code-reviewer agent again
+   - Increment counter and continue
 
-2. After fixes complete, return to Step 3 (Review Phase)
-
-3. Track iteration count:
-   - Maximum 10 review→fix cycles
-   - If 10 iterations reached, ask user:
-     - **Commit anyway**: Proceed with commit despite remaining issues
+3. **Loop Exit Conditions**:
+   - **Success**: No issues found → proceed to Step 4 (Commit)
+   - **Max iterations reached**: Report remaining issues and ask user:
+     - **Commit anyway**: Proceed despite remaining issues
      - **Continue fixing**: Allow more iterations (reset counter)
-     - **Abort**: Stop the workflow and report status
+     - **Abort**: Stop workflow and report status
 
-### Step 5: Commit Phase
+### Step 4: Commit Phase
 
-1. When user accepts the changes, use commit.md to create commits:
+1. After review loop completes successfully, use commit.md to create commits:
    - Run git status, git diff, git log in parallel
    - Stage all files and run pre-commit hooks
    - Fix any hook failures
@@ -91,12 +86,12 @@ This command orchestrates the complete development cycle: plan → implement →
 
 ## Important Notes
 
-- **State tracking**: Keep track of current iteration count (1-10)
+- **State tracking**: Keep track of current iteration count (1-5)
 - **Error handling**: If any agent fails, report error and ask user how to proceed
-- **User control**: Always show review results and get user approval before proceeding
+- **Automated review**: Review-fix loop runs without user interaction until complete or max iterations reached
 - **No auto-push**: DO NOT push to remote unless user explicitly requests
 - **Agent isolation**: Each agent gets fresh context with relevant information
-- **Main context responsibility**: Main context handles planning, review, and commit - agents handle implementation and fixes
+- **Main context responsibility**: Main context handles planning and commit - agents handle implementation, review, and fixes
 
 ## Example Usage
 
@@ -109,6 +104,6 @@ This command orchestrates the complete development cycle: plan → implement →
 ## Workflow Summary
 
 ```
-User Request → Plan (iterate with user) → Implement (agent) → Review (main) →
-[Accept → Commit] OR [Fix (agent) → Review (main) → ...] (max 10 cycles)
+User Request → Plan (iterate with user) → Implement (agent) →
+Automated Review-Fix Loop (max 5 cycles, no user interaction) → Commit
 ```
