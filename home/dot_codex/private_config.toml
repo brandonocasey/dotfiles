@@ -1,3 +1,4 @@
+model = "gpt-5.1-codex"
 [profiles.full_auto]
 approval_policy = "never"
 sandbox_mode    = "workspace-write"
@@ -11,3 +12,15 @@ trust_level = "trusted"
 
 [projects."/Users/bcasey/Projects/brandonocasey/vibe-skel"]
 trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/npm-merge-driver-install2"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/jwpconnatix/web-player"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/npm-merge-driver-install"]
+trust_level = "trusted"
+
+[notice]
+hide_gpt5_1_migration_prompt = true
