@@ -1,0 +1,41 @@
+services:
+  dotfiles:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Map to your local user to match file permissions
+        UNAME: ${USER:-brandonocasey}
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+      pull: true
+
+    image: brandonocasey/dotfiles:latest
+
+    # Interactive terminal
+    stdin_open: true
+    tty: true
+
+    # Optional: Mount volumes for persistent data
+    # Uncomment the volumes you want to use
+    volumes:
+      # Mount your projects directory
+      # - ~/Projects:/home/${USER:-brandonocasey}/Projects
+
+      # Mount specific project
+      # - ./my-project:/home/${USER:-brandonocasey}/Projects/my-project
+
+      # Persist fish history and other state
+      # - dotfiles-local-share:/home/${USER:-brandonocasey}/.local/share
+      # - dotfiles-config:/home/${USER:-brandonocasey}/.config
+
+    # Set working directory
+    # working_dir: /home/${USER:-brandonocasey}/Projects
+
+    # Override the default command if needed
+    # command: /home/linuxbrew/.linuxbrew/bin/fish
+
+# Optional: Named volumes for persistence
+# volumes:
+#   dotfiles-local-share:
+#   dotfiles-config:

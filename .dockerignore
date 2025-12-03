@@ -1,0 +1,18 @@
+# Version control
+.github
+
+# Documentation
+README.md
+*.md
+!.chezmoi*.md
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode
+.idea
+
+# Temporary files
+*.tmp
+*.log

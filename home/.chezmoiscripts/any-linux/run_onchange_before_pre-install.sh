@@ -191,7 +191,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 echo "$BUNDLE" | brew bundle --cleanup --file=/dev/stdin
 brew cleanup --prune=all
 
-if cmd_exists fish; then
+if [ "$RUNNING_IN_DOCKER" != "true" ] && cmd_exists fish; then
   fish_loc="$(which fish)"
   if ! grep -q "$fish_loc" /etc/shells && command -v fish 2>/dev/null >/dev/null; then
     echo "Changing default shell to fish"
