@@ -22,7 +22,6 @@ sudo scutil --set HostName bcasey-macbook
 sudo scutil --set LocalHostName bcasey-macbook
 sudo scutil --set ComputerName bcasey-macbook
 
-
 echo "Writings settings"
 
 ##
@@ -119,12 +118,11 @@ defaults write NSGlobalDomain "ApplePressAndHoldEnabled" -bool "false"
 
 # Faster key repeat
 defaults write NSGlobalDomain "InitialKeyRepeat" -int 10 # normal minimum is 15 (225 ms)
-defaults write NSGlobalDomain "KeyRepeat" -int "1" # normal minimum is 2 (30 ms)<Paste>
+defaults write NSGlobalDomain "KeyRepeat" -int "1"       # normal minimum is 2 (30 ms)<Paste>
 
 ##
 # mouse
 ##
-
 
 ##
 # Global
@@ -140,10 +138,8 @@ defaults write NSGlobalDomain "NSWindowResizeTime" -float "0.001"
 # opening and closing Quick Look windows
 defaults write NSGlobalDomain "QLPanelAnimationDuration" -float "0"
 
-
 # smooth scrolling
 defaults write -g NSScrollAnimationEnabled -bool false
-
 
 # rubberband scrolling (doesn't affect web views)
 defaults write -g NSScrollViewRubberbanding -bool false
@@ -157,7 +153,6 @@ defaults write -g NSToolbarFullScreenAnimationDuration -float 0
 
 # scrolling column views
 defaults write -g NSBrowserColumnAnimationSpeedMultiplier -float 0
-
 
 # showing and hiding Mission Control, command+numbers
 defaults write com.apple.dock expose-animation-duration -float 0
@@ -194,7 +189,7 @@ defaults write com.apple.controlcenter.plist BatteryShowPercentage -bool true
 defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 # Expand save panel by default
-defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode  -bool true
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
 defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
 
 # Disable automatic capitalization as it’s annoying when typing code
@@ -229,6 +224,9 @@ defaults -currentHost write com.apple.controlcenter BatteryShowPercentage -bool 
 # automatic dark/light mode
 defaults delete "Apple Global Domain" "AppleInterfaceStyleSwitchesAutomatically"
 defaults write "Apple Global Domain" "AppleInterfaceStyle" 'Dark'
+
+# prevent mission control re-arrange by recently used
+defaults write "com.apple.dock" "mru-spaces" -bool false
 
 ##
 # apps
