@@ -35,7 +35,7 @@ if [ "$UNAME" = "Darwin" ]; then
     sleep 5
   done
 else
-  install_linux_pkg curl git build-essential xsel
+  install_linux_pkg curl git build-essential xsel unzip
 fi
 
 # install brew if not installed
