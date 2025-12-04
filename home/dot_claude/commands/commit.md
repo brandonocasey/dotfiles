@@ -10,14 +10,39 @@ Create a git commit by following these steps:
    - git status to see all untracked files
    - git diff to see both staged and unstaged changes
    - git log --oneline -10 to see recent commit message style
+   - git rev-parse --abbrev-ref HEAD to get current branch name
+   - git merge-base HEAD main (or origin/main) to find fork point from main branch
 
-2. Analyze all changes (both staged and unstaged) and draft commit messages:
+2. Determine commit scope to analyze:
+   - **If on main branch** (or default branch): analyze only the most recent commit (HEAD)
+   - **If on feature branch**: find the fork point and analyze ALL commits since diverging from main
+     - Use: `git log --format='%H|%an <%ae>|%s' <fork-point>..HEAD` to get all commits since fork
+     - This gives you the full context of work done on this branch
+
+3. Decide whether to amend or create new commit:
+   - **Amend the most recent commit if ALL of these conditions are true**:
+     - The most recent commit author matches you (Claude)
+     - The current changes are directly related to ANY commit since the fork point (same type, scope, and purpose)
+     - The most recent commit has NOT been pushed to remote (check with `git log @{u}..HEAD` or `git cherry -v`)
+     - The changes would logically belong in the same atomic commit as the most recent commit
+     - No other developer has committed since the commit you'd be amending
+   - **Create a new commit if ANY of these conditions are true**:
+     - The most recent commit author is NOT you
+     - The changes serve a different purpose than all commits since the fork point
+     - The most recent commit has been pushed to remote
+     - The changes represent a distinct logical unit of work
+     - There are commits by other authors between the fork point and HEAD
+   - When in doubt, prefer creating a new commit over amending
+
+4. Analyze all changes (both staged and unstaged) and draft commit messages:
+   - Consider the context of ALL commits since the fork point to understand the branch's purpose
    - Do not commit files that likely contain secrets (.env, credentials.json, etc.)
    - Follow the "Best Practices for Commits" section below
    - DO NOT use any emojis in the commit message
    - DO NOT add any attribution or co-author information
+   - If amending, keep the existing commit message unless the changes significantly alter the commit's purpose
 
-3. Stage files and run pre-commit hooks to fix issues:
+5. Stage files and run pre-commit hooks to fix issues:
    - **If target parameter provided**: Stage ONLY the specified file(s) or files matching the logical chunk
    - **If no parameter provided**: Stage ALL relevant files at once
    - Run pre-commit hooks (lefthook run pre-commit, .husky/pre-commit, or .git/hooks/pre-commit)
@@ -25,9 +50,13 @@ Create a git commit by following these steps:
    - Stage any hook-generated changes (formatting, auto-fixes) and verify hooks pass
    - Once hooks pass, do NOT run them again
 
-4. Commit with --no-verify:
-   - **If a target parameter was provided**: commit ONLY the specified file or logical chunk (single commit)
-   - **If no parameter provided**: commit all staged files, splitting into multiple logical commits when appropriate (see "Guidelines for Splitting Commits")
+6. Commit with --no-verify:
+   - **If amending**: Use `git commit --amend --no-verify` to amend the previous commit
+     - Keep the original commit message with `-C HEAD` unless changes warrant a message update
+     - If updating message, use the same format as the original commit
+   - **If creating new commit**:
+     - **If a target parameter was provided**: commit ONLY the specified file or logical chunk (single commit)
+     - **If no parameter provided**: commit all staged files, splitting into multiple logical commits when appropriate (see "Guidelines for Splitting Commits")
    - Use --no-verify since hooks already passed
    - Run git status after to verify the intended files are committed
 
