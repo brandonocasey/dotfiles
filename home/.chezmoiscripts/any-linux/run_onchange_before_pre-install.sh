@@ -74,11 +74,7 @@ brew 'rsync'
 brew 'ast-grep'
 brew 'luajit'
 
-EOF
-)
-if [ "$RUNNING_IN_DOCKER" != "true" ]; then
-  BUNDLE+=$(
-    cat <<EOF
+cask 'claude-code'
 
 brew 'tealdeer'
 brew 'mosh'
@@ -123,8 +119,7 @@ tap 'peterldowns/tap'
 brew 'peterldowns/tap/localias'
 
 EOF
-  )
-fi
+)
 
 # additional packages for mac only
 if [ "$(uname)" = "Darwin" ]; then
