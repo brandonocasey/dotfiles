@@ -46,6 +46,7 @@ fi
 
 BUNDLE=$(
   cat <<EOF
+brew 'gcc'
 brew 'bat'
 brew 'chezmoi'
 brew 'curlie'
@@ -81,7 +82,6 @@ brew 'mosh'
 brew 'bottom'
 brew 'bash'
 brew 'aider'
-brew 'gcc'
 brew 'make'
 brew 'act'
 brew 'bitwarden-cli'

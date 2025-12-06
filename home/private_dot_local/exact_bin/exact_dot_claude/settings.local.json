@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv:*)",
+      "Bash(grep:*)",
+      "Bash(for func in remove_localias print_cleanup_instructions prompt_yes_no switch_to_main_branch check_and_handle_worktree_changes remove_worktree_and_branch perform_cleanup show_help parse_arguments validate_environment check_existing_worktree handle_clean_mode create_worktree auto_install_deps setup_localias set_terminal_title kill_worktree_processes launch_claude get_merge_preference handle_merge handle_push cleanup_after_merge handle_no_merge_cleanup)",
+      "Bash(do echo \"Function: $func\")",
+      "Bash(done)",
+      "Read(//Users/bcasey/.config/fish/completions/**)",
+      "Read(//Users/bcasey/.config/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
