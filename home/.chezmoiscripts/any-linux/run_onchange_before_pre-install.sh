@@ -74,6 +74,8 @@ brew 'mise'
 brew 'rsync'
 brew 'ast-grep'
 brew 'luajit'
+brew 'shellcheck'
+brew 'pandoc'
 
 cask 'claude-code'
 
