@@ -100,6 +100,8 @@ brew 'lazydocker'
 brew 'docker-buildx'
 brew 'imagemagick'
 brew 'ffmpeg'
+brew 'luarocks'
+brew 'gcc'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
