@@ -1,14 +1,14 @@
 {
-  "git": {
-    "mergeStrategy": "ff-only",
-    "autoPush": true,
-    "autoRebase": true
-  },
   "ai": {
     "interface": "claude"
   },
+  "git": {
+    "autoPush": true,
+    "autoRebase": true,
+    "mergeStrategy": "ff-only"
+  },
   "tmux": {
-    "require": true,
-    "rename": true
+    "rename": true,
+    "require": true
   }
 }
