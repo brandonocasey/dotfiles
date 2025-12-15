@@ -71,6 +71,7 @@ for man_loc in /usr/local/main /usr/share/man /usr/local/share/man
 end
 
 fish_add_path -a "$HOME/.local/bin"
+fish_add_path -a "$HOME/.cargo/bin"
 set -gx PATH $PATH ./node_modules/.bin
 
 set -gx PAGER less
