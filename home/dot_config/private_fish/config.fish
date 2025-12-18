@@ -77,4 +77,6 @@ if status is-interactive
 
     add_all_ssh_identities
 
+    vibetree init shell fish | source
+
 end
