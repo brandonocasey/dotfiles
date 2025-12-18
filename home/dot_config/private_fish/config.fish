@@ -78,5 +78,6 @@ if status is-interactive
     add_all_ssh_identities
 
     vibetree init shell fish | source
+    alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
 
 end
