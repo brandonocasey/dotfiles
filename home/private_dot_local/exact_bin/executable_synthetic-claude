@@ -1,0 +1,30 @@
+#!/bin/bash
+# Claude Code wrapper for synthetic.new
+
+if [ -z "$SYNTHETIC_API_KEY" ]; then
+    echo "Error: SYNTHETIC_API_KEY environment variable is not set." >&2
+    echo "Please set SYNTHETIC_API_KEY to use synthetic-claude." >&2
+    exit 1
+fi
+
+export CLAUDE_CONFIG_DIR=~/.config/synthetic-claude
+
+# Server configuration
+export ANTHROPIC_BASE_URL=https://api.synthetic.new/anthropic
+export ANTHROPIC_AUTH_TOKEN=${SYNTHETIC_API_KEY}
+
+# Model configuration
+export ANTHROPIC_DEFAULT_OPUS_MODEL=hf:zai-org/GLM-4.7
+export ANTHROPIC_DEFAULT_SONNET_MODEL=hf:zai-org/GLM-4.7
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=hf:zai-org/GLM-4.7
+export CLAUDE_CODE_SUBAGENT_MODEL=hf:zai-org/GLM-4.7
+
+# Privacy configuration
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+
+if ! command -v claude &>/dev/null; then
+    echo "Error: claude command not found. Please install Claude Code CLI." >&2
+    exit 1
+fi
+
+exec claude "$@"
