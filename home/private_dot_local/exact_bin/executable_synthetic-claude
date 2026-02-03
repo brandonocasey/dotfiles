@@ -2,9 +2,15 @@
 # Claude Code wrapper for synthetic.new
 
 if [ -z "$SYNTHETIC_API_KEY" ]; then
-    echo "Error: SYNTHETIC_API_KEY environment variable is not set." >&2
-    echo "Please set SYNTHETIC_API_KEY to use synthetic-claude." >&2
-    exit 1
+    if command -v pass &>/dev/null; then
+        SYNTHETIC_API_KEY=$(pass show api/synthetic.new 2>/dev/null | head -1)
+    fi
+
+    if [ -z "$SYNTHETIC_API_KEY" ]; then
+        echo "Error: SYNTHETIC_API_KEY not set and could not retrieve from pass." >&2
+        echo "Either set SYNTHETIC_API_KEY or run: pass insert api/synthetic.new" >&2
+        exit 1
+    fi
 fi
 
 export CLAUDE_CONFIG_DIR=~/.config/synthetic-claude

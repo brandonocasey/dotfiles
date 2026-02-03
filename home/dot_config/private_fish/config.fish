@@ -80,7 +80,6 @@ if status is-interactive
 
     vibetree init shell fish | source
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
-
 end
 
 # Added by LM Studio CLI (lms)

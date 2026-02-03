@@ -105,6 +105,7 @@ set -gx GIT_EDITOR $EDITOR
 set -gx ANDROID_USER_HOME "$XDG_DATA_HOME/android"
 set -gx DOCKER_CONFIG "$XDG_CONFIG_HOME/docker"
 set -gx GNUPGHOME "$XDG_DATA_HOME/gnupg"
+set -gx GPG_TTY (tty)
 set -gx LESSHISTFILE "$XDG_CACHE_HOME/less/history"
 set -gx NODE_REPL_HISTORY "$XDG_DATA_HOME/node_repl_history"
 set -gx NPM_CONFIG_USERCONFIG "$XDG_CONFIG_HOME/npm/npmrc"
@@ -131,6 +132,7 @@ set -gx INPUTRC "$XDG_CONFIG_HOME/readline/inputrc"
 
 set -gx PYTHONSTARTUP "$XDG_CONFIG_HOME/python/pythonrc"
 set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
+set -gx PASSWORD_STORE_DIR "$XDG_DATA_HOME/pass"
 
 # finding things
 set -gx GREP_OPTIONS "--color=auto"

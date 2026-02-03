@@ -76,6 +76,7 @@ brew 'ast-grep'
 brew 'luajit'
 brew 'shellcheck'
 brew 'pandoc'
+brew 'pass'
 
 cask 'claude-code'
 
