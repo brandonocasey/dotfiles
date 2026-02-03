@@ -1,0 +1,23 @@
+{
+  "interface": "ask",
+  "cli": {
+    "autocorrect": true
+  },
+  "git": {
+    "autoPush": true,
+    "autoRebase": true,
+    "mergeStrategy": "ff-only"
+  },
+  "tmux": {
+    "rename": true,
+    "require": true
+  },
+  "ai": {
+    "synthetic": {
+      "command": "synthetic-claude",
+      "promptArg": "--prompt",
+      "continueArg": "--continue",
+      "description": "Claude with synthetic.new backend"
+    }
+  }
+}

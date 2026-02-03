@@ -1,63 +1,105 @@
 {
-  "$schema" : "https:\/\/schema.linearmouse.app\/0.10.0",
+  "$schema" : "https:\/\/schema.linearmouse.app\/0.10.1",
   "schemes" : [
     {
-      "pointer" : {
-        "disableAcceleration" : true
-      },
-      "if" : {
-        "device" : {
-          "productName" : "USB Receiver",
-          "productID" : "0xc52b",
-          "category" : "mouse",
-          "vendorID" : "0x46d"
-        }
-      },
       "buttons" : {
-        "universalBackForward" : true,
         "mappings" : [
           {
-            "command" : false,
+            "action" : "missionControl",
             "button" : 2,
-            "option" : false,
+            "command" : false,
             "control" : false,
-            "shift" : false,
-            "action" : "missionControl"
+            "option" : false,
+            "shift" : false
           },
           {
-            "shift" : false,
-            "option" : false,
+            "action" : "missionControl.spaceLeft",
+            "button" : 3,
             "command" : false,
             "control" : false,
-            "button" : 3,
-            "action" : "missionControl.spaceLeft"
+            "option" : false,
+            "shift" : false
           },
           {
             "action" : "missionControl.spaceRight",
-            "shift" : false,
-            "option" : false,
-            "control" : false,
+            "button" : 4,
             "command" : false,
-            "button" : 4
+            "control" : false,
+            "option" : false,
+            "shift" : false
           }
-        ]
+        ],
+        "universalBackForward" : true
+      },
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0xc52b",
+          "productName" : "USB Receiver",
+          "vendorID" : "0x46d"
+        }
+      },
+      "pointer" : {
+        "disableAcceleration" : true
       },
       "scrolling" : {
-        "reverse" : {
-          "vertical" : true
-        },
-        "speed" : {
-          "vertical" : 0
-        },
         "acceleration" : {
           "vertical" : 1
         },
         "distance" : {
           "vertical" : "auto"
+        },
+        "reverse" : {
+          "vertical" : true
+        },
+        "speed" : {
+          "vertical" : 0
         }
       }
     },
     {
+      "buttons" : {
+        "mappings" : [
+          {
+            "action" : "missionControl",
+            "button" : 2,
+            "command" : false,
+            "control" : false,
+            "option" : false,
+            "shift" : false
+          },
+          {
+            "action" : "missionControl.spaceLeft",
+            "button" : 3,
+            "command" : false,
+            "control" : false,
+            "option" : false,
+            "shift" : false
+          },
+          {
+            "action" : "missionControl.spaceRight",
+            "button" : 4,
+            "command" : false,
+            "control" : false,
+            "option" : false,
+            "shift" : false
+          }
+        ],
+        "universalBackForward" : true
+      },
+      "if" : {
+        "device" : {
+          "category" : "mouse",
+          "productID" : "0xc049",
+          "productName" : "USB Gaming Mouse",
+          "vendorID" : "0x46d"
+        }
+      },
+      "pointer" : {
+        "acceleration" : 0,
+        "disableAcceleration" : false,
+        "speed" : 1
+      },
       "scrolling" : {
         "acceleration" : {
           "vertical" : 2
@@ -68,48 +110,6 @@
         "speed" : {
           "vertical" : 1.19
         }
-      },
-      "if" : {
-        "device" : {
-          "productName" : "USB Gaming Mouse",
-          "productID" : "0xc049",
-          "category" : "mouse",
-          "vendorID" : "0x46d"
-        }
-      },
-      "pointer" : {
-        "speed" : 1,
-        "acceleration" : 0,
-        "disableAcceleration" : false
-      },
-      "buttons" : {
-        "mappings" : [
-          {
-            "option" : false,
-            "button" : 2,
-            "action" : "missionControl",
-            "command" : false,
-            "shift" : false,
-            "control" : false
-          },
-          {
-            "shift" : false,
-            "option" : false,
-            "control" : false,
-            "command" : false,
-            "action" : "missionControl.spaceLeft",
-            "button" : 3
-          },
-          {
-            "command" : false,
-            "button" : 4,
-            "option" : false,
-            "control" : false,
-            "shift" : false,
-            "action" : "missionControl.spaceRight"
-          }
-        ],
-        "universalBackForward" : true
       }
     }
   ]

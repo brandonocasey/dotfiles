@@ -81,3 +81,8 @@ if status is-interactive
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
 
 end
+
+# Added by LM Studio CLI (lms)
+set -gx PATH $PATH /Users/bcasey/.lmstudio/bin
+# End of LM Studio CLI section
+
