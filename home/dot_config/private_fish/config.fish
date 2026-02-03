@@ -66,7 +66,8 @@ if status is-interactive
         set -l existing_keys (ssh-add -l)
         for file in (grep -slR "PRIVATE" $HOME/.ssh/ | sort)
             if not string match -q (string join '' '*' (ssh-keygen -lf "$file") '*') "$existing_keys"
-                ssh-add "$file"
+                # 2592000 seconds = 30 days
+                ssh-add -t 2592000 "$file"
             end
         end
     end
