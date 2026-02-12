@@ -18,6 +18,6 @@ shell-integration-features = no-cursor
 bold-is-bright=true
 window-inherit-working-directory=true
 # adjust-cursor-thickness=
-shell-integration-features = ssh-env,ssh-terminfo,sudo:
+shell-integration-features = ssh-env,ssh-terminfo,sudo
 keybind = shift+enter=text:\x1b\r
 scrollback-limit = 10000000

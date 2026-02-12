@@ -13,6 +13,14 @@
     "require": true
   },
   "ai": {
+    "codex": {
+      "args": [
+        "-a", "never",
+        "-s", "workspace-write",
+        "-c", "sandbox_workspace_write.network_access=true",
+        "--search"
+      ]
+    },
     "synthetic": {
       "command": "synthetic-claude",
       "promptArg": "--prompt",
