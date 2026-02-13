@@ -33,4 +33,6 @@ if ! command -v claude &>/dev/null; then
     exit 1
 fi
 
-exec claude "$@"
+# Run claude and wait for it to complete (keeps this script in process list)
+claude "$@"
+exit $?

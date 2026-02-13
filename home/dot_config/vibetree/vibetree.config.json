@@ -13,11 +13,19 @@
     "require": true
   },
   "ai": {
+    "gemini": {
+      "args": [
+        "--yolo"
+      ]
+    },
     "codex": {
       "args": [
-        "-a", "never",
-        "-s", "workspace-write",
-        "-c", "sandbox_workspace_write.network_access=true",
+        "-a",
+        "never",
+        "-s",
+        "workspace-write",
+        "-c",
+        "sandbox_workspace_write.network_access=true",
         "--search"
       ]
     },

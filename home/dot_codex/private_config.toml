@@ -33,3 +33,6 @@ hide_rate_limit_model_nudge = true
 
 [notice.model_migrations]
 "gpt-5.1-codex" = "gpt-5.2-codex"
+
+[tui]
+status_line = ["current-dir", "git-branch", "context-remaining", "context-used", "five-hour-limit", "weekly-limit"]
