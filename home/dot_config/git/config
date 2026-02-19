@@ -69,7 +69,7 @@
 
 [credential]
   # cache credentials for 3 days max
-  helper = cache --timeout=259200
+	helper = cache --timeout=2592000
 
 [rerere]
   # save conflict resolutions
