@@ -78,11 +78,12 @@ if status is-interactive
 
     add_all_ssh_identities
 
-    vibetree init shell fish | source
+    if type -q vibetree
+        vibetree init shell fish | source
+    end
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
 end
 
 # Added by LM Studio CLI (lms)
 set -gx PATH $PATH /Users/bcasey/.lmstudio/bin
 # End of LM Studio CLI section
-

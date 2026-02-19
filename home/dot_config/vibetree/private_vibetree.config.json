@@ -1,0 +1,39 @@
+{
+  "cli": {
+    "autocorrect": true,
+    "startupChecks": "strict"
+  },
+  "git": {
+    "autoPush": true,
+    "autoRebase": true,
+    "mergeStrategy": "ff-only"
+  },
+  "tmux": {
+    "rename": true,
+    "require": true
+  },
+  "tool": {
+    "defaults": {
+      "choice": "ask"
+    },
+    "codex": {
+      "command": ["codex"],
+      "createFlags": ["--dangerously-bypass-approvals-and-sandbox"],
+      "continueFlags": ["resume", "--last"],
+      "promptFlags": []
+    },
+    "gemini": {
+      "command": ["gemini"],
+      "createFlags": ["--yolo"],
+      "continueFlags": ["--resume"],
+      "promptFlags": false
+    },
+    "synthetic": {
+      "command": ["synthetic-claude"],
+      "createFlags": [],
+      "continueFlags": ["--continue"],
+      "promptFlags": ["--prompt"],
+      "description": "Claude with synthetic.new backend"
+    }
+  }
+}

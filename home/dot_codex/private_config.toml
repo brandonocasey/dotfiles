@@ -1,6 +1,6 @@
 model = "gpt-5.3-codex"
 personality = "pragmatic"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 [profiles.full_auto]
 approval_policy = "never"
 sandbox_mode    = "workspace-write"
@@ -27,6 +27,9 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Projects/brandonocasey/book-manager"]
 trust_level = "trusted"
 
+[projects."/Users/bcasey"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
@@ -35,4 +38,4 @@ hide_rate_limit_model_nudge = true
 "gpt-5.1-codex" = "gpt-5.2-codex"
 
 [tui]
-status_line = ["current-dir", "git-branch", "context-remaining", "context-used", "five-hour-limit", "weekly-limit"]
+status_line = ["git-branch", "context-used", "five-hour-limit", "weekly-limit"]

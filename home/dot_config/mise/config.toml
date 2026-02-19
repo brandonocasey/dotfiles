@@ -8,6 +8,7 @@ uv = ['latest']
 experimental = true
 trusted_config_paths = [
     '~/Projects/',
+    '~/.local/share/vibetree/worktrees/',
     '~/projects'
 ]
 idiomatic_version_file_enable_tools = ["node"]
