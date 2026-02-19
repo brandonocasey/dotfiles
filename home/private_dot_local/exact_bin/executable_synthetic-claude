@@ -28,10 +28,17 @@ export CLAUDE_CODE_SUBAGENT_MODEL=hf:zai-org/GLM-4.7
 # Privacy configuration
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 
-# Format ISO timestamp to human-readable (local timezone, 12-hour time)
+# Format ISO timestamp to human-readable (convert UTC to local timezone, 12-hour time)
 format_time() {
     local iso_time="$1"
-    date -j -f "%Y-%m-%dT%H:%M:%S" "${iso_time%%.*}" "+%b %d, %Y at %I:%M:%S %p %Z" 2>/dev/null || echo "$iso_time"
+    local epoch
+    # Parse as UTC to get epoch seconds, then format as local time
+    epoch=$(TZ=UTC date -j -f "%Y-%m-%dT%H:%M:%S" "${iso_time%%.*}" "+%s" 2>/dev/null)
+    if [ -n "$epoch" ]; then
+        date -j -r "$epoch" "+%b %d, %Y at %I:%M:%S %p %Z"
+    else
+        echo "$iso_time"
+    fi
 }
 
 # Print quota from JSON response using jq path
@@ -53,9 +60,6 @@ for arg in "$@"; do
         response=$(curl -s https://api.synthetic.new/v2/quotas -H "Authorization: Bearer ${SYNTHETIC_API_KEY}")
 
         if command -v jq &>/dev/null; then
-            echo "Quota Information"
-            echo "================="
-            echo ""
             print_quota "Subscription" ".subscription" "$response"
             print_quota "Search (hourly)" ".search.hourly" "$response"
             print_quota "Free tool calls" ".freeToolCalls" "$response"
