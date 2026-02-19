@@ -51,7 +51,7 @@ print_quota() {
     limit=$(echo "$response" | jq -r "${jq_path}.limit")
     renews=$(echo "$response" | jq -r "${jq_path}.renewsAt")
     formatted=$(format_time "$renews")
-    printf "%-15s %s/%s requests used (renews: %s)\n" "$name:" "$used" "$limit" "$formatted"
+    printf "%-16s %s/%s requests used (renews: %s)\n" "$name:" "$used" "$limit" "$formatted"
 }
 
 # Handle --quota flag
