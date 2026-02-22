@@ -2,7 +2,7 @@
   # consider trailing space and space before a tab an error
   whitespace = trailing-space,space-before-tab
   # use the fs monitor to speed up git
-  fsmonitor = true
+	fsmonitor = false
   # use git-delta, aka delta to get better diffs
   pager = delta
 [help]
