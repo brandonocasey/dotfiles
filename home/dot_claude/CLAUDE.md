@@ -56,3 +56,5 @@
 - **Commit message format**: `<type>(<scope>): <description>` (scope is required by commitlint)
 - **Changelog**: Run `npm version <major|minor|patch>` to bump version and update CHANGELOG.md automatically
 - **Prerelease workflow**: For prereleases, commit normally. When ready for final release, run `npm run changelog:all` to regenerate entire CHANGELOG.md which consolidates all commits (including prerelease commits) into a single release entry
+
+@RTK.md

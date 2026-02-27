@@ -17,22 +17,35 @@
       "choice": "ask"
     },
     "codex": {
-      "command": ["codex"],
-      "createFlags": ["--dangerously-bypass-approvals-and-sandbox"],
-      "continueFlags": ["resume", "--last"],
+      "command": [
+        "codex"
+      ],
+      "flags": [
+        "--dangerously-bypass-approvals-and-sandbox"
+      ],
+      "continueFlags": [
+        "resume",
+        "--last"
+      ],
       "promptFlags": []
     },
     "gemini": {
-      "command": ["gemini"],
-      "createFlags": ["--yolo"],
-      "continueFlags": ["--resume"],
+      "command": [
+        "gemini"
+      ],
+      "flags": [
+        "--yolo"
+      ],
+      "continueFlags": [
+        "--resume"
+      ],
       "promptFlags": false
     },
     "synthetic": {
-      "command": ["synthetic-claude"],
-      "createFlags": [],
-      "continueFlags": ["--continue"],
-      "promptFlags": ["--prompt"],
+      "inherit": "claude",
+      "command": [
+        "synthetic-claude"
+      ],
       "description": "Claude with synthetic.new backend"
     }
   }
