@@ -2,9 +2,9 @@
 
 
 pnpm=""
-workspace=""
 pkglock=""
 skip_install=""
+list=""
 
 if ! command -v "npm" 2>/dev/null 1>/dev/null; then
   echo "npm must be installed to use this" 1>&2 && exit 1
@@ -12,15 +12,15 @@ fi
 
 print_help() {
 cat <<EOF
-  Usage: npmre [--pnpm][--workspaces][--lock]
+  Usage: npmre [--pnpm][--lock][--list]
 
   > node_modules removal and reinstall for workspaces and beyond
 
   -h, --help         show this help message
       --pnpm         use pnpm (requires pnpm-workspace.yaml in root for workspaces)
       --lock         remove package-lock.json (will also remove for workspaces)
-  -w, --workspaces   remove node_modules for monorepo as well
   -s, --skip-install skip doing the install, just cleanup
+  -l, --list         list workspaces and exit without doing anything
 EOF
 
 }
@@ -32,9 +32,9 @@ while [ $# -gt 0 ]; do
 
     (--help|-h) print_help && exit ;;
     (--pnpm) pnpm="true" ;;
-    (--workspace|--workspaces|-w|-ws) workspace="true" ;;
     (--lock|--package-lock|--pkg-lock) pkglock="true" ;;
     (--skip-install|-s|--no-install) skip_install="true" ;;
+    (--list|-l) list="true" ;;
     (*) print_help && echo "invalid argument $arg" 1>&2 && exit 1 ;;
   esac
 done
@@ -46,40 +46,36 @@ if [ -n "$pnpm" ]; then
 fi
 
 
-nl=$'\n'
-root=""
+root="$(find-root)"
 
-if [ -n "$workspace" ]; then
-  root="$(find-root)"
-else
-  root="$(find-up package.json || "$PWD")"
-fi
-
-
-if [ -n "$pnpm" ] && [ -n "$workspace" ] && ! [ -f "./pnpm-workspace.yaml" ]; then
-  echo "Warning no pnpm-workspace.yaml file found!"
-  workspace=
-fi
-
-echo "$root"
 cd "$root"
 
 DIRS=('.')
 
-if [ -n "$workspace" ]; then
-  workspaces=""
+if [ "$pnpm" ] && [ -f "./pnpm-workspace.yaml" ]; then
+  # Extract packages array from pnpm-workspace.yaml using Node.js
+  workspaces="$(node -e "const fs=require('fs');const c=fs.readFileSync('./pnpm-workspace.yaml','utf8');const m=c.match(/^packages:\n((?:  - [^\n]*\n?)*)/m);if(m)m[1].match(/^  - (.+)$/gm).forEach(l=>console.log(l.replace(/^  - /,'')))" 2>/dev/null)"
+elif [ -f "./package.json" ]; then
+  # Extract workspaces array from package.json using Node.js
+  workspaces="$(node -e "const w=require('./package.json').workspaces;w&&w.forEach(x=>console.log(x))")"
+fi
 
-  if [ "$pnpm" ]; then
-    workspaces="$(dasel -r yaml -f pnpm-workspace.yaml -w - -s "packages.all().join($nl)")"
-  else
-    workspaces="$(dasel -r json -f package.json -w - -s "workspaces.all().join($nl)")"
-  fi
-
-  while IFS=$nl read -r line; do
-    for d in $line; do
-      DIRS+=("$d")
-    done
+if [ -n "$workspaces" ]; then
+  while IFS= read -r line; do
+    if [ -n "$line" ]; then
+      # Expand globs like "packages/*" to actual directories
+      for expanded in $line; do
+        [ -d "$expanded" ] && DIRS+=("$expanded")
+      done
+    fi
   done <<< "$workspaces"
+fi
+
+if [ -n "$list" ]; then
+  for d in "${DIRS[@]}"; do
+    echo "$d"
+  done
+  exit 0
 fi
 
 tmpdir="$(mktemp -d)"

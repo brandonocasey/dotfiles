@@ -1,21 +1,13 @@
 {
-  "cli": {
-    "autocorrect": true,
-    "startupChecks": "strict"
+  "general": {
+    "cliAutocorrect": true,
   },
   "git": {
     "autoPush": true,
     "autoRebase": true,
     "mergeStrategy": "ff-only"
   },
-  "tmux": {
-    "rename": true,
-    "require": true
-  },
   "tool": {
-    "defaults": {
-      "choice": "ask"
-    },
     "codex": {
       "command": [
         "codex"
