@@ -1,11 +1,14 @@
 {
-  "general": {
-    "cliAutocorrect": true,
+  "cliAutocorrect": true,
+  "versionControl": {
+    "mergeStrategy": "ask"
   },
-  "git": {
-    "autoPush": true,
-    "autoRebase": true,
-    "mergeStrategy": "ff-only"
+  "hooks": {
+    "mergePush": true
+  },
+  "session": {
+    "default": "tmux",
+    "exitBehavior": "close-switch-any"
   },
   "tool": {
     "codex": {
