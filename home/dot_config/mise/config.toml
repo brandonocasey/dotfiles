@@ -12,3 +12,6 @@ trusted_config_paths = [
     '~/projects'
 ]
 idiomatic_version_file_enable_tools = ["node"]
+
+[_]
+file = { path = ".vt.env.local", required = false }

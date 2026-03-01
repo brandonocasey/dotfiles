@@ -1,20 +1,13 @@
 {
-  "cliAutocorrect": true,
-  "versionControl": {
-    "mergeStrategy": "ask"
-  },
+  "$schema": "/Users/bcasey/Projects/brandonocasey/vibetree/dist/vibetree.config.schema.json",
   "hooks": {
     "mergePush": true
   },
-  "session": {
-    "default": "tmux",
-    "exitBehavior": "close-switch-any"
+  "versionControl": {
+    "pushConflictStrategy": "forceWithLease"
   },
   "tool": {
     "codex": {
-      "command": [
-        "codex"
-      ],
       "flags": [
         "--dangerously-bypass-approvals-and-sandbox"
       ],
@@ -43,5 +36,8 @@
       ],
       "description": "Claude with synthetic.new backend"
     }
+  },
+  "smart": {
+    "cliAutocorrect": true
   }
 }
