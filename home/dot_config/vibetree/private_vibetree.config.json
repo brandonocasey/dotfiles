@@ -1,7 +1,8 @@
 {
   "$schema": "/Users/bcasey/Projects/brandonocasey/vibetree/dist/vibetree.config.schema.json",
   "hooks": {
-    "mergePush": true
+    "mergePush": true,
+    "mergeDiscard": true
   },
   "versionControl": {
     "pushConflictStrategy": "forceWithLease"

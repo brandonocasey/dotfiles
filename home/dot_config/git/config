@@ -68,6 +68,8 @@
   logone = log --all --decorate --oneline --graph
 
 [credential]
+  # clear system-level osxkeychain helper from /opt/homebrew/etc/gitconfig
+  helper =
   # cache credentials for 3 days max
 	helper = cache --timeout=2592000
 
