@@ -1,5 +1,8 @@
 {
   "$schema": "/Users/bcasey/Projects/brandonocasey/vibetree/dist/vibetree.config.schema.json",
+  "general": {
+    "logLevel": "trace"
+  },
   "hooks": {
     "mergePush": true,
     "mergeDiscard": true
@@ -32,6 +35,7 @@
     },
     "synthetic": {
       "inherit": "claude",
+      "otelEnabled": true,
       "command": [
         "synthetic-claude"
       ],

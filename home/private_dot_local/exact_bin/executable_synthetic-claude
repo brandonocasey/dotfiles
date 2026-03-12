@@ -18,13 +18,12 @@ export CLAUDE_CONFIG_DIR=~/.config/synthetic-claude
 # Server configuration
 export ANTHROPIC_BASE_URL=https://api.synthetic.new/anthropic
 export ANTHROPIC_AUTH_TOKEN=${SYNTHETIC_API_KEY}
-export CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1
 
 # Model configuration
-export ANTHROPIC_DEFAULT_OPUS_MODEL=hf:zai-org/GLM-4.7
-export ANTHROPIC_DEFAULT_SONNET_MODEL=hf:zai-org/GLM-4.7
-export ANTHROPIC_DEFAULT_HAIKU_MODEL=hf:zai-org/GLM-4.7
-export CLAUDE_CODE_SUBAGENT_MODEL=hf:zai-org/GLM-4.7
+export ANTHROPIC_DEFAULT_OPUS_MODEL=hf:moonshotai/Kimi-K2.5
+export ANTHROPIC_DEFAULT_SONNET_MODEL=hf:moonshotai/Kimi-K2.5
+export ANTHROPIC_DEFAULT_HAIKU_MODEL=hf:zai-org/GLM-4.7-Flash
+export CLAUDE_CODE_SUBAGENT_MODEL=hf:moonshotai/Kimi-K2.5
 
 # Privacy configuration
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1

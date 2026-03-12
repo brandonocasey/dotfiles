@@ -1,6 +1,6 @@
 model = "gpt-5.4"
 personality = "pragmatic"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 [profiles.full_auto]
 approval_policy = "never"
 sandbox_mode    = "workspace-write"
