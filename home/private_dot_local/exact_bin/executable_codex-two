@@ -1,0 +1,5 @@
+#!/bin/bash
+# Wrapper script for codex CLI with custom CODEX_HOME
+
+export CODEX_HOME="${HOME}/.config/codex-two"
+exec codex "$@"

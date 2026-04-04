@@ -40,6 +40,12 @@
         "synthetic-claude"
       ],
       "description": "Claude with synthetic.new backend"
+    },
+    "codex-two": {
+      "inherit": "codex",
+      "command": [
+        "codex-two"
+      ]
     }
   },
   "smart": {
