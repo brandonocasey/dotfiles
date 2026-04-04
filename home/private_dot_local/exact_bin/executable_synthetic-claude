@@ -14,6 +14,7 @@ if [ -z "$SYNTHETIC_API_KEY" ]; then
 fi
 
 export CLAUDE_CONFIG_DIR=~/.config/synthetic-claude
+mkdir -p "$CLAUDE_CONFIG_DIR"
 
 # Server configuration
 export ANTHROPIC_BASE_URL=https://api.synthetic.new/anthropic
