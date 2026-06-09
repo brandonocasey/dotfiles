@@ -1,6 +1,7 @@
 
 README.md
 .chezmoiscripts/.script-env.sh
+.local/bin/claude
 
 # ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}
