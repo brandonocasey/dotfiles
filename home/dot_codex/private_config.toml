@@ -1,7 +1,9 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
 personality = "pragmatic"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
+plan_mode_reasoning_effort = "xhigh"
+service_tier = "default"
 [profiles.full_auto]
 approval_policy = "never"
 sandbox_mode    = "workspace-write"
@@ -34,13 +36,89 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Downloads/audiobooks"]
 trust_level = "trusted"
 
+[projects."/Users/bcasey/.config/synthetic-claude/plans"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/books"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/NextUI"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/books/bookgraph"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Downloads/test"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/RomPatcher.js"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/bookman"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/mame"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/libarchive"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/dolphin"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/game-tools"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/jwpconnatix/dashboard-clippingtool"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/jwpconnatix/hive"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/file-trimmer"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver/vendor/libarchive"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver/vendor/nod"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/rom-weaver"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Downloads"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
+fast_default_opt_out = true
 
 [notice.model_migrations]
 "gpt-5.1-codex" = "gpt-5.2-codex"
+"gpt-5.3-codex" = "gpt-5.5"
+"gpt-5.4" = "gpt-5.5"
 
 [tui]
-status_line = ["git-branch", "context-used", "five-hour-limit", "weekly-limit"]
+status_line = ["project-name", "context-used", "weekly-limit", "model-with-reasoning", "fast-mode"]
 theme = "one-half-dark"
+status_line_use_colors = true
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+[features]
+memories = true
+terminal_resize_reflow = true
+goals = true
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = ["chrome-devtools-mcp@latest"]

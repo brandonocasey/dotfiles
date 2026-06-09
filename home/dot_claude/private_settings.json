@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "Glob",
+      "Grep",
+      "LS",
+      "MultiEdit",
+      "NotebookEdit",
+      "NotebookRead",
+      "Read",
+      "Task",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
+    "ask": [],
+    "defaultMode": "auto"
+  },
+  "hooks": {
+    "PreToolUse": []
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash /Users/bcasey/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": false,
+    "chrome-devtools-mcp@claude-plugins-official": true
+  },
+  "syntaxHighlightingDisabled": true,
+  "effortLevel": "high",
+  "tui": "default",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "custom:onedark",
+  "skipAutoPermissionPrompt": true
+}
