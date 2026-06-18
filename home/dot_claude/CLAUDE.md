@@ -3,18 +3,17 @@
 - Don't always agree with me, only agree when I'm correct
 - Give very small and concise summaries if you need to summarize
 - **Don't suggest git operations** on files you didn't modify
-- Don't ask to use specific commands that you don't have access to. Try to use commands that you already have access to without asking
+- Use commands you have access to without asking
 - Stage new files when added
-- **Use relative imports** - No path aliases (for example `../../shared/log` not `@/shared/log`)
 - Always prefer not adding dependencies or adding a dependency with fewer of its own dependencies when possible
 - Assume issues are not pre-existing. Always look into fixing them
+- Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; set it in the environment, and configure servers that don't honor `PORT` to use it directly
 
 ## Test & Lint considerations
 
 - You may **NOT** skip, remove, or modify tests without user consent
-- Failing linting, type checking, or tests is **ALWAYS** an issue and must be fixed without user intervention.
-- Never modify test, typescript, or linting configuration without user consent
-- Never use `any`, `@ts-ignore`, or other linter/type checking disable comments without user consent.
+- Failing linting, type checking, or tests is **ALWAYS** an issue and must be fixed without user intervention
+- Never silence the linter/type checker with disable comments, nor edit test/type-check/lint config, without user consent
 
 ## Planning
 
@@ -26,19 +25,18 @@
 
 ## Logging
 
-- Always include appropriate trace, debug, info, error, and warning logs.
-- Trace level logs are especially important and should always be added when possible for LLM debugging
+- Add appropriate trace/debug/info/error/warning logs; trace logs especially, for LLM debugging
 
 ## Code Quality
 
 - All code should be written to do one chunk of functionality well so that it can be well tested and reused
 - Reduce duplication and complexity as much as possible while still meeting specifications
-- Follow strict TypeScript settings: handle undefined/null from indexed access, provide explicit returns
-- Prefer `for...of` loops over `.forEach()` methods
+- Handle undefined/null cases; provide explicit returns
 - Avoid nested ternaries and yoda expressions
-- Always provide error messages in Error constructors
+- Always provide error messages when raising errors
 - No nested `else` blocks when unnecessary (use early returns)
 - Components should be broken up when one component starts to take on too much complexity
+- Comments: minimal — only add context the code can't show (why, constraints, workarounds) or untangle complicated code; never narrate the code or the change
 
 ## File Organization
 
@@ -48,11 +46,7 @@
 ## Git workflow
 
 - Default branch: `main`
-- VCS integration enabled for git operations
-
-- **Commit format**: Use conventional commits as defined in @/Users/bcasey/.claude/commands/commit.md
-- **Commit types**: build, ci, docs, dx, feat, fix, perf, refactor, revert, style, test
-- **Commit scopes**: Use scopes defined in @.config/commitlint.config.js (core, deps, config, docs, test)
-- **Commit message format**: `<type>(<scope>): <description>` (scope is required by commitlint)
+- Do branch work in a git worktree (`git worktree add ../<dir> -b <branch>`), never by switching branches in the main checkout; base on the default branch unless asked otherwise, and clean up with `git worktree remove` once merged
+- **Commit format**: `<type>(<scope>): <description>` conventional commits — full rules in @/Users/bcasey/.claude/commands/commit.md; scope required by commitlint (@.config/commitlint.config.js)
 - **Changelog**: Run `npm version <major|minor|patch>` to bump version and update CHANGELOG.md automatically
 - **Prerelease workflow**: For prereleases, commit normally. When ready for final release, run `npm run changelog:all` to regenerate entire CHANGELOG.md which consolidates all commits (including prerelease commits) into a single release entry

@@ -3,7 +3,7 @@ return {
     "mason-org/mason.nvim",
     opts = {
       ensure_installed = {
-        "ltex-ls-plus",
+        "harper-ls",
         "gh-actions-language-server",
         "markdownlint-cli2",
         "vacuum",
@@ -51,15 +51,11 @@ return {
             },
           },
         },
-        ltex_plus = {
+        harper_ls = {
           settings = {
-            ltex = {
-              language = "en",
-              additionalRules = {
-                languageModel = "~/.local/share/ngrams",
-              },
-              disabledRules = {
-                en = { "ARROWS" },
+            ["harper-ls"] = {
+              linters = {
+                SentenceCapitalization = false,
               },
             },
           },

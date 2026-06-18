@@ -16,7 +16,7 @@ never paper over a problem to keep the pipeline moving.
 
 ```sh
 git rev-parse --abbrev-ref HEAD                         # current branch
-git symbolic-ref --quiet refs/heads/main && echo main || echo master   # target name
+git show-ref --verify --quiet refs/heads/main && echo main || echo master   # target name (main if the branch exists, else master)
 git rev-parse --git-common-dir                          # shared dir → are we in a worktree?
 git worktree list --porcelain                           # paths + which branch is where
 git status --short                                      # is the tree dirty?
@@ -61,7 +61,21 @@ Skip if the tree is already clean (nothing staged/unstaged/untracked).
 
 After all chunks: show `git log --oneline <TARGET>..HEAD` so the user sees what's about to land.
 
-## 2. Rebase onto the local target
+## 2. Run tests
+
+Run the project's test suite to verify the committed changes are green before rebasing.
+
+- Detect the test command from the project: check `package.json` scripts for `test`, `test:unit`,
+  or `test:ci`; fall back to common runners (`npm test`, `cargo test`, `go test ./...`, `pytest`,
+  etc.) if no `package.json` is present.
+- Run the test command and capture output.
+- If tests fail: fix the failures. Make the minimal changes needed to make tests pass, then commit
+  the fix as a separate logical commit following the same Conventional Commit rules as step 1.
+  Re-run tests to confirm green before proceeding. If you cannot determine how to fix the failures,
+  STOP and ask the user.
+- If tests pass: continue.
+
+## 4. Rebase onto the local target
 
 ```sh
 git rebase <TARGET>
@@ -73,9 +87,9 @@ git rebase <TARGET>
   `git rebase --continue`; offer `git rebase --abort` to bail.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
 
-## 3. Fast-forward the target to the branch
+## 5. Fast-forward the target to the branch
 
-The merge must be a clean fast-forward; if it can't be, the rebase in step 2 didn't take and you
+The merge must be a clean fast-forward; if it can't be, the rebase in step 4 didn't take and you
 should stop and investigate rather than create a merge commit.
 
 **If `TARGET_DIRTY`** (the target tree has local uncommitted work): stash it first so the
@@ -121,7 +135,7 @@ git -C <TARGET_WT> stash pop
   a commit — the restored changes stay as uncommitted local work, matching how they started.
   If a conflict is genuinely ambiguous, STOP and ask rather than guessing; the stash is intact.
 
-## 4. Clean up
+## 6. Clean up
 
 - Delete the landed branch (it's now an ancestor of `TARGET`, so `-d` is safe and refuses if it
   somehow isn't):
@@ -140,7 +154,7 @@ git -C <TARGET_WT> stash pop
 - Branch deletion ordering: when in a worktree, delete the branch *after* removing the worktree
   (a branch checked out in a live worktree can't be deleted), running `git -C <MAIN_WT> branch -d`.
 
-## 5. Report
+## 7. Report
 
 End by stating, plainly: which commits landed (`<short> <subject>` each), the new `TARGET` tip,
 what was cleaned up (branch deleted, worktree removed), and — if you stashed — that the target's
