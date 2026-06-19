@@ -35,7 +35,7 @@
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": true
+    "chrome-devtools-mcp@claude-plugins-official": {{ if eq (env "RUNNING_IN_DOCKER") "true" }}false{{ else }}true{{ end }}
   },
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,

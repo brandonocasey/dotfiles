@@ -7,6 +7,23 @@ ARG GID=1000
 ENV RUNNING_IN_DOCKER=true
 ENV PATH="${PATH}:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 ENV MANPATH="${MANPATH}:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+# All persistent tool state lives under one dir (~/state) so a single host bind
+# mount is the one place to keep/back up. The entrypoint seeds these from the
+# chezmoi-managed config baked into the image so the empty mount doesn't shadow it.
+ENV STATE_DIR="/home/${UNAME}/state"
+ENV CLAUDE_CONFIG_DIR="/home/${UNAME}/state/claude"
+ENV CODEX_HOME="/home/${UNAME}/state/codex"
+# XDG_STATE_HOME holds genuinely-persistent state (nvim shada/undo, etc.).
+# CONFIG/DATA/CACHE stay at defaults so chezmoi config and baked plugins/tools
+# remain in the image and refresh on rebuild instead of freezing in the mount.
+ENV XDG_STATE_HOME="/home/${UNAME}/state/xdg-state"
+# mise toolchains live in ~/state (persisted) instead of the image: build uses
+# them for nvim/LSP, then they're dropped from the image and reinstalled into
+# the mount on first run by the entrypoint. Keeps the image smaller.
+ENV MISE_DATA_DIR="/home/${UNAME}/state/mise"
+# UTF-8 so TUIs (nvim, fzf) render correctly without a full locales package.
+ENV LANG="C.UTF-8"
+ENV CHROME_BIN="/usr/bin/chromium"
 
 # Install base system dependencies
 RUN apt-get -y update && \
@@ -17,11 +34,45 @@ RUN apt-get -y update && \
     gcc \
     binutils \
     unzip \
+    python3 \
+    python3-pip \
+    python3-venv \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd -g $GID -o $UNAME \
   && useradd -m -u $UID -g $GID -o -s /bin/bash $UNAME \
   && usermod -aG sudo $UNAME \
   && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Browser for the chrome-devtools MCP server. The distro chromium package is
+# multi-arch (works on amd64 and arm64) and pulls in the shared libraries and
+# fonts Chrome needs, which a bare slim image lacks.
+RUN apt-get -y update && \
+  apt-get install -y --no-install-recommends \
+    chromium \
+    fonts-liberation \
+    ca-certificates \
+    openssh-server \
+  && rm -rf /var/lib/apt/lists/*
+
+# Docker CLI (+ compose/buildx plugins) so the container can drive a mounted
+# host Docker socket (docker-out-of-Docker). Client only; no daemon runs here.
+RUN apt-get -y update && \
+  apt-get install -y --no-install-recommends gnupg && \
+  install -m 0755 -d /etc/apt/keyrings && \
+  curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+  chmod a+r /etc/apt/keyrings/docker.asc && \
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+    > /etc/apt/sources.list.d/docker.list && \
+  apt-get -y update && \
+  apt-get install -y --no-install-recommends \
+    docker-ce-cli \
+    docker-buildx-plugin \
+    docker-compose-plugin \
+  && rm -rf /var/lib/apt/lists/*
+
+# Entrypoint registers the container-tuned chrome-devtools MCP server at runtime.
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER $UNAME
 WORKDIR /home/$UNAME
@@ -49,6 +100,8 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
    sudo rm -rf /home/$UNAME/.cache && \
    sudo rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --cache)" && \
    sudo rm -rf /tmp/* && \
+   sudo rm -rf "/home/$UNAME/state" && \
    /home/linuxbrew/.linuxbrew/bin/brew uninstall --ignore-dependencies gcc binutils || true
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["fish"]

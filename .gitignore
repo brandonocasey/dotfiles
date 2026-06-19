@@ -1,0 +1,5 @@
+# Local docker compose env (UID/GID, SSH key, paths) — never commit
+.env
+
+# Host runtime state bind-mount dir
+state/

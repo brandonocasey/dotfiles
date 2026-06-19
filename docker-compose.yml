@@ -16,26 +16,36 @@ services:
     stdin_open: true
     tty: true
 
-    # Optional: Mount volumes for persistent data
-    # Uncomment the volumes you want to use
+    # Reap zombies from Chrome/MCP/sshd children (entrypoint is PID 1).
+    init: true
+
+    # Chromium (chrome-devtools MCP) crashes with Docker's default 64MB /dev/shm.
+    shm_size: "1gb"
+
+    environment:
+      # SSH access (off by default). Set ENABLE_SSHD=1 and provide a key below.
+      ENABLE_SSHD: ${ENABLE_SSHD:-0}
+      SSH_PUBKEY: ${SSH_PUBKEY:-}
+
+    # Your work lives under the shared state dir, so start there.
+    working_dir: /home/${USER:-brandonocasey}/state/projects
+
+    # Uncomment to reach the SSH server when ENABLE_SSHD=1 (ssh -p 2222 ...).
+    # ports:
+    #   - "${SSH_PORT:-2222}:22"
+
     volumes:
-      # Mount your projects directory
-      # - ~/Projects:/home/${USER:-brandonocasey}/Projects
+      # One place for everything persistent: projects, Claude/Codex/opencode
+      # auth + sessions, gh/gpg/pass/bw, nvim state, shell history. Set STATE_DIR
+      # (defaults to ./state). The entrypoint lays out and seeds the subdirs.
+      - ${STATE_DIR:-./state}:/home/${USER:-brandonocasey}/state
 
-      # Mount specific project
-      # - ./my-project:/home/${USER:-brandonocasey}/Projects/my-project
+      # Your SSH keys (read-only) so git push/pull and remotes work. Comment out
+      # if you prefer SSH agent forwarding. New-host known_hosts writes won't
+      # persist while read-only; use `ssh -o StrictHostKeyChecking=accept-new`.
+      - ${SSH_DIR:-${HOME}/.ssh}:/home/${USER:-brandonocasey}/.ssh:ro
 
-      # Persist fish history and other state
-      # - dotfiles-local-share:/home/${USER:-brandonocasey}/.local/share
-      # - dotfiles-config:/home/${USER:-brandonocasey}/.config
-
-    # Set working directory
-    # working_dir: /home/${USER:-brandonocasey}/Projects
-
-    # Override the default command if needed
-    # command: /home/linuxbrew/.linuxbrew/bin/fish
-
-# Optional: Named volumes for persistence
-# volumes:
-#   dotfiles-local-share:
-#   dotfiles-config:
+      # Docker-out-of-Docker: drive the host's Docker daemon from inside the
+      # container. Comment out if you don't want host Docker access. NOTE: this
+      # grants root-equivalent control of the host's Docker.
+      - /var/run/docker.sock:/var/run/docker.sock

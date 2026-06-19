@@ -16,3 +16,9 @@ README.md
 # Temporary files
 *.tmp
 *.log
+
+# Host runtime bind-mount dir (created by docker compose; never build it in)
+state/
+
+# Local compose env (may hold a pubkey / host paths)
+.env
