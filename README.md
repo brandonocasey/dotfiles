@@ -148,12 +148,18 @@ ssh -p 2222 $(whoami)@<host>
 
 ### Chrome / chrome-devtools MCP
 
-The image installs `chromium` (multi-arch: Apple Silicon and amd64/arm64
-servers) plus its libraries. On macOS the `chrome-devtools-mcp` plugin runs as
-usual; in the container the plugin is disabled and the entrypoint registers an
+The image installs `chromium` plus its libraries. On macOS the
+`chrome-devtools-mcp` plugin runs as usual; in the container the plugin is
+disabled and the entrypoint registers an
 equivalent `chrome-devtools` server tuned for headless containers
 (`--headless --isolated -e /usr/bin/chromium --chrome-arg=--no-sandbox`).
 Verify inside the container with `claude mcp list`.
+
+### Architecture
+
+The image is **amd64-only**: the toolchain is Homebrew-based and Homebrew is
+unsupported on ARM64 Linux (no bottles), so an arm64 build ships empty. On Apple
+Silicon it runs under Docker Desktop's emulation — slower, but everything works.
 
 ### Customization
 
