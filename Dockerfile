@@ -23,7 +23,7 @@ ENV XDG_STATE_HOME="/home/${UNAME}/state/xdg-state"
 ENV MISE_DATA_DIR="/home/${UNAME}/state/mise"
 # UTF-8 so TUIs (nvim, fzf) render correctly without a full locales package.
 ENV LANG="C.UTF-8"
-ENV CHROME_BIN="/usr/bin/chromium"
+ENV CHROME_BIN="/usr/bin/google-chrome-stable"
 
 # Install base system dependencies
 RUN apt-get -y update && \
@@ -43,15 +43,19 @@ RUN apt-get -y update && \
   && usermod -aG sudo $UNAME \
   && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# Browser for the chrome-devtools MCP server. The distro chromium package is
-# multi-arch (works on amd64 and arm64) and pulls in the shared libraries and
-# fonts Chrome needs, which a bare slim image lacks.
+# Browser for the chrome-devtools MCP server: Google Chrome stable (the exact
+# build the MCP targets). amd64-only, which matches this image. The .deb pulls
+# in the shared libraries and fonts a bare slim image lacks.
 RUN apt-get -y update && \
   apt-get install -y --no-install-recommends \
-    chromium \
-    fonts-liberation \
+    gnupg \
     ca-certificates \
+    fonts-liberation \
     openssh-server \
+  && curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+  && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
+  && apt-get -y update \
+  && apt-get install -y --no-install-recommends google-chrome-stable \
   && rm -rf /var/lib/apt/lists/*
 
 # Docker CLI (+ compose/buildx plugins) so the container can drive a mounted
@@ -102,6 +106,14 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
    sudo rm -rf /tmp/* && \
    sudo rm -rf "/home/$UNAME/state" && \
    /home/linuxbrew/.linuxbrew/bin/brew uninstall --ignore-dependencies gcc binutils || true
+
+# Guard: fail the build if the Homebrew bundle or agent installs silently did
+# nothing, instead of shipping a broken image. Checks brew tools and the
+# native-installed agents (in ~/.local/bin).
+RUN PATH="/home/${UNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:${PATH}" sh -c '\
+      for t in fish nvim mise fzf rg claude codex opencode; do \
+        command -v "$t" >/dev/null || { echo "FATAL: $t missing after build" >&2; exit 1; }; \
+      done'
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["fish"]

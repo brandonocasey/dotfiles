@@ -89,7 +89,7 @@ if [ "${ENABLE_SSHD:-0}" = "1" ]; then
   sudo /usr/sbin/sshd -o "AuthorizedKeysFile=$AUTH_KEYS" 2>/dev/null || true
 fi
 
-CHROME_BIN="${CHROME_BIN:-$(command -v chromium || command -v chromium-browser || true)}"
+CHROME_BIN="${CHROME_BIN:-$(command -v google-chrome-stable || command -v google-chrome || command -v chromium || true)}"
 
 # chrome-devtools-mcp's plugin form launches a headed, sandboxed Chrome that
 # cannot start in a container. Register our own copy of the server pointed at the
