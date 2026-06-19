@@ -81,12 +81,6 @@ brew 'tealdeer'
 brew 'mosh'
 brew 'bottom'
 brew 'bash'
-
-## AI coding agents
-brew 'codex'
-tap 'anomalyco/tap'
-brew 'anomalyco/tap/opencode'
-
 brew 'make'
 brew 'act'
 brew 'bitwarden-cli'
@@ -135,6 +129,8 @@ cask 'font-iosevka-term-nerd-font'
 
 # Claude Code: cask on macOS, native installer on Linux (see below)
 cask 'claude-code'
+# codex: homebrew-core formula on macOS (no Linux formula; Linux uses a binary)
+brew 'codex'
 
 brew 'reattach-to-user-namespace'
 brew 'dockutil'
@@ -205,20 +201,54 @@ EOF
 fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
-echo "$BUNDLE" | brew bundle --cleanup --file=/dev/stdin
-brew cleanup --prune=all
+# Homebrew 6 refuses formulae from third-party taps (wader, peterldowns, …) and
+# aborts the entire bundle on the first one. These are taps we deliberately use,
+# so opt out of the trust requirement for the bundle.
+export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 
-# Shrink the image: drop Homebrew's git repos (no in-container `brew update`).
-if [ "$RUNNING_IN_DOCKER" = "true" ]; then
-  echo "stripping homebrew git metadata"
-  rm -rf "$(brew --repo)/.git"
-  find "$(brew --repo)/Library/Taps" -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
-fi
+# Write a real Brewfile: `brew bundle --cleanup` reads the file twice (install,
+# then cleanup), and a /dev/stdin pipe is empty on the second read, which makes
+# cleanup uninstall everything it just installed.
+BREWFILE="$(mktemp)"
+printf '%s\n' "$BUNDLE" > "$BREWFILE"
+brew bundle --cleanup --file="$BREWFILE"
+rm -f "$BREWFILE"
+brew cleanup --prune=all
 
 # Homebrew casks are macOS-only, so install Claude Code natively on Linux.
 if [ "$UNAME" = "Linux" ] && ! cmd_exists claude; then
   echo "Installing Claude Code (native installer)"
   curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
+fi
+
+# opencode's Homebrew tap is "untrusted" under Homebrew 6 and `codex` has no
+# Linux formula, so on Linux install these AI agents from their release binaries
+# (node-free) into ~/.local/bin instead of the brew bundle, which aborts on them.
+if [ "$UNAME" = "Linux" ]; then
+  mkdir -p "$HOME/.local/bin"
+
+  if ! [ -x "$HOME/.local/bin/codex" ]; then
+    echo "Installing codex (release binary)"
+    if curl -fsSL https://github.com/openai/codex/releases/latest/download/codex-x86_64-unknown-linux-musl.tar.gz -o /tmp/codex.tgz; then
+      tar xzf /tmp/codex.tgz -C /tmp &&
+        install -m 0755 /tmp/codex-x86_64-unknown-linux-musl "$HOME/.local/bin/codex"
+      rm -f /tmp/codex.tgz /tmp/codex-x86_64-unknown-linux-musl
+    else
+      echo "codex download failed (continuing)"
+    fi
+  fi
+
+  if ! [ -x "$HOME/.local/bin/opencode" ]; then
+    echo "Installing opencode (release binary)"
+    oc_url=$(curl -fsSL https://registry.npmjs.org/opencode-linux-x64/latest | tr ',' '\n' | sed -n 's/.*"tarball":"\([^"]*\)".*/\1/p')
+    if [ -n "$oc_url" ] && curl -fsSL "$oc_url" -o /tmp/oc.tgz; then
+      tar xzf /tmp/oc.tgz -C /tmp &&
+        install -m 0755 /tmp/package/bin/opencode "$HOME/.local/bin/opencode"
+      rm -rf /tmp/oc.tgz /tmp/package
+    else
+      echo "opencode download failed (continuing)"
+    fi
+  fi
 fi
 
 if [ "$RUNNING_IN_DOCKER" != "true" ] && cmd_exists fish; then
