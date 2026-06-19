@@ -31,15 +31,6 @@ if cmd_exists "fish"; then
   fish -c "fish_update_completions" 1>$OUTPUT
 fi
 
-# for itex-ls, a spelling an grammar checker
-if [ ! -d "$HOME/.local/share/ngrams" ]; then
-  echo "downloading languagetool ngrams"
-  wget 'https://languagetool.org/download/ngram-data/ngrams-en-20150817.zip' -O /tmp/ngrams.zip
-  mkdir "$HOME/.local/share/ngrams"
-  unzip /tmp/ngrams.zip -d "$HOME/.local/share/ngrams"
-  rm -f /tmp/ngrams.zip
-fi
-
 # for vale-ls, a writing linter
 if [ ! -d "$HOME/.local/share/vale/styles" ]; then
   mkdir "$HOME/.local/share/vale/styles"
