@@ -75,16 +75,18 @@ brew 'rsync'
 brew 'ast-grep'
 brew 'luajit'
 brew 'shellcheck'
-brew 'pandoc'
 brew 'pass'
-
-cask 'claude-code'
 
 brew 'tealdeer'
 brew 'mosh'
 brew 'bottom'
 brew 'bash'
-brew 'aider'
+
+## AI coding agents
+brew 'codex'
+tap 'anomalyco/tap'
+brew 'anomalyco/tap/opencode'
+
 brew 'make'
 brew 'act'
 brew 'bitwarden-cli'
@@ -99,8 +101,6 @@ brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
 brew 'docker-buildx'
-brew 'imagemagick'
-brew 'ffmpeg'
 brew 'luarocks'
 brew 'gcc'
 
@@ -132,6 +132,9 @@ if [ "$(uname)" = "Darwin" ]; then
     cat <<EOF
 
 cask 'font-iosevka-term-nerd-font'
+
+# Claude Code: cask on macOS, native installer on Linux (see below)
+cask 'claude-code'
 
 brew 'reattach-to-user-namespace'
 brew 'dockutil'
@@ -187,9 +190,36 @@ EOF
   )
 fi
 
+# Heavy media/doc tools: skip in the container image to keep it small (use the
+# host or `docker-ffmpeg`/`docker-ffprobe` wrappers there); install everywhere else.
+if [ "$RUNNING_IN_DOCKER" != "true" ]; then
+  BUNDLE+=$(
+    cat <<EOF
+
+brew 'ffmpeg'
+brew 'imagemagick'
+brew 'pandoc'
+brew 'aider'
+EOF
+  )
+fi
+
 export HOMEBREW_NO_AUTO_UPDATE=1
 echo "$BUNDLE" | brew bundle --cleanup --file=/dev/stdin
 brew cleanup --prune=all
+
+# Shrink the image: drop Homebrew's git repos (no in-container `brew update`).
+if [ "$RUNNING_IN_DOCKER" = "true" ]; then
+  echo "stripping homebrew git metadata"
+  rm -rf "$(brew --repo)/.git"
+  find "$(brew --repo)/Library/Taps" -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
+fi
+
+# Homebrew casks are macOS-only, so install Claude Code natively on Linux.
+if [ "$UNAME" = "Linux" ] && ! cmd_exists claude; then
+  echo "Installing Claude Code (native installer)"
+  curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
+fi
 
 if [ "$RUNNING_IN_DOCKER" != "true" ] && cmd_exists fish; then
   fish_loc="$(which fish)"
