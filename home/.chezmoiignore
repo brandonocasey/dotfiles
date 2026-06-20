@@ -1,7 +1,11 @@
 
 README.md
 .chezmoiscripts/.script-env.sh
+# Natively installed on Linux into ~/.local/bin (see any-linux pre-install);
+# ignore so the exact_bin directory doesn't delete them on `chezmoi apply`.
 .local/bin/claude
+.local/bin/codex
+.local/bin/opencode
 
 # ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}
