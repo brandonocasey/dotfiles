@@ -89,9 +89,13 @@ COPY --chown=$UID:$GID home/.chezmoiignore /home/$UNAME/.local/share/chezmoi/hom
 COPY --chown=$UID:$GID home/.chezmoiexternal.toml /home/$UNAME/.local/share/chezmoi/home/.chezmoiexternal.toml
 COPY --chown=$UID:$GID .chezmoiroot /home/$UNAME/.local/share/chezmoi/.chezmoiroot
 
-# Run pre-install scripts to install Homebrew packages (cached layer)
+# Run pre-install scripts to install Homebrew packages (cached layer).
+# Strip Homebrew's own git metadata (~130MB) in this same layer — it must be the
+# layer that created it, or the bytes still ship. No `brew update` runs
+# in-container (HOMEBREW_NO_AUTO_UPDATE is set), so brew still works without it.
 RUN export CHEZMOI_SOURCE_DIR="/home/${UNAME}/.local/share/chezmoi" && \
-    bash "/home/${UNAME}/.local/share/chezmoi/home/.chezmoiscripts/any-linux/run_onchange_before_pre-install.sh"
+    bash "/home/${UNAME}/.local/share/chezmoi/home/.chezmoiscripts/any-linux/run_onchange_before_pre-install.sh" && \
+    rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --repo)/.git"
 
 # Copy remaining dotfiles
 COPY --chown=$UID:$GID . /home/$UNAME/.local/share/chezmoi
@@ -113,12 +117,6 @@ RUN PATH="/home/${UNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:${PATH}" sh -
       for t in fish nvim mise fzf rg claude codex opencode; do \
         command -v "$t" >/dev/null || { echo "FATAL: $t missing after build" >&2; exit 1; }; \
       done'
-
-# Drop Homebrew's git metadata (~130MB): no `brew update` runs in-container. This
-# is the final build step so nothing downstream needs git.
-RUN BREW_REPO="$(brew --repo)" && \
-    rm -rf "${BREW_REPO}/.git" && \
-    find "${BREW_REPO}/Library/Taps" -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["fish"]
