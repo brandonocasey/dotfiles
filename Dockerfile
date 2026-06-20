@@ -104,8 +104,7 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
    sudo rm -rf /home/$UNAME/.cache && \
    sudo rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --cache)" && \
    sudo rm -rf /tmp/* && \
-   sudo rm -rf "/home/$UNAME/state" && \
-   /home/linuxbrew/.linuxbrew/bin/brew uninstall --ignore-dependencies gcc binutils || true
+   sudo rm -rf "/home/$UNAME/state"
 
 # Guard: fail the build if the Homebrew bundle or agent installs silently did
 # nothing, instead of shipping a broken image. Checks brew tools and the
@@ -114,6 +113,12 @@ RUN PATH="/home/${UNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:${PATH}" sh -
       for t in fish nvim mise fzf rg claude codex opencode; do \
         command -v "$t" >/dev/null || { echo "FATAL: $t missing after build" >&2; exit 1; }; \
       done'
+
+# Drop Homebrew's git metadata (~130MB): no `brew update` runs in-container. This
+# is the final build step so nothing downstream needs git.
+RUN BREW_REPO="$(brew --repo)" && \
+    rm -rf "${BREW_REPO}/.git" && \
+    find "${BREW_REPO}/Library/Taps" -type d -name .git -prune -exec rm -rf {} + 2>/dev/null || true
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["fish"]

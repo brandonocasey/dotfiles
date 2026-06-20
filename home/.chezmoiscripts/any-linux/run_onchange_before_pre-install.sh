@@ -46,7 +46,6 @@ fi
 
 BUNDLE=$(
   cat <<EOF
-brew 'gcc'
 brew 'bat'
 brew 'chezmoi'
 brew 'curlie'
@@ -82,7 +81,6 @@ brew 'mosh'
 brew 'bottom'
 brew 'bash'
 brew 'make'
-brew 'act'
 brew 'bitwarden-cli'
 brew 'wget'
 brew 'ctop'
@@ -94,9 +92,7 @@ brew 'ctop'
 brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
-brew 'docker-buildx'
 brew 'luarocks'
-brew 'gcc'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'dasel'
@@ -114,8 +110,6 @@ brew 'htmlq'
 ## unsupported on arm
 #tap 'doron-cohen/tap'
 #brew 'doron-cohen/tap/antidot'
-tap 'peterldowns/tap'
-brew 'peterldowns/tap/localias'
 
 EOF
 )
@@ -186,8 +180,12 @@ EOF
   )
 fi
 
-# Heavy media/doc tools: skip in the container image to keep it small (use the
-# host or `docker-ffmpeg`/`docker-ffprobe` wrappers there); install everywhere else.
+# Tools skipped in the container image to keep it small, installed everywhere else:
+#   - heavy media/doc tools (use the host or docker-ffmpeg/docker-ffprobe there)
+#   - gcc / docker-buildx: redundant in the container (apt provides cc and the
+#     buildx plugin); brew gcc is ~hundreds of MB
+#   - act / localias: GitHub-Actions runner and local DNS aliasing, not needed
+#     in the dev container
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
   BUNDLE+=$(
     cat <<EOF
@@ -196,6 +194,11 @@ brew 'ffmpeg'
 brew 'imagemagick'
 brew 'pandoc'
 brew 'aider'
+brew 'gcc'
+brew 'docker-buildx'
+brew 'act'
+tap 'peterldowns/tap'
+brew 'peterldowns/tap/localias'
 EOF
   )
 fi
