@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Map to your local user to match file permissions
-        UNAME: ${USER:-brandonocasey}
+        UNAME: ${USER:-bcasey}
         UID: ${UID:-1000}
         GID: ${GID:-1000}
       pull: true
@@ -28,7 +28,7 @@ services:
       SSH_PUBKEY: ${SSH_PUBKEY:-}
 
     # Your work lives under the shared state dir, so start there.
-    working_dir: /home/${USER:-brandonocasey}/state/projects
+    working_dir: /home/${USER:-bcasey}/state/projects
 
     # Uncomment to reach the SSH server when ENABLE_SSHD=1 (ssh -p 2222 ...).
     # ports:
@@ -38,12 +38,12 @@ services:
       # One place for everything persistent: projects, Claude/Codex/opencode
       # auth + sessions, gh/gpg/pass/bw, nvim state, shell history. Set STATE_DIR
       # (defaults to ./state). The entrypoint lays out and seeds the subdirs.
-      - ${STATE_DIR:-./state}:/home/${USER:-brandonocasey}/state
+      - ${STATE_DIR:-./state}:/home/${USER:-bcasey}/state
 
       # Your SSH keys (read-only) so git push/pull and remotes work. Comment out
       # if you prefer SSH agent forwarding. New-host known_hosts writes won't
       # persist while read-only; use `ssh -o StrictHostKeyChecking=accept-new`.
-      - ${SSH_DIR:-${HOME}/.ssh}:/home/${USER:-brandonocasey}/.ssh:ro
+      - ${SSH_DIR:-${HOME}/.ssh}:/home/${USER:-bcasey}/.ssh:ro
 
       # Docker-out-of-Docker: drive the host's Docker daemon from inside the
       # container. Comment out if you don't want host Docker access. NOTE: this
