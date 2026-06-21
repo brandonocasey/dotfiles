@@ -100,7 +100,13 @@ RUN export CHEZMOI_SOURCE_DIR="/home/${UNAME}/.local/share/chezmoi" && \
 # Copy remaining dotfiles
 COPY --chown=$UID:$GID . /home/$UNAME/.local/share/chezmoi
 
-# Run chezmoi apply and clean up
+# Run chezmoi apply and clean up. Also switch the login shell to fish: the
+# pre-install's chsh is skipped under Docker, so without this, ssh/exec/login
+# sessions land in bash (the useradd default) and never source the fish env that
+# puts Homebrew on PATH. CMD already runs fish for `docker run`, but logins don't.
+# /etc/profile.d/brew.sh covers the remaining gap: bash/sh login shells (fish
+# ignores it). brew is referenced by full path (sshd logins get a minimal PATH)
+# and `shellenv sh` is explicit (no-arg infers fish from $SHELL → wrong syntax).
 RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
    rm -rf ./bin/chezmoi && \
    rmdir --ignore-fail-on-non-empty ./bin && \
@@ -108,7 +114,10 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
    sudo rm -rf /home/$UNAME/.cache && \
    sudo rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --cache)" && \
    sudo rm -rf /tmp/* && \
-   sudo rm -rf "/home/$UNAME/state"
+   sudo rm -rf "/home/$UNAME/state" && \
+   echo /home/linuxbrew/.linuxbrew/bin/fish | sudo tee -a /etc/shells >/dev/null && \
+   sudo usermod -s /home/linuxbrew/.linuxbrew/bin/fish $UNAME && \
+   echo '[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv sh)"' | sudo tee /etc/profile.d/brew.sh >/dev/null
 
 # Guard: fail the build if the Homebrew bundle or agent installs silently did
 # nothing, instead of shipping a broken image. Checks brew tools and the
