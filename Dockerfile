@@ -114,7 +114,7 @@ RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- apply && \
 # nothing, instead of shipping a broken image. Checks brew tools and the
 # native-installed agents (in ~/.local/bin).
 RUN PATH="/home/${UNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:${PATH}" sh -c '\
-      for t in fish nvim mise fzf rg claude codex opencode; do \
+      for t in fish nvim mise fzf rg tmux claude codex opencode; do \
         command -v "$t" >/dev/null || { echo "FATAL: $t missing after build" >&2; exit 1; }; \
       done'
 
