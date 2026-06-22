@@ -24,11 +24,6 @@ ENV MISE_DATA_DIR="/home/${UNAME}/state/mise"
 # UTF-8 so TUIs (nvim, fzf) render correctly without a full locales package.
 ENV LANG="C.UTF-8"
 ENV CHROME_BIN="/usr/bin/google-chrome-stable"
-# brew's own repo .git is stripped below to slim the image, so a runtime
-# `brew install` must not auto-update (it would git-fetch the now-gitless repo
-# and fail). Installs/upgrades still work via the JSON API + bottles. This was
-# previously only exported inside the build script, so it didn't apply at runtime.
-ENV HOMEBREW_NO_AUTO_UPDATE=1
 
 # Install base system dependencies
 RUN apt-get -y update && \
@@ -91,12 +86,8 @@ COPY --chown=$UID:$GID home/.chezmoiexternal.toml /home/$UNAME/.local/share/chez
 COPY --chown=$UID:$GID .chezmoiroot /home/$UNAME/.local/share/chezmoi/.chezmoiroot
 
 # Run pre-install scripts to install Homebrew packages (cached layer).
-# Strip Homebrew's own git metadata (~130MB) in this same layer — it must be the
-# layer that created it, or the bytes still ship. No `brew update` runs
-# in-container (HOMEBREW_NO_AUTO_UPDATE is set), so brew still works without it.
 RUN export CHEZMOI_SOURCE_DIR="/home/${UNAME}/.local/share/chezmoi" && \
-    bash "/home/${UNAME}/.local/share/chezmoi/home/.chezmoiscripts/any-linux/run_onchange_before_pre-install.sh" && \
-    rm -rf "$(/home/linuxbrew/.linuxbrew/bin/brew --repo)/.git"
+    bash "/home/${UNAME}/.local/share/chezmoi/home/.chezmoiscripts/any-linux/run_onchange_before_pre-install.sh"
 
 # Copy remaining dotfiles
 COPY --chown=$UID:$GID . /home/$UNAME/.local/share/chezmoi

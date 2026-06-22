@@ -72,14 +72,6 @@ for brew_location in /usr/local /opt/homebrew "/home/linuxbrew/.linuxbrew"
     end
 end
 
-# Under the container image, brew's repo .git is stripped to slim the image, so a
-# brew auto-update (which git-fetches that repo) fails. Disable it in-container —
-# gated on /.dockerenv so an ssh login (which doesn't inherit the image ENV) still
-# gets it, while brew on non-container hosts keeps auto-updating normally.
-if test -e /.dockerenv
-    set -gx HOMEBREW_NO_AUTO_UPDATE 1
-end
-
 for man_loc in /usr/local/main /usr/share/man /usr/local/share/man
     if ! contains "$man_loc" $MANPATH
         set -gx MANPATH "$man_loc" $MANPATH
