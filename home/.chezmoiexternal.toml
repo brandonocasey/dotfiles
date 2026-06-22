@@ -2,3 +2,13 @@
 type = "git-repo"
 url = "https://github.com/tmux-plugins/tpm"
 refreshPeriod = "168h"
+
+[".config/tmux/plugins/tmux-resurrect"]
+type = "git-repo"
+url = "https://github.com/tmux-plugins/tmux-resurrect"
+refreshPeriod = "168h"
+
+[".config/tmux/plugins/tmux-continuum"]
+type = "git-repo"
+url = "https://github.com/tmux-plugins/tmux-continuum"
+refreshPeriod = "168h"
