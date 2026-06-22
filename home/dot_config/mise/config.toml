@@ -1,13 +1,11 @@
 [tools]
 node = ['22']
+python = ['system']
 go = ['latest']
 uv = ['latest']
 
 [settings]
 experimental = true
-# Use the system python instead of a mise-managed one (replaces the deprecated
-# `python = ['system']` pseudo-version).
-disable_tools = ['python']
 trusted_config_paths = [
     '~/Projects/',
     '~/.local/share/vibetree/worktrees/',
