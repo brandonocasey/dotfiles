@@ -148,9 +148,6 @@ set -gx PYTHONSTARTUP "$XDG_CONFIG_HOME/python/pythonrc"
 set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 set -gx PASSWORD_STORE_DIR "$XDG_DATA_HOME/pass"
 
-# finding things
-set -gx GREP_OPTIONS "--color=auto"
-
 # themed ls colors
 if type -q vivid
     set -gx LS_COLORS "$(vivid generate one-dark)"
@@ -166,5 +163,10 @@ set -gx LESS -R
 set -gx _ZO_DATA_DIR "$XDG_DATA_HOME/zoxide"
 
 fish_add_path -a "$HOME/.local/share/npm/bin"
+
+# LM Studio CLI (lms) — only on machines where it's installed
+if test -d "$HOME/.lmstudio/bin"
+    fish_add_path -a "$HOME/.lmstudio/bin"
+end
 
 set -gx LANG "en_US.UTF-8"
