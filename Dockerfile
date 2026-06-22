@@ -74,10 +74,6 @@ RUN apt-get -y update && \
     docker-compose-plugin \
   && rm -rf /var/lib/apt/lists/*
 
-# Entrypoint registers the container-tuned chrome-devtools MCP server at runtime.
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 USER $UNAME
 WORKDIR /home/$UNAME
 
@@ -126,6 +122,12 @@ RUN PATH="/home/${UNAME}/.local/bin:/home/linuxbrew/.linuxbrew/bin:${PATH}" sh -
       for t in fish nvim mise fzf rg tmux claude codex opencode; do \
         command -v "$t" >/dev/null || { echo "FATAL: $t missing after build" >&2; exit 1; }; \
       done'
+
+# Entrypoint registers the container-tuned chrome-devtools MCP server at runtime.
+# Copied last (runtime-only) so editing it doesn't invalidate the costly brew
+# layer above. --chmod sets the mode at copy time (no extra chmod RUN, and it
+# works after USER since chmod-by-RUN as non-root couldn't touch a root file).
+COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["fish"]
