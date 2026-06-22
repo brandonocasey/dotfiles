@@ -79,6 +79,7 @@ brew 'pass'
 brew 'tealdeer'
 brew 'mosh'
 brew 'bottom'
+brew 'hyperfine'
 brew 'bash'
 brew 'make'
 brew 'bitwarden-cli'
@@ -95,6 +96,7 @@ brew 'lazydocker'
 brew 'luarocks'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
+brew 'jq'
 brew 'dasel'
 # or
 # brew 'yq'
