@@ -14,6 +14,11 @@ if status is-interactive
         end
     end
 
+    # multi-shell completions for hundreds of CLIs
+    if type -q carapace
+        carapace _carapace fish | source
+    end
+
     function journal -a filename --description "Open a journal entry in your editor for quick notes"
         if [ -z "$filename" ]
             set filename default
@@ -76,14 +81,14 @@ if status is-interactive
     function fish_greeting
     end
 
-    add_all_ssh_identities
+    # Only walk ~/.ssh when the agent has no identities loaded; once keys are
+    # added (with a 30-day expiry) later shells skip the grep/ssh-keygen scan.
+    if not ssh-add -l >/dev/null 2>&1
+        add_all_ssh_identities
+    end
 
     if type -q vibetree
         vibetree shell init fish | source
     end
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
 end
-
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/bcasey/.lmstudio/bin
-# End of LM Studio CLI section
