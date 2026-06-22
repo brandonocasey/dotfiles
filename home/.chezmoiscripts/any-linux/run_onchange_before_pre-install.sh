@@ -158,7 +158,7 @@ cask 'brave-browser'
 cask 'browserstacklocal'
 cask 'calibre'
 cask 'charles'
-cask 'docker'
+cask 'docker-desktop'
 cask 'firefox'
 cask 'google-chrome'
 cask 'grandperspective'
@@ -182,9 +182,8 @@ cask 'vlc'
 cask 'visual-studio-code'
 cask 'wezterm'
 cask 'ghostty'
-cask 'wireshark'
+cask 'wireshark-app'
 cask 'openinterminal'
-cask 'ollama'
 
 # App Store applications
 mas 'Xcode', id: 497799835
@@ -223,12 +222,15 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # so opt out of the trust requirement for the bundle.
 export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 
-# Write a real Brewfile: `brew bundle --cleanup` reads the file twice (install,
-# then cleanup), and a /dev/stdin pipe is empty on the second read, which makes
+# Write a real Brewfile: `brew bundle` reads the file twice (install, then
+# cleanup), and a /dev/stdin pipe is empty on the second read, which makes
 # cleanup uninstall everything it just installed.
 BREWFILE="$(mktemp)"
 printf '%s\n' "$BUNDLE" > "$BREWFILE"
-brew bundle --cleanup --file="$BREWFILE"
+# The `brew bundle --cleanup` switch is deprecated, so run install and the
+# cleanup subcommand separately; `cleanup --force` prunes anything not listed.
+brew bundle install --file="$BREWFILE"
+brew bundle cleanup --force --file="$BREWFILE"
 rm -f "$BREWFILE"
 brew cleanup --prune=all
 
