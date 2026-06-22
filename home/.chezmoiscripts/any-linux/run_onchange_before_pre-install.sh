@@ -60,6 +60,10 @@ brew 'git'
 brew 'git-extras'
 brew 'git-delta'
 brew 'git-lfs'
+# auto-routes staged hunks into the right commits as fixups (git absorb)
+brew 'git-absorb'
+# syntactic/AST-aware diff, wired as `git dft` (delta stays the default pager)
+brew 'difftastic'
 brew 'neovim'
 brew 'ripgrep'
 brew 'ripgrep-all'
@@ -69,17 +73,25 @@ brew 'vivid'
 brew 'zoxide'
 brew 'wget2'
 brew 'tmux'
+# smart tmux session manager (zoxide + fzf aware), bound to prefix+T
+brew 'sesh'
 brew 'mise'
 brew 'rsync'
 brew 'ast-grep'
 brew 'luajit'
 brew 'shellcheck'
+# shell formatter to pair with shellcheck
+brew 'shfmt'
 brew 'pass'
 
 brew 'tealdeer'
 brew 'mosh'
 brew 'bottom'
 brew 'hyperfine'
+# multi-shell completion engine (hundreds of CLIs), bridges into fish
+brew 'carapace'
+# universal archive (de)compression front-end
+brew 'ouch'
 brew 'bash'
 brew 'make'
 brew 'bitwarden-cli'
