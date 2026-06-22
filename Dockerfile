@@ -24,6 +24,11 @@ ENV MISE_DATA_DIR="/home/${UNAME}/state/mise"
 # UTF-8 so TUIs (nvim, fzf) render correctly without a full locales package.
 ENV LANG="C.UTF-8"
 ENV CHROME_BIN="/usr/bin/google-chrome-stable"
+# brew's own repo .git is stripped below to slim the image, so a runtime
+# `brew install` must not auto-update (it would git-fetch the now-gitless repo
+# and fail). Installs/upgrades still work via the JSON API + bottles. This was
+# previously only exported inside the build script, so it didn't apply at runtime.
+ENV HOMEBREW_NO_AUTO_UPDATE=1
 
 # Install base system dependencies
 RUN apt-get -y update && \
