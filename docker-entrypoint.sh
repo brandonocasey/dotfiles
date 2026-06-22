@@ -41,8 +41,6 @@ seed_state() {
   mkdir -p "$dest"
   [ -z "$(ls -A "$dest" 2>/dev/null)" ] && cp -a "$src/." "$dest"/ 2>/dev/null || true
 }
-seed_state "$HOME/.claude" "$CLAUDE_CONFIG_DIR"
-seed_state "$HOME/.codex" "$CODEX_HOME"
 
 # Point each tool's state dir at ~/state via symlink. This is env-agnostic: the
 # tool's configured path (often $XDG_DATA_HOME/<x> from fish) resolves through
@@ -62,7 +60,22 @@ link_state "$STATE_DIR/zoxide"    "$HOME/.local/share/zoxide"          # zoxide 
 link_state "$STATE_DIR/direnv"    "$HOME/.local/share/direnv"          # direnv allow-list
 link_state "$STATE_DIR/docker"    "$HOME/.config/docker"               # docker registry auth (DOCKER_CONFIG)
 link_state "$STATE_DIR/tmux-resurrect" "$HOME/.local/share/tmux/resurrect" # tmux-continuum saved sessions
+link_state "$STATE_DIR/mise"      "$HOME/.local/share/mise"            # mise toolchains (MISE_DATA_DIR; default over ssh)
+# XDG_STATE_HOME (nvim shada/undo, ...). The image sets it to ~/state/xdg-state,
+# but a shell that doesn't inherit the image ENV (ssh login) falls back to the
+# XDG default ~/.local/state; link that at the persisted dir so both resolve here.
+link_state "$STATE_DIR/xdg-state" "$HOME/.local/state"
 chmod 700 "$STATE_DIR/gnupg" 2>/dev/null || true                      # gpg refuses loose perms
+
+# Claude/Codex: seed the baked config into ~/state on first run, then symlink the
+# DEFAULT dir (~/.claude, ~/.codex) at it. Going through the default location
+# keeps persistence working even when CLAUDE_CONFIG_DIR/CODEX_HOME aren't exported
+# (an ssh/login shell re-sources its profile and won't inherit the image's ENV).
+# The image still points those vars at the same ~/state path, so both resolve here.
+seed_state "$HOME/.claude" "$STATE_DIR/claude"
+link_state "$STATE_DIR/claude" "$HOME/.claude"
+seed_state "$HOME/.codex"  "$STATE_DIR/codex"
+link_state "$STATE_DIR/codex"  "$HOME/.codex"
 
 # npm writes auth tokens into its userconfig (the chezmoi-managed npmrc), so seed
 # the managed config into ~/state once, then symlink it. The modify_npmrc template
