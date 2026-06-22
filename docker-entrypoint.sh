@@ -60,7 +60,15 @@ link_state "$STATE_DIR/pass"      "$HOME/.local/share/pass"            # passwor
 link_state "$STATE_DIR/bitwarden" "$HOME/.config/Bitwarden CLI"        # bw session
 link_state "$STATE_DIR/zoxide"    "$HOME/.local/share/zoxide"          # zoxide jump db
 link_state "$STATE_DIR/direnv"    "$HOME/.local/share/direnv"          # direnv allow-list
+link_state "$STATE_DIR/docker"    "$HOME/.config/docker"               # docker registry auth (DOCKER_CONFIG)
+link_state "$STATE_DIR/tmux-resurrect" "$HOME/.local/share/tmux/resurrect" # tmux-continuum saved sessions
 chmod 700 "$STATE_DIR/gnupg" 2>/dev/null || true                      # gpg refuses loose perms
+
+# npm writes auth tokens into its userconfig (the chezmoi-managed npmrc), so seed
+# the managed config into ~/state once, then symlink it. The modify_npmrc template
+# preserves existing keys, so a later apply won't drop persisted `npm login` tokens.
+seed_state "$HOME/.config/npm" "$STATE_DIR/npm"
+link_state "$STATE_DIR/npm"      "$HOME/.config/npm"
 
 mkdir -p "$HOME/.local/share/fish"
 [ -e "$HOME/.local/share/fish/fish_history" ] && [ ! -L "$HOME/.local/share/fish/fish_history" ] && rm -f "$HOME/.local/share/fish/fish_history"
