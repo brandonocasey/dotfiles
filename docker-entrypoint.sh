@@ -94,6 +94,24 @@ if command -v mise >/dev/null 2>&1; then
   mise install -y >/dev/null 2>&1 || true
 fi
 
+# WASI SDK (wasm32 C/C++ toolchain). Large (~1GB unpacked), so — like mise — it's
+# fetched into ~/state on first run rather than baked into the image. Pinned; bump
+# WASI_SDK_VERSION to upgrade. Symlinked at the XDG default so any shell (incl. an
+# ssh login that doesn't inherit the image ENV) resolves WASI_SDK_PATH to it.
+WASI_SDK_VERSION="33.0"
+WASI_SDK_DIR="$STATE_DIR/wasi-sdk"
+if command -v curl >/dev/null 2>&1 && [ ! -x "$WASI_SDK_DIR/bin/clang" ]; then
+  wasi_tag="wasi-sdk-${WASI_SDK_VERSION%%.*}"
+  wasi_tarball="wasi-sdk-${WASI_SDK_VERSION}-x86_64-linux.tar.gz"
+  wasi_tmp="$(mktemp -d)"
+  if curl -fsSL "https://github.com/WebAssembly/wasi-sdk/releases/download/${wasi_tag}/${wasi_tarball}" -o "$wasi_tmp/sdk.tar.gz" 2>/dev/null; then
+    mkdir -p "$WASI_SDK_DIR"
+    tar -xzf "$wasi_tmp/sdk.tar.gz" -C "$WASI_SDK_DIR" --strip-components=1 2>/dev/null || true
+  fi
+  rm -rf "$wasi_tmp"
+fi
+link_state "$WASI_SDK_DIR" "$HOME/.local/share/wasi-sdk"
+
 # Docker-out-of-Docker: if the host Docker socket is mounted, make it usable by
 # this (non-root) user so `docker ...` works inside the container.
 if [ -S /var/run/docker.sock ]; then
