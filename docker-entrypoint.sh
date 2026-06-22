@@ -23,6 +23,14 @@ mkdir -p "$STATE_DIR/projects" "$XDG_STATE_HOME" 2>/dev/null || true
 git config --global --get-all safe.directory 2>/dev/null | grep -Fqx '*' || \
   git config --global --add safe.directory '*' 2>/dev/null || true
 
+# No systemd-logind in the container to create XDG_RUNTIME_DIR (/run/user/<uid>),
+# so tools that expect it (gpg, chezmoi, ...) fail with "permission denied" once
+# the shell sets it. Create it ourselves with the right owner and mode.
+RUNTIME_DIR="/run/user/$(id -u)"
+sudo mkdir -p "$RUNTIME_DIR" 2>/dev/null \
+  && sudo chown "$(id -u):$(id -g)" "$RUNTIME_DIR" 2>/dev/null \
+  && chmod 700 "$RUNTIME_DIR" 2>/dev/null || true
+
 # Seed a chezmoi-managed config dir into its ~/state location on first run only
 # (mirrors how a named volume seeds from the image, but for an empty host bind
 # mount). Auth/sessions then accumulate and persist there. Config refreshes only
