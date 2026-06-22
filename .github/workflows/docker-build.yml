@@ -52,3 +52,9 @@ jobs:
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Reuse layers across push/release builds via the GitHub Actions cache.
+          # The twice-daily cron skips the import (no-cache) so brew/apt/agents are
+          # pulled fresh, but still exports the fresh layers to seed later builds.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          no-cache: ${{ github.event_name == 'schedule' }}
