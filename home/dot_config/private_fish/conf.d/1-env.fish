@@ -27,7 +27,15 @@ if test -z "$XDG_RUNTIME_DIR"
     if test $UNAME = Darwin
         set -gx XDG_RUNTIME_DIR "$HOME/Library/Application Support"
     else if test $UNAME = Linux
-        set -gx XDG_RUNTIME_DIR "/run/user/$(id -u)"
+        # Prefer the logind-managed runtime dir, but fall back when it's absent or
+        # unwritable (e.g. containers without systemd) so tools that use it don't
+        # fail with "permission denied".
+        if test -d "/run/user/$(id -u)" -a -w "/run/user/$(id -u)"
+            set -gx XDG_RUNTIME_DIR "/run/user/$(id -u)"
+        else
+            set -gx XDG_RUNTIME_DIR "$XDG_CACHE_HOME/xdg-runtime"
+            mkdir -p "$XDG_RUNTIME_DIR"; and chmod 700 "$XDG_RUNTIME_DIR"
+        end
     end
 end
 
