@@ -6,7 +6,7 @@ ARG GID=1000
 
 ENV RUNNING_IN_DOCKER=true
 ENV PATH="${PATH}:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
-ENV MANPATH="${MANPATH}:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+ENV MANPATH=":./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
 # All persistent tool state lives under one dir (~/state) so a single host bind
 # mount is the one place to keep/back up. The entrypoint seeds these from the
 # chezmoi-managed config baked into the image so the empty mount doesn't shadow it.
