@@ -66,6 +66,10 @@
   fix = commit --amend -a -C HEAD
   checkout-default = "!git checkout $(git rev-parse --abbrev-ref origin/HEAD | sed 's@^origin/@@')"
   logone = log --all --decorate --oneline --graph
+  # difftastic (syntactic diff) on demand; delta stays the default pager.
+  # `git dft [range|paths]` -> difftool per file; `git dlog` -> paged history.
+  dft = difftool --tool difftastic
+  dlog = "!GIT_PAGER='less -R' DFT_COLOR=always git -c diff.external=difft log -p --ext-diff \"$@\" #"
 
 [credential]
   # clear system-level osxkeychain helper from /opt/homebrew/etc/gitconfig
@@ -78,6 +82,12 @@
   enabled = true
   # automatically do them
   autoUpdate = true
+
+[difftool "difftastic"]
+  cmd = difft "$LOCAL" "$REMOTE"
+[difftool]
+  # don't ask before launching difftastic on each file
+  prompt = false
 
 [column]
   # allow showing things as columns rather than a long new-line separated list
@@ -121,6 +131,10 @@
   features = decorations
   tabs = 2
   hyperlinks = true
+  # jump between files/hunks in the pager with n / N
+  navigate = true
+  # gutter line numbers
+  line-numbers = true
 
 [log]
   # iso dates in log
