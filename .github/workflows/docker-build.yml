@@ -52,9 +52,12 @@ jobs:
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Reuse layers across push/release builds via the GitHub Actions cache.
+          # Reuse layers across push/release builds via a registry cache stored as
+          # a :buildcache tag in GHCR. Registry (not GHA) cache because this image
+          # is large and mode=max would thrash GHA's 10GB/repo cap. image-manifest
+          # + oci-mediatypes are required for GHCR to accept the cache manifest.
           # The twice-daily cron skips the import (no-cache) so brew/apt/agents are
           # pulled fresh, but still exports the fresh layers to seed later builds.
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
           no-cache: ${{ github.event_name == 'schedule' }}
