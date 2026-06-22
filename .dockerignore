@@ -1,11 +1,3 @@
-# Version control
-.github
-
-# Documentation
-README.md
-*.md
-!.chezmoi*.md
-
 # macOS
 .DS_Store
 
