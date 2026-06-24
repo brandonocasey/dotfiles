@@ -260,6 +260,12 @@ if [ -n "$git_info" ]; then
   parts=$(printf '%s | \033[33m%s\033[0m' "$parts" "$git_info")
 fi
 
+# Working directory basename (green)
+dir_base=$(basename "$cwd" 2>/dev/null)
+if [ -n "$dir_base" ]; then
+  parts=$(printf '%s | \033[32m%s\033[0m' "$parts" "$dir_base")
+fi
+
 # Time (cyan)
 parts=$(printf '%s | \033[96m%s\033[0m' "$parts" "$time_str")
 

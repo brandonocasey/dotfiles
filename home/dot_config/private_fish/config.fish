@@ -14,11 +14,6 @@ if status is-interactive
         end
     end
 
-    # multi-shell completions for hundreds of CLIs
-    if type -q carapace
-        carapace _carapace fish | source
-    end
-
     function journal -a filename --description "Open a journal entry in your editor for quick notes"
         if [ -z "$filename" ]
             set filename default

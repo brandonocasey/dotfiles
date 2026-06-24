@@ -148,6 +148,9 @@ set -gx PYTHONSTARTUP "$XDG_CONFIG_HOME/python/pythonrc"
 set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 set -gx PASSWORD_STORE_DIR "$XDG_DATA_HOME/pass"
 
+# finding things
+set -gx GREP_OPTIONS "--color=auto"
+
 # themed ls colors
 if type -q vivid
     set -gx LS_COLORS "$(vivid generate one-dark)"
