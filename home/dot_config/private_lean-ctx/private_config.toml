@@ -1,0 +1,11 @@
+shell_allowlist_extra = [
+    "otool",
+    "nm",
+    "install_name_tool",
+    "codesign",
+    "pipx",
+    "headroom",
+    "chezmoi",
+]
+output_density = "terse"
+minimal_overhead = true
