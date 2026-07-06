@@ -118,7 +118,19 @@ status_line_use_colors = true
 memories = true
 terminal_resize_reflow = true
 goals = true
+hooks = true
 
 [mcp_servers.chrome-devtools]
 command = "npx"
 args = ["chrome-devtools-mcp@latest"]
+
+[mcp_servers.codegraph]
+command = "codegraph"
+args = ["serve", "--mcp"]
+
+[mcp_servers.lean-ctx]
+command = "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx"
+args = []
+
+[mcp_servers.lean-ctx.env]
+

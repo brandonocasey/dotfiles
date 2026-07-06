@@ -31,7 +31,7 @@ Establish and hold these facts for the whole run:
   `git worktree list`). Needed to ff-merge a checked-out branch.
 
 If `TARGET` is checked out in a worktree that has **uncommitted changes** (staged or unstaged),
-note it as `TARGET_DIRTY` — you'll stash those changes around the ff-merge in step 3, not bail.
+note it as `TARGET_DIRTY` — you'll stash those changes around the ff-merge, not bail.
 
 ## 1. Commit the working tree in logical chunks
 
@@ -59,6 +59,13 @@ Skip if the tree is already clean (nothing staged/unstaged/untracked).
   the user keeps in memory for TS-only changes in unbuilt worktrees).
 - Repeat until `git status --short` is empty.
 
+**Gate — the worktree must be fully committed before anything lands.** Re-run `git status --short`
+and confirm it prints nothing (no staged, unstaged, or untracked files). If anything remains, do
+NOT proceed to rebase/ff: either commit it as another logical chunk or, if it's genuinely not meant
+to land, STOP and ask the user what to do with it. Never rebase, fast-forward, or remove the
+worktree while the tree is dirty — uncommitted work in the worktree is lost when the worktree is
+removed in step 6.
+
 After all chunks: show `git log --oneline <TARGET>..HEAD` so the user sees what's about to land.
 
 ## 2. Run tests
@@ -75,7 +82,7 @@ Run the project's test suite to verify the committed changes are green before re
   STOP and ask the user.
 - If tests pass: continue.
 
-## 4. Rebase onto the local target
+## 3. Rebase onto the local target
 
 ```sh
 git rebase <TARGET>
@@ -87,7 +94,7 @@ git rebase <TARGET>
   `git rebase --continue`; offer `git rebase --abort` to bail.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
 
-## 5. Fast-forward the target to the branch
+## 4. Fast-forward the target to the branch
 
 The merge must be a clean fast-forward; if it can't be, the rebase in step 4 didn't take and you
 should stop and investigate rather than create a merge commit.
@@ -135,7 +142,7 @@ git -C <TARGET_WT> stash pop
   a commit — the restored changes stay as uncommitted local work, matching how they started.
   If a conflict is genuinely ambiguous, STOP and ask rather than guessing; the stash is intact.
 
-## 6. Clean up
+## 5. Clean up
 
 - Delete the landed branch (it's now an ancestor of `TARGET`, so `-d` is safe and refuses if it
   somehow isn't):
@@ -154,7 +161,7 @@ git -C <TARGET_WT> stash pop
 - Branch deletion ordering: when in a worktree, delete the branch *after* removing the worktree
   (a branch checked out in a live worktree can't be deleted), running `git -C <MAIN_WT> branch -d`.
 
-## 7. Report
+## 6. Report
 
 End by stating, plainly: which commits landed (`<short> <subject>` each), the new `TARGET` tip,
 what was cleaned up (branch deleted, worktree removed), and — if you stashed — that the target's
@@ -164,6 +171,8 @@ pushing is a separate, explicit step the user must ask for.
 ## Hard rules
 
 - Local only: never `git fetch`/`pull`/`push` here.
+- Never rebase, fast-forward, or remove the worktree while the worktree tree is dirty — everything
+  in the worktree must be committed (or explicitly resolved with the user) first.
 - Never force-push, never `git merge` without `--ff-only`, never `rebase --skip` past a conflict.
 - Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).
 - A dirty target tree is handled by stash/ff/pop (step 3), not a hard stop — but stop and ask if

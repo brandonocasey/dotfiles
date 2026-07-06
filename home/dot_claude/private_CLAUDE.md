@@ -29,13 +29,12 @@
 
 ## Code Quality
 
-- All code should be written to do one chunk of functionality well so that it can be well tested and reused
+- Build each piece of code to do one thing well so it can be tested and reused; break up a component when it takes on too much complexity
 - Reduce duplication and complexity as much as possible while still meeting specifications
 - Handle undefined/null cases; provide explicit returns
 - Avoid nested ternaries and yoda expressions
 - Always provide error messages when raising errors
 - No nested `else` blocks when unnecessary (use early returns)
-- Components should be broken up when one component starts to take on too much complexity
 - Comments: minimal — only add context the code can't show (why, constraints, workarounds) or untangle complicated code; never narrate the code or the change
 
 ## File Organization
@@ -46,7 +45,19 @@
 ## Git workflow
 
 - Default branch: `main`
-- Do branch work in a git worktree (`git worktree add ../<dir> -b <branch>`), never by switching branches in the main checkout; base on the default branch unless asked otherwise, and clean up with `git worktree remove` once merged
-- **Commit format**: `<type>(<scope>): <description>` conventional commits — full rules in @/Users/bcasey/.claude/commands/commit.md; scope required by commitlint (@.config/commitlint.config.js)
+- Do branch work in a git worktree (`git worktree add .worktrees/<branch> -b <branch>`), never by switching branches in the main checkout; base on the default branch unless asked otherwise, and clean up with `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`), so worktrees stay inside the repo without polluting `git status`
+- If you've already made changes in the default branch's checkout before creating the worktree, bring those changes over to the worktree and revert them in the default branch's checkout so main stays clean
+- **Commit format**: `<type>(<scope>): <description>` conventional commits — full rules in the `commit` skill; scope required by commitlint (@.config/commitlint.config.js)
 - **Changelog**: Run `npm version <major|minor|patch>` to bump version and update CHANGELOG.md automatically
 - **Prerelease workflow**: For prereleases, commit normally. When ready for final release, run `npm run changelog:all` to regenerate entire CHANGELOG.md which consolidates all commits (including prerelease commits) into a single release entry
+
+<!-- CODEGRAPH_START -->
+## CodeGraph
+
+In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+
+- **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
+- **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
+
+If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
+<!-- CODEGRAPH_END -->
