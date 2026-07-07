@@ -6,6 +6,7 @@ README.md
 .local/bin/claude
 .local/bin/codex
 .local/bin/opencode
+.local/bin/tokensave
 
 # ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}
