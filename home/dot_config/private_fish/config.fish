@@ -78,6 +78,7 @@ if status is-interactive
 
     # Only walk ~/.ssh when the agent has no identities loaded; once keys are
     # added (with a 30-day expiry) later shells skip the grep/ssh-keygen scan.
+    # Keys are pulled/refreshed from the Bitwarden vault via setup-bw-ssh-keys.
     if not ssh-add -l >/dev/null 2>&1
         add_all_ssh_identities
     end

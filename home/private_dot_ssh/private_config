@@ -13,3 +13,13 @@ Host catnip
   UserKnownHostsFile /dev/null
   SendEnv WORKDIR
 # END CATNIP MANAGED BLOCK
+
+# The koof.win zone has a wildcard *.koof.win CNAME -> koof.win but no explicit
+# ssh-forgejo record, so resolvers return a conflicting CNAME(.6)+A(.8) pair and
+# getaddrinfo follows the CNAME. Pin to the container IP until an explicit
+# ssh-forgejo A 192.168.73.8 record is added at the koof.win DNS authority.
+Host ssh-forgejo.koof.win
+  HostName 192.168.73.8
+  User git
+  IdentityFile ~/.ssh/forgejo-koof
+  IdentitiesOnly yes

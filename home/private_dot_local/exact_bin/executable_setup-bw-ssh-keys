@@ -1,33 +1,44 @@
 #!/usr/bin/env bash
+# Pull ssh keys from the Bitwarden vault item into ~/.ssh.
+# Idempotent: rerun any time to refresh keys to the latest vault state.
+set -euo pipefail
+
 export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
 export NODE_OPTIONS="--no-deprecation"
 
-if ! command -v bw 2>/dev/null >/dev/null; then
+ITEM_ID="0608e72b-a25b-4b7d-ad72-b12101687d21"
+
+if ! command -v bw >/dev/null 2>&1; then
   echo "Installing bitwarden-cli"
   brew install bitwarden-cli
 fi
 
-echo "Setting up ssh keys via bitwarden"
-bw login
+if bw login --check >/dev/null 2>&1; then
+  BW_SESSION="$(bw unlock --raw)"
+else
+  BW_SESSION="$(bw login --raw)"
+fi
+export BW_SESSION
+
+echo "Syncing vault"
+bw sync >/dev/null
+
+mkdir -p "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
 
 TEMP="$(mktemp -d)"
-mkdir -p "$TEMP"
+trap 'rm -rf "$TEMP"' EXIT
 cd "$TEMP"
 
-sudo -v
-mkdir -p "$HOME/.ssh"
-
-sudo chmod 700 "$HOME/.ssh"
-
-for a in "brandonocasey-github-auth" "brandonocasey-github-auth.pub" "brandonocasey-github-sign" "brandonocasey-github-sign.pub"; do
-  bw get attachment "$a" --itemid 0608e72b-a25b-4b7d-ad72-b12101687d21
-  sudo mv "$TEMP/$a" "$HOME/.ssh/$a"
-
-  if echo "$a" | grep -q '.pub'; then
-    sudo chmod 644 "$HOME/.ssh/$a"
-  else
-    sudo chmod 600 "$HOME/.ssh/$a"
-  fi
+for a in $(bw get item "$ITEM_ID" | jq -r '.attachments[].fileName'); do
+  echo "Fetching $a"
+  bw get attachment "$a" --itemid "$ITEM_ID" >/dev/null
+  case "$a" in
+    *.pub) chmod 644 "$a" ;;
+    *) chmod 600 "$a" ;;
+  esac
+  mv -f "$TEMP/$a" "$HOME/.ssh/$a"
 done
 
-rm -rf "$TEMP"
+bw lock >/dev/null
+echo "Done"
