@@ -4,10 +4,10 @@
 [user]
   name = bcasey1
   email = bcasey@jwplayer.com
-  signingkey = ~/.ssh/bcasey1-gitlab-auth-sign.pub
+  signingkey = ~/.ssh/bcasey1@jwx-gitlab.com-09082025.pub
 
 [gpg]
   format = ssh
 
 [core]
-  sshCommand = "ssh -i ~/.ssh/bcasey1-gitlab-auth-sign"
+  sshCommand = "ssh -i ~/.ssh/bcasey1@jwx-gitlab.com-09082025 -o IdentitiesOnly=yes"

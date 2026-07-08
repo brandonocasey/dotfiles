@@ -4,10 +4,10 @@
 [user]
   name = brandonocasey
   email = brandonocasey@gmail.com
-  signingkey = ~/.ssh/brandonocasey-github-sign.pub
+  signingkey = ~/.ssh/brandonocasey@github.com-07082026.pub
 
 [gpg]
   format = ssh
 
 [core]
-  sshCommand = "ssh -i ~/.ssh/brandonocasey-github-auth"
+  sshCommand = "ssh -i ~/.ssh/brandonocasey@github.com-07082026 -o IdentitiesOnly=yes"
