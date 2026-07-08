@@ -70,7 +70,7 @@ brew 'git-delta'
 brew 'git-lfs'
 # auto-routes staged hunks into the right commits as fixups (git absorb)
 brew 'git-absorb'
-# syntactic/AST-aware diff, wired as `git dft` (delta stays the default pager)
+# syntactic/AST-aware diff, wired as 'git dft' (delta stays the default pager)
 brew 'difftastic'
 brew 'neovim'
 brew 'ripgrep'
@@ -109,11 +109,15 @@ brew 'curl'
 brew 'gh'
 brew 'grex'
 brew 'http-server'
-brew 'ctop'
 brew 's-search'
 brew 'lazygit'
 brew 'lazydocker'
 brew 'luarocks'
+brew 'forgejo-cli'
+brew 'glab'
+brew 'cloc'
+brew 'media-info'
+brew 'yt-dlp'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'jq'
@@ -144,9 +148,13 @@ if [ "$(uname)" = "Darwin" ]; then
 cask 'font-iosevka-term-nerd-font'
 
 # Claude Code: cask on macOS, native installer on Linux (see below)
-cask 'claude-code'
-# codex: homebrew-core formula on macOS (no Linux formula; Linux uses a binary)
-brew 'codex'
+cask 'claude-code@latest'
+# codex: cask on macOS (no brew formula; Linux uses a release binary, see below)
+cask 'codex'
+# Cursor CLI: cask on macOS, official installer on Linux (see below)
+cask 'cursor-cli'
+# Antigravity CLI: macOS-only (no standalone Linux CLI; it ships inside the IDE)
+cask 'antigravity-cli'
 
 brew 'reattach-to-user-namespace'
 brew 'dockutil'
@@ -188,7 +196,6 @@ cask 'spotify'
 cask 'sublime-text'
 cask 'vlc'
 cask 'visual-studio-code'
-cask 'wezterm'
 cask 'ghostty'
 cask 'wireshark-app'
 cask 'openinterminal'
@@ -197,6 +204,19 @@ cask 'openinterminal'
 mas 'Xcode', id: 497799835
 mas 'WireGuard', id: 1451685025
 
+EOF
+  )
+fi
+
+# additional packages for Linux only
+if [ "$UNAME" = "Linux" ]; then
+  BUNDLE+=$(
+    cat <<EOF
+
+# opencode lives only in a third-party tap; HOMEBREW_NO_REQUIRE_TAP_TRUST (set
+# below) lets the bundle use it. Its Linux bottles cover both x86_64 and arm64.
+tap 'anomalyco/tap'
+brew 'anomalyco/tap/opencode'
 EOF
   )
 fi
@@ -211,7 +231,8 @@ if [ "$RUNNING_IN_DOCKER" != "true" ]; then
   BUNDLE+=$(
     cat <<EOF
 
-brew 'ffmpeg'
+# keg-only (versioned formula) — installed but NOT auto-symlinked onto PATH as 'ffmpeg'
+brew 'ffmpeg-full'
 brew 'imagemagick'
 brew 'pandoc'
 brew 'aider'
@@ -243,39 +264,25 @@ rm -f "$BREWFILE"
 brew cleanup --prune=all
 
 # Homebrew casks are macOS-only, so install Claude Code natively on Linux.
-if [ "$UNAME" = "Linux" ] && ! cmd_exists claude; then
-  echo "Installing Claude Code (native installer)"
+# No install guard: re-run every apply so it self-updates to the latest release.
+if [ "$UNAME" = "Linux" ]; then
+  echo "Installing/updating Claude Code (native installer)"
   curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
 fi
 
-# opencode's Homebrew tap is "untrusted" under Homebrew 6 and `codex` has no
-# Linux formula, so on Linux install these AI agents from their release binaries
-# (node-free) into ~/.local/bin instead of the brew bundle, which aborts on them.
+# `codex` has no Linux brew formula and Cursor's CLI is a macOS-only cask, so on
+# Linux install both natively. opencode now comes from the brew bundle above (its
+# tap ships Linux bottles). No guards: all re-pull the latest each run.
 if [ "$UNAME" = "Linux" ]; then
   mkdir -p "$HOME/.local/bin"
 
-  if ! [ -x "$HOME/.local/bin/codex" ]; then
-    echo "Installing codex (release binary)"
-    if curl -fsSL https://github.com/openai/codex/releases/latest/download/codex-x86_64-unknown-linux-musl.tar.gz -o /tmp/codex.tgz; then
-      tar xzf /tmp/codex.tgz -C /tmp &&
-        install -m 0755 /tmp/codex-x86_64-unknown-linux-musl "$HOME/.local/bin/codex"
-      rm -f /tmp/codex.tgz /tmp/codex-x86_64-unknown-linux-musl
-    else
-      echo "codex download failed (continuing)"
-    fi
-  fi
+  # codex ships an official node-free installer (arch-aware, always latest).
+  echo "Installing/updating codex (official installer)"
+  curl -fsSL https://chatgpt.com/codex/install.sh | sh || echo "codex install failed (continuing)"
 
-  if ! [ -x "$HOME/.local/bin/opencode" ]; then
-    echo "Installing opencode (release binary)"
-    oc_url=$(curl -fsSL https://registry.npmjs.org/opencode-linux-x64/latest | tr ',' '\n' | sed -n 's/.*"tarball":"\([^"]*\)".*/\1/p')
-    if [ -n "$oc_url" ] && curl -fsSL "$oc_url" -o /tmp/oc.tgz; then
-      tar xzf /tmp/oc.tgz -C /tmp &&
-        install -m 0755 /tmp/package/bin/opencode "$HOME/.local/bin/opencode"
-      rm -rf /tmp/oc.tgz /tmp/package
-    else
-      echo "opencode download failed (continuing)"
-    fi
-  fi
+  # Cursor CLI: official installer, handles Linux x86_64 and arm64.
+  echo "Installing/updating Cursor CLI (official installer)"
+  curl -fsSL https://cursor.com/install | bash || echo "cursor install failed (continuing)"
 fi
 
 if [ "$RUNNING_IN_DOCKER" != "true" ] && cmd_exists fish; then
