@@ -18,6 +18,12 @@ README.md
 .config/brewfile/Brewfile-mac
 .vscode-oss/
 Library/
+# Mac-only shims — these symlinks target /Users/bcasey paths that only exist on
+# macOS. Ignore off-Mac so exact_bin leaves them alone (and doesn't recreate the
+# dead links); the symlink_* source files stay for the Mac.
+.local/bin/agent
+.local/bin/headroom
+.local/bin/python3.14
 {{- end }}
 
 # ignore these files if not on windows

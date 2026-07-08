@@ -147,4 +147,35 @@ return {
       },
     },
   },
+
+  -- nvim-treesitter's `main` branch builds parsers by shelling out to the
+  -- tree-sitter CLI, which uses $CC. Only override it when the default compiler
+  -- can't actually build (e.g. Unraid ships no libc headers, so cc fails on
+  -- <stdint.h>); a healthy toolchain is left alone. Falls back to the newest
+  -- Homebrew gcc-N/g++-N by absolute path (survives version bumps / GUI launches).
+  {
+    "nvim-treesitter/nvim-treesitter",
+    init = function()
+      local src = vim.fn.tempname() .. ".c"
+      vim.fn.writefile({ "#include <stdio.h>", "#include <stdint.h>", "int main(void){return 0;}" }, src)
+      local ok, probe = pcall(function()
+        return vim.system({ vim.env.CC or "cc", "-fsyntax-only", src }):wait()
+      end)
+      os.remove(src)
+      if ok and probe.code == 0 then
+        return -- default compiler works; don't touch anything
+      end
+
+      local bin = (vim.env.HOMEBREW_PREFIX or "/home/linuxbrew/.linuxbrew") .. "/bin"
+      local newest = function(pat)
+        local matches = vim.fn.globpath(bin, pat, false, true)
+        table.sort(matches, function(a, b)
+          return (tonumber(a:match("(%d+)$")) or 0) > (tonumber(b:match("(%d+)$")) or 0)
+        end)
+        return matches[1]
+      end
+      vim.env.CC = newest("gcc-[0-9]*") or vim.env.CC
+      vim.env.CXX = newest("g++-[0-9]*") or vim.env.CXX
+    end,
+  },
 }

@@ -80,7 +80,13 @@ end
 
 fish_add_path -a "$HOME/.local/bin"
 fish_add_path -a "$HOME/.cargo/bin"
+fish_add_path -a "$HOME/bin"
 set -gx PATH $PATH ./node_modules/.bin
+
+# ~/.local/bin must resolve before Homebrew — its `brew` wrapper (and other
+# shims) live there and need to shadow the real binaries. Prepend + move so it
+# lands first even if a stale universal fish_user_paths ordered Homebrew ahead.
+fish_add_path -pm "$HOME/.local/bin"
 
 set -gx PAGER less
 set -gx GIT_PAGER less

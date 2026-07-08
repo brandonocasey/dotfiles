@@ -175,3 +175,6 @@
 [includeIf "hasconfig:remote.*.url:ssh://*forgejo.koof.win*/**"]
   path = ~/.config/git/forgejo
 
+[safe]
+	directory = *
+	directory = *
