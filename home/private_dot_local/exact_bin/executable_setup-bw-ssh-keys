@@ -30,9 +30,10 @@ TEMP="$(mktemp -d)"
 trap 'rm -rf "$TEMP"' EXIT
 cd "$TEMP"
 
-for a in $(bw get item "$ITEM_ID" | jq -r '.attachments[].fileName | select(endswith(".pub") | not)'); do
+for a in $(bw get item "$ITEM_ID" --session "$BW_SESSION" | jq -r '.attachments[].fileName | select(endswith(".pub") | not)'); do
   echo "Fetching $a"
-  bw get attachment "$a" --itemid "$ITEM_ID" >/dev/null
+  # ponytail: bw get attachment ignores the exported BW_SESSION env var; must pass --session explicitly
+  bw get attachment "$a" --itemid "$ITEM_ID" --session "$BW_SESSION" >/dev/null
   chmod 600 "$a"
   mv -f "$TEMP/$a" "$HOME/.ssh/$a"
   ssh-keygen -y -f "$HOME/.ssh/$a" > "$HOME/.ssh/$a.pub"

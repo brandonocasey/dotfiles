@@ -13,14 +13,14 @@ cmd_exists() {
 SUDO_ME=""
 if cmd_exists sudo; then
   SUDO_ME="sudo"
-  # Prompt for the password once, then refresh the cached credential in the
-  # background so later sudo calls (brew, chsh) never re-prompt.
+  # Prime sudo once, then refresh the cached credential in the background so
+  # sudo-backed steps (apt/yum/pacman, chsh) don't re-prompt.
   sudo -v
   while true; do
-    sudo -n true
+    sudo -n true 2>/dev/null
     sleep 50
-    kill -0 "$$" || exit
-  done 2>/dev/null &
+    kill -0 "$$" 2>/dev/null || exit
+  done &
 fi
 
 install_linux_pkg() {
