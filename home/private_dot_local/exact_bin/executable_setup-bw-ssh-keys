@@ -30,14 +30,13 @@ TEMP="$(mktemp -d)"
 trap 'rm -rf "$TEMP"' EXIT
 cd "$TEMP"
 
-for a in $(bw get item "$ITEM_ID" | jq -r '.attachments[].fileName'); do
+for a in $(bw get item "$ITEM_ID" | jq -r '.attachments[].fileName | select(endswith(".pub") | not)'); do
   echo "Fetching $a"
   bw get attachment "$a" --itemid "$ITEM_ID" >/dev/null
-  case "$a" in
-    *.pub) chmod 644 "$a" ;;
-    *) chmod 600 "$a" ;;
-  esac
+  chmod 600 "$a"
   mv -f "$TEMP/$a" "$HOME/.ssh/$a"
+  ssh-keygen -y -f "$HOME/.ssh/$a" > "$HOME/.ssh/$a.pub"
+  chmod 644 "$HOME/.ssh/$a.pub"
 done
 
 bw lock >/dev/null
