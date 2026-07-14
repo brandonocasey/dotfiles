@@ -1,13 +1,12 @@
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 personality = "pragmatic"
-model_reasoning_effort = "xhigh"
+model_reasoning_effort = "low"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "xhigh"
 service_tier = "default"
-[profiles.full_auto]
+notify = ["/Users/bcasey/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 approval_policy = "never"
-sandbox_mode    = "workspace-write"
-sandbox_workspace_write.network_access = true
+sandbox_mode    = "danger-full-access"
 
 [projects."/Users/bcasey/Projects/brandonocasey/vibetree"]
 trust_level = "trusted"
@@ -96,6 +95,21 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Downloads"]
 trust_level = "trusted"
 
+[projects."/Users/bcasey/Projects/forgejo/rom-weaver"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/.local/share/chezmoi"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/brandonocasey/gameman"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/forgejo/game-tools"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
@@ -107,18 +121,20 @@ fast_default_opt_out = true
 "gpt-5.4" = "gpt-5.5"
 
 [tui]
-status_line = ["project-name", "context-used", "weekly-limit", "model-with-reasoning", "fast-mode"]
+status_line = ["project-name", "context-used", "five-hour-limit", "weekly-limit", "model-with-reasoning", "git-branch", "thread-title"]
 theme = "one-half-dark"
 status_line_use_colors = true
 
 [tui.model_availability_nux]
 "gpt-5.5" = 4
+"gpt-5.6-sol" = 4
 
 [features]
 memories = true
 terminal_resize_reflow = true
 goals = true
 hooks = true
+js_repl = false
 
 [mcp_servers.chrome-devtools]
 command = "npx"
@@ -128,9 +144,26 @@ args = ["chrome-devtools-mcp@latest"]
 command = "codegraph"
 args = ["serve", "--mcp"]
 
-[mcp_servers.lean-ctx]
-command = "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx"
-args = []
+[mcp_servers.computer-use]
+command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+args = ["mcp"]
+cwd = "."
+enabled = false
 
-[mcp_servers.lean-ctx.env]
+[desktop]
+followUpQueueMode = "queue"
+dock-icon-preference = "codex-system"
 
+[marketplaces.openai-bundled]
+last_updated = "2026-07-13T18:35:07Z"
+source_type = "local"
+source = "/Users/bcasey/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true

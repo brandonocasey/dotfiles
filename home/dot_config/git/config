@@ -162,12 +162,18 @@
   path = ~/.config/git/bcasey1
 [includeIf "gitdir/i:~/Projects/forgejo/**"]
   path = ~/.config/git/forgejo
+[includeIf "gitdir/i:~/Projects/jwbrandon/**"]
+  path = ~/.config/git/jwbrandon
 
 # --- remote authority (by remote URL) — overrides the directory rules above ---
 [includeIf "hasconfig:remote.*.url:**github.com**brandonocasey/**"]
   path = ~/.config/git/brandonocasey
 [includeIf "hasconfig:remote.*.url:**github.com**videojs/**"]
   path = ~/.config/git/brandonocasey
+[includeIf "hasconfig:remote.*.url:**github.com**jwplayer/**"]
+  path = ~/.config/git/jwbrandon
+[includeIf "hasconfig:remote.*.url:**github.com**jwbrandon/**"]
+  path = ~/.config/git/jwbrandon
 [includeIf "hasconfig:remote.*.url:**gitlab.com**jwpconnatix/**"]
   path = ~/.config/git/bcasey1
 [includeIf "hasconfig:remote.*.url:**gitlab.com**bcasey1/**"]

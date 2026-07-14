@@ -1,5 +1,5 @@
 {
-  "$schema": "/Users/bcasey/Projects/brandonocasey/vibetree/dist/vibetree.config.schema.json",
+  "$schema": "/Users/bcasey/Projects/forgejo/vibetree/vibetree.config.schema.json",
   "general": {
     "logLevel": "trace"
   },

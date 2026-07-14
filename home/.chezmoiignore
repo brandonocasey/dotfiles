@@ -4,7 +4,7 @@ README.md
 # Natively installed on Linux into ~/.local/bin (see any-linux pre-install);
 # ignore so the exact_bin directory doesn't delete them on `chezmoi apply`.
 .local/bin/claude
-.local/bin/codex
+.local/bin/codex*
 .local/bin/opencode
 .local/bin/tokensave
 
