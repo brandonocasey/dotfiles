@@ -1,13 +1,8 @@
-# tmux plugins are pinned to release tags so every machine gets the same
-# version (no floating HEAD). tpm itself manages the non-seeded plugins; these
-# three are seeded here so session restore works on the very first tmux start.
-# Bump the version in each URL to update.
+# tpm is pinned to a release tag so every machine gets the same version (no
+# floating HEAD); tpm itself manages the remaining plugins. It is seeded here
+# so plugin install works on the very first tmux start.
+# Bump the version in the URL to update.
 [".config/tmux/plugins/tpm"]
 type = "archive"
 url = "https://github.com/tmux-plugins/tpm/archive/refs/tags/v3.1.0.tar.gz"
-stripComponents = 1
-
-[".config/tmux/plugins/tmux-resurrect"]
-type = "archive"
-url = "https://github.com/tmux-plugins/tmux-resurrect/archive/refs/tags/v4.0.0.tar.gz"
 stripComponents = 1
