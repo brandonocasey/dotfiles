@@ -3,9 +3,10 @@ name: land
 description: >
   Finish a feature branch: split the working tree into logical Conventional-Commit chunks,
   rebase onto the local main/master, fast-forward main to the branch, then delete the branch
-  and remove the worktree. Local-only — never fetches, pushes, or force-anything. Use when the
-  user says "land this", "land the branch", "ship the worktree", "merge into main and clean up",
-  or invokes /land. Designed for the dedicated-worktree workflow.
+  and remove the worktree. When already on the default branch, degrades to just running the
+  commit skill. Local-only — never fetches, pushes, or force-anything. Use when the user says
+  "land this", "land the branch", "ship the worktree", "merge into main and clean up", or
+  invokes /land. Designed for the dedicated-worktree workflow.
 ---
 
 Land the current branch into the local `main`/`master` and clean up after it. Everything is
@@ -24,7 +25,7 @@ git log --oneline -8
 ```
 
 Establish and hold these facts for the whole run:
-- `BRANCH` — current branch (must NOT be `main`/`master`; if it is, stop — nothing to land).
+- `BRANCH` — current branch.
 - `TARGET` — `main` if `refs/heads/main` exists, else `master`.
 - `IN_WORKTREE` — true if this checkout is a linked worktree (git-dir ≠ git-common-dir).
 - `MAIN_WT` — the filesystem path of the worktree that has `TARGET` checked out (from
@@ -32,6 +33,26 @@ Establish and hold these facts for the whole run:
 
 If `TARGET` is checked out in a worktree that has **uncommitted changes** (staged or unstaged),
 note it as `TARGET_DIRTY` — you'll stash those changes around the ff-merge, not bail.
+
+### Already on the target branch → commit only
+
+If `BRANCH` == `TARGET`, there is nothing to rebase, fast-forward, or clean up: the work is
+already on the target. Do **not** stop, and do **not** invent a branch to land. Instead, run the
+`commit` skill over the working tree and finish there.
+
+- Invoke the `commit` skill (`Skill` tool, `skill: "commit"`) and follow it — it owns the
+  chunking, message format, and amend-vs-new decision. Do not re-implement that logic here.
+- If the tree is already clean, say so plainly and stop. A clean tree on `TARGET` means the work
+  is already committed; there is no no-op "landing" to perform and nothing to report beyond the
+  current tip.
+- Skip steps 2–5 entirely (tests, rebase, ff-merge, cleanup). Those exist to move a branch onto
+  `TARGET` and tear it down; none of it applies when you are already standing on `TARGET`.
+- Report as step 6 describes, minus the branch/worktree lines: which commits were created (or
+  that the tree was already clean) and the current `TARGET` tip. Still do not push.
+
+This is the expected path in repos where work happens directly on the default branch. It is not
+an error, so do not warn about it or suggest retroactively moving the commits onto a branch
+unless the user asks.
 
 ## 1. Commit the working tree in logical chunks
 
@@ -178,3 +199,5 @@ pushing is a separate, explicit step the user must ask for.
 - A dirty target tree is handled by stash/ff/pop (step 3), not a hard stop — but stop and ask if
   the stash pop conflicts ambiguously, and never drop a stash you haven't successfully reapplied.
 - Stop and ask on any rebase conflict, any non-ff, or any unexpected worktree state.
+- Being on `TARGET` already is not an error state: hand off to the `commit` skill (step 0) rather
+  than stopping or fabricating a branch to land.

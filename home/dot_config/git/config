@@ -184,3 +184,5 @@
 [safe]
 	directory = *
 	directory = *
+[gpg "ssh"]
+	allowedSignersFile = ~/.config/git/allowed_signers

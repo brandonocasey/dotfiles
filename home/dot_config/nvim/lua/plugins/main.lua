@@ -26,17 +26,18 @@ return {
   -- -- faster escape key usage
   {
     "max397574/better-escape.nvim",
-    lazy = false,
-    config = function()
-      require("better_escape").setup()
-    end,
+    event = "InsertEnter",
+    opts = {},
   },
 
   -- cursor animation so that it doesn't get lost
   {
     "sphamba/smear-cursor.nvim",
+    event = "VeryLazy",
+    cond = vim.g.neovide == nil,
     opts = {
       -- legacy_computing_symbols_support = true,
+      cursor_color = "none",
       transparent_bg_fallback_color = "#303030",
       stiffness = 0.9, -- 0.6      [0, 1]
       trailing_stiffness = 0.5, -- 0.3      [0, 1]
@@ -91,11 +92,9 @@ return {
   -- automatically trim bad whitespace
   {
     "cappyzawa/trim.nvim",
-    cond = function()
-      return not string.match(vim.bo.filetype, "snacks_dashboard")
-    end,
     event = "VeryLazy",
     opts = {
+      ft_blocklist = { "snacks_dashboard" },
       highlight = true,
       trim_last_line = false,
     },

@@ -5,10 +5,8 @@ return {
       ensure_installed = {
         "harper-ls",
         "gh-actions-language-server",
-        "markdownlint-cli2",
         "vacuum",
         "biome",
-        "vale",
       },
     },
   },
@@ -24,12 +22,10 @@ return {
         gh_actions_ls = {},
         vacuum = {},
         vale_ls = {
-          settings = {
-            initializationParams = {
-              syncOnStartup = true,
-              installVale = true,
-              configPath = vim.env.VALE_CONFIG_PATH,
-            },
+          init_options = {
+            syncOnStartup = true,
+            installVale = true,
+            configPath = vim.env.VALE_CONFIG_PATH,
           },
         },
         stylelint_lsp = {
@@ -42,7 +38,6 @@ return {
             "sugarss",
             "vue",
             "wxss",
-            "css",
             "markdown",
           },
           settings = {

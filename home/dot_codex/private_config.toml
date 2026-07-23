@@ -1,6 +1,6 @@
-model = "gpt-5.6-sol"
+model = "gpt-5.6-luna"
 personality = "pragmatic"
-model_reasoning_effort = "low"
+model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "xhigh"
 service_tier = "default"
@@ -108,6 +108,12 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/bcasey/Projects"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/forgejo/vibetree"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/forgejo/npm-verify-pkg"]
 trust_level = "trusted"
 
 [notice]
