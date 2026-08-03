@@ -6,7 +6,7 @@ description: >
   steps, key file paths, and gotchas. Use when the user says "checkpoint", "save a
   checkpoint", "write a handoff", "make a plan file for another agent", "save state so we
   can continue later", or invokes /checkpoint. Also resumes from an existing checkpoint
-  when invoked with a path or when a checkpoint file exists.
+  when invoked with a path or asked to continue from one.
 ---
 
 Write (or resume from) a checkpoint file that lets a context-free agent continue this work.
@@ -14,8 +14,9 @@ Write (or resume from) a checkpoint file that lets a context-free agent continue
 ## Writing a checkpoint
 
 1. **Location**: `.checkpoints/<slug>.md` at the repo root (create the dir; add
-   `.checkpoints/` to `.git/info/exclude` if not already ignored — checkpoints are scratch,
-   never committed unless the user asks). `<slug>` = short kebab-case name for the task,
+   `.checkpoints/` to `$(git rev-parse --git-common-dir)/info/exclude` if not already
+   ignored — not a literal `.git/` path, which breaks in linked worktrees where `.git` is a
+   file. Checkpoints are scratch, never committed unless the user asks). `<slug>` = short kebab-case name for the task,
    e.g. `playlist-loader-refactor`. If a checkpoint for this task already exists, update it
    in place — don't create a second file for the same task.
 2. **Content** — write for someone with ZERO context from this conversation. No shorthand,

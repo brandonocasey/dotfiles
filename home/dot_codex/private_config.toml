@@ -147,7 +147,7 @@ status_line_use_colors = true
 "gpt-5.6-sol" = 4
 
 [features]
-memories = true
+memories = false
 terminal_resize_reflow = true
 goals = true
 hooks = true

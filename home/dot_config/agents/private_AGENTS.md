@@ -1,75 +1,54 @@
 ## General
 
-- Don't always agree with me, only agree when I'm correct
-- Give very small and concise summaries if you need to summarize
-- Always ELI5 everything in the dumbest, easiest to understand way: plain language, short sentences, no dense or overly compressed phrasing
-- **Don't suggest git operations** on files you didn't modify
-- Use commands you have access to without asking
-- Stage new files when added
-- Always prefer not adding dependencies or adding a dependency with fewer of its own dependencies when possible
-- Assume issues are not pre-existing. Always look into fixing them
-- Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; set it in the environment, and configure servers that don't honor `PORT` to use it directly
+- Push back when I'm wrong; don't agree just to be agreeable
+- Avoid new dependencies unless one saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies
+- Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; export it, and configure servers that ignore `PORT` to use it directly
+- When a task is done, clean up after yourself: close MCP resources you opened (browser pages, connections) and release shared resources (stop dev servers and background processes you started, free ports)
 
-## Test & Lint considerations
+## Tests & Lint
 
-- You may **NOT** skip, remove, or modify tests without user consent
-- Failing linting, type checking, or tests is **ALWAYS** an issue and must be fixed without user intervention
-- Never silence the linter/type checker with disable comments, nor edit test/type-check/lint config, without user consent
+- Treat failing lint, type checks, or tests as yours to fix, never as pre-existing; fix them without user intervention
+- You may **NOT** skip, remove, or modify tests, silence the linter/type checker with disable comments, or edit test/type-check/lint config without user consent
 
 ## Planning
 
-- Never add time estimates for plans that you make
-- Never add pseudo or real code for planning
-- Break down plans into the most simple and basic steps
+- Never add time estimates, pseudo code, or real code to plans
+- Break plans into the most simple and basic steps, each with the context and location of its changes
 - Delete plans upon completion
-- Give context and location of changes in all plans
-
-## Logging
-
-- Add appropriate trace/debug/info/error/warning logs; trace logs especially, for LLM debugging
 
 ## Code Quality
 
-- Build each piece of code to do one thing well so it can be tested and reused; break up a component when it takes on too much complexity
-- Reduce duplication and complexity as much as possible while still meeting specifications
-- Handle undefined/null cases; provide explicit returns
-- Avoid nested ternaries and yoda expressions
-- Always provide error messages when raising errors
-- No nested `else` blocks when unnecessary (use early returns)
-- Comments: minimal — only add context the code can't show (why, constraints, workarounds) or untangle complicated code; never narrate the code or the change
-- Write comments as complete sentences
-- When you change code, update or delete the comments that describe it
-- If code needs a comment to be understood, prefer rewriting it (better names/structure); struggling to write a clear comment means the code needs refactoring
-- Comment intentionally unidiomatic code so a future reader doesn't "simplify" it back into a bug
-- Link sources at the point of use: copied code gets a link to where it came from; tricky logic gets a link to the spec/standard/docs it implements
-- Bug-fix workarounds reference the issue/bug they work around
-- Mark known-incomplete implementations with `TODO` plus an issue reference
+- Before writing new code, prefer in order: not building it at all (YAGNI: no interface with one implementation, no factory for one product, no config for a value that never changes), an existing helper in this codebase, the stdlib, a native platform feature (CSS over JS, DB constraint over app code), an already-installed dependency; only then write the minimum code that works; prefer deletion over addition, boring over clever
+- Fix bugs at the root cause: put the fix in the shared code all callers route through, not just the path the report names; check every caller first
+- Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
+- Keep each piece of code small and single-purpose so it can be tested and reused; break up components that take on too much complexity, and reduce duplication
+- Handle undefined/null cases; always include a message when raising errors; avoid nested ternaries and unnecessary nested `else` blocks (use early returns)
+- Comments: minimal, complete sentences, only context the code can't show (why, constraints, workarounds, warnings on intentionally unidiomatic code); never narrate the code or the change; update or delete comments when the code they describe changes
+- Link external context at the point of use: copied code links its source, tricky logic links the spec/standard/docs it implements, workarounds reference the issue they work around, and known-incomplete implementations get `TODO` plus an issue reference
+- Add logs at appropriate levels; be generous with trace logs — they're how LLM agents debug
 
-## Technical Writing (based on ASD-STE100 Simplified Technical English)
+## Writing
 
-- Procedures: max 20 words per sentence, one instruction per sentence, imperative form ("Remove the cover"), notes give information only — never instructions
-- Descriptions: max 25 words per sentence, one topic per sentence, one topic per paragraph, max 6 sentences per paragraph; introduce information gradually
-- Active voice; passive only in descriptions when the actor is unknown
-- Simple tenses only (present, past, future); no complex verb chains ("has been removed" → "was removed"); no "-ing" verb forms except in technical nouns
-- Noun strings: max 3 words — break longer ones up with prepositions ("runway light connection resistance calibration" → "calibration of the resistance of the runway light connection")
+Apply to all writing: chat responses, documentation, code comments, and commit/PR/MR text.
+
+- ELI5 everything: plain language, active voice, short sentences, one idea per sentence; instructions in imperative form ("Remove the cover"); no idioms or figurative phrases; use vertical lists for multi-part text; keep summaries short
 - One term per concept, one meaning per term; never vary terminology for the same item
-- Keep articles (the, a, this); no contractions; don't drop words to shorten sentences
-- Use vertical lists for complex or multi-part text
-- Safety instructions: risk word (WARNING/CAUTION) + clear command + why ("what happens if you don't")
-- No semicolons; American English spelling
+- Start with the answer; no preamble, no closing pleasantries
+- Finish the current issue before raising a second one; offer tangents as one question at the end
+- Recaps must be self-contained: repeat all relevant links, commands, and addresses (dev server, LAN, and test URLs) each time; never point the reader to an earlier message
+- Every MR/PR, ticket, pipeline, commit, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing all of them
 
 ## File Organization
 
+Applies to new projects, or when the repo has no existing convention:
+
 - Place test files in `test/<type>`, for example `test/fixtures`, `test/unit`, `test/integration`
-- All built or generated files must be placed in subdirectories within `./dist` (for example `./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
+- Place built or generated files in subdirectories within `./dist` (for example `./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
 
 ## Git workflow
 
-- Default branch: `main`
-- Before starting work, fetch and use the newest version of the default branch (e.g. `git fetch origin && git checkout main && git pull`) rather than the local version, unless the user specifies otherwise
-- Do branch work in a git worktree (`git worktree add .worktrees/<branch> -b <branch>`), never by switching branches in the main checkout; base on the default branch unless asked otherwise, and clean up with `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`), so worktrees stay inside the repo without polluting `git status`
-- If you've already made changes in the default branch's checkout before creating the worktree, bring those changes over to the worktree and revert them in the default branch's checkout so main stays clean
-- **Commit format**: `<type>(<scope>): <description>` conventional commits — full rules in the `commit` skill; scope required by commitlint (@.config/commitlint.config.js)
-- **Changelog**: Run `npm version <major|minor|patch>` to bump version and update CHANGELOG.md automatically
-- **Prerelease workflow**: For prereleases, commit normally. When ready for final release, run `npm run changelog:all` to regenerate entire CHANGELOG.md which consolidates all commits (including prerelease commits) into a single release entry
+- Do branch work in a git worktree, never by switching branches in the main checkout: `git fetch origin`, then `git worktree add .worktrees/<branch> -b <branch> origin/<default>`; base on the freshly fetched default branch unless asked otherwise, and `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`). Move any accidental main-checkout changes into the worktree so main stays clean
+- **Don't suggest git operations** on files you didn't modify
+- Stage new files when added
+- **Commit format**: `<type>(<scope>): <description>` conventional commits — details in the `commit` skill
 - After pushing, verify that CI is passing; if it fails, fix the issue
