@@ -1,6 +1,10 @@
 ---
 name: commit
-description: Create git commit
+description: >
+  Create a git commit: split the working tree into logical chunks, decide amend vs new,
+  and write Conventional Commit messages. Use when the user says "commit", "commit this",
+  "commit my changes", or invokes /commit. The land, ship, and repo-audit skills defer to
+  it for chunking, message format, and the amend-vs-new decision.
 ---
 
 Optional: target file/chunk only.

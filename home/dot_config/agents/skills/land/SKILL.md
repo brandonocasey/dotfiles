@@ -123,6 +123,9 @@ git -C <MAIN_WT> stash pop
 
 ## 5. Clean up
 
+- If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: there is no separate
+  worktree to remove (you are standing in the checkout that now holds `TARGET`) — skip the
+  removal and delete the branch from here with `git branch -d <BRANCH>`.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted, and you can't remove the worktree you're standing in, so do it from `MAIN_WT`:
   ```sh
@@ -147,13 +150,13 @@ pushing is a separate, explicit step the user must ask for.
 
 ## Hard rules
 
+- Everything in **Shared rules** of `../shared/git-flow.md`.
 - Local only: never `git fetch`/`pull`/`push` here.
-- Never rebase, fast-forward, or remove the worktree while the worktree tree is dirty — everything
-  in the worktree must be committed (or explicitly resolved with the user) first.
-- Never force-push, never `git merge` without `--ff-only`, never `rebase --skip` past a conflict.
+- Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
+  (step 4) — never fall back to a merge commit.
 - Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).
-- A dirty target tree is handled by stash/ff/pop (step 4), not a hard stop — but stop and ask if
-  the stash pop conflicts ambiguously, and never drop a stash you haven't successfully reapplied.
-- Stop and ask on any rebase conflict, any non-ff, or any unexpected worktree state.
+- Dirty target tree: the one exception to the shared dirty-tree rule — handled by stash/ff/pop
+  (step 4), not a hard stop; but stop and ask if the stash pop conflicts ambiguously, and never
+  drop a stash you haven't successfully reapplied.
 - Being on `TARGET` already is not an error state: hand off to the `commit` skill (step 0) rather
   than stopping or fabricating a branch to land.
