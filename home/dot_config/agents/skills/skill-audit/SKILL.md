@@ -31,11 +31,8 @@ paper trail, and never silently drop a rule.
   `~/.claude*/CLAUDE.md` → `~/.config/agents/AGENTS.md`. Symlinked copies are not
   duplicates, and one edit propagates everywhere — say so before proposing moves.
 - Read every target file whole. Record `wc -l` per file for the before/after report.
-- Targets are chezmoi-managed (`chezmoi source-path <target>` confirms; source lives in
-  `~/.local/share/chezmoi`). Recovery is the source repo's git history — no ad-hoc
-  backups. Run `chezmoi status` on the targets first and report pre-existing drift
-  before creating any of your own. Flag unmanaged targets so the user can `chezmoi add`
-  them.
+- No backup step: the user keeps these files backed up. Edit in place; do not copy
+  targets to the scratchpad or anywhere else first.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.
@@ -90,9 +87,8 @@ Rules mode additions:
 1. Setup, then apply fixes directly with Edit — no permission round.
 2. Apply semantic changes (where the user's intent could differ) using the safer reading;
    collect them as veto items.
-3. Verify: `chezmoi diff` on each edited file to review the changes, `head` each
-   frontmatter, `wc -l` before/after. Re-derive any algorithm or math you touched or
-   chose to keep.
+3. Verify: `head` each edited file's frontmatter, `wc -l` before/after. Re-derive any
+   algorithm or math you touched or chose to keep.
 4. Report in categories: **Bugs fixed / Deduped / Improved / Veto items / Left alone**.
    Each finding: what was wrong, why it matters for the user's workflow, the fix. Veto
    items include the revert instruction.
@@ -121,9 +117,9 @@ Rules mode additions:
 - Accuracy beats brevity: a shortening that loses a fact, condition, number, or scope
   qualifier is a bug, not an improvement.
 - Report every file left untouched and every finding left unfixed, with reasons.
-- After edits are final, `chezmoi add` every changed or new file so source matches the
-  target — never leave drift you created. Committing the chezmoi repo is the user's
-  call; offer it once at the end.
+- After edits are final, sync every changed or new file back into whatever manages the
+  targets so source matches target — never leave drift you created. Committing is the
+  user's call; offer it once at the end.
 - The audit is re-runnable; when a pass finds little, say the files are in good shape —
   do not invent findings.
 - End the report with a **Links** section: every file touched or cited, as bare
