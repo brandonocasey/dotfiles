@@ -2,11 +2,16 @@ model = "gpt-5.6-luna"
 personality = "pragmatic"
 model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
-plan_mode_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "high"
 service_tier = "default"
 notify = ["/Users/bcasey/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 approval_policy = "never"
 sandbox_mode    = "danger-full-access"
+allow_login_shell = true
+
+[shell_environment_policy]
+inherit = "all"
+experimental_use_profile = true
 
 [projects."/Users/bcasey/Projects/brandonocasey/vibetree"]
 trust_level = "trusted"
@@ -116,6 +121,12 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Projects/forgejo/npm-verify-pkg"]
 trust_level = "trusted"
 
+[projects."/Users/bcasey/Documents/Codex/2026-07-27/chrome-plugin-chrome-openai-bundled-file"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Documents/Codex/2026-07-27/i-want-you-to-make-me"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
@@ -146,24 +157,46 @@ js_repl = false
 command = "npx"
 args = ["chrome-devtools-mcp@latest"]
 
-[mcp_servers.codegraph]
-command = "codegraph"
-args = ["serve", "--mcp"]
-
 [mcp_servers.computer-use]
 command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
 args = ["mcp"]
 cwd = "."
 enabled = false
 
+[mcp_servers.node_repl]
+args = []
+command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"
+CODEX_HOME = "/Users/bcasey/.codex"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.721.41059"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
+
 [desktop]
 followUpQueueMode = "queue"
 dock-icon-preference = "codex-system"
+conversationDetailMode = "STEPS_PROSE"
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-13T18:35:07Z"
+last_updated = "2026-07-27T15:18:40Z"
 source_type = "local"
 source = "/Users/bcasey/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-07-27T15:19:11Z"
+source_type = "local"
+source = "/Users/bcasey/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
 [plugins."sites@openai-bundled"]
 enabled = true
@@ -173,3 +206,26 @@ enabled = true
 
 [plugins."browser@openai-bundled"]
 enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."chrome@openai-bundled"]
+enabled = true
+
+[shell_environment_policy.set]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"

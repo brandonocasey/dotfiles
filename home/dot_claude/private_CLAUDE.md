@@ -2,6 +2,7 @@
 
 - Don't always agree with me, only agree when I'm correct
 - Give very small and concise summaries if you need to summarize
+- Always ELI5 everything in the dumbest, easiest to understand way: plain language, short sentences, no dense or overly compressed phrasing
 - **Don't suggest git operations** on files you didn't modify
 - Use commands you have access to without asking
 - Stage new files when added
@@ -36,6 +37,26 @@
 - Always provide error messages when raising errors
 - No nested `else` blocks when unnecessary (use early returns)
 - Comments: minimal — only add context the code can't show (why, constraints, workarounds) or untangle complicated code; never narrate the code or the change
+- Write comments as complete sentences
+- When you change code, update or delete the comments that describe it
+- If code needs a comment to be understood, prefer rewriting it (better names/structure); struggling to write a clear comment means the code needs refactoring
+- Comment intentionally unidiomatic code so a future reader doesn't "simplify" it back into a bug
+- Link sources at the point of use: copied code gets a link to where it came from; tricky logic gets a link to the spec/standard/docs it implements
+- Bug-fix workarounds reference the issue/bug they work around
+- Mark known-incomplete implementations with `TODO` plus an issue reference
+
+## Technical Writing (based on ASD-STE100 Simplified Technical English)
+
+- Procedures: max 20 words per sentence, one instruction per sentence, imperative form ("Remove the cover"), notes give information only — never instructions
+- Descriptions: max 25 words per sentence, one topic per sentence, one topic per paragraph, max 6 sentences per paragraph; introduce information gradually
+- Active voice; passive only in descriptions when the actor is unknown
+- Simple tenses only (present, past, future); no complex verb chains ("has been removed" → "was removed"); no "-ing" verb forms except in technical nouns
+- Noun strings: max 3 words — break longer ones up with prepositions ("runway light connection resistance calibration" → "calibration of the resistance of the runway light connection")
+- One term per concept, one meaning per term; never vary terminology for the same item
+- Keep articles (the, a, this); no contractions; don't drop words to shorten sentences
+- Use vertical lists for complex or multi-part text
+- Safety instructions: risk word (WARNING/CAUTION) + clear command + why ("what happens if you don't")
+- No semicolons; American English spelling
 
 ## File Organization
 
@@ -45,19 +66,10 @@
 ## Git workflow
 
 - Default branch: `main`
+- Before starting work, fetch and use the newest version of the default branch (e.g. `git fetch origin && git checkout main && git pull`) rather than the local version, unless the user specifies otherwise
 - Do branch work in a git worktree (`git worktree add .worktrees/<branch> -b <branch>`), never by switching branches in the main checkout; base on the default branch unless asked otherwise, and clean up with `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`), so worktrees stay inside the repo without polluting `git status`
 - If you've already made changes in the default branch's checkout before creating the worktree, bring those changes over to the worktree and revert them in the default branch's checkout so main stays clean
 - **Commit format**: `<type>(<scope>): <description>` conventional commits — full rules in the `commit` skill; scope required by commitlint (@.config/commitlint.config.js)
 - **Changelog**: Run `npm version <major|minor|patch>` to bump version and update CHANGELOG.md automatically
 - **Prerelease workflow**: For prereleases, commit normally. When ready for final release, run `npm run changelog:all` to regenerate entire CHANGELOG.md which consolidates all commits (including prerelease commits) into a single release entry
-
-<!-- CODEGRAPH_START -->
-## CodeGraph
-
-In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
-
-- **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
-- **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
-
-If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
-<!-- CODEGRAPH_END -->
+- After pushing, verify that CI is passing; if it fails, fix the issue
