@@ -39,7 +39,7 @@ Apply to all writing: chat responses, documentation, code comments, and commit/P
 - For multi-step work, restate state each turn ("Step 3 of 5 done: schema updated. Next: run the backfill") and end with one concrete next action
 - Finish the current issue before raising a second one; offer tangents as one question at the end
 - Recaps must be self-contained: repeat all relevant links, commands, and addresses (dev server, LAN, and test URLs) each time; never point the reader to an earlier message
-- Every MR/PR, ticket, pipeline, commit, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing only the relevant external links (tickets, MRs/PRs, pipelines/CI jobs) — never a list of every file or URL mentioned
+- Every MR/PR, ticket, pipeline, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Commits are the exception: reference them by sha only, never as links. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing only the relevant external links (tickets, MRs/PRs, pipelines/CI jobs — not commits) — never a list of every file or URL mentioned
 
 ## File Organization
 
