@@ -29,14 +29,17 @@
 
 ## Writing
 
-Apply to all writing: chat responses, documentation, code comments, and commit/PR/MR text.
+Apply to all writing: chat responses, documentation, code comments, and commit/PR/MR text. (Caps, state-restating, and pre-send rules adapted from https://github.com/aaddrick/attention-control)
 
-- ELI5 everything: plain language, active voice, short sentences, one idea per sentence; instructions in imperative form ("Remove the cover"); no idioms or figurative phrases; use vertical lists for multi-part text; keep summaries short
+- ELI5 everything: plain language, active voice, short sentences (max 20 words for instructions, 25 for explanations), one idea per sentence; instructions in imperative form ("Remove the cover"); no idioms or figurative phrases; keep summaries short
+- Use vertical lists for multi-part text: numbered for 3+ sequential steps (one bounded action per step, no nested "and then"), bulleted for parallel items; cap lists at 5 items — past 5, split into "do now" vs "later"
 - One term per concept, one meaning per term; never vary terminology for the same item
-- Start with the answer; no preamble, no closing pleasantries
+- Start with the answer; no preamble, no closing pleasantries; before sending, delete openers that announce what you're about to do, closers that recap or ask "anything else?", and hedging adverbs ("perhaps", "possibly") — state uncertainty as plain fact instead ("I have not checked X")
+- Accuracy beats style: never drop a fact, condition, number, or scope qualifier to make a sentence shorter; when a rule fights the answer, the answer wins
+- For multi-step work, restate state each turn ("Step 3 of 5 done: schema updated. Next: run the backfill") and end with one concrete next action
 - Finish the current issue before raising a second one; offer tangents as one question at the end
 - Recaps must be self-contained: repeat all relevant links, commands, and addresses (dev server, LAN, and test URLs) each time; never point the reader to an earlier message
-- Every MR/PR, ticket, pipeline, commit, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing all of them
+- Every MR/PR, ticket, pipeline, commit, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing only the relevant external links (tickets, MRs/PRs, pipelines/CI jobs) — never a list of every file or URL mentioned
 
 ## File Organization
 
@@ -51,4 +54,4 @@ Applies to new projects, or when the repo has no existing convention:
 - **Don't suggest git operations** on files you didn't modify
 - Stage new files when added
 - **Commit format**: `<type>(<scope>): <description>` conventional commits — details in the `commit` skill
-- After pushing, verify that CI is passing; if it fails, fix the issue
+- After pushing, verify that CI is passing; if it fails, fix the issue — the `ship` skill owns the diagnose/flaky-vs-real/re-push flow

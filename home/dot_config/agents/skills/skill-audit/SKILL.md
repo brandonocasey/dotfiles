@@ -122,5 +122,6 @@ Rules mode additions:
   user's call; offer it once at the end.
 - The audit is re-runnable; when a pass finds little, say the files are in good shape —
   do not invent findings.
-- End the report with a **Links** section: every file touched or cited, as bare
-  `path:line` — never markdown links.
+- Cite files inline as bare `path:line`, never markdown links. End the report with a
+  **Links** section only when there are relevant external links (tickets, MRs/PRs, CI
+  jobs) — never a list of the files touched.
