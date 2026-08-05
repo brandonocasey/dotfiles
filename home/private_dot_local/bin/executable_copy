@@ -1,0 +1,42 @@
+#!/bin/sh
+# Copy a file (or stdin) to the local clipboard via OSC 52; works over ssh.
+# POSIX twin of ~/.config/fish/functions/copy.fish so `copy` works in any shell.
+if [ "$#" -gt 0 ]; then
+    data=$(base64 < "$1" | tr -d '\n')
+else
+    data=$(base64 | tr -d '\n')
+fi
+
+# Find a terminal to write the escape to. Wrappers that capture stdout (e.g.
+# Claude Code `!` commands) run without a controlling tty, so fall back to the
+# tty of the nearest ancestor process that has one.
+out=""
+if (: > /dev/tty) 2>/dev/null; then
+    out=/dev/tty
+else
+    pid=$$
+    while [ "$pid" -gt 1 ]; do
+        t=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
+        if [ -n "$t" ] && [ "$t" != "??" ] && [ -w "/dev/$t" ]; then
+            out="/dev/$t"
+            break
+        fi
+        pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+        [ -n "$pid" ] || break
+    done
+fi
+
+if [ -z "$out" ]; then
+    if command -v pbcopy >/dev/null 2>&1; then
+        printf '%s' "$data" | base64 -d | pbcopy
+        exit 0
+    fi
+    out=/dev/stdout
+fi
+
+if [ -n "$TMUX" ]; then
+    # tmux needs the sequence wrapped in a passthrough escape.
+    printf '\033Ptmux;\033\033]52;c;%s\a\033\\' "$data" > "$out"
+else
+    printf '\033]52;c;%s\a' "$data" > "$out"
+fi
