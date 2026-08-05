@@ -7,7 +7,7 @@ description: >
   it for chunking, message format, and the amend-vs-new decision.
 ---
 
-Optional: target file/chunk only.
+Optional argument: a target file or chunk — commit only that.
 
 1. **Gather** (if context unknown): `git status --short`, `git diff -w`, `git log --oneline -5`
 2. **Amend if**: HEAD not pushed to any remote AND directly related to HEAD (amending a pushed commit forces a divergent history). **New if**: no commits, different purpose, HEAD already pushed, or distinct unit

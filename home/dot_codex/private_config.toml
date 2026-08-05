@@ -1,6 +1,6 @@
 model = "gpt-5.6-luna"
 personality = "pragmatic"
-model_reasoning_effort = "max"
+model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "high"
 service_tier = "default"
@@ -127,6 +127,9 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Documents/Codex/2026-07-27/i-want-you-to-make-me"]
 trust_level = "trusted"
 
+[projects."/Users/bcasey/Projects/forgejo/junkture"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
@@ -138,7 +141,7 @@ fast_default_opt_out = true
 "gpt-5.4" = "gpt-5.5"
 
 [tui]
-status_line = ["project-name", "context-used", "five-hour-limit", "weekly-limit", "model-with-reasoning", "git-branch", "thread-title"]
+status_line = ["project-name", "five-hour-limit", "weekly-limit", "model-with-reasoning", "git-branch", "pull-request-number", "thread-title"]
 theme = "one-half-dark"
 status_line_use_colors = true
 

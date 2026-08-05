@@ -15,6 +15,35 @@ Review a code change. The deliverable is a set of verified findings the user can
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
 explained in plain language.
 
+## Delegation
+
+Delegate the review to a sub-agent ONLY when the reviewer would otherwise be the same
+agent that implemented the change — i.e. this session (or its sub-agents) wrote the
+code. That is what buys an independent reviewer. When the change was written by someone
+else (an MR/PR from a colleague, an arbitrary commit), run the review inline — no
+sub-agent needed.
+
+When delegating: spawn one sub-agent per the `sub-agents` skill. Pass it the review
+target verbatim plus the text of steps 0–2 only — never the implementation rationale
+or the conversation, or the reviewer is not independent. The sub-agent runs steps 0–2
+and returns candidate findings as raw data (file, line, severity, failure scenario,
+evidence, and which tests it ran). It must NOT remove the review worktree; it returns
+the worktree path with its findings. An external tool's findings still go through the
+re-verification below.
+
+When the sub-agent returns, the main session re-verifies each finding in that
+worktree before showing or fixing anything: read the cited code, confirm the failure
+scenario is reachable, and kill anything that isn't concrete. Do not re-run tests the
+sub-agent already reported running — re-run only when a finding hinges on a test
+result the sub-agent did not show. The main session then runs steps 3–4 itself
+(including worktree removal). If the sub-agent could not access the target (missing
+auth, no checkout), fall back to running the review inline and note that the reviewer
+is not independent.
+
+Auto-triggered reviews of this session's own work skip the `--fix` gate: apply
+verified fixes immediately, once per task — after applying them, re-run tests/lint
+but do not review again.
+
 ## 0. Identify the target and get the diff
 
 Classify the argument:

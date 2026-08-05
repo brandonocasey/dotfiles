@@ -4,6 +4,8 @@
 - Avoid new dependencies unless one saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies
 - Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; export it, and configure servers that ignore `PORT` to use it directly
 - When a task is done, clean up after yourself: close MCP resources you opened (browser pages, connections) and release shared resources (stop dev servers and background processes you started, free ports)
+- Delegate work to sub-agents per the `delegate` skill, automatically — do not wait for me to ask when a task will change 5+ files (excluding documentation); a model I name or an external tool I request always overrides your choice
+- Run all code reviews through the `review` skill. After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task; after applying its fixes, re-run tests/lint but do not re-review. Fix verified findings without asking only when the reviewed change is this session's own work; for other people's changes, print comments and wait for `--fix`
 
 ## Tests & Lint
 
@@ -50,7 +52,9 @@ Applies to new projects, or when the repo has no existing convention:
 
 ## Git workflow
 
-- Do branch work in a git worktree, never by switching branches in the main checkout: `git fetch origin`, then `git worktree add .worktrees/<branch> -b <branch> origin/<default>`; base on the freshly fetched default branch unless asked otherwise, and `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`). Move any accidental main-checkout changes into the worktree so main stays clean
+- ALWAYS do branch work in a git worktree, never by switching branches in the main checkout: `git fetch origin`, then `git worktree add .worktrees/<branch> -b <branch> origin/<default>`; base on the freshly fetched default branch unless asked otherwise, and `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`). Move any accidental main-checkout changes into the worktree so main stays clean
+- Never push, or merge to the default branch, unless I ask or give consent — and then do it via the `ship` skill (push + MR/PR + CI) or the `land` skill (local merge to default + cleanup)
+- When marking a task complete, the worktree must be fully committed: no uncommitted or untracked changes left behind (commit per the `commit` skill)
 - **Don't suggest git operations** on files you didn't modify
 - Stage new files when added
 - **Commit format**: `<type>(<scope>): <description>` conventional commits — details in the `commit` skill
