@@ -72,6 +72,8 @@ git rebase <TARGET>
   auto-resolve by guessing or by picking a side. After the user resolves, continue with
   `git rebase --continue`; offer `git rebase --abort` to bail.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
+- If the rebase replayed commits (it was not a no-op), re-run the step 2 tests before
+  proceeding — the branch was tested on its old base, not on top of the current `TARGET`.
 
 ## 4. Fast-forward the target to the branch
 
@@ -127,10 +129,13 @@ git -C <MAIN_WT> stash pop
   worktree to remove (you are standing in the checkout that now holds `TARGET`) — skip the
   removal and delete the branch from here with `git branch -d <BRANCH>`.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
-  deleted, and you can't remove the worktree you're standing in, so do it from `MAIN_WT`:
+  deleted. Move your shell out of the worktree before removing it: git happily removes the
+  directory under you (`git -C <MAIN_WT>` does not move your cwd), and a shell left in the
+  deleted directory fails every later command with "Unable to read current working directory".
   ```sh
-  git -C <MAIN_WT> worktree remove <worktree-path>
-  git -C <MAIN_WT> worktree prune
+  cd <MAIN_WT>
+  git worktree remove <worktree-path>
+  git worktree prune
   ```
   If `worktree remove` complains about leftover untracked/build artifacts that you trust are
   disposable (e.g. a worktree-local `target/`, symlinked `node_modules`), report what they are and

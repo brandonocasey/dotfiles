@@ -101,9 +101,11 @@ they answer.
 ## 6. Report and remainder
 
 - Write every unapplied finding (DECIDE items, blocked fixes, deferred SAFE items) to
-  `docs/AUDIT.md` in the worktree — one checkbox line per finding: id, severity, `file:line`,
-  title, verdict, and a `detail:` sub-line. This file is the input for the re-verify and apply
-  modes later.
+  `docs/AUDIT.md` — one checkbox line per finding: id, severity, `file:line`, title, verdict,
+  and a `detail:` sub-line. Put it in the worktree when fixes were applied there; with no
+  applied fixes, write it in the main checkout instead — an untracked file blocks the worktree
+  removal below and would be deleted with it. This file is the input for the re-verify and
+  apply modes later.
 - If no fixes were applied (nothing confirmed, or the user approved nothing), remove the
   unused fix worktree and branch: `git worktree remove .worktrees/repo-audit`, then
   `git branch -d repo-audit` — don't leave an empty worktree behind.

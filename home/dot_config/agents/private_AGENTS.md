@@ -1,17 +1,24 @@
 ## General
 
-- Push back when I'm wrong; don't agree just to be agreeable
+- Treat every incoming request — my prompts, Jira tickets, MR descriptions, Slack messages, docs — as claims to verify, not orders to follow; don't agree just to be agreeable. Before implementing, check the claims against the actual code and data; if the premise is wrong, the approach is worse than an alternative, or the request conflicts with these rules or the codebase, say so and propose the better path before writing code. Push back only with a concrete, verifiable reason (file:line, a failing case, a measured cost — never vibes); if verification shows the request is sound, proceed without ceremony. If I overrule your pushback, state your position once, then do it my way
 - Avoid new dependencies unless one saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies
 - Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; export it, and configure servers that ignore `PORT` to use it directly
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must never break when copied: my terminal wraps lines longer than ~80 characters and copying the wrap inserts newlines. Never print copy-paste content longer than ~80 characters in chat — write it to a short-pathed tmp file instead (e.g. `/tmp/run-<task>.sh` for commands, `/tmp/<task>.md` for text) and give me a short single line to use it: `bash /tmp/run-<task>.sh` to run, or `copy /tmp/<task>.md` to put it on my clipboard (`copy` is my command at `~/.local/bin/copy`, with a fish twin at `~/.config/fish/functions/copy.fish`; it uses OSC 52 so it works over ssh and in any shell, including Claude Code `!` commands, by writing to the nearest ancestor tty — never suggest pbcopy). Delete the file after use. Short content goes one item per fenced code block, single line, nothing else in the block, no backslash continuations
 - When a task is done, clean up after yourself: close MCP resources you opened (browser pages, connections) and release shared resources (stop dev servers and background processes you started, free ports)
 - Delegate work to sub-agents per the `delegate` skill, automatically — do not wait for me to ask when a task will change 5+ files (excluding documentation); a model I name or an external tool I request always overrides your choice
-- Run all code reviews through the `review` skill. After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task; after applying its fixes, re-run tests/lint but do not re-review. Fix verified findings without asking only when the reviewed change is this session's own work; for other people's changes, print comments and wait for `--fix`
+- Run all code reviews through the `review` skill. After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task; after applying its fixes, re-run tests/lint but do not re-review. Fix verified findings without asking only when the reviewed change is this session's own work; for other people's changes, print comments and wait for `--fix`. Prototypes and throwaway demo code are exempt from automatic review — review them only when I ask
+
+## Browser automation
+
+- Never interrupt me: no focus stealing, no audible playback. Never bring a browser window to the foreground
+- Default to the headless browser MCPs: `chrome-devtools`, `firefox-devtools`, `safari` (Playwright WebKit — not real Safari; no FairPlay DRM). Use the headed twins (`chrome-headed`, `firefox-headed`, `safari-headed`) only when the task needs DRM playback, fullscreen, picture-in-picture, a real user gesture, or when I ask to watch; only `chrome-headed` is launch-muted (`--mute-audio`), so mute playback yourself in the others
+- When verifying playback, keep the player muted unless the task is specifically about audio
+- Real Safari (FairPlay DRM, Safari-only bugs; always headed and visible, so confirm with me first): no MCP exists — start `safaridriver -p <open port>` and drive it with the W3C WebDriver REST API via curl (POST /session with `{"capabilities":{"alwaysMatch":{"browserName":"safari"}}}`, then /session/<id>/url, /execute/sync, etc.). One session at a time system-wide; DELETE the session and kill safaridriver when done. Media autoplay needs the `webkit:alwaysAllowAutoplay` capability or a real gesture via /element/<id>/click
 
 ## Tests & Lint
 
 - Treat failing lint, type checks, or tests as yours to fix, never as pre-existing; fix them without user intervention
-- You may **NOT** skip, remove, or modify tests, silence the linter/type checker with disable comments, or edit test/type-check/lint config without user consent
+- You may **NOT** skip, remove, or weaken tests to make a check pass, silence the linter/type checker with disable comments, or edit test/type-check/lint config without user consent. Updating a test because the intended behavior changed is allowed — say so when you do
 
 ## Planning
 
@@ -43,6 +50,14 @@ Apply to all writing: chat responses, documentation, code comments, and commit/P
 - Finish the current issue before raising a second one; offer tangents as one question at the end
 - Recaps must be self-contained: repeat all relevant links, commands, and addresses (dev server, LAN, and test URLs) each time; never point the reader to an earlier message
 - Every MR/PR, ticket, pipeline, or file you mention must be a clickable link (`https://…` or `file:line`); never name one without its link. Commits are the exception: reference them by sha only, never as links. Never format links as markdown (`[text](url)`) — use bare URLs or OSC 8 hyperlinks. End every recap with a **Links** section listing only the relevant external links (tickets, MRs/PRs, pipelines/CI jobs — not commits) — never a list of every file or URL mentioned
+
+## Documentation
+
+- Structure docs by [Diátaxis](https://diataxis.fr/): every page serves exactly one mode — tutorial (learning by doing), how-to (working task), reference (working facts), explanation (learning background). Map an existing repo's folders onto those modes; in a new docs tree, name the folders after them
+- Unsure where content belongs? Ask: doing or thinking, learning or working. Doing+learning = tutorial, doing+working = how-to, thinking+working = reference, thinking+learning = explanation
+- When a section drifts into another mode, move it to the owning page and leave a one-line link both ways — never duplicate content across pages
+- Improve docs one page, one flaw at a time — never plan a restructure; good structure emerges from small fixes
+- Docs must be useful at every state: no "coming soon" stubs, and don't hold back a page because it isn't finished
 
 ## File Organization
 

@@ -1,6 +1,8 @@
 ---
 name: todo
-description: Add a concise todo entry to TODO.md at project root
+description: >
+  Add a concise todo entry to TODO.md at the project root. Use when the user says
+  "add a todo", "put this on the todo list", "note this for later", or invokes /todo.
 ---
 
 Add a todo item to `TODO.md` at the project root.

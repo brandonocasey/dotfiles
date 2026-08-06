@@ -1,9 +1,10 @@
 ---
 name: review
 description: >
-  Verified code review of any change: a GitLab MR or GitHub PR URL, a local branch, a commit
-  or range, or the uncommitted working diff. Remote targets fetch via glab/gh. Every
-  candidate finding is VERIFIED against the real code before it is shown. Output: findings
+  Adversarial, verified code review of any change: a GitLab MR or GitHub PR URL, a local
+  branch, a commit or range, or the uncommitted working diff. Remote targets fetch via
+  glab/gh. The reviewer actively tries to break the change, and every candidate finding
+  is VERIFIED against the real code before it is shown. Output: findings
   with a severity label, a plain-language explanation, the exact location (clickable MR/PR
   link, or file:line locally), and a ready-to-post comment or concrete fix. Use when the
   user pastes an MR/PR URL, names a branch or commit to review, says "review this
@@ -11,7 +12,8 @@ description: >
   Optional --fix applies the agreed fixes (and pushes, for an MR/PR).
 ---
 
-Review a code change. The deliverable is a set of verified findings the user can act on
+Review a code change adversarially: assume it is broken and try to prove it. The
+deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
 explained in plain language.
 
@@ -94,20 +96,37 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 
 Read the surrounding code of every changed hunk you intend to comment on.
 
-## 1. Review
+## 1. Review — adversarial
 
-Look for, in priority order: correctness bugs (null/undefined paths, ordering, races, missed
-callers of changed functions), behavior changes not covered by the description, missing or
-weakened tests, and only then style/simplification. Check every caller of any changed
-function — a fix applied at one call site with broken siblings is the most common real finding.
+Start from the assumption that the change is broken and your job is to prove it. Do not
+read the diff looking for things that seem off — attack it:
+
+- **Construct breaking inputs.** For each changed function, actively hunt for a concrete
+  input or state that makes it misbehave: null/undefined, empty, zero, negative, huge,
+  unicode, concurrent calls, re-entrancy, out-of-order events, first/last iteration.
+- **Attack the boundaries.** Check every caller of any changed function — a fix applied at
+  one call site with broken siblings is the most common real finding. Then flip it: what
+  does the changed code assume about its inputs, and which caller can violate that?
+- **Distrust the description.** List what the author claims the change does, then look for
+  behavior the diff actually changes that the claims don't cover — that gap is where bugs
+  hide. Treat "refactor, no behavior change" as a claim to falsify.
+- **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
+  or subtly wrong? A test that can't fail is a finding. Missing or weakened tests for the
+  changed behavior are findings too.
+- **Exploit it.** Where the change touches a trust boundary (user input, URLs, HTML, file
+  paths, permissions), spend a pass thinking like an attacker, not a reviewer.
+
+Only after the attack passes are exhausted, note style/simplification issues.
 
 ## 2. Verify — mandatory, before anything is shown
 
-For EVERY candidate finding, confirm it against the actual code (not the diff hunk alone):
-read the full function/file in the checkout, trace the failure path, and state the concrete
-input/state that triggers it. Kill any finding you cannot make concrete. A plausible-sounding
-comment that turns out false is worse than no comment. If tests exist for the area, run the
-relevant ones when a finding claims broken behavior.
+Now switch sides: for EVERY candidate finding, try to REFUTE it. Read the full
+function/file in the checkout (not the diff hunk alone), trace the failure path, and hunt
+for the guard, caller contract, or earlier check that makes the scenario unreachable. A
+finding survives only if refutation fails AND you can state the concrete input/state that
+triggers it. Kill everything else. A plausible-sounding comment that turns out false is
+worse than no comment. If tests exist for the area, run the relevant ones when a finding
+claims broken behavior — a passing test that covers the exact scenario refutes the finding.
 
 ## 3. Output
 

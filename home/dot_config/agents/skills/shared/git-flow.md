@@ -22,8 +22,8 @@ git log --oneline -8
 - `IN_WORKTREE` — true if this checkout is a linked worktree (git-dir ≠ git-common-dir).
 - `MAIN_WT` — filesystem path of the worktree that has `TARGET` checked out (from
   `git worktree list`). Unset if `TARGET` is not checked out anywhere.
-- `TARGET_DIRTY` — true when the worktree holding `TARGET` has uncommitted changes (staged or
-  unstaged).
+- `TARGET_DIRTY` — true when the worktree holding `TARGET` has uncommitted changes (staged,
+  unstaged, or untracked — check with `git -C <MAIN_WT> status --short`).
 
 ## Commit gate
 
