@@ -59,7 +59,6 @@ link_state "$STATE_DIR/bitwarden" "$HOME/.config/Bitwarden CLI"        # bw sess
 link_state "$STATE_DIR/zoxide"    "$HOME/.local/share/zoxide"          # zoxide jump db
 link_state "$STATE_DIR/direnv"    "$HOME/.local/share/direnv"          # direnv allow-list
 link_state "$STATE_DIR/docker"    "$HOME/.config/docker"               # docker registry auth (DOCKER_CONFIG)
-link_state "$STATE_DIR/tmux-resurrect" "$HOME/.local/share/tmux/resurrect" # tmux-continuum saved sessions
 link_state "$STATE_DIR/mise"      "$HOME/.local/share/mise"            # mise toolchains (MISE_DATA_DIR; default over ssh)
 # XDG_STATE_HOME (nvim shada/undo, ...). The image sets it to ~/state/xdg-state,
 # but a shell that doesn't inherit the image ENV (ssh login) falls back to the
