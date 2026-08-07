@@ -7,6 +7,11 @@ description: >
 
 Add a todo item to `TODO.md` at the project root.
 
+`TODO.md` is the user's personal list. This skill is the only sanctioned way to
+add to it, and only on the user's explicit request. Never invoke it to track
+your own tasks — those go in the internal todo list and must be completed before
+handing work back.
+
 1. If no description argument was provided, reply "Error: /todo requires a description. Usage: /todo <description>" and stop.
 2. Find the project root (look for `.git`, `package.json`, or similar); fall back to the current directory.
 3. Append the item to the end of `TODO.md` as `- <description>`, creating the file with a `# TODO` header if it doesn't exist.

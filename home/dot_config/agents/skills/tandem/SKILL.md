@@ -45,6 +45,8 @@ Two input modes:
   to touch the same files, and completable without user decisions mid-flight.
   Skip tasks that are destructive, outward-facing, or too vague to have
   acceptance criteria — list the skipped ones and why in the final report.
+  Never add items to `TODO.md` or any other list source; removing items the
+  batch completed is fine. Report completions either way.
 
 For every selected task, write one line of acceptance criteria: what must be true
 for it to count as done. If a task has no checkable outcome, ask the user before
