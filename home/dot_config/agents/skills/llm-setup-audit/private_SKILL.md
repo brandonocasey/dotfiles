@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: llm-setup-audit
 description: >
   Audit the user's prompt files: SKILL.md skills, agent definitions, and always-loaded

@@ -1,15 +1,12 @@
 ---
 name: review
 description: >
-  Adversarial, verified code review of any change: a GitLab MR or GitHub PR URL, a local
-  branch, a commit or range, or the uncommitted working diff. Remote targets fetch via
-  glab/gh. The reviewer actively tries to break the change, and every candidate finding
-  is VERIFIED against the real code before it is shown. Output: findings
-  with a severity label, a plain-language explanation, the exact location (clickable MR/PR
-  link, or file:line locally), and a ready-to-post comment or concrete fix. Use when the
-  user pastes an MR/PR URL, names a branch or commit to review, says "review this
-  MR/PR/branch/commit", "review my changes", "review and ELI5", or invokes /review.
-  Optional --fix applies the agreed fixes (and pushes, for an MR/PR).
+  Adversarial, verified code review of any change: an MR/PR URL, a local branch, a
+  commit or range, or the uncommitted working diff. Every candidate finding is
+  verified against the real code before it is shown; output is findings with
+  severity, a plain-language explanation, the exact location, and a ready-to-post
+  comment or concrete fix. Use for any review request or /review. Optional --fix
+  applies the agreed fixes (and pushes, for an MR/PR).
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The

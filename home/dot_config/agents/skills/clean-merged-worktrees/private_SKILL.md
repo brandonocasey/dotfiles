@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: clean-merged-worktrees
 description: >
   Safely clean local Git worktrees and branches after their changes have been merged.

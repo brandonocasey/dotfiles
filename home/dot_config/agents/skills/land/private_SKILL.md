@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: land
 description: >
   Finish a feature branch: split the working tree into logical Conventional-Commit chunks,

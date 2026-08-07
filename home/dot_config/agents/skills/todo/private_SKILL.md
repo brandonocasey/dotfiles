@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: todo
 description: >
   Add a concise todo entry to TODO.md at the project root. Use when the user says

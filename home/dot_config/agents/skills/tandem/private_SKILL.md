@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: tandem
 description: >
   Run a set of user-given tasks in parallel: split them across sub-agents (one

@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: ship
 description: >
   Ship the current branch for review: commit remaining work in logical chunks, push, open (or

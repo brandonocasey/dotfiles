@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: skill-audit
 description: >
   Renamed to llm-setup-audit; kept only as an alias so /skill-audit still works.
