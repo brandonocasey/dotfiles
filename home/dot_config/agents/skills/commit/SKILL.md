@@ -20,6 +20,7 @@ Split commits by concern/type/pattern — one commit = one reviewable idea; don'
 `<type>(<scope>): <description>` - lowercase, imperative, no period, <50 chars
 - Types: build, ci, docs, dx, feat, fix, perf, refactor, revert, style, test
 - Scope: optional; include one when the repo's commitlint config requires it
+- Repo conventions (commitlint config, AGENTS.md/CONTRIBUTING) override these defaults — e.g. a required ticket suffix like `[PUBS-1234]` or a longer header limit
 - Breaking: `feat!:` or `feat(api)!:`
 - Minimal, no filler, focus "why"
 - Body: if adds context
