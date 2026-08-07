@@ -23,7 +23,7 @@
     "ask": [],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": []
   },
@@ -35,13 +35,15 @@
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true,
-    "chrome-devtools-mcp@claude-plugins-official": {{ if eq (env "RUNNING_IN_DOCKER") "true" }}false{{ else }}true{{ end }}
+    "chrome-devtools-mcp@claude-plugins-official": {{ if eq (env "RUNNING_IN_DOCKER") "true" }}false{{ else }}false{{ end }}
   },
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "tui": "default",
+  "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
   "theme": "custom:onedark",
   "fileCheckpointingEnabled": true,
   "skipAutoPermissionPrompt": true
