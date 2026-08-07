@@ -1,11 +1,9 @@
 ---
 name: sub-agents
 description: >
-  Shared rules for spawning any sub-agent: model tier and effort selection,
-  user-named model and external-tool overrides, self-contained prompts,
-  prompt-cache-friendly prompt structure, raw-data returns, and main-session
-  re-validation. Other skills (delegate, review) reference this instead of
-  duplicating it. Use whenever spawning a sub-agent for any reason.
+  Shared rules for spawning any sub-agent: tier and effort selection, model/tool
+  overrides, self-contained prompts, raw-data returns, and main-session
+  re-validation. Load whenever spawning a sub-agent for any reason.
 ---
 
 Rules for every sub-agent spawn, regardless of which skill or task triggers it.

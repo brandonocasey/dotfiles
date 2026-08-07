@@ -1,13 +1,11 @@
 ---
 name: delegate
 description: >
-  Decide whether and how to pass work to sub-agents. Covers: monitoring and
-  long-running waits (cheapest background agent), tasks changing 5+ non-doc files
-  with independent parts (parallel cheaper sub-agents, main-session re-validation), and
-  moving a whole task to a different tier (warn, then single sub-agent on approval).
-  Spawn mechanics live in the sub-agents skill. Use when starting a task that may
-  be worth delegating, when the user says "delegate this", or when invoked as
-  /delegate.
+  Decide whether and how to pass work to sub-agents: monitoring/long waits
+  (cheapest background agent), tasks changing 5+ non-doc files with independent
+  parts (parallel sub-agents, main-session re-validation), or moving a whole task
+  to a different tier (warn, then approval). Spawn mechanics live in the
+  sub-agents skill. Use when starting any possibly-delegatable task or /delegate.
 ---
 
 Pass work to sub-agents when it saves cost or keeps the main session free — and only
