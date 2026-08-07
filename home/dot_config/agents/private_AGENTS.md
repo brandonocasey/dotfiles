@@ -77,3 +77,4 @@ Applies to new projects, or when the repo has no existing convention:
 - **Don't suggest git operations** on files you didn't modify
 - Stage new files when added
 - After pushing, verify that CI is passing; if it fails, fix the issue — the `ship` skill owns the diagnose/flaky-vs-real/re-push flow
+- Keep MR/PR titles and descriptions in sync with the code, but only when I ask, or when you are actively working with an MR/PR that you pushed/created or that is out of date: edit the title and description to match what the MR/PR now does. The title uses the conventional commit type of the most user-facing change in the MR/PR (e.g. `feat` over `refactor` over `chore`)

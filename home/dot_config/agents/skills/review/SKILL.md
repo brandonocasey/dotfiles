@@ -115,6 +115,10 @@ read the diff looking for things that seem off — attack it:
   changed behavior are findings too.
 - **Exploit it.** Where the change touches a trust boundary (user input, URLs, HTML, file
   paths, permissions), spend a pass thinking like an attacker, not a reviewer.
+- **Check the title and description are current** (MR/PR only). Compare them against the
+  full diff: if they omit or misstate what the change now does, or the title does not use
+  the conventional commit type of the most user-facing change in the diff (`feat` over
+  `refactor` over `chore`), report it as a finding with the corrected title/description text.
 
 Only after the attack passes are exhausted, note style/simplification issues.
 
