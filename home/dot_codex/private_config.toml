@@ -3,7 +3,7 @@ personality = "pragmatic"
 model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "high"
-service_tier = "default"
+service_tier = "fast"
 notify = ["/Users/bcasey/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 approval_policy = "never"
 sandbox_mode    = "danger-full-access"
@@ -127,7 +127,13 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Documents/Codex/2026-07-27/i-want-you-to-make-me"]
 trust_level = "trusted"
 
-[projects."/Users/bcasey/Projects/forgejo/junkture"]
+[projects."/Users/bcasey/Projects/forgejo/juncture"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/forgejo/game-scaffold"]
+trust_level = "trusted"
+
+[projects."/Users/bcasey/Projects/forgejo/bookman"]
 trust_level = "trusted"
 
 [notice]
