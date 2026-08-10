@@ -70,7 +70,8 @@ chmod 700 "$STATE_DIR/gnupg" 2>/dev/null || true                      # gpg refu
 # DEFAULT dir (~/.claude, ~/.codex) at it. Going through the default location
 # keeps persistence working even when CLAUDE_CONFIG_DIR/CODEX_HOME aren't exported
 # (an ssh/login shell re-sources its profile and won't inherit the image's ENV).
-# The image still points those vars at the same ~/state path, so both resolve here.
+# CLAUDE_CONFIG_DIR points directly into state; CODEX_HOME resolves through its
+# default-path symlink after startup.
 seed_state "$HOME/.claude" "$STATE_DIR/claude"
 link_state "$STATE_DIR/claude" "$HOME/.claude"
 seed_state "$HOME/.codex"  "$STATE_DIR/codex"

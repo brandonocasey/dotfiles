@@ -12,7 +12,8 @@ ENV MANPATH=":./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
 # chezmoi-managed config baked into the image so the empty mount doesn't shadow it.
 ENV STATE_DIR="/home/${UNAME}/state"
 ENV CLAUDE_CONFIG_DIR="/home/${UNAME}/state/claude"
-ENV CODEX_HOME="/home/${UNAME}/state/codex"
+# The entrypoint symlinks this default path into ~/state/codex at runtime.
+ENV CODEX_HOME="/home/${UNAME}/.codex"
 # XDG_STATE_HOME holds genuinely-persistent state (nvim shada/undo, etc.).
 # CONFIG/DATA/CACHE stay at defaults so chezmoi config and baked plugins/tools
 # remain in the image and refresh on rebuild instead of freezing in the mount.
