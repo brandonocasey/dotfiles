@@ -154,8 +154,9 @@ Brief beats complete-sounding: no padding, no restating the diff.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do NOT post anything to the MR/PR unless the user asks; print for the user
-to post. Remove any worktree this review created — never a pre-existing one — unless
-continuing to `--fix` (`git worktree remove .worktrees/review-<number>`).
+to post. Remove any worktree this review created — never a pre-existing one — with
+`git worktree remove <the .worktrees/review-… path from step 0>`. When continuing to
+`--fix`, keep it until the end of step 4 and remove it there.
 
 ### Link formats (MR/PR only)
 
@@ -204,6 +205,8 @@ Only when the user asks (`--fix`, "fix them"):
   need push access to the fork and must add it as a remote and push there instead. Print
   branch, HEAD sha, and the MR/PR link afterwards. Clean up the worktree when done either way.
 - **Local branch or commit**: apply the agreed fixes in the target's checkout/worktree, run
-  the repo's tests/lint, and commit per the `commit` skill. Do not push.
+  the repo's tests/lint, and commit per the `commit` skill. Do not push. Then remove the
+  worktree if step 0 created it — the commits stay on the branch. Never remove a pre-existing
+  worktree.
 - **Working diff**: apply the agreed fixes in place and leave them uncommitted unless the
   user asks to commit.

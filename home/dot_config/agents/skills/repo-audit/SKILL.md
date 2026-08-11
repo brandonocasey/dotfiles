@@ -18,11 +18,13 @@ and fixes are never applied without the user picking them.
 Pick from the invocation; default is **full**.
 
 - **full** — find → verify → present → (on approval) fix. Steps 0–6.
-- **re-verify `<AUDIT.md>`** — the repo changed since the findings were written: run step 3
+- **re-verify `<path>`** — the repo changed since the findings were written: run step 3
   against the current code for every unresolved finding, then rewrite the file (step 6's
   format). Skip finding.
-- **apply `<AUDIT.md>`** — findings already exist and are decided: run steps 4–6 for the
+- **apply `<path>`** — findings already exist and are decided: run steps 4–6 for the
   entries the user selects.
+
+`<path>` is the findings file step 6 writes; it defaults to `docs/AUDIT.md`.
 
 Arguments the user may pass: dimensions to audit (default: bugs, performance, duplication,
 legacy/back-compat, consistency), paths to include/exclude, and an agent model override (e.g.
@@ -33,10 +35,11 @@ legacy/back-compat, consistency), paths to include/exclude, and an agent model o
 - Establish repo facts the agents will need: language/toolchain, package or crate map with
   **real repo paths** (agents waste turns resolving shorthand — give them the mapping), rough
   LOC, test and lint commands.
-- Create the fix worktree up front per the global git workflow: `git fetch origin`, then
-  `git worktree add .worktrees/repo-audit -b repo-audit origin/<default>`. Finder and verifier
-  agents are read-only and run against the main checkout; only fixers (step 4) write, and only
-  inside this worktree.
+- In the modes that can write code (**full**, **apply**), create the fix worktree up front per
+  the global git workflow: `git fetch origin`, then
+  `git worktree add .worktrees/repo-audit -b repo-audit origin/<default>`. **re-verify** never
+  writes code — create no worktree there. Finder and verifier agents are read-only and run
+  against the main checkout; only fixers (step 5) write, and only inside this worktree.
 - Findings live as JSON in the session scratchpad, batched into files (`batches/batch_N.json`).
 - Orchestrate with the Workflow tool when it is available (this skill is the user's opt-in);
   otherwise fan out with the Agent tool. Keep any single workflow under ~15 agents — split the

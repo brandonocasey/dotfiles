@@ -17,7 +17,8 @@ paper trail, and never silently drop a rule.
 
 ## Targets and modes
 
-- **Skills mode** — SKILL.md files and agent definition `.md` files. Fix directly, report
+- **Skills mode** — every file in the skills tree: `SKILL.md` files, agent definitions, and
+  the shared helper files that skills read (e.g. `shared/git-flow.md`). Fix directly, report
   after. Default target: `~/.config/agents/skills/`.
 - **Rules mode** — always-loaded instruction files: AGENTS.md, CLAUDE.md, and project
   equivalents. Talk first; zero edits before explicit approval. Default target:
@@ -38,6 +39,9 @@ paper trail, and never silently drop a rule.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.
+- Check what the harness has switched off: `skillOverrides` in `settings.json`, and
+  `disable-model-invocation` in each skill's frontmatter. Audit a disabled skill as normal,
+  but report it as disabled — its fixes do nothing until the user turns it back on.
 
 ## Checks
 

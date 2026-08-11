@@ -69,7 +69,8 @@ Run the **Commit gate** from `../shared/git-flow.md`: chunk via the `commit` ski
   real error under the boilerplate, and classify:
   - **Flaky** — the project's docs/skills name known-flaky suites (e.g. web-player `test-pw`
     shards / ad-suite Playwright specs), or it is an infra hiccup (runner died, registry
-    timeout): retry the job once. Fails again → treat as real.
+    timeout): retry the job once (`glab ci retry <job>` / `gh run rerun --failed`). Fails
+    again → treat as real.
   - **Real** — fix it in this checkout, commit via the `commit` skill, push, and re-watch.
     Failing CI on a branch you shipped is yours to fix; do not hand it back to the user.
 - Repeat until the pipeline is green. STOP and ask only when the fix would change the scope of
@@ -79,7 +80,7 @@ Run the **Commit gate** from `../shared/git-flow.md`: chunk via the `commit` ski
 
 State plainly: the commits shipped (`<short> <subject>` each), whether the MR/PR was created
 or updated, and the final pipeline state. End with a **Links** section — MR/PR URL, pipeline
-URL, ticket URL (when set) — as bare URLs or OSC 8 hyperlinks, never markdown-formatted.
+URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
 
 ## Hard rules
 

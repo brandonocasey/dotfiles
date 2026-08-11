@@ -127,8 +127,9 @@ git -C <MAIN_WT> stash pop
 ## 5. Clean up
 
 - If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: there is no separate
-  worktree to remove (you are standing in the checkout that now holds `TARGET`) — skip the
-  removal and delete the branch from here with `git branch -d <BRANCH>`.
+  worktree to remove (you are standing in the checkout that now holds `TARGET`) — delete the
+  branch from here with `git branch -d <BRANCH>`, then skip the rest of this step. The two
+  bullets below need `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of the worktree before removing it: git happily removes the
   directory under you (`git -C <MAIN_WT>` does not move your cwd), and a shell left in the
