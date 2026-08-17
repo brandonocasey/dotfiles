@@ -15,7 +15,9 @@ if cmd_exists sudo; then
   SUDO_ME="sudo"
   # Prime sudo once, then refresh the cached credential in the background so
   # sudo-backed steps (apt/yum/pacman, chsh) don't re-prompt.
-  sudo -v
+  if ! sudo -n true 2>/dev/null; then
+    sudo -v
+  fi
   while true; do
     sudo -n true 2>/dev/null
     sleep 50
@@ -255,7 +257,7 @@ export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 # cleanup), and a /dev/stdin pipe is empty on the second read, which makes
 # cleanup uninstall everything it just installed.
 BREWFILE="$(mktemp)"
-printf '%s\n' "$BUNDLE" > "$BREWFILE"
+printf '%s\n' "$BUNDLE" >"$BREWFILE"
 # The `brew bundle --cleanup` switch is deprecated, so run install and the
 # cleanup subcommand separately; `cleanup --force` prunes anything not listed.
 brew bundle install --file="$BREWFILE"

@@ -1,212 +1,257 @@
 {
-  "$schema" : "https:\/\/schema.linearmouse.app\/0.11.4",
-  "schemes" : [
+  "$schema": "https://schema.linearmouse.app/0.11.4",
+  "schemes": [
     {
-      "buttons" : {
-        "clickDebouncing" : {
-          "buttons" : [
+      "buttons": {
+        "clickDebouncing": {
+          "buttons": [
             0
           ],
-          "timeout" : 0
+          "timeout": 0
         },
-        "mappings" : [
+        "mappings": [
           {
-            "action" : "missionControl",
-            "button" : 2,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl",
+            "button": 2,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceLeft",
-            "button" : 3,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceLeft",
+            "button": 3,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceRight",
-            "button" : 4,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceRight",
+            "button": 4,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           }
         ]
       },
-      "if" : {
-        "device" : {
-          "category" : "mouse"
+      "if": {
+        "device": {
+          "category": "mouse"
         }
       },
-      "pointer" : {
-        "acceleration" : 1,
-        "disableAcceleration" : true,
-        "speed" : 0.2288
+      "pointer": {
+        "acceleration": 1,
+        "disableAcceleration": true,
+        "speed": 0.2288
       },
-      "scrolling" : {
-        "reverse" : {
-          "vertical" : true
+      "scrolling": {
+        "reverse": {
+          "vertical": true
         }
       }
     },
     {
-      "buttons" : {
-        "mappings" : [
+      "buttons": {
+        "mappings": [
           {
-            "action" : "missionControl",
-            "button" : 2,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl",
+            "button": 2,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceLeft",
-            "button" : 3,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceLeft",
+            "button": 3,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceRight",
-            "button" : 4,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceRight",
+            "button": 4,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           }
         ],
-        "universalBackForward" : true
+        "universalBackForward": true
       },
-      "if" : {
-        "device" : {
-          "category" : "mouse",
-          "productID" : "0xc52b",
-          "productName" : "USB Receiver",
-          "vendorID" : "0x46d"
+      "if": {
+        "device": {
+          "category": "mouse",
+          "productID": "0xc52b",
+          "productName": "USB Receiver",
+          "vendorID": "0x46d"
         }
       },
-      "pointer" : {
-        "disableAcceleration" : true
+      "pointer": {
+        "disableAcceleration": true
       },
-      "scrolling" : {
-        "acceleration" : {
-          "vertical" : 1
+      "scrolling": {
+        "acceleration": {
+          "vertical": 1
         },
-        "distance" : {
-          "vertical" : "auto"
+        "distance": {
+          "vertical": "auto"
         },
-        "reverse" : {
-          "vertical" : true
+        "reverse": {
+          "vertical": true
         },
-        "speed" : {
-          "vertical" : 0
+        "speed": {
+          "vertical": 0
         }
       }
     },
     {
-      "buttons" : {
-        "mappings" : [
+      "buttons": {
+        "mappings": [
           {
-            "action" : "missionControl",
-            "button" : 2,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl",
+            "button": 2,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceLeft",
-            "button" : 3,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceLeft",
+            "button": 3,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceRight",
-            "button" : 4,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceRight",
+            "button": 4,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           }
         ],
-        "universalBackForward" : true
+        "universalBackForward": true
       },
-      "if" : {
-        "device" : {
-          "category" : "mouse",
-          "productID" : "0xc049",
-          "productName" : "USB Gaming Mouse",
-          "vendorID" : "0x46d"
+      "if": {
+        "device": {
+          "category": "mouse",
+          "productID": "0xc049",
+          "productName": "USB Gaming Mouse",
+          "vendorID": "0x46d"
         }
       },
-      "pointer" : {
-        "acceleration" : 0,
-        "disableAcceleration" : false,
-        "speed" : 1
+      "pointer": {
+        "acceleration": 0,
+        "disableAcceleration": false,
+        "speed": 1
       },
-      "scrolling" : {
-        "acceleration" : {
-          "vertical" : 2
+      "scrolling": {
+        "acceleration": {
+          "vertical": 2
         },
-        "reverse" : {
-          "vertical" : true
+        "reverse": {
+          "vertical": true
         },
-        "speed" : {
-          "vertical" : 1.19
+        "speed": {
+          "vertical": 1.19
         }
       }
     },
     {
-      "buttons" : {
-        "mappings" : [
+      "buttons": {
+        "mappings": [
           {
-            "action" : "missionControl",
-            "button" : 2,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl",
+            "button": 2,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceLeft",
-            "button" : 3,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceLeft",
+            "button": 3,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           },
           {
-            "action" : "missionControl.spaceRight",
-            "button" : 4,
-            "command" : false,
-            "control" : false,
-            "option" : false,
-            "shift" : false
+            "action": "missionControl.spaceRight",
+            "button": 4,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
           }
         ]
       },
-      "if" : {
-        "device" : {
-          "category" : "mouse",
-          "productID" : "0x10c9",
-          "productName" : "Nearlink Mouse Dongle",
-          "serialNumber" : "Љ",
-          "vendorID" : "0x373b"
+      "if": {
+        "device": {
+          "category": "mouse",
+          "productID": "0x10c9",
+          "productName": "Nearlink Mouse Dongle",
+          "vendorID": "0x373b"
         }
       },
-      "pointer" : {
-        "speed" : 0.2474
+      "pointer": {
+        "speed": 0.2474
       },
-      "scrolling" : {
-        "reverse" : {
-          "vertical" : true
+      "scrolling": {
+        "reverse": {
+          "vertical": true
+        }
+      }
+    },
+    {
+      "buttons": {
+        "mappings": [
+          {
+            "action": "missionControl",
+            "button": 2,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
+          },
+          {
+            "action": "missionControl.spaceLeft",
+            "button": 3,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
+          },
+          {
+            "action": "missionControl.spaceRight",
+            "button": 4,
+            "command": false,
+            "control": false,
+            "option": false,
+            "shift": false
+          }
+        ]
+      },
+      "if": {
+        "device": {
+          "category": "mouse",
+          "productID": "0x10c7",
+          "productName": "VXE R1 NK",
+          "vendorID": "0x373b"
+        }
+      },
+      "pointer": {
+        "speed": 0.2474
+      },
+      "scrolling": {
+        "reverse": {
+          "vertical": true
         }
       }
     }
