@@ -142,6 +142,12 @@ trust_level = "trusted"
 [projects."/Users/bcasey/Projects/forgejo/book-manager"]
 trust_level = "trusted"
 
+[projects."/home/bcasey"]
+trust_level = "trusted"
+
+[projects."/home/bcasey/.local/bin"]
+trust_level = "trusted"
+
 [notice]
 hide_gpt5_1_migration_prompt = true
 hide_rate_limit_model_nudge = true
