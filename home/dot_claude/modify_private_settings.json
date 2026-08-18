@@ -1,0 +1,81 @@
+#!/bin/bash
+# chezmoi modify_ script. It reads the live ~/.claude/settings.json on stdin and
+# prints the file chezmoi should apply. Every key below is enforced from this
+# file EXCEPT the ones in KEEP_KEYS, whose live values are carried through, so
+# changing them in the TUI never shows up as chezmoi drift.
+# To hand another key to the app, add its name to KEEP_KEYS.
+set -euo pipefail
+
+KEEP_KEYS='["model", "effortLevel"]'
+
+# Values here are the fallback for a machine that has no settings.json yet.
+managed=$(
+  cat <<'JSON'
+{
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Edit",
+      "Glob",
+      "Grep",
+      "LS",
+      "MultiEdit",
+      "NotebookEdit",
+      "NotebookRead",
+      "Read",
+      "Task",
+      "TodoWrite",
+      "WebFetch",
+      "WebSearch",
+      "Write"
+    ],
+    "ask": [],
+    "defaultMode": "auto"
+  },
+  "model": "claude-fable-5[1m]",
+  "skillOverrides": {
+    "checkpoint": "off",
+    "repo-audit": "off"
+  },
+  "hooks": {
+    "PreToolUse": []
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "rust-analyzer-lsp@claude-plugins-official": false,
+    "playwright@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {},
+  "feedbackSurveyRate": 0,
+  "syntaxHighlightingDisabled": true,
+  "effortLevel": "medium",
+  "tui": "default",
+  "autoMemoryEnabled": false,
+  "skipDangerousModePermissionPrompt": true,
+  "skipWorkflowUsageWarning": true,
+  "theme": "custom:onedark",
+  "fileCheckpointingEnabled": true,
+  "skipAutoPermissionPrompt": true
+}
+JSON
+)
+
+# A missing, corrupt, or non-object live file MUST fall back to the managed
+# defaults. Slurp so a half-written file with two concatenated values parses.
+live=$(cat | jq -s -c 'first // {} | if type == "object" then . else {} end' 2>/dev/null) || live='{}'
+[ -n "$live" ] || live='{}'
+
+jq -n \
+  --argjson keep "$KEEP_KEYS" \
+  --argjson managed "$managed" \
+  --argjson live "$live" \
+  'reduce $keep[] as $k ($managed;
+     if ($live | has($k)) then .[$k] = $live[$k] else . end)'

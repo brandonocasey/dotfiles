@@ -1,3 +1,19 @@
+#!/bin/bash
+# chezmoi modify_ script. It reads the live ~/.codex/config.toml on stdin and
+# prints the file chezmoi should apply. Everything below is enforced from this
+# file EXCEPT the keys in KEEP_KEYS and the tables in KEEP_SECTIONS, whose live
+# values are copied through verbatim, so changing them in the TUI never shows up
+# as chezmoi drift.
+# To hand another top-level key to the app, add it to KEEP_KEYS. To hand another
+# table to the app, add its name to KEEP_SECTIONS and delete the managed copy of
+# that table from the body below.
+set -euo pipefail
+
+KEEP_KEYS=(model model_reasoning_effort)
+KEEP_SECTIONS=(projects)
+
+body=$(
+  cat <<'TOML'
 model = "gpt-5.6-luna"
 personality = "pragmatic"
 model_reasoning_effort = "xhigh"
@@ -12,138 +28,6 @@ allow_login_shell = true
 [shell_environment_policy]
 inherit = "all"
 experimental_use_profile = true
-
-[projects."/Users/bcasey/Projects/brandonocasey/vibetree"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/npm-verify-pkg"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/vibe-skel"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/npm-merge-driver-install2"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/jwpconnatix/web-player"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/npm-merge-driver-install"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/book-manager"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Downloads/audiobooks"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/.config/synthetic-claude/plans"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/books"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/NextUI"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/books/bookgraph"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Downloads/test"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/RomPatcher.js"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/bookman"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/mame"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/libarchive"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/dolphin"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/game-tools"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/jwpconnatix/dashboard-clippingtool"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/jwpconnatix/hive"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/file-trimmer"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver/vendor/libarchive"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/rom-weaver/vendor/nod"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/rom-weaver"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Downloads"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/rom-weaver"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/.local/share/chezmoi"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/brandonocasey/gameman"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/game-tools"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/vibetree"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/npm-verify-pkg"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Documents/Codex/2026-07-27/chrome-plugin-chrome-openai-bundled-file"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Documents/Codex/2026-07-27/i-want-you-to-make-me"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/juncture"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/game-scaffold"]
-trust_level = "trusted"
-
-[projects."/Users/bcasey/Projects/forgejo/bookman"]
-trust_level = "trusted"
-
-[projects."/home/bcasey"]
-trust_level = "trusted"
-
-[projects."/home/bcasey/.local/bin"]
-trust_level = "trusted"
-
-[projects."/home/bcasey/.local/share/chezmoi"]
-trust_level = "trusted"
 
 [notice]
 hide_gpt5_1_migration_prompt = true
@@ -269,3 +153,73 @@ enabled = true
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"
+@KEEP_SECTIONS@
+TOML
+)
+
+live=$(cat)
+
+# awk -v strips backslashes from the value, so pass the regex in the environment.
+SECTION_RE="^[[:space:]]*\[($(
+  IFS='|'
+  echo "${KEEP_SECTIONS[*]}"
+))([.]|\])"
+export SECTION_RE
+
+# Codex writes this file with toml_edit, which patches single keys in place.
+# Copying its text verbatim therefore keeps the output byte-identical.
+# Live values for the app-owned tables, in the order the app wrote them.
+KEEP_SECTIONS_TOML=$(printf '%s\n' "$live" | awk '
+  /^[[:space:]]*\[/ { p = ($0 ~ ENVIRON["SECTION_RE"]) }
+  p { print }
+' | awk '
+  { lines[NR] = $0 }
+  END {
+    last = NR
+    while (last > 0 && lines[last] ~ /^[[:space:]]*$/) last--
+    for (i = 1; i <= last; i++) print lines[i]
+  }
+')
+export KEEP_SECTIONS_TOML
+
+# Live values for the app-owned top-level keys. They all sit above the first
+# table header, so stop reading there.
+for key in "${KEEP_KEYS[@]}"; do
+  value=$(printf '%s\n' "$live" | awk -v k="$key" '
+    /^[[:space:]]*\[/ { exit }
+    $0 ~ "^" k "[[:space:]]*=" { print; exit }
+  ')
+  export "KEEP_KEY_${key}=${value}"
+done
+
+printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
+  BEGIN {
+    n = split(keys, klist, " ")
+  }
+  # Print the app-owned tables at the end of the file. Codex appends new tables
+  # there, so copying them from that position keeps the output byte-identical.
+  # An empty value drops the placeholder, which a machine with no config needs.
+  /^@KEEP_SECTIONS@$/ {
+    if (ENVIRON["KEEP_SECTIONS_TOML"] != "") {
+      print ""
+      print ENVIRON["KEEP_SECTIONS_TOML"]
+    }
+    next
+  }
+  {
+    if (!intable) {
+      if ($0 ~ /^[[:space:]]*\[/) {
+        intable = 1
+      } else {
+        for (i = 1; i <= n; i++) {
+          live_line = ENVIRON["KEEP_KEY_" klist[i]]
+          if (live_line != "" && $0 ~ "^" klist[i] "[[:space:]]*=") {
+            print live_line
+            next
+          }
+        }
+      }
+    }
+    print
+  }
+'
