@@ -248,6 +248,9 @@ EOF
 fi
 
 export HOMEBREW_NO_AUTO_UPDATE=1
+# Only install missing packages; never upgrade outdated ones here. Upgrades
+# are manual via `brew upgrade` so a script edit stays fast.
+export HOMEBREW_BUNDLE_NO_UPGRADE=1
 # Homebrew 6 refuses formulae from third-party taps (wader, peterldowns, …) and
 # aborts the entire bundle on the first one. These are taps we deliberately use,
 # so opt out of the trust requirement for the bundle.
@@ -258,12 +261,19 @@ export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 # cleanup uninstall everything it just installed.
 BREWFILE="$(mktemp)"
 printf '%s\n' "$BUNDLE" >"$BREWFILE"
-# The `brew bundle --cleanup` switch is deprecated, so run install and the
-# cleanup subcommand separately; `cleanup --force` prunes anything not listed.
-brew bundle install --file="$BREWFILE"
-brew bundle cleanup --force --file="$BREWFILE"
+# `check` is seconds when nothing is missing; skip the slow install then.
+if ! brew bundle check --file="$BREWFILE"; then
+  brew bundle install --file="$BREWFILE"
+fi
+# `check` cannot see packages that were REMOVED from the bundle, so gate the
+# slow forced cleanup and cache prune on the cleanup dry run instead.
+if [ -n "$(brew bundle cleanup --file="$BREWFILE")" ]; then
+  # The `brew bundle --cleanup` switch is deprecated, so run install and the
+  # cleanup subcommand separately; `cleanup --force` prunes anything not listed.
+  brew bundle cleanup --force --file="$BREWFILE"
+  brew cleanup --prune=all
+fi
 rm -f "$BREWFILE"
-brew cleanup --prune=all
 
 # Homebrew casks are macOS-only, so install Claude Code natively on Linux.
 # No install guard: re-run every apply so it self-updates to the latest release.
