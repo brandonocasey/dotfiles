@@ -12,6 +12,10 @@ cmd_exists() {
   return 1
 }
 
+# Prime sudo up front so the password prompt appears immediately,
+# not minutes into the apply.
+sudo -v
+
 # prevent annoying "Login Item" Notifications
 sudo sfltool resetbtm
 
