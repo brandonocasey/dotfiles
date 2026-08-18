@@ -16,8 +16,8 @@ Every spawn follows the `sub-agents` skill.
 
 ## Monitoring and long-running waits
 
-Polling CI, watching logs, waiting on builds/deploys: delegate to a background agent
-on the smallest, cheapest model tier available at the lowest reasoning effort. The
+Polling CI, watching logs, waiting on builds/deploys: delegate to a background agent.
+Tier and effort come from the `sub-agents` skill — this is its watch-and-wait case. The
 agent reports back only the outcome and relevant details. The main session continues
 other work or ends its turn; it never polls the same target itself.
 
@@ -43,7 +43,6 @@ sub-agents follows the `sub-agents` skill and needs no consent.
 
 If a different tier fits the whole task better — stronger because the current tier
 has already failed an attempt or the task needs subtle cross-cutting reasoning, or
-weaker because the task is simple enough that a cheaper current tier suffices
-(usually a net saving even though the sub-agent starts with a cold prompt cache) —
-warn the user first. On approval, delegate to a single sub-agent on that tier with
+weaker because the task is simple enough that a cheaper current tier suffices (the
+`sub-agents` skill owns the price-vs-cache trade-off) — warn the user first. On approval, delegate to a single sub-agent on that tier with
 the full context it needs.

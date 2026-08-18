@@ -16,8 +16,10 @@ never paper over a problem to keep the pipeline moving.
 
 ## 0. Detect context (always run first)
 
-Read `../shared/git-flow.md` (sibling of this skill's directory) and establish its **Facts**:
-`BRANCH`, `TARGET`, `IN_WORKTREE`, `MAIN_WT`, `TARGET_DIRTY`. Hold them for the whole run.
+Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
+against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
+directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `IN_WORKTREE`,
+`MAIN_WT`, `TARGET_DIRTY`. Hold them for the whole run.
 `MAIN_WT` matters here because you can't ff-merge a branch that is checked out elsewhere;
 `TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
 
@@ -43,7 +45,7 @@ unless the user asks.
 
 ## 1. Commit the working tree in logical chunks
 
-Run the **Commit gate** from `../shared/git-flow.md`: chunk via the `commit` skill until
+Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill until
 `git status --short` prints nothing, then show `git log --oneline <TARGET>..HEAD`. Nothing
 proceeds to rebase/ff while the tree is dirty — uncommitted work in the worktree is lost when
 the worktree is removed in step 5.
@@ -83,15 +85,16 @@ should stop and investigate rather than create a merge commit.
 
 **If `TARGET_DIRTY`** (the target tree has local uncommitted work): stash it first so the
 fast-forward lands on a clean tree, then restore it afterward. Run the stash in `MAIN_WT` — the
-worktree that holds `TARGET`. Use a labelled, include-untracked stash so it's identifiable and
+worktree that holds `TARGET`. `TARGET_DIRTY` can only be true when `MAIN_WT` is set: an
+unchecked-out branch has no working tree to dirty, so this block never runs without a path. Use a labelled, include-untracked stash so it's identifiable and
 nothing is left behind:
 
 ```sh
 git -C <MAIN_WT> stash push --include-untracked -m "land: pre-ff autostash"
 ```
 
-Confirm it was created (`git -C <MAIN_WT> stash list | head -1`). If `stash push` reports
-"No local changes to save", treat the tree as clean and skip the pop below.
+Confirm it was created (`git -C <MAIN_WT> stash list | head -1`) and record its ref. If
+`stash push` reports "No local changes to save", treat the tree as clean and skip the pop below.
 
 Do the fast-forward:
 
@@ -109,27 +112,35 @@ Do the fast-forward:
 If `--ff-only` fails, STOP and report — do not fall back to a non-ff merge. (If you stashed, the
 work is safe in the stash; tell the user it's there and how to restore it.)
 
-**Restore the stash** after a successful ff (only if you created one above):
+**Restore the stash** after a successful ff (only if you created one above). Pop the entry by
+its label, not by position — a bare `stash pop` takes `stash@{0}`, which is the wrong entry if
+any other stash was pushed in the meantime:
 
 ```sh
-git -C <MAIN_WT> stash pop
+REF=$(git -C <MAIN_WT> stash list | grep -F 'land: pre-ff autostash' | head -1 | cut -d: -f1)
+git -C <MAIN_WT> stash pop "$REF"
 ```
+
+If that label is not in the list, STOP and report — do not pop a stash you cannot identify.
 
 - Clean pop → done; verify `git -C <MAIN_WT> status` looks as expected.
 - **Conflicts on pop** (the landed commits touched the same lines as the stashed local work):
   resolve them. For each conflicted file, read both sides, reconcile by intent (the landed change
   is now the base; reapply the local edit on top so neither is lost — never just delete a side),
   then `git -C <MAIN_WT> add <file>`. When all are resolved, **drop the now-applied stash entry**
-  with `git -C <MAIN_WT> stash drop` (a conflicted `stash pop` does NOT auto-drop). Do not create
+  with `git -C <MAIN_WT> stash drop "$REF"` (a conflicted `stash pop` does NOT auto-drop). Do not create
   a commit — the restored changes stay as uncommitted local work, matching how they started.
   If a conflict is genuinely ambiguous, STOP and ask rather than guessing; the stash is intact.
 
 ## 5. Clean up
 
-- If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: there is no separate
-  worktree to remove (you are standing in the checkout that now holds `TARGET`) — delete the
-  branch from here with `git branch -d <BRANCH>`, then skip the rest of this step. The two
-  bullets below need `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it.
+- If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: delete the branch from
+  here with `git branch -d <BRANCH>`, then skip the rest of this step. The two bullets below need
+  `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it. When `IN_WORKTREE` is false you
+  are standing in the main checkout and there is no worktree to remove. When `IN_WORKTREE` is
+  true, `TARGET` now lives in a linked worktree that this step cannot remove — a worktree cannot
+  remove itself while you stand in it. Leave it in place and say so in the step 6 report, naming
+  the worktree path and that `TARGET` is checked out there instead of in the main checkout.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of the worktree before removing it: git happily removes the
   directory under you (`git -C <MAIN_WT>` does not move your cwd), and a shell left in the
@@ -157,7 +168,7 @@ pushing is a separate, explicit step the user must ask for.
 
 ## Hard rules
 
-- Everything in **Shared rules** of `../shared/git-flow.md`.
+- Everything in **Shared rules** of `shared/git-flow.md`.
 - Local only: never `git fetch`/`pull`/`push` here.
 - Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
   (step 4) — never fall back to a merge commit.

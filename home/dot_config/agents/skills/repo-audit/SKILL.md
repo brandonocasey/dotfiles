@@ -36,8 +36,8 @@ legacy/back-compat, consistency), paths to include/exclude, and an agent model o
   **real repo paths** (agents waste turns resolving shorthand — give them the mapping), rough
   LOC, test and lint commands.
 - In the modes that can write code (**full**, **apply**), create the fix worktree up front per
-  the global git workflow: `git fetch origin`, then
-  `git worktree add .worktrees/repo-audit -b repo-audit origin/<default>`. **re-verify** never
+  the `worktree` skill — it owns the commands and the base-branch rule. This skill's only delta
+  is the naming: path `.worktrees/repo-audit`, branch `repo-audit`. **re-verify** never
   writes code — create no worktree there. Finder and verifier agents are read-only and run
   against the main checkout; only fixers (step 5) write, and only inside this worktree.
 - Findings live as JSON in the session scratchpad, batched into files (`batches/batch_N.json`).

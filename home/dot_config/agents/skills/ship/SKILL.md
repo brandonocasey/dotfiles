@@ -15,8 +15,9 @@ is green. Never merge, approve, close, or mark ready unless the user asks.
 
 ## 0. Detect context (always run first)
 
-Read `../shared/git-flow.md` (sibling of this skill's directory) and establish its **Facts**:
-`BRANCH`, `TARGET`, `IN_WORKTREE`. Additionally:
+Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
+against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
+directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARGET`. Additionally:
 
 - `HOST` — from `git remote get-url origin`: `gitlab.com` → `glab`; `github.com` → `gh`;
   anything else (self-hosted forgejo/gitea/gitlab) → a matching CLI if installed, else the
@@ -31,11 +32,12 @@ Read `../shared/git-flow.md` (sibling of this skill's directory) and establish i
   (`git switch -c <branch>`, repo naming convention — e.g. `<type>/<jira>/<description>` in
   jwpconnatix repos); the uncommitted work follows you. Continue from there.
 - Local `TARGET` is ahead of `origin/<TARGET>`: STOP and ask which commits should ship on the
-  branch — never guess, and never reset or force `TARGET` yourself.
+  branch — never guess, and never reset or force `TARGET` yourself. Refresh the remote-tracking
+  ref first (`git fetch origin <TARGET>`), or a stale ref decides this for you.
 
 ## 1. Commit gate
 
-Run the **Commit gate** from `../shared/git-flow.md`: chunk via the `commit` skill until
+Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill until
 `git status --short` prints nothing, then show `git log --oneline <TARGET>..HEAD`.
 
 ## 2. Push
@@ -88,4 +90,4 @@ URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 
 - `--force-with-lease` only, only on `BRANCH`, never on `TARGET`.
 - Never create or transition tickets from this skill unless asked — reuse keys you find.
 - Always confirm the push happened before talking about the MR/PR.
-- Everything in **Shared rules** of `../shared/git-flow.md`.
+- Everything in **Shared rules** of `shared/git-flow.md`.

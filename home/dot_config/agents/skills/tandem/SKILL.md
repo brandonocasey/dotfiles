@@ -61,10 +61,10 @@ State the selected set and the plan in one short message, then proceed.
 - Use the user's split when they gave one (see Modes). Otherwise group tasks
   whose expected file footprints overlap into the same agent (run sequentially
   inside it); everything else gets its own agent.
-- Code tasks: one worktree per agent, per the global git workflow
-  (`git fetch origin`, `git worktree add .worktrees/tandem-<slug> -b
-  <type>/<slug> origin/<default>`). Non-code tasks (research, docs lookups,
-  external checks) run without a worktree.
+- Code tasks: one worktree per agent, created per the `worktree` skill — it owns the
+  commands and the base-branch rule. This skill's only delta is the naming: path
+  `.worktrees/tandem-<slug>`, branch `<type>/<slug>`. Non-code tasks (research, docs
+  lookups, external checks) run without a worktree.
 - Each prompt is self-contained per the `sub-agents` skill and must include: the
   task, its acceptance criteria, the worktree path (and its own `PORT` if it runs
   a server), the hard boundary (edit only inside your worktree), and the return

@@ -7,22 +7,44 @@ description: >
   message format, and the amend-vs-new decision.
 ---
 
-Optional argument: a target file or chunk — commit only that.
+Optional argument: a target file or chunk. Commit only that target.
 
-1. **Gather** (if context unknown): `git status --short`, `git diff -w` and `git diff --staged -w`, `git log --oneline -5`
-2. **Amend if**: HEAD not pushed to any remote AND directly related to HEAD (amending a pushed commit forces a divergent history). **New if**: no commits, different purpose, HEAD already pushed, or distinct unit
-3. **Message**: no emojis, no attribution, skip secrets. Amending: keep message unless purpose changed
-4. **Commit**: stage each chunk explicitly, including new/untracked files (only the target if param provided); `git commit --amend -C HEAD` or new commit; fix hook errors
+1. **Gather** — skip if you already know the context. Run `git status --short`,
+   `git diff -w`, `git diff --staged -w`, and `git log --oneline -5`.
+2. **Decide amend or new.** Amend when HEAD is not pushed to any remote AND the change is
+   directly related to HEAD. Amending a pushed commit forces a divergent history, so never
+   do it. Make a new commit when there are no commits yet, when the change has a different
+   purpose, when HEAD is already pushed, or when the change is a distinct unit.
+3. **Write the message** per the Format section below. Use no emojis and no attribution,
+   and keep secrets out of it. When you amend, keep the existing message unless the purpose
+   of the commit changed.
+4. **Commit.** Stage each chunk explicitly, including new and untracked files. Stage only
+   the target when the user gave one. Then run one of:
+   - New commit: `git commit -m '<message>'`.
+   - Amend, message unchanged: `git commit --amend -C HEAD`.
+   - Amend, message changed (the commit's purpose changed): `git commit --amend -m '<message>'`.
 
-Split commits by concern/type/pattern — one commit = one reviewable idea; don't bundle a refactor with a feature or a fix with docs.
+   Fix the cause of any hook error and commit again.
+
+Split the commits by concern, by type, or by pattern. One commit is one reviewable idea.
+Do not bundle a refactor with a feature, or a fix with docs.
 
 ## Format
-`<type>(<scope>): <description>` - lowercase, imperative, no period, <50 chars
-- Types: build, ci, docs, dx, feat, fix, perf, refactor, revert, style, test
-- Scope: optional; include one when the repo's commitlint config requires it
-- Repo conventions (commitlint config, AGENTS.md/CONTRIBUTING) override these defaults — e.g. a required ticket suffix like `[PUBS-1234]` or a longer header limit
-- Breaking: `feat!:` or `feat(api)!:`
-- Minimal, no filler, focus "why"
-- Body: if adds context
 
-Constraints: no push unless asked; no `-i` flag; no empty commits; use heredoc: `git commit -m "$(cat <<'EOF'...EOF)"`
+`<type>(<scope>): <description>` — lowercase, imperative, no period, under 50 characters.
+
+- Types: build, ci, docs, dx, feat, fix, perf, refactor, revert, style, test
+- The scope is optional. Include one when the repo's commitlint config requires it
+- The repo's own conventions override these defaults — the commitlint config, AGENTS.md, or
+  CONTRIBUTING. An example is a required ticket suffix such as `[PUBS-1234]`, or a header
+  limit longer than 50 characters
+- Mark a breaking change as `feat!:` or `feat(api)!:`
+- Keep the description minimal, with no filler, and make it say why the change happened
+- Add a body only when it gives context the description cannot hold
+
+## Constraints
+
+- Do not push unless the user asks
+- Do not use the `-i` flag
+- Do not create an empty commit
+- Pass a multi-line message through a heredoc: `git commit -m "$(cat <<'EOF'...EOF)"`

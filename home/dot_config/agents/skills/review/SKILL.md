@@ -39,10 +39,11 @@ result the sub-agent did not show. The main session then runs steps 3–4 itself
 auth, no checkout), fall back to running the review inline and note that the reviewer
 is not independent.
 
-Reviews of this session's own work skip the `--fix` gate whether auto-triggered or
-user-requested (the global AGENTS.md review rule is the authority): apply verified
+This skill is the authority for the fix-and-re-review rules. Reviews of this session's
+own work skip the `--fix` gate, whether auto-triggered or user-requested: apply verified
 fixes immediately, re-run tests/lint after applying them, and do not review again.
-Auto-reviews run once per task.
+Reviews of someone else's change print the comments and wait for `--fix`. Auto-reviews
+run once per task.
 
 ## 0. Identify the target and get the diff
 
@@ -51,8 +52,9 @@ Classify the argument:
 - **GitLab or GitHub URL** → remote review. Parse host, project path, and MR/PR number.
   GitLab (any host) → `glab`, prefixed with `GITLAB_HOST=<host>` when self-hosted;
   GitHub → `gh`.
-- **Branch name** → local branch review against the default branch (`main` if it exists,
-  else `master`): `git log <default>..<branch>` for the commits,
+- **Branch name** → local branch review against the default branch, resolved per the
+  `worktree` skill's order (`origin/HEAD`, then local `main`, then local `master`) —
+  never from a naming convention alone: `git log <default>..<branch>` for the commits,
   `git diff <default>...<branch>` (three-dot: changes since the merge-base) for the diff.
 - **Commit sha or range** (`<sha>`, `<a>..<b>`) → `git show <sha>` / `git diff <a>..<b>`.
 - **No argument** → the working diff (`git diff`, `git diff --staged`, plus untracked
@@ -77,9 +79,10 @@ gh pr view <n> --repo <owner>/<repo> --comments   # existing discussion — skip
 
 Get the full code, not just the diff — the diff alone is rarely enough context:
 
-- **Remote target**: check out the source branch in a worktree — never the main checkout.
-  The repo may not be the current working directory: locate the local checkout for the
-  project first and create the worktree there.
+- **Remote target**: check out the source branch in a worktree per the `worktree` skill —
+  never the main checkout. The repo may not be the current working directory: locate the
+  local checkout for the project first and create the worktree there. A review worktree is
+  detached on purpose, so it takes a commit-ish rather than `-b <branch>`.
 
   ```sh
   git fetch origin <source-branch>                             # GitLab, or same-repo GitHub PR
@@ -163,7 +166,8 @@ to post. Remove any worktree this review created — never a pre-existing one �
 
 GitLab — diff-line anchor in the Changes tab:
 `https://<host>/<project-path>/-/merge_requests/<iid>/diffs#<sha1>_<old>_<new>`
-where `<sha1>` = `printf '<repo-relative-file-path>' | shasum -a 1` and `<old>`/`<new>` are
+where `<sha1>` = `printf '<repo-relative-file-path>' | shasum -a 1 | cut -d' ' -f1`
+(`shasum` appends two spaces and `-`; the anchor breaks if you paste that) and `<old>`/`<new>` are
 the diff positions of the line (walk the hunk from `@@ -o,c +n,c @@`: context lines increment
 both counters, `-` only the old, `+` only the new; an added line's `<old>` is the current
 unincremented old counter). File-wide notes use `.../diffs#<sha1>`. Fall back to
@@ -172,7 +176,8 @@ the diff.
 
 GitHub — diff-line anchor in the Files tab:
 `https://github.com/<owner>/<repo>/pull/<n>/files#diff-<sha256>R<new-line>`
-where `<sha256>` = `printf '<repo-relative-file-path>' | shasum -a 256`; use `L<old-line>`
+where `<sha256>` = `printf '<repo-relative-file-path>' | shasum -a 256 | cut -d' ' -f1`;
+use `L<old-line>`
 for a deleted line. File-wide notes use `...#diff-<sha256>`. Fall back to
 `https://github.com/<owner>/<repo>/blob/<source-branch>/<file>#L<line>` for lines outside
 the diff.
