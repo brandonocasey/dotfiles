@@ -49,7 +49,7 @@ Links:
 - Write a comment ONLY when it carries context the code can't show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code
 - Never narrate the code or the change
 - Delete any comment the code already states. Update or delete a comment when the code it describes changes
-- Keep each comment to 1–2 lines of complete sentences: state the one non-obvious constraint or reason. Cut background, alternatives considered, and anything a reader can derive from the code
+- Keep each comment to 1–2 lines of complete sentences: state the one non-obvious constraint or reason
 - State a rule in a comment with the RFC 2119 keywords, capitalized: MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, OPTIONAL — see https://www.rfc-editor.org/rfc/rfc2119. The keyword sets the requirement level exactly, so `Callers MUST hold the lock` beats `be careful about locking`. Use a keyword only for a real requirement; keep it lowercase in ordinary prose
 - Link external context at the point of use: copied code links its source, tricky logic links the spec/standard/docs it implements, workarounds reference the issue they work around, and known-incomplete implementations get `TODO` plus an issue reference
 

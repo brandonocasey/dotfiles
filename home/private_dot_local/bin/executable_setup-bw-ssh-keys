@@ -7,6 +7,47 @@ export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/
 export NODE_OPTIONS="--no-deprecation"
 
 ITEM_ID="0608e72b-a25b-4b7d-ad72-b12101687d21"
+SSH_KEY_LIFETIME=2592000
+
+add_ssh_identity() {
+  local private_key="$1"
+  local public_key="$private_key.pub"
+  local fingerprint
+  local agent_key
+  local agent_fingerprint
+
+  fingerprint="$(ssh-keygen -lf "$private_key" | awk '{print $2}')"
+  if [[ -z "$fingerprint" ]]; then
+    echo "Unable to read the fingerprint for $private_key" >&2
+    return 1
+  fi
+
+  if ! ssh-add -l 2>/dev/null |
+    awk -v fingerprint="$fingerprint" '
+      $2 == fingerprint { found=1 }
+      END { exit !found }
+    '
+  then
+    ssh-add -t "$SSH_KEY_LIFETIME" "$private_key"
+  fi
+
+  # Read the public key from the agent to avoid a second passphrase prompt.
+  while IFS= read -r agent_key; do
+    agent_fingerprint="$(
+      printf '%s\n' "$agent_key" |
+        ssh-keygen -lf - |
+        awk '{print $2}'
+    )"
+    if [[ "$agent_fingerprint" == "$fingerprint" ]]; then
+      printf '%s\n' "$agent_key" > "$public_key"
+      chmod 644 "$public_key"
+      return
+    fi
+  done < <(ssh-add -L 2>/dev/null)
+
+  echo "Unable to find $private_key in the SSH agent" >&2
+  return 1
+}
 
 if ! command -v bw >/dev/null 2>&1; then
   echo "Installing bitwarden-cli"
@@ -36,8 +77,7 @@ for a in $(bw get item "$ITEM_ID" --session "$BW_SESSION" | jq -r '.attachments[
   bw get attachment "$a" --itemid "$ITEM_ID" --session "$BW_SESSION" >/dev/null
   chmod 600 "$a"
   mv -f "$TEMP/$a" "$HOME/.ssh/$a"
-  ssh-keygen -y -f "$HOME/.ssh/$a" > "$HOME/.ssh/$a.pub"
-  chmod 644 "$HOME/.ssh/$a.pub"
+  add_ssh_identity "$HOME/.ssh/$a"
 done
 
 bw lock >/dev/null
