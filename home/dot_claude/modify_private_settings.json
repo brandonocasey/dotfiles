@@ -68,9 +68,24 @@ managed=$(
 JSON
 )
 
-# A missing, corrupt, or non-object live file MUST fall back to the managed
-# defaults. Slurp so a half-written file with two concatenated values parses.
-live=$(cat | jq -s -c 'first // {} | if type == "object" then . else {} end' 2>/dev/null) || live='{}'
+live=$(cat)
+
+# The merge needs jq. It ships in the shared brew bundle that the pre-install
+# script installs before chezmoi applies any file, so this is the bootstrap
+# edge case only. Never destroy the live file: pass it through untouched, and
+# fall back to the managed defaults only when there is no live file yet.
+if ! command -v jq >/dev/null 2>&1; then
+  if [ -n "${live//[[:space:]]/}" ]; then
+    printf '%s\n' "$live"
+  else
+    printf '%s\n' "$managed"
+  fi
+  exit 0
+fi
+
+# A corrupt or non-object live file MUST fall back to the managed defaults.
+# Slurp so a half-written file with two concatenated values still parses.
+live=$(printf '%s' "$live" | jq -s -c 'first // {} | if type == "object" then . else {} end' 2>/dev/null) || live='{}'
 [ -n "$live" ] || live='{}'
 
 jq -n \
