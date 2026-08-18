@@ -16,6 +16,18 @@ cmd_exists() {
 sudo sfltool resetbtm
 
 ##
+# One sudo password entry covers 15 minutes across all terminals,
+# so brew casks stop re-prompting mid-install.
+# A broken sudoers.d file locks out sudo; visudo -c MUST pass or we remove it.
+##
+sudo tee /etc/sudoers.d/timestamp-timeout >/dev/null <<'EOF'
+Defaults timestamp_timeout=15
+Defaults timestamp_type=global
+EOF
+sudo chmod 440 /etc/sudoers.d/timestamp-timeout
+sudo visudo -c -f /etc/sudoers.d/timestamp-timeout || sudo rm /etc/sudoers.d/timestamp-timeout
+
+##
 # setup computer name
 ##
 sudo scutil --set HostName bcasey-macbook
