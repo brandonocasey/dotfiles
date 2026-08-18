@@ -147,8 +147,6 @@ if [ "$(uname)" = "Darwin" ]; then
   BUNDLE+=$(
     cat <<EOF
 
-cask 'font-iosevka-term-nerd-font'
-
 # Claude Code: cask on macOS, native installer on Linux (see below)
 cask 'claude-code@latest'
 # codex: cask on macOS (no brew formula; Linux uses a release binary, see below)
@@ -173,7 +171,6 @@ brew 'loginitems'
 cask 'android-platform-tools'
 cask 'balenaetcher'
 cask 'brave-browser'
-cask 'browserstacklocal'
 cask 'calibre'
 cask 'charles'
 cask 'docker-desktop'
@@ -181,7 +178,6 @@ cask 'firefox'
 cask 'google-chrome'
 cask 'grandperspective'
 cask 'hammerspoon'
-cask 'hex-fiend'
 cask 'imageoptim'
 cask 'karabiner-elements'
 cask 'keka'
@@ -190,9 +186,7 @@ cask 'microsoft-edge'
 cask 'openvpn-connect'
 cask 'plex'
 cask 'plexamp'
-cask 'postman'
 cask 'rectangle'
-cask 'replay'
 cask 'speedcrunch'
 cask 'spotify'
 cask 'sublime-text'
@@ -227,8 +221,7 @@ fi
 #   - heavy media/doc tools (use the host or docker-ffmpeg/docker-ffprobe there)
 #   - gcc / docker-buildx: redundant in the container (apt provides cc and the
 #     buildx plugin); brew gcc is ~hundreds of MB
-#   - act / localias: GitHub-Actions runner and local DNS aliasing, not needed
-#     in the dev container
+#   - act: GitHub-Actions runner, not needed in the dev container
 if [ "$RUNNING_IN_DOCKER" != "true" ]; then
   BUNDLE+=$(
     cat <<EOF
@@ -241,8 +234,6 @@ brew 'aider'
 brew 'gcc'
 brew 'docker-buildx'
 brew 'act'
-tap 'peterldowns/tap'
-brew 'peterldowns/tap/localias'
 EOF
   )
 fi
