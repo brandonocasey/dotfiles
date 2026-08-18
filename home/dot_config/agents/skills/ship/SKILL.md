@@ -40,7 +40,7 @@ Run the **Commit gate** from `../shared/git-flow.md`: chunk via the `commit` ski
 
 ## 2. Push
 
-- First push: `git push -u origin <BRANCH>`.
+- First push, or new commits on an already-pushed branch: `git push -u origin <BRANCH>`.
 - Branch exists on the remote but histories diverged (rebase/amend since last push):
   `git push --force-with-lease origin <BRANCH>`. Never plain `--force`; never any force on
   `TARGET`; never push `TARGET` at all from this skill.

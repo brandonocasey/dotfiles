@@ -9,7 +9,7 @@ description: >
 
 Optional argument: a target file or chunk — commit only that.
 
-1. **Gather** (if context unknown): `git status --short`, `git diff -w`, `git log --oneline -5`
+1. **Gather** (if context unknown): `git status --short`, `git diff -w` and `git diff --staged -w`, `git log --oneline -5`
 2. **Amend if**: HEAD not pushed to any remote AND directly related to HEAD (amending a pushed commit forces a divergent history). **New if**: no commits, different purpose, HEAD already pushed, or distinct unit
 3. **Message**: no emojis, no attribution, skip secrets. Amending: keep message unless purpose changed
 4. **Commit**: stage each chunk explicitly, including new/untracked files (only the target if param provided); `git commit --amend -C HEAD` or new commit; fix hook errors

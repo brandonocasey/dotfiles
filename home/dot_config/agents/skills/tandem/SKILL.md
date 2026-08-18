@@ -51,7 +51,8 @@ Two input modes:
 
 For every selected task, write one line of acceptance criteria: what must be true
 for it to count as done. If a task has no checkable outcome, ask the user before
-spawning anything — this is the only question the skill asks up front.
+spawning anything — this and an unknown agent name (see Modes) are the only
+up-front questions.
 
 State the selected set and the plan in one short message, then proceed.
 

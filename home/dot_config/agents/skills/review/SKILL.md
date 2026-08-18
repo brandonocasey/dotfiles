@@ -39,9 +39,10 @@ result the sub-agent did not show. The main session then runs steps 3–4 itself
 auth, no checkout), fall back to running the review inline and note that the reviewer
 is not independent.
 
-Auto-triggered reviews of this session's own work skip the `--fix` gate: apply
-verified fixes immediately, once per task — after applying them, re-run tests/lint
-but do not review again.
+Reviews of this session's own work skip the `--fix` gate whether auto-triggered or
+user-requested (the global AGENTS.md review rule is the authority): apply verified
+fixes immediately, re-run tests/lint after applying them, and do not review again.
+Auto-reviews run once per task.
 
 ## 0. Identify the target and get the diff
 

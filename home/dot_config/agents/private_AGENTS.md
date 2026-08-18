@@ -9,7 +9,49 @@
 - Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; export it, and configure servers that ignore `PORT` to use it directly. When the task is done, release what you opened: close MCP resources (browser pages, connections), stop dev servers and background processes you started, and free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must never break when copied: my terminal wraps lines longer than ~80 characters and copying the wrap inserts newlines. Never print copy-paste content longer than ~80 characters in chat — write it to a short-pathed tmp file instead (e.g. `/tmp/run-<task>.sh` for commands, `/tmp/<task>.md` for text) and give me a short single line to use it: `bash /tmp/run-<task>.sh` to run, or `copy /tmp/<task>.md` for my clipboard (`copy` is my OSC 52 command — works over ssh, in any shell, and from `!` commands; never suggest pbcopy). This overrides any harness rule that sends temp files to a scratchpad directory — a scratchpad path is far longer than 80 characters, which is the problem this rule exists to prevent. Delete the file after use. Short content goes one item per fenced code block, single line, nothing else in the block, no backslash continuations
 - Delegate work to sub-agents per the `delegate` skill, automatically at its thresholds — do not wait for me to ask; a model I name or an external tool I request always overrides your choice
-- Run all code reviews through the `review` skill. After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task; after applying its fixes, re-run tests/lint but do not re-review. Fix verified findings without asking only when the reviewed change is this session's own work; for other people's changes, print comments and wait for `--fix`. Prototypes and throwaway demo code are exempt from automatic review — review them only when I ask
+- Run all code reviews through the `review` skill; it owns the fix-and-re-review rules (own work: fix verified findings without asking; other people's changes: print comments and wait for `--fix`). After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task. Prototypes and throwaway demo code are exempt from automatic review — review them only when I ask
+
+## Writing
+
+Apply these rules to ALL writing: chat responses, documentation, code comments, and commit/PR/MR text. The standard is ASD-STE100 Simplified Technical English https://asd-ste100.org — follow its writing rules, not its approved-word dictionary. Keep the domain's own technical names and technical verbs (`hydrate`, `transpile`, `seek`) as the code and the team use them. (Also adapted from https://github.com/aaddrick/attention-control)
+
+Style — ELI5 everything:
+
+- Start with the answer. Before sending, delete preamble openers, recap/"anything else?" closers, and hedging adverbs
+- State uncertainty as plain fact ("I have not checked X")
+- Use plain language and the active voice. Use the passive voice only when the actor is unknown or does not matter
+- Keep sentences short: max 20 words for an instruction, 25 for an explanation. One idea per sentence
+- Write instructions in the imperative, one instruction per sentence
+- No idioms or figurative phrases. Keep summaries short
+- Keep articles and pronouns explicit (`the config`, not `config`)
+- No noun cluster longer than three words. No `-ing` verb form where a plain verb works (`use`, not `using`)
+- One term per concept, one meaning per term
+- Accuracy beats style: never drop a fact, condition, number, or scope qualifier to make a sentence shorter. When a rule fights the answer, the answer wins
+
+Structure:
+
+- Use vertical lists for multi-part text: numbered for 3+ sequential steps (one bounded action per step), bulleted for parallel items
+- Cap lists at 5 items — past 5, split into "do now" vs "later"
+- For multi-step work, restate state each turn ("Step 3 of 5 done: schema updated. Next: run the backfill") and end with one concrete next action
+- Finish the current issue before raising a second one; offer tangents as one question at the end
+- Make recaps self-contained: repeat all relevant links, commands, and addresses each time; never point the reader to an earlier message
+
+Links:
+
+- Write every MR/PR, ticket, pipeline, or external file you mention as a raw URL, never as text alone. Keep the `https://` or `http://` scheme exactly as-is
+- Put the label and the URL on one line, separated only by spaces: `MR 42 https://…`. Nothing may surround the label or the URL — no brackets, parentheses, quotes, backticks, angle brackets, Markdown `[text](url)`, or OSC 8 escapes
+- Local files may use the host renderer's required clickable file-link form
+- Commits are the exception: sha only, never links
+- End every recap with a **Links** section of only the relevant external links (tickets, MRs/PRs, pipelines — not commits, not file lists)
+
+### Code comments
+
+- Write a comment ONLY when it carries context the code can't show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code
+- Never narrate the code or the change
+- Delete any comment the code already states. Update or delete a comment when the code it describes changes
+- Keep each comment to 1–2 lines of complete sentences: state the one non-obvious constraint or reason. Cut background, alternatives considered, and anything a reader can derive from the code
+- State a rule in a comment with the RFC 2119 keywords, capitalized: MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, OPTIONAL — see https://www.rfc-editor.org/rfc/rfc2119. The keyword sets the requirement level exactly, so `Callers MUST hold the lock` beats `be careful about locking`. Use a keyword only for a real requirement; keep it lowercase in ordinary prose
+- Link external context at the point of use: copied code links its source, tricky logic links the spec/standard/docs it implements, workarounds reference the issue they work around, and known-incomplete implementations get `TODO` plus an issue reference
 
 ## Browser automation
 
@@ -36,25 +78,8 @@
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
 - Keep each piece of code small and single-purpose so it can be tested and reused; break up components that take on too much complexity, and reduce duplication
 - Handle undefined/null cases; always include a message when raising errors; avoid nested ternaries and unnecessary nested `else` blocks (use early returns)
-- Comments: only the essential ones. A comment must carry context the code can't show (why, constraints, workarounds, warnings on intentionally unidiomatic code); write it in complete sentences; never narrate the code or the change. Delete any comment the code already states, and update or delete a comment when the code it describes changes. Keep each comment to 1–2 lines: state the one non-obvious constraint or reason, and cut background, alternatives considered, and anything a reader can derive from the code
-- State a rule in a comment with the RFC 2119 keywords, capitalized: MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, OPTIONAL — see https://www.rfc-editor.org/rfc/rfc2119. The keyword sets the requirement level exactly, so `Callers MUST hold the lock` beats `be careful about locking`. Use a keyword only for a real requirement; keep it lowercase in ordinary prose
-- Link external context at the point of use: copied code links its source, tricky logic links the spec/standard/docs it implements, workarounds reference the issue they work around, and known-incomplete implementations get `TODO` plus an issue reference
+- Comment per the Writing section's "Code comments" rules
 - Add logs at appropriate levels; be generous with trace logs — they're how LLM agents debug
-
-## Writing
-
-Apply to all writing: chat responses, documentation, code comments, and commit/PR/MR text. The standard is ASD-STE100 Simplified Technical English https://asd-ste100.org — follow its writing rules, not its approved-word dictionary; keep the domain's own technical names and technical verbs (`hydrate`, `transpile`, `seek`) as the code and the team use them. (Also adapted from https://github.com/aaddrick/attention-control)
-
-- ELI5 everything: plain language, active voice, short sentences (the STE limits: max 20 words for instructions, 25 for explanations), one idea per sentence; imperative instructions; no idioms or figurative phrases; keep summaries short
-- More STE rules that apply here: one instruction per sentence; keep articles and pronouns explicit (`the config`, not `config`); no noun cluster longer than three words; no `-ing` verb form where a plain verb works (`use`, not `using`); passive voice only when the actor is unknown or does not matter
-- Vertical lists for multi-part text: numbered for 3+ sequential steps (one bounded action per step), bulleted for parallel items; cap lists at 5 — past 5, split into "do now" vs "later"
-- One term per concept, one meaning per term
-- Start with the answer; before sending, delete preamble openers, recap/"anything else?" closers, and hedging adverbs — state uncertainty as plain fact instead ("I have not checked X")
-- Accuracy beats style: never drop a fact, condition, number, or scope qualifier to make a sentence shorter; when a rule fights the answer, the answer wins
-- For multi-step work, restate state each turn ("Step 3 of 5 done: schema updated. Next: run the backfill") and end with one concrete next action
-- Finish the current issue before raising a second one; offer tangents as one question at the end
-- Recaps must be self-contained: repeat all relevant links, commands, and addresses each time; never point the reader to an earlier message
-- Every MR/PR, ticket, pipeline, or external file you mention must appear as a raw URL, never as text alone. Keep the `https://` or `http://` scheme exactly as-is. Write the label and the URL on one line, separated only by spaces: `MR 42 https://…`. Nothing may surround the label or the URL — no brackets, parentheses, quotes, backticks, angle brackets, Markdown `[text](url)`, or OSC 8 escapes. Local files may use the host renderer's required clickable file-link form. Commits are the exception: sha only, never links. End every recap with a **Links** section of only the relevant external links (tickets, MRs/PRs, pipelines — not commits, not file lists)
 
 ## File Organization
 
@@ -67,7 +92,7 @@ Applies to new projects, or when the repo has no existing convention:
 
 - ALWAYS do branch work in a git worktree, never by switching branches in the main checkout: `git fetch origin`, then `git worktree add .worktrees/<branch> -b <branch> origin/<default>`; base on the freshly fetched default branch unless asked otherwise, and `git worktree remove .worktrees/<branch>` once merged. `.worktrees/` is ignored via global excludes (`~/.config/git/ignore`). Move any accidental main-checkout changes into the worktree so main stays clean
 - Never push, or merge to the default branch, unless I ask or give consent — and then do it via the `ship` skill (push + MR/PR + CI) or the `land` skill (local merge to default + cleanup)
-- When marking a task complete, the worktree must be fully committed: no uncommitted or untracked changes left behind. Commit per the `commit` skill — `<type>(<scope>): <description>` conventional commits; it owns the format details
+- When marking a task complete, the worktree must be fully committed: no uncommitted or untracked changes left behind. Commit per the `commit` skill — it owns the Conventional Commit chunking and message format
 - **Don't suggest git operations** on files you didn't modify
 - Stage new files when added
 - Keep MR/PR titles and descriptions in sync with the code, but only when I ask, or when you are actively working with an MR/PR that you pushed/created or that is out of date: edit the title and description to match what the MR/PR now does. The title uses the conventional commit type of the most user-facing change in the MR/PR (e.g. `feat` over `refactor` over `chore`)
