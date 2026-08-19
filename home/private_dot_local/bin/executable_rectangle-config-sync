@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Normalize a Rectangle config export and sync it into chezmoi.
+
+Rectangle exports are state snapshots: they carry Float32 noise
+(0.30000001192092896 vs 0.3) and bookkeeping keys that change on their
+own. This script strips both, so only real setting changes produce a diff.
+
+Usage: rectangle-config-sync [export.json]
+Without an argument it uses the newest RectangleConfig*.json export in
+~/Library/Application Support/Rectangle, or the live file if no dated
+export exists.
+"""
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+RECTANGLE_DIR = Path.home() / "Library/Application Support/Rectangle"
+MANAGED = RECTANGLE_DIR / "RectangleConfig.json"
+
+# Keys Rectangle updates on its own; they are state, not settings.
+VOLATILE_KEYS = {"SUHasLaunchedBefore", "SUEnableAutomaticChecks", "lastVersion"}
+
+
+def normalize(value):
+    if isinstance(value, dict):
+        return {k: normalize(v) for k, v in sorted(value.items()) if k not in VOLATILE_KEYS}
+    if isinstance(value, list):
+        return [normalize(v) for v in value]
+    if isinstance(value, float):
+        # Collapse Float32 round-trip noise; Rectangle floats are sliders
+        # and sizes, so 4 decimals is more precision than the UI offers.
+        rounded = round(value, 4)
+        return int(rounded) if rounded == int(rounded) else rounded
+    return value
+
+
+def load_normalized(path):
+    return normalize(json.loads(path.read_text()))
+
+
+def main():
+    if len(sys.argv) > 1:
+        export = Path(sys.argv[1])
+    else:
+        dated = sorted(RECTANGLE_DIR.glob("RectangleConfig2*.json"))
+        export = dated[-1] if dated else MANAGED
+    if not export.exists():
+        sys.exit(f"not found: {export}")
+
+    new = load_normalized(export)
+    old = load_normalized(MANAGED) if MANAGED.exists() else None
+
+    if new == old and export != MANAGED:
+        print(f"no real changes; removing {export.name}")
+        export.unlink()
+        return
+    if new == old:
+        print("no real changes")
+        return
+
+    MANAGED.write_text(json.dumps(new, indent=2, sort_keys=True) + "\n")
+    if export != MANAGED:
+        export.unlink()
+    subprocess.run(["chezmoi", "add", str(MANAGED)], check=True)
+    print(f"updated and added to chezmoi: {MANAGED}")
+
+
+if __name__ == "__main__":
+    main()
