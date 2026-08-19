@@ -288,14 +288,8 @@ killall Safari
 killall Rectangle
 killall Karabiner-Elements
 killall LinearMouse
-open --hide --background /Applications/Karabiner-Elements.app
-open --hide --background /Applications/Rectangle.app
-open --hide --background /Applications/LinearMouse.app
-
-cat <<EOF
-# System Settings:
-- Display scale
-- Add HOME directory to left bar
-- Add Projects directory to left bar
-- Setup Touch id
-EOF
+# Best-effort: `open` fails with error -600 when there is no GUI session
+# (ssh, pre-login); the apps start on the next normal login anyway.
+open --hide --background /Applications/Karabiner-Elements.app || true
+open --hide --background /Applications/Rectangle.app || true
+open --hide --background /Applications/LinearMouse.app || true
