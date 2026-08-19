@@ -147,10 +147,7 @@ if [ "$(uname)" = "Darwin" ]; then
   BUNDLE+=$(
     cat <<EOF
 
-# Claude Code: cask on macOS, native installer on Linux (see below)
-cask 'claude-code@latest'
-# codex: cask on macOS (no brew formula; Linux uses a release binary, see below)
-cask 'codex'
+# Claude Code and codex use their native installers on every platform (see below)
 # Cursor CLI: cask on macOS, official installer on Linux (see below)
 cask 'cursor-cli'
 # Antigravity CLI: macOS-only (no standalone Linux CLI; it ships inside the IDE)
@@ -267,23 +264,19 @@ if [ -n "$(brew bundle cleanup --file="$BREWFILE")" ]; then
 fi
 rm -f "$BREWFILE"
 
-# Homebrew casks are macOS-only, so install Claude Code natively on Linux.
-# No install guard: re-run every apply so it self-updates to the latest release.
+# Claude Code and codex use their native installers on every platform (not the
+# brew casks). No install guard: re-run every apply so they self-update.
+mkdir -p "$HOME/.local/bin"
+
+echo "Installing/updating Claude Code (native installer)"
+curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
+
+# codex ships an official node-free installer (arch-aware, always latest).
+echo "Installing/updating codex (official installer)"
+curl -fsSL https://chatgpt.com/codex/install.sh | sh || echo "codex install failed (continuing)"
+
+# Cursor's CLI is a macOS-only cask, so install it natively on Linux.
 if [ "$UNAME" = "Linux" ]; then
-  echo "Installing/updating Claude Code (native installer)"
-  curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
-fi
-
-# `codex` has no Linux brew formula and Cursor's CLI is a macOS-only cask, so on
-# Linux install both natively. opencode now comes from the brew bundle above (its
-# tap ships Linux bottles). No guards: all re-pull the latest each run.
-if [ "$UNAME" = "Linux" ]; then
-  mkdir -p "$HOME/.local/bin"
-
-  # codex ships an official node-free installer (arch-aware, always latest).
-  echo "Installing/updating codex (official installer)"
-  curl -fsSL https://chatgpt.com/codex/install.sh | sh || echo "codex install failed (continuing)"
-
   # Cursor CLI: official installer, handles Linux x86_64 and arm64.
   echo "Installing/updating Cursor CLI (official installer)"
   curl -fsSL https://cursor.com/install | bash || echo "cursor install failed (continuing)"
