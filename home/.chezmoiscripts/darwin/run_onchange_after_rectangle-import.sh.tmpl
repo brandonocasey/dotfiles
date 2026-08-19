@@ -34,5 +34,10 @@ with tempfile.NamedTemporaryFile(suffix=".plist", delete=False) as f:
 subprocess.run(["defaults", "import", "com.knollsoft.Rectangle", f.name], check=True)
 PY
 
-killall Rectangle 2>/dev/null || true
-open --hide --background /Applications/Rectangle.app
+# Relaunch so Rectangle reads the new defaults. Best-effort: `open` fails with
+# error -600 when there is no GUI session (ssh, pre-login), and the defaults
+# are already written, so Rectangle picks them up on its next normal launch.
+if pgrep -xq Rectangle; then
+  killall Rectangle 2>/dev/null || true
+  open --hide --background /Applications/Rectangle.app || true
+fi
