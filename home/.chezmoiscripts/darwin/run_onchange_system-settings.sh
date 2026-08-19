@@ -12,32 +12,6 @@ cmd_exists() {
   return 1
 }
 
-# Prime sudo up front so the password prompt appears immediately,
-# not minutes into the apply.
-sudo -v
-
-# prevent annoying "Login Item" Notifications
-sudo sfltool resetbtm
-
-##
-# One sudo password entry covers 15 minutes across all terminals,
-# so brew casks stop re-prompting mid-install.
-# A broken sudoers.d file locks out sudo; visudo -c MUST pass or we remove it.
-##
-sudo tee /etc/sudoers.d/timestamp-timeout >/dev/null <<'EOF'
-Defaults timestamp_timeout=15
-Defaults timestamp_type=global
-EOF
-sudo chmod 440 /etc/sudoers.d/timestamp-timeout
-sudo visudo -c -f /etc/sudoers.d/timestamp-timeout || sudo rm /etc/sudoers.d/timestamp-timeout
-
-##
-# setup computer name
-##
-sudo scutil --set HostName bcasey-macbook
-sudo scutil --set LocalHostName bcasey-macbook
-sudo scutil --set ComputerName bcasey-macbook
-
 echo "Writings settings"
 
 ##
@@ -280,9 +254,28 @@ pluginkit -e "use" -u "wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExten
 # customize finder toolbar
 defaults write "com.apple.finder" "NSToolbar Configuration Browser" '{"TB Default Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.SWCH",NSToolbarSpaceItem,"com.apple.finder.ARNG","com.apple.finder.SHAR","com.apple.finder.LABL","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Display Mode"=1;"TB Icon Size Mode"=1;"TB Is Shown"=1;"TB Item Identifiers"=("com.apple.finder.BACK","com.apple.finder.PATH","com.apple.finder.SWCH",NSToolbarSpaceItem,"wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension","com.apple.finder.SHAR","com.apple.finder.ACTN",NSToolbarSpaceItem,"com.apple.finder.SRCH",);"TB Size Mode"=1;}'
 
+# OpenInTerminal settings. The app rewrites its own plist, so the plist MUST
+# NOT be a chezmoi-managed file; write the setting keys here instead.
+OIT_PLIST="$HOME/Library/Group Containers/group.wang.jianing.app.OpenInTerminal/Library/Preferences/group.wang.jianing.app.OpenInTerminal.plist"
+defaults write "$OIT_PLIST" CustomMenuApplyToContext -bool true
+defaults write "$OIT_PLIST" CustomMenuApplyToToolbar -bool true
+defaults write "$OIT_PLIST" CustomMenuIconOption -string "original"
+# JSON blob the app stores as data
+printf '[{"type":"terminal","name":"Ghostty","bundleId":"com.mitchellh.ghostty"},{"name":"neovim","bundleId":"","type":"editor"}]' \
+  | xxd -p | tr -d '\n' | xargs defaults write "$OIT_PLIST" CustomMenuOptions -data
+defaults write "$OIT_PLIST" DefaultEditor -string "neovim"
+defaults write "$OIT_PLIST" DefaultTerminal -string "Ghostty"
+defaults write "$OIT_PLIST" FirstSetup -bool true
+defaults write "$OIT_PLIST" HideContextMenuItems -bool false
+defaults write "$OIT_PLIST" HideStatusItem -bool false
+defaults write "$OIT_PLIST" iTermNewOption -string "window"
+defaults write "$OIT_PLIST" LaunchAtLogin -bool false
+defaults write "$OIT_PLIST" PathEscapeOption -bool true
+defaults write "$OIT_PLIST" QuickToggle -bool false
+defaults write "$OIT_PLIST" QuickToggleType -string "openWithDefaultTerminal"
 if cmd_exists nvim; then
   if cmd_exists mise; then
-    defaults write "$HOME/Library/Group Containers/group.wang.jianing.app.OpenInTerminal/Library/Preferences/group.wang.jianing.app.OpenInTerminal.plist" NeovimCommand "open -na Ghostty --args -e '$(which mise) x -- $(which nvim) PATH'"
+    defaults write "$OIT_PLIST" NeovimCommand "open -na Ghostty --args -e '$(which mise) x -- $(which nvim) PATH'"
   fi
 fi
 
@@ -306,39 +299,3 @@ cat <<EOF
 - Add Projects directory to left bar
 - Setup Touch id
 EOF
-
-echo "
-<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-  <dict>
-    <key>Label</key>
-    <string>ollama</string>
-    <key>StandardOutPath</key>
-    <string>$HOME/.ollama/launchd.stdout.log</string>
-    <key>StandardErrorPath</key>
-    <string>$HOME/.ollama/launchd.stderr.log</string>
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>OLLAMA_HOST</key>
-        <string>0.0.0.0:11434</string>
-        <key>OLLAMA_ORIGINS</key>
-        <string>*</string>
-    </dict>
-    <key>ProgramArguments</key>
-    <array>
-      <string>/opt/homebrew/bin/ollama</string>
-      <string>serve</string>
-    </array>
-    <key>UserName</key>
-    <string>$(id -un)</string>
-    <key>GroupName</key>
-    <string>$(id -gn)</string>
-    <key>ExitTimeOut</key>
-    <integer>30</integer>
-    <key>Disabled</key>
-    <false />
-    <key>KeepAlive</key>
-    <true />
-  </dict>
-</plist>" | sudo tee /Library/LaunchDaemons/ollama.plist >/dev/null
