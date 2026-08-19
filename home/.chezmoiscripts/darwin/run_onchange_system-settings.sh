@@ -248,9 +248,6 @@ defaults write "com.apple.dock" "mru-spaces" -bool false
 # apps
 ##
 
-# tell hammerspoon to use this as the config directory
-defaults write org.hammerspoon.Hammerspoon MJConfigFile "$HOME/.config/hammerspoon/init.lua"
-
 ##
 # Setup login Items
 ##
@@ -258,7 +255,6 @@ loginitems -l | while read -r item; do
   loginitems -d "$item"
 done
 
-loginitems -a "Hammerspoon" -p "/Applications/Hammerspoon.app/"
 loginitems -a "Karabiner" -p "/Applications/Karabiner-Elements.app/"
 loginitems -a "LinearMouse" -p "/Applications/LinearMouse.app/"
 loginitems -a "Rectangle" -p "/Applications/Rectangle.app/"
@@ -297,10 +293,8 @@ killall Dock
 killall Finder
 killall Safari
 killall Rectangle
-killall Hammerspoon
 killall Karabiner-Elements
 killall LinearMouse
-open --hide --background /Applications/Hammerspoon.app
 open --hide --background /Applications/Karabiner-Elements.app
 open --hide --background /Applications/Rectangle.app
 open --hide --background /Applications/LinearMouse.app

@@ -12,7 +12,6 @@ README.md
 {{- if ne .chezmoi.os "darwin" }}
 .chezmoiscripts/darwin/**
 .config/karabiner
-.config/hammerspoon
 .config/iterm2
 .config/linearmouse
 .config/brewfile/Brewfile-mac
