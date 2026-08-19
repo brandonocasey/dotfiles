@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Rectangle only reads RectangleConfig.json on a fresh install, so after
-# chezmoi applies a changed config this script pushes it into Rectangle's
-# defaults domain and relaunches the app.
-# config hash: {{ include "private_Library/private_Application Support/Rectangle/modify_RectangleConfig.json" | sha256sum }}
+# Pushes the managed Rectangle config into Rectangle's defaults domain and
+# relaunches the app. The config lives in ~/.config/rectangle, NOT in
+# Application Support: Rectangle imports and deletes any RectangleConfig.json
+# it finds there on launch, which would fight chezmoi forever.
+# config hash: {{ include "dot_config/rectangle/modify_RectangleConfig.json" | sha256sum }}
 set -euo pipefail
 
-CONFIG="$HOME/Library/Application Support/Rectangle/RectangleConfig.json"
+CONFIG="$HOME/.config/rectangle/RectangleConfig.json"
 [ -f "$CONFIG" ] || exit 0
 
 # Merge into the existing domain instead of replacing it, so bookkeeping keys

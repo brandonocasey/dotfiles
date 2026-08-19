@@ -1,6 +1,10 @@
 #!/bin/bash
 # chezmoi modify_ script, same pattern as ~/.claude/settings.json. It reads the
-# live RectangleConfig.json on stdin and prints the file chezmoi should apply.
+# live ~/.config/rectangle/RectangleConfig.json on stdin and prints the file
+# chezmoi should apply. The file MUST live outside Rectangle's Application
+# Support directory: Rectangle imports and then deletes (renames to a dated
+# file) any RectangleConfig.json it finds there on launch. The rectangle-import
+# run_onchange script pushes this file into Rectangle's defaults instead.
 # Every key in the managed JSON below is enforced EXCEPT the ones in KEEP_KEYS
 # (inside .defaults), whose live values are carried through — they are
 # Rectangle bookkeeping state, not settings, so they never show as drift.
