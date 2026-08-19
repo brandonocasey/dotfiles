@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Rectangle only reads RectangleConfig.json on a fresh install, so after
+# chezmoi applies a changed config this script pushes it into Rectangle's
+# defaults domain and relaunches the app.
+# config hash: {{ include "private_Library/private_Application Support/Rectangle/modify_RectangleConfig.json" | sha256sum }}
+set -euo pipefail
+
+CONFIG="$HOME/Library/Application Support/Rectangle/RectangleConfig.json"
+[ -f "$CONFIG" ] || exit 0
+
+# Merge into the existing domain instead of replacing it, so bookkeeping keys
+# not present in the config (SUHasLaunchedBefore, lastVersion) survive.
+python3 - "$CONFIG" <<'PY'
+import json, plistlib, subprocess, sys, tempfile
+
+cfg = json.load(open(sys.argv[1]))
+
+def unwrap(value):
+    if isinstance(value, dict) and len(value) == 1 and next(iter(value)) in ("bool", "int", "float", "string"):
+        return next(iter(value.values()))
+    return value
+
+exported = subprocess.run(
+    ["defaults", "export", "com.knollsoft.Rectangle", "-"],
+    capture_output=True, check=False)
+domain = plistlib.loads(exported.stdout) if exported.returncode == 0 and exported.stdout else {}
+
+domain.update({k: unwrap(v) for k, v in cfg.get("defaults", {}).items()})
+domain.update(cfg.get("shortcuts", {}))
+
+with tempfile.NamedTemporaryFile(suffix=".plist", delete=False) as f:
+    plistlib.dump(domain, f)
+subprocess.run(["defaults", "import", "com.knollsoft.Rectangle", f.name], check=True)
+PY
+
+killall Rectangle 2>/dev/null || true
+open --hide --background /Applications/Rectangle.app
