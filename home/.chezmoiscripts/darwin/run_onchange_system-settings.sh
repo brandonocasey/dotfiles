@@ -249,6 +249,14 @@ dockutil --add "/Applications/Sublime Text.app" --no-restart
 dockutil --add "/Applications/Ghostty.app" --no-restart
 dockutil --add "$HOME/Downloads/" --display stack
 
+# Finder sidebar: remove then add so repeat runs do not duplicate entries
+if cmd_exists mysides; then
+  mysides remove "$(basename "$HOME")" 2>/dev/null || true
+  mysides add "$(basename "$HOME")" "file://$HOME/"
+  mysides remove Projects 2>/dev/null || true
+  mysides add Projects "file://$HOME/Projects/"
+fi
+
 # turn on OpenInTerminal finder extension
 pluginkit -e "use" -u "wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension"
 # customize finder toolbar

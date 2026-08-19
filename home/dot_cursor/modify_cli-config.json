@@ -1,0 +1,86 @@
+#!/bin/bash
+# chezmoi modify_ script. the Cursor CLI rewrites this file itself (it bumps privacyCache.updatedAt constantly),
+# so this script compares parsed JSON, not bytes: when the live file matches
+# the managed settings semantically, it is passed through untouched and never
+# shows as drift. To change a setting, edit the JSON below.
+set -euo pipefail
+
+# python3 is required for the semantic compare; without it, never destroy the
+# live file: pass it through, or fall back to managed on a fresh machine.
+if ! command -v python3 >/dev/null 2>&1; then
+  live=$(cat)
+  if [ -n "${live//[[:space:]]/}" ]; then printf '%s\n' "$live"; else sed -n '/^__MANAGED__$/,/^__END__$/p' "$0" | sed '1d;$d'; fi
+  exit 0
+fi
+
+# stdin flows straight to python so pass-through stays byte-exact,
+# including the trailing newline that $(cat) would strip.
+python3 - "$0" <<'PY2'
+import json, re, sys
+
+# Keys the app updates on its own; carried through from live, never enforced.
+VOLATILE = ["privacyCache.updatedAt"]
+
+def strip(obj, paths):
+    for path in paths:
+        node, keys = obj, path.split(".")
+        for key in keys[:-1]:
+            node = node.get(key, {}) if isinstance(node, dict) else {}
+        if isinstance(node, dict):
+            node.pop(keys[-1], None)
+    return obj
+
+source = open(sys.argv[1]).read()
+managed = json.loads(re.search(r"^__MANAGED__$(.*?)^__END__$", source, re.S | re.M).group(1))
+raw = sys.stdin.read()
+try:
+    live = json.loads(raw)
+    assert isinstance(live, dict)
+except Exception:
+    live = None
+
+if live is not None and strip(json.loads(json.dumps(live)), VOLATILE) == strip(json.loads(json.dumps(managed)), VOLATILE):
+    sys.stdout.write(raw)  # semantically equal: keep the app's own formatting
+else:
+    out = json.loads(json.dumps(managed))
+    if live is not None:
+        for path in VOLATILE:
+            src, dst, keys = live, out, path.split(".")
+            for key in keys[:-1]:
+                src = src.get(key, {}) if isinstance(src, dict) else {}
+                dst = dst.setdefault(key, {}) if isinstance(dst, dict) else {}
+            if isinstance(src, dict) and keys[-1] in src and isinstance(dst, dict):
+                dst[keys[-1]] = src[keys[-1]]
+    json.dump(out, sys.stdout, indent=2)
+    sys.stdout.write("\n")
+PY2
+exit 0
+# Managed settings (fallback + enforcement source). MUST stay valid JSON.
+__MANAGED__
+{
+  "permissions": {
+    "allow": [
+      "Shell(ls)"
+    ],
+    "deny": []
+  },
+  "version": 1,
+  "editor": {
+    "vimMode": false
+  },
+  "hasChangedDefaultModel": false,
+  "privacyCache": {
+    "ghostMode": true,
+    "privacyMode": 2,
+    "updatedAt": 1764105571673
+  },
+  "network": {
+    "useHttp1ForAgent": false
+  },
+  "approvalMode": "allowlist",
+  "sandbox": {
+    "mode": "disabled",
+    "networkAccess": "allowlist"
+  }
+}
+__END__
