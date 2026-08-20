@@ -122,6 +122,7 @@ Applies to new projects, or when the repo has no existing convention:
 
 ## Git workflow
 
+- Resolve rebase and merge conflicts automatically when the correct combined result is apparent. Continue the workflow after checks pass. Stop only when the intended result is ambiguous.
 - ALWAYS do branch work in a git worktree, never by switching branches in the main checkout. Load the `worktree` skill before you start on a branch — it owns the create/remove commands, the base-branch rule, and moving accidental main-checkout changes into the worktree
 - Never push, or merge to the default branch, unless I ask or give consent — and then do it via the `ship` skill (push + MR/PR + CI) or the `land` skill (local merge to default + cleanup)
 - When marking a task complete, the worktree must be fully committed: no uncommitted or untracked changes left behind. Commit per the `commit` skill — it owns the Conventional Commit chunking and message format
