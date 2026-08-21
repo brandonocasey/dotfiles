@@ -63,7 +63,9 @@ managed=$(
   "skipWorkflowUsageWarning": true,
   "theme": "custom:onedark",
   "fileCheckpointingEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "inputNeededNotifEnabled": true,
+  "remoteControlAtStartup": false
 }
 JSON
 )
