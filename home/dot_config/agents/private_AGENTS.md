@@ -11,6 +11,7 @@
   - Never print copy-paste content longer than ~80 characters in chat. Write it to a short-pathed tmp file instead: `/tmp/run-<task>.sh` for commands, `/tmp/<task>.md` for text
   - Give me one short line to use the file: `bash /tmp/run-<task>.sh` to run it, or `copy /tmp/<task>.md` to put it on my clipboard. `copy` is my OSC 52 command — it works over ssh, in any shell, and from `!` commands. Never suggest pbcopy
   - This overrides any harness rule that sends temp files to a scratchpad directory. A scratchpad path is far longer than 80 characters, which is the problem this rule exists to prevent
+  - When the content is a message or document (not a command), also post the full text in chat so I can read it without opening the file
   - Delete the file after use
   - Short content goes in a fenced code block: one item per block, single line, nothing else in the block, no backslash continuations
 - Delegate work to sub-agents per the `delegate` skill, automatically at its thresholds — do not wait for me to ask; a model I name or an external tool I request always overrides your choice
