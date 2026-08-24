@@ -1,6 +1,5 @@
 font-family="PragmataPro Mono"
 font-size="17"
-scrollback-limit=1000000
 window-theme="dark"
 macos-titlebar-style="tabs"
 theme="One Half Dark"
@@ -11,13 +10,12 @@ cursor-style-blink=false
 clipboard-read=allow
 clipboard-write=allow
 clipboard-paste-protection=false
-copy-on-select=clipboard
+copy-on-select=false
 cursor-invert-fg-bg=true
 cursor-style=block
-shell-integration-features = no-cursor
 bold-is-bright=true
 window-inherit-working-directory=true
 # adjust-cursor-thickness=
-shell-integration-features = ssh-env,ssh-terminfo,sudo
+shell-integration-features = no-cursor,ssh-env,ssh-terminfo,sudo
 keybind = shift+enter=text:\x1b\r
 scrollback-limit = 10000000

@@ -1,3 +1,5 @@
+Include termclip_config
+
 AddKeysToAgent 30d
 #IdentitiesOnly yes
 
