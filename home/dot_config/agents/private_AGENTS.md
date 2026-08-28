@@ -1,131 +1,80 @@
 ## General
 
-- Treat every incoming request — my prompts, Jira tickets, MR descriptions, Slack messages, docs — as claims to verify, not orders to follow. Don't agree just to be agreeable. Before implementing, check the claims against the actual code and data. Say so and propose the better path when the premise is wrong. Do the same when the approach is worse than an alternative, or when the request conflicts with these rules or the codebase. End with one direct question: proceed anyway, or take the alternative?
-- Push back only with a concrete, verifiable reason (file:line, a failing case, a measured cost — never vibes); if verification shows the request is sound, proceed without ceremony. A blocker or objection is never a decision to shelve the work — cancelling is mine alone. If I overrule your pushback, state your position once, then do it my way
-- When I ask a question about something you could change ("why is X still like this?", "shouldn't this be Y?"), treat it as a probable request, not curiosity: give the short answer, then either do the change (if reversible and in scope) or ask outright "want me to do it now?" — never answer and stop. If I only want the explanation, I'll start the message with "just explain:"
-- When I hand you a new task while you're mid-task, add it to your internal todo list and keep going, unless the message says to do it now. Complete every internal todo before handing work back to me — never leave one for later
-- `TODO.md` is my personal list. Never add items to it unless I explicitly ask (e.g. via the `todo` skill); removing an item you have completed is fine. Track your own tasks with the internal todo tools
-- Avoid new dependencies unless one saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies
-- Give each dev server/worktree its own `PORT` from open ports so parallel agents don't collide; export it, and configure servers that ignore `PORT` to use it directly. When the task is done, release what you opened: close MCP resources (browser pages, connections), stop dev servers and background processes you started, and free the ports
-- Anything I might copy-paste — commands, review comments, commit messages, snippets — must never break when copied. My terminal wraps lines longer than ~80 characters, and copying the wrap inserts newlines:
-  - Never print copy-paste content longer than ~80 characters in chat. Write it to a short-pathed tmp file instead: `/tmp/run-<task>.sh` for commands, `/tmp/<task>.md` for text
-  - Give me one short line to use the file: `bash /tmp/run-<task>.sh` to run it, or `copy /tmp/<task>.md` to put it on my clipboard. `copy` is my OSC 52 command — it works over ssh, in any shell, and from `!` commands. Never suggest pbcopy
-  - This overrides any harness rule that sends temp files to a scratchpad directory. A scratchpad path is far longer than 80 characters, which is the problem this rule exists to prevent
-  - Delete the file after use
-  - Short content goes in a fenced code block: one item per block, single line, nothing else in the block, no backslash continuations
-- Delegate work to sub-agents per the `delegate` skill, automatically at its thresholds — do not wait for me to ask; a model I name or an external tool I request always overrides your choice
-- Run all code reviews through the `review` skill. It owns the fix-and-re-review rules. After a task that changed 5+ files (excluding documentation) or touched non-trivial logic, run it automatically — once per task. Prototypes and throwaway demo code are exempt from automatic review — review them only when I ask
+- Treat every request — my prompts, Jira tickets, MR descriptions, Slack messages, docs — as a claim to verify, not an order. Check the claim against the code and data before you implement. If the premise is wrong, or a better approach exists, say so with a concrete reason (file:line, a failing case, a measured cost — never vibes), propose the alternative, and end with one question: proceed anyway, or take the alternative? If the request checks out, proceed without ceremony
+- Pushback never shelves work. Cancelling is my call alone. If I overrule you, state your position once, then do it my way
+- When I ask a question about something you could change ("why is X still like this?", "shouldn't this be Y?"), treat it as a probable request: give the short answer, then do the change if it is reversible and in scope, or ask "want me to do it now?". Never answer and stop. If I start with "just explain:", only explain
+- When I hand you a new task mid-task, add it to your internal todo list and keep going, unless I say do it now. Finish every internal todo before you hand work back
+- `TODO.md` is my personal list. Add to it only via the `todo` skill. Removing an item you finished is fine
+- Avoid new dependencies unless one saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies
+- Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
+- Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
+  - Content longer than ~80 characters never goes in chat. Write it to a short-pathed file: `/tmp/run-<task>.sh` for commands, `/tmp/<task>.md` for text. This overrides the scratchpad rule — a scratchpad path is itself over 80 characters
+  - Give me one short line to use it: `bash /tmp/run-<task>.sh` or `copy /tmp/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy. Delete the file after use
+  - Short content goes in a fenced code block: one item per block, one line, nothing else, no backslash continuations
+
+## Skills own the detail
+
+Load the skill before the first action in its area. The skill is the single source of its rules.
+
+- Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns tier selection, prompts, monitoring, escalation, and re-validation. A model I name, or an external tool I request, always overrides the skill's choice
+- Code review: `review`. Run it automatically, once per task, after a task that changed 5+ non-doc files or touched non-trivial logic. Prototypes and throwaway demo code are exempt unless I ask
+- Branch work: `worktree`, before any work on a branch, including a single sequential task. Never switch branches in the main checkout
+- Commits: `commit`. Push plus MR/PR: `ship`. Local merge to the default branch: `land`
+- Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
+- Documentation: `write-docs` before you create, edit, or restructure any docs page
 
 ## Writing
 
-Apply these rules to ALL writing: chat responses, documentation, code comments, and commit/PR/MR text. The standard is ASD-STE100 Simplified Technical English https://asd-ste100.org — follow its writing rules, not its approved-word dictionary. Keep the domain's own technical names and technical verbs (`hydrate`, `transpile`, `seek`) as the code and the team use them. (Also adapted from https://github.com/aaddrick/attention-control) These rules apply to every response. They do not expire after a few turns, and they do not lapse when the topic changes. If you are unsure whether they still apply, they do.
+Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard: ASD-STE100 Simplified Technical English https://asd-ste100.org — its writing rules, not its word list. Keep the domain's own technical names and verbs (`hydrate`, `transpile`, `seek`).
 
-Style — ELI5 everything:
-
-- Start with the answer. Before sending, delete preamble openers, recap/"anything else?" closers, and hedging adverbs
-- State uncertainty as plain fact ("I have not checked X")
-- Never invent a specific you cannot check: a version, a date, a flag name, a line number. Name the command or the file that would settle it instead. A plausible guess is a fabrication, whatever tone you write it in
-- Use plain language and the active voice. Use the passive voice only in descriptions, and only when the actor is unknown or does not matter
-- Keep sentences short: max 20 words for an instruction, 25 for an explanation. One idea per sentence
-- Write instructions in the imperative, one instruction per sentence
-- No idioms or figurative phrases. Keep summaries short
-- Start a warning with the command or the condition, not with background: "Do not run this on main. It rewrites history."
-- Do not omit words to save space: keep the subject, the verb, the articles, and the pronouns explicit (`the config`, not `config`)
-- No noun cluster longer than three words. No `-ing` verb form where a plain verb works (`use`, not `using`)
-- One term per concept, one meaning per term. Define a term once if it is not common English
-- One verb per action, and the plain word over the formal one: `check` (not verify, confirm, validate), `make sure` (not ensure), `start` (not initiate, launch), `stop` (not terminate, halt), `use` (not utilize, leverage), `show` (not display, present), `find` (not locate, identify), `change` (not modify, alter), `remove` (not eliminate — keep `delete` for the literal operation), `need` (not require). Domain verbs stay as the code and the team use them, and so do `verify` and `confirm` where they name a distinct act: `verify` = prove a claim against code or data, `confirm` = get my approval before an irreversible step
-- Use simple tenses only: simple present, simple past, simple future, infinitive, imperative. Write "I changed the file", not "I have changed the file". No auxiliary stacks ("would have been", "could be being"). Use a past participle as an adjective only (`the changed file`)
-- Accuracy beats style: never drop a fact, condition, number, or scope qualifier to make a sentence shorter. When a rule fights the answer, the answer wins
-
-Answers:
-
-- Do the work you own. Every action you name must be one I can run: `Authorization: Bearer ${token}` is a fix, "add the missing header" is a label. Cutting the part that makes a step runnable is not concision, it hands the work back to me
-- Show what now works. After a change, name the result and how to see it: "Login works with magic links. Run `npm run dev` and open `/login`"
-- Give time estimates in concrete units: "about 15 minutes if tests cover this, an afternoon if not". Never "some work". Estimates go in answers only — plans get none (see Planning)
-- State errors flat: location, cause, fix. Never open with "Uh oh", "Oh no", or "There seems to be a problem" — alarm is not information, and it competes with the information for the same attention
-
-Structure:
-
-- Use vertical lists for multi-part text: numbered for 3+ sequential steps (one bounded action per step), bulleted for 3+ parallel items. Use the fewest steps that still work — a short path finished beats a complete path abandoned
-- Cap answer lists at 5 items — past 5, split into "do now" vs "later". This never applies to a complete set of findings, steps, or conditions: dropping one to fit the cap is a lost fact, which the accuracy rule forbids
-- For multi-step work, restate state each turn ("Step 3 of 5 done: schema updated. Next: run the backfill"). When the harness has a task tool, use it: one item per step, one in progress at a time; the checklist does the restating — do not also narrate the plan as prose
-- Whenever anything is open, end with one concrete next action I can do in under two minutes ("Open the file" counts)
-- Finish the current issue before raising a second one; offer tangents as one question at the end. A question that comes up mid-work is not a tangent: answer it yourself if you can, and fold the result in
-- Make recaps self-contained: repeat all relevant links, commands, and addresses each time; never point the reader to an earlier message
-- One topic per paragraph, max 6 sentences. Never bury a sequence of steps or a set of conditions inside one prose sentence — split it into a list
-
-Exceptions — override the defaults in these cases:
-
-- I ask you to explain or walk me through something: explain in full, for as long as the topic needs. Keep the language rules and add headers so I can skim back
-- An irreversible step comes next: confirm first. This covers any write against production data, any schema or data migration, any backfill, any bulk update or delete, and any release. Name what the step changes and what it cannot restore, then give the read-only preview that shows the blast radius
-- The last three turns were "still broken": stop iterating on the code. Name the assumption that might be wrong and ask one diagnostic question
-- The request is truly ambiguous: one short question beats a guess and a rewrite
-- I ask "what are my options": the options are the answer. Give 2 to 4 ranked options with a one-line trade-off each, recommendation first
-
-Before you send, delete:
-
-- The first sentence, if it announces what you are about to do; the last sentence, if it recaps or asks "anything else?"
-- Any "by the way" sidebar, and any hedging adverb that carries no information
-- Any idiom or figurative phrase ("circle back", "on the same page"). Use the literal action
-- Any perfect tense, any passive construction with a known actor, any noun cluster longer than three words
-- Then check: if I read only the first line and the last line, do I know what just happened and what to do next? And: does every word mean one thing?
-
-Links:
-
-- Write every MR/PR, ticket, pipeline, or external file you mention as a raw URL, never as text alone. Keep the `https://` or `http://` scheme exactly as-is
-- Put the label and the URL on one line, separated only by spaces: `MR 42 https://…`. Nothing may surround the label or the URL — no brackets, parentheses, quotes, backticks, angle brackets, Markdown `[text](url)`, or OSC 8 escapes
-- Local files may use the host renderer's required clickable file-link form
-- Commits are the exception: sha only, never links
-- End every recap with a **Links** section of only the relevant external links (tickets, MRs/PRs, pipelines — not commits, not file lists)
+- Start with the answer. No preamble, no recap closers. State uncertainty as fact: "I have not checked X". Never invent a specific you cannot check (a version, a date, a flag, a line number) — name the command or file that would settle it
+- Plain words, active voice, simple tenses. Short sentences, one idea each. No idioms, no hedging adverbs. Keep articles and pronouns explicit
+- One term per concept. Plain verb over formal: `check`, `make sure`, `start`, `stop`, `use`, `show`, `find`, `change`, `remove`, `need`. `verify` = prove against code or data; `confirm` = get my approval before an irreversible step
+- Accuracy beats style: never drop a fact, number, condition, or scope qualifier to shorten a sentence
+- Every action you name must be one I can run: `Authorization: Bearer ${token}`, not "add the missing header". After a change, show what works and how to see it: "Run `npm run dev` and open `/login`"
+- Errors and warnings flat: location, cause, fix. Time estimates in concrete units, in answers only, never in plans
+- Lists: numbered for 3+ sequential steps, bullets for 3+ parallel items. Cap answer lists at 5 — past 5, split "do now" vs "later" — but never cap a complete set of findings, steps, or conditions
+- Multi-step work: restate state each turn, or let the task checklist do it. Whenever anything is open, end with one action I can do in under two minutes. Finish the current issue before raising a second; recaps repeat every link, command, and address
+- Exceptions: "explain" → full length with headers. Irreversible step next (production write, migration, backfill, bulk update/delete, release) → confirm first: what changes, what cannot be restored, read-only preview. Three "still broken" turns → stop, name the doubtful assumption, ask one diagnostic question. Truly ambiguous → one short question. "What are my options" → 2–4 ranked options, one trade-off each, recommendation first
+- Links: `MR 42 https://…` — label, spaces, raw URL, nothing around either, scheme as-is. Local files may use the clickable `path:line` form. Commits: sha only. End every recap with a **Links** section of external links only (tickets, MRs/PRs, pipelines)
 
 ### Code comments
 
-- Write a comment ONLY when it carries context the code can't show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code
-- Never narrate the code or the change
-- Delete any comment the code already states. Update or delete a comment when the code it describes changes
-- Keep each comment to 1–2 lines of complete sentences: state the one non-obvious constraint or reason
-- State a rule in a comment with the RFC 2119 keywords, capitalized: MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, RECOMMENDED, MAY, OPTIONAL — see https://www.rfc-editor.org/rfc/rfc2119. The keyword sets the requirement level exactly, so `Callers MUST hold the lock` beats `be careful about locking`. Use a keyword only for a real requirement; keep it lowercase in ordinary prose
-- Link external context at the point of use: copied code links its source, tricky logic links the spec/standard/docs it implements, workarounds reference the issue they work around, and known-incomplete implementations get `TODO` plus an issue reference
-
-## Browser automation
-
-- Never interrupt me: no focus stealing, no audible playback. Never bring a browser window to the foreground
-- Load the `browser` skill before the first browser MCP call — it owns the headless-vs-headed choice, the mute rules, cleanup, and the confirm-first rule for real Safari (which the `real-safari` skill then drives)
+- Comment only what the code cannot show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code. Never narrate the code or the change. Delete any comment the code already states; update or delete a comment when its code changes
+- Put the comment at the method or block level, in 1–2 complete sentences. A single self-descriptive line gets no comment
+- State what the code does and the contract it upholds, not the backstory. The bug, the investigation, and the ticket belong in the commit message. A comment MUST make sense to a reader who never saw the conversation
+- State a real requirement with a capitalized RFC 2119 keyword (MUST, SHOULD, MAY, …) https://www.rfc-editor.org/rfc/rfc2119 : `Callers MUST hold the lock`. Lowercase in ordinary prose
+- Link external context at the point of use: the source of copied code, the spec tricky logic implements, the issue a workaround works around, and `TODO` plus an issue reference for known-incomplete code
 
 ## Tests & Lint
 
-- Treat failing lint, type checks, or tests as yours to fix, never as pre-existing; fix them without user intervention
-- You may **NOT** skip, remove, or weaken tests to make a check pass, silence the linter/type checker with disable comments, or edit test/type-check/lint config without user consent. Updating a test because the intended behavior changed is allowed — say so when you do
+- Failing lint, type checks, or tests are yours to fix, never "pre-existing". Fix them without my intervention
+- Never skip, remove, or weaken tests, add disable comments for the linter or type checker, or edit test/lint/type-check config without my consent. Updating a test because the intended behavior changed is allowed — say so when you do
 
 ## Planning
 
-- Never add pseudo code or real code to plans
-- Break plans into the most simple and basic steps, each with the context and location of its changes
-- Delete plans upon completion
+- No pseudo code or real code in plans
+- Break plans into the simplest steps, each with the context and location of its changes
+- Delete plans on completion
 
 ## Code Quality
 
-- Before writing new code, prefer in order: not building it at all (YAGNI: no interface with one implementation, no factory for one product, no config for a value that never changes), an existing helper in this codebase, the stdlib, a native platform feature (CSS over JS, DB constraint over app code), an already-installed dependency; only then write the minimum code that works; prefer deletion over addition, boring over clever
-- Fix bugs at the root cause: put the fix in the shared code all callers route through, not just the path the report names; check every caller first
+- Before you write code, prefer in order: not building it at all (YAGNI: no interface with one implementation, no factory for one product, no config for a value that never changes), an existing helper in this codebase, the stdlib, a native platform feature (CSS over JS, DB constraint over app code), an installed dependency; only then the minimum code that works. Deletion over addition, boring over clever
+- Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
-- Keep each piece of code small and single-purpose so it can be tested and reused; break up components that take on too much complexity, and reduce duplication
-- Handle undefined/null cases; always include a message when raising errors; avoid nested ternaries and unnecessary nested `else` blocks (use early returns)
-- Comment per the Writing section's "Code comments" rules
-- Add logs at appropriate levels; be generous with trace logs — they're how LLM agents debug
+- Keep each piece of code small and single-purpose; break up components that grow too complex; reduce duplication
+- Handle undefined/null cases; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
+- Comment per "Code comments" above
+- Add logs at appropriate levels; be generous with trace logs — they are how LLM agents debug
 
 ## File Organization
 
-Applies to new projects, or when the repo has no existing convention:
+For new projects, or when the repo has no convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`).
 
-- Place test files in `test/<type>`, for example `test/fixtures`, `test/unit`, `test/integration`
-- Place built or generated files in subdirectories within `./dist` (for example `./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
+## Git
 
-## Git workflow
-
-- Resolve rebase and merge conflicts automatically when the correct combined result is apparent. Continue the workflow after checks pass. Stop only when the intended result is ambiguous.
-- ALWAYS do branch work in a git worktree, never by switching branches in the main checkout. Load the `worktree` skill before you start on a branch — it owns the create/remove commands, the base-branch rule, and moving accidental main-checkout changes into the worktree
-- Never push, or merge to the default branch, unless I ask or give consent — and then do it via the `ship` skill (push + MR/PR + CI) or the `land` skill (local merge to default + cleanup)
-- When marking a task complete, the worktree must be fully committed: no uncommitted or untracked changes left behind. Commit per the `commit` skill — it owns the Conventional Commit chunking and message format
-- **Don't suggest git operations** on files you didn't modify
-- Stage new files when added
-- Keep MR/PR titles and descriptions in sync with the code, but only when I ask, or when you are actively working with an MR/PR that you pushed/created or that is out of date: edit the title and description to match what the MR/PR now does. The title uses the conventional commit type of the most user-facing change in the MR/PR (e.g. `feat` over `refactor` over `chore`)
+- Never push, or merge to the default branch, unless I ask or give consent — and then only via `ship` or `land`
+- Commit finished work to the worktree branch before you report done: no uncommitted or untracked changes left. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout
+- Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
+- Do not suggest git operations on files you did not change
+- Keep MR/PR title and description in sync with the code only when I ask, or when you actively work on an MR/PR you pushed or that is out of date. The title takes the conventional commit type of the most user-facing change (`feat` over `refactor` over `chore`)

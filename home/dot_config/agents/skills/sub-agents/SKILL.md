@@ -1,12 +1,15 @@
 ---
 name: sub-agents
 description: >
-  Shared rules for spawning any sub-agent: tier and effort selection, model/tool
-  overrides, self-contained prompts, raw-data returns, and main-session
-  re-validation. Load whenever spawning a sub-agent for any reason.
+  Shared rules for spawning any sub-agent: tier and effort selection (Claude and GPT
+  tiers), model/tool overrides, self-contained prompts, raw-data returns, main-session
+  re-validation, background monitoring, and escalation of a hard sub-problem to a
+  stronger tier. Load whenever spawning a sub-agent for any reason.
 ---
 
-Rules for every sub-agent spawn, regardless of which skill or task triggers it.
+Rules for every sub-agent spawn, regardless of which skill or task triggers it. The
+spawning session always owns the result: it re-validates whatever comes back before
+declaring done.
 
 ## Overrides (check first)
 
@@ -17,16 +20,23 @@ Rules for every sub-agent spawn, regardless of which skill or task triggers it.
 
 ## Model tier and effort
 
-Pick tier and reasoning effort to fit the work: cheap tier and low effort for
-mechanical or watch-and-wait work; stronger tier only when the work is subtle.
-Default to inheriting the session model when unsure.
+Pick the tier by task class and set the model explicitly in the spawn call. The tier is the rule; the
+names in brackets are only today's examples. Read the real tiers from the models the
+harness offers, cheapest to most capable. Choose only current-generation, actively
+maintained models — "cheapest tier" means the smallest current model, not a stale one.
 
-- Choose only among current-generation, actively maintained frontier models in the
-  harness's roster. Never pick an older, deprecated, or weak model just because it
-  is cheap — "cheapest tier" means the smallest current model, not a stale one.
-- Per-token price dominates cache savings: moving work from a top tier down one
-  current tier usually saves money even though the sub-agent starts with a cold
-  prompt cache. Do not keep work on an expensive tier just to preserve the cache.
+| Tier | Claude | GPT | Work |
+| --- | --- | --- | --- |
+| Cheapest | Haiku | GPT 5.6 Luna | Mechanical, well-specified: data aggregation, reformatting, extraction, counting, bulk find-and-replace, web research, watch-and-wait. Low reasoning effort |
+| Middle | Sonnet | GPT 5.6 Luna | Codebase exploration and search: locating usages, tracing call paths, "where/how is X done" fan-out |
+| Judgement | Opus | GPT 5.6 Terra | Design, tricky debugging, cross-file reasoning, anything ambiguous |
+| Top | Fable | GPT 5.6 Sol | Only as the target of an escalation from the main session (see below). Never for splits, monitoring, or review sub-agents; that work stays in the main session, or goes to a forked agent that inherits the parent model where the harness offers one |
+
+Escalate one tier when a simple-looking task turns out to need judgement.
+
+Per-token price dominates cache savings: moving work from a top tier down one
+current tier usually saves money even though the sub-agent starts with a cold prompt
+cache. Do not keep work on an expensive tier just to preserve the cache.
 
 ## Prompts
 
@@ -41,7 +51,34 @@ Default to inheriting the session model when unsure.
   instructions as an identical prefix across their prompts and put the per-part
   variation (file list, item under review) at the end, so cached tokens are reused.
 - For follow-up work that shares a sub-agent's existing context, continue that
-  agent (SendMessage or the harness equivalent) instead of spawning a fresh one.
+  agent instead of spawning a fresh one, where the harness supports it.
+
+## Monitoring and long waits
+
+Polling CI, watching logs, waiting on builds or deploys: spawn a cheapest-tier
+background agent at low effort. It reports back only the outcome and the relevant
+details. The main session continues other work or ends its turn; it never polls the
+same target itself.
+
+## Escalate to a stronger tier
+
+Only the main session — the one the user drives — may escalate. Sub-agents never
+escalate; they report blocked and the main session decides. Each escalation goes one
+tier up from the session's tier, so a middle-tier session (Sonnet, Luna) calls the
+judgement tier (Opus, Terra), and a judgement-tier session calls the top tier
+(Fable, Sol). Escalate again only if the first escalation also fails.
+
+- **A hard sub-problem, task stays here** — trigger: one failed attempt, or reasoning
+  that spans files or systems beyond what the current tier resolved. Spawn one agent
+  on the next tier up with a self-contained question: the problem, the evidence
+  gathered so far, the files involved, and what a good answer must settle. No user
+  approval is needed because the session keeps the task. Re-validate the answer
+  before acting on it.
+- **The whole task, on a different tier** — stronger because the current tier already
+  failed an attempt or the task needs subtle cross-cutting reasoning; weaker because
+  the task is simple enough that a cheaper current tier suffices. Warn the user
+  first, with the reason. On approval, hand the whole task to one sub-agent on that
+  tier with the full context it needs.
 
 ## After they return
 

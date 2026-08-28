@@ -65,7 +65,7 @@ Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill 
 ## 4. Babysit CI until green
 
 - Watch the pipeline without blocking: delegate the watching to a background agent per the
-  `delegate` skill's monitoring section (poll `glab ci status` / `gh run watch`, or list+get
+  `sub-agents` skill's monitoring section (poll `glab ci status` / `gh run watch`, or list+get
   loops), and keep the user posted on state changes.
 - On a failed job, pull its log (`glab ci trace <job>` / `gh run view --log-failed`), find the
   real error under the boilerplate, and classify:
