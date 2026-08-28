@@ -1,12 +1,12 @@
 #!/bin/bash
-# chezmoi modify_ script. It reads the live ~/.claude/settings.json on stdin and
+# chezmoi modify_ script, shared by ~/.claude and ~/.claude-two via .chezmoitemplates. It reads the live settings.json on stdin and
 # prints the file chezmoi should apply. Every key below is enforced from this
 # file EXCEPT the ones in KEEP_KEYS, whose live values are carried through, so
 # changing them in the TUI never shows up as chezmoi drift.
 # To hand another key to the app, add its name to KEEP_KEYS.
 set -euo pipefail
 
-KEEP_KEYS='["model", "effortLevel"]'
+KEEP_KEYS='["model", "effortLevel", "modelSettings"]'
 
 # Values here are the fallback for a machine that has no settings.json yet.
 managed=$(
