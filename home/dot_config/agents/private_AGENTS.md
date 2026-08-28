@@ -4,7 +4,7 @@
 - Pushback never shelves work. Cancelling is my call alone. If I overrule you, state your position once, then do it my way
 - When I ask a question about something you could change ("why is X still like this?", "shouldn't this be Y?"), treat it as a probable request: give the short answer, then do the change if it is reversible and in scope, or ask "want me to do it now?". Never answer and stop. If I start with "just explain:", only explain
 - When I hand you a new task mid-task, add it to your internal todo list and keep going, unless I say do it now. Finish every internal todo before you hand work back
-- `TODO.md` is my personal list. Add to it only via the `todo` skill. Removing an item you finished is fine
+- `TODO.md` is my personal list. Only `/todo` adds to it, and only when I run it. Removing an item you finished is fine
 - Avoid new dependencies unless one saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
@@ -19,7 +19,7 @@ Load the skill before the first action in its area. The skill is the single sour
 - Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns tier selection, prompts, monitoring, escalation, and re-validation. A model I name, or an external tool I request, always overrides the skill's choice
 - Code review: `review`. Run it automatically, once per task, after a task that changed 5+ non-doc files or touched non-trivial logic. Prototypes and throwaway demo code are exempt unless I ask
 - Branch work: `worktree`, before any work on a branch, including a single sequential task. Never switch branches in the main checkout
-- Commits: `commit`. Push plus MR/PR: `ship`. Local merge to the default branch: `land`
+- Commits: `commit`. Push plus MR/PR: `/ship`. Local merge to the default branch: `/land`. The last two are yours to invoke — I will read the skill file and follow it only when you ask
 - Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
 - Documentation: `write-docs` before you create, edit, or restructure any docs page
 
@@ -73,7 +73,7 @@ For new projects, or when the repo has no convention: test files in `test/<type>
 
 ## Git
 
-- Never push, or merge to the default branch, unless I ask or give consent — and then only via `ship` or `land`
+- Never push, or merge to the default branch, unless I ask or give consent — and then only through the `ship` or `land` procedure (see "Skills own the detail")
 - Commit finished work to the worktree branch before you report done: no uncommitted or untracked changes left. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change

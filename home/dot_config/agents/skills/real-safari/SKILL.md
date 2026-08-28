@@ -8,7 +8,11 @@ description: >
 
 Real Safari has no MCP. Start `safaridriver -p <open port>` and drive it with the
 W3C WebDriver REST API via curl. Every endpoint below is relative to
-`http://localhost:<port>`:
+`http://localhost:<port>`.
+
+Remote automation must be enabled once per machine, or `POST /session` fails. If it
+does, tell the user to run `safaridriver --enable` — it asks for their password, so
+do not run it yourself. Steps:
 
 1. Create the session: `POST /session` with
    `{"capabilities":{"alwaysMatch":{"browserName":"safari"}}}`. Read the session id from

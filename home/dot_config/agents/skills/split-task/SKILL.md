@@ -25,13 +25,10 @@ medium-sized task costs MORE than doing it inline.
 
 ## How to split
 
-- Give each part a self-contained prompt and non-overlapping file ownership.
-- Use a cheaper current-generation tier per the `sub-agents` skill; the user's named
-  model or external tool overrides that choice.
-- Keep the shared instructions as an identical prompt prefix and put the per-part
-  variation at the end, so cached tokens are reused.
-- When the parts return, re-validate all results in the main session before
-  declaring done. Redo a failed part inline; never respawn the same part twice.
+- Give each part non-overlapping file ownership. This is the only rule this skill owns.
+- Everything else — self-contained prompts, tier choice and the user's model/tool
+  override, the shared prompt prefix for cache reuse, and re-validating results before
+  declaring done — comes from the `sub-agents` skill. Do not restate it here.
 
 ## Not this skill
 

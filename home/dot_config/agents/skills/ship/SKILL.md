@@ -28,9 +28,11 @@ directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARG
 
 **If `BRANCH` == `TARGET`** (you are on the default branch):
 
-- Only a dirty tree, no unpushed commits: create and switch to a properly named branch
-  (`git switch -c <branch>`, repo naming convention — e.g. `<type>/<jira>/<description>` in
-  jwpconnatix repos); the uncommitted work follows you. Continue from there.
+- Only a dirty tree, no unpushed commits: move the work onto a properly named branch (repo
+  naming convention — e.g. `<type>/<jira>/<description>` in jwpconnatix repos) using the
+  `worktree` skill's **Recover changes made in the main checkout** steps (stash `-u`, add the
+  worktree, pop there). Never `git switch` in the main checkout — the `worktree` skill owns that
+  rule. Continue from inside the new worktree.
 - Local `TARGET` is ahead of `origin/<TARGET>`: STOP and ask which commits should ship on the
   branch — never guess, and never reset or force `TARGET` yourself. Refresh the remote-tracking
   ref first (`git fetch origin <TARGET>`), or a stale ref decides this for you.

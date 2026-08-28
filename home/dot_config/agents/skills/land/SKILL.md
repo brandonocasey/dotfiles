@@ -142,9 +142,8 @@ If that label is not in the list, STOP and report — do not pop a stash you can
   remove itself while you stand in it. Leave it in place and say so in the step 6 report, naming
   the worktree path and that `TARGET` is checked out there instead of in the main checkout.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
-  deleted. Move your shell out of the worktree before removing it: git happily removes the
-  directory under you (`git -C <MAIN_WT>` does not move your cwd), and a shell left in the
-  deleted directory fails every later command with "Unable to read current working directory".
+  deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
+  owns that rule (`git -C <MAIN_WT>` does not move your cwd):
   ```sh
   cd <MAIN_WT>
   git worktree remove <worktree-path>

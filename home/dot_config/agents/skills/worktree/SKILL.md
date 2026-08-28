@@ -65,8 +65,13 @@ git worktree remove .worktrees/<branch>
 The tree must be clean first. `git worktree remove` refuses a dirty tree, and
 you must never force it — commit or ask the user instead.
 
-To clean up several merged worktrees at once, use the
-`clean-merged-worktrees` skill.
+Move your shell out of the worktree before you remove it. Git removes the
+directory under you, and a shell left in a deleted directory fails every later
+command with "Unable to read current working directory".
+
+To clean up several merged worktrees at once, use the `clean-merged-worktrees`
+skill. It sets `disable-model-invocation`, so only the user can invoke it with
+`/clean-merged-worktrees` — say so instead of trying to load it yourself.
 
 ## Related skills
 

@@ -20,10 +20,13 @@ skill; review follows the `review` skill; commits follow the `commit` skill.
 
 ## Modes and arguments
 
-- **End mode** — from the invocation: `ship` / "run-task-list-ship" (after review, run
-  the `ship` skill per branch: push, open MR, babysit CI), `land` / "run-task-list-land"
-  (run the `land` skill per branch: local merge to default, cleanup). Default:
-  neither — branches stay local and committed.
+- **End mode** — from the invocation: `ship` / "run-task-list-ship" (after review, follow
+  `ship` per branch: push, open MR, babysit CI), `land` / "run-task-list-land" (follow
+  `land` per branch: local merge to default, cleanup). Default: neither — branches stay
+  local and committed. `ship` and `land` set `disable-model-invocation`, so the `Skill`
+  tool cannot load them: read `<skills-dir>/ship/SKILL.md` or `<skills-dir>/land/SKILL.md`
+  — resolve `<skills-dir>` against this file's path, not the user's repo — and follow it
+  step by step. The end mode in the user's invocation is the authorization to run it.
 - **User-defined splits** — if the user says how to split the work ("3 agents",
   "one agent per package", "group tasks 1+3, run 2 alone", a model per group),
   their split overrides step 2's automatic grouping. Warn once with a concrete
@@ -93,9 +96,9 @@ For every returned task, in the main session:
 ## 4. Close out
 
 - Commit each worktree via the `commit` skill so nothing is left uncommitted.
-- Apply the end mode: `ship` — run the `ship` skill per branch (skip blocked
-  tasks' branches); `land` — run the `land` skill per branch, one at a time.
-  No end mode: leave branches local.
+- Apply the end mode by reading and following the skill file named in **Modes and
+  arguments**: `ship` — per branch, skipping blocked tasks' branches; `land` — per
+  branch, one at a time. No end mode: leave branches local.
 - Clean up everything the batch opened: stop servers, free ports, close browser
   pages. Keep worktrees with commits; remove empty ones.
 - Report, self-contained: per task — done / blocked / skipped, one plain

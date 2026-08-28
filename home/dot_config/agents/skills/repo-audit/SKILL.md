@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: repo-audit
 description: >
   Multi-agent repo audit pipeline: fan out dimension-scoped finder agents (bugs, performance,
@@ -99,7 +100,10 @@ they answer.
 - After all fixers return: run the project's lint and test commands in the worktree. Failures
   are yours to fix before reporting.
 - Commit via the `commit` skill (one logical commit per concern, referencing finding ids in
-  bodies). Hand the branch to `land` or `ship` only when the user asks.
+  bodies). Hand the branch to `land` or `ship` only when the user asks. Those two set
+  `disable-model-invocation`, so the `Skill` tool cannot load them: read
+  `<skills-dir>/land/SKILL.md` or `<skills-dir>/ship/SKILL.md` — resolve `<skills-dir>`
+  against this file's path, not the user's repo — and follow it.
 
 ## 6. Report and remainder
 

@@ -38,9 +38,11 @@ Skip if the tree is already clean (nothing staged, unstaged, or untracked).
   diff, the split rules, staging (new and untracked files included), the message format, and the
   amend-vs-new decision. Do not restate or re-derive any of that here. Defer to a project-level
   `commit` skill/command if one exists.
-- Deltas this gate adds: use `git add -p` when a single file spans two chunks, and never
-  `--no-verify` a failing pre-commit hook unless the user has said the failure is irrelevant to
-  the change — fix the cause and re-commit instead.
+- Deltas this gate adds: when a single file spans two chunks, stage the first chunk's hunks
+  non-interactively — `git diff -U0 -- <file> > <patch>`, delete the hunks that belong to the
+  other chunk, then `git apply --cached --unidiff-zero <patch>`. `git add -p` and `git add -i`
+  are interactive and cannot run here. Never `--no-verify` a failing pre-commit hook unless the
+  user has said the failure is irrelevant to the change — fix the cause and re-commit instead.
 - Repeat until `git status --short` is empty.
 
 **Gate — the tree must be fully committed before anything moves.** Re-run `git status --short`
