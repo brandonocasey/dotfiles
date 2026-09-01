@@ -20,9 +20,9 @@ against this file's path (`<skills-dir>/shared/git-flow.md`), not against the cu
 directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARGET`. Additionally:
 
 - `HOST` — from `git remote get-url origin`: `gitlab.com` → `glab`; `github.com` → `gh`;
-  anything else (self-hosted forgejo/gitea/gitlab) → a matching CLI if installed, else the
-  host's REST API with a token, else plain `git push` and use the create-MR/PR URL the remote
-  prints on push.
+  self-hosted GitLab → `glab` prefixed with `GITLAB_HOST=<host>`; anything else (forgejo/gitea)
+  → a matching CLI if installed, else the host's REST API with a token, else plain `git push`
+  and use the create-MR/PR URL the remote prints on push.
 - `TICKET` — issue/ticket key (e.g. `PUBS-1234`) from the branch name or unpushed commit
   subjects. Unset if none.
 

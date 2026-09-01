@@ -11,8 +11,8 @@ description: >
 ---
 
 Land the current branch into the local `main`/`master` and clean up after it. Everything is
-local: no `fetch`, no `push`, no force. If anything is ambiguous or conflicts, STOP and ask —
-never paper over a problem to keep the pipeline moving.
+local: no `fetch`, no `push`, no force. If anything is ambiguous, STOP and ask — never paper
+over a problem to keep the pipeline moving.
 
 ## 0. Detect context (always run first)
 
@@ -71,9 +71,9 @@ git rebase <TARGET>
 ```
 
 - This replays `BRANCH` onto the current local `TARGET` tip. No fetch — local only.
-- On conflict: STOP. Show `git status`, the conflicting hunks, and ask how to resolve. Never
-  auto-resolve by guessing or by picking a side. After the user resolves, continue with
-  `git rebase --continue`; offer `git rebase --abort` to bail.
+- On conflict: follow the **Shared rules** of `shared/git-flow.md` — resolve it when the
+  combined result is clear; otherwise STOP, show `git status` and the conflicting hunks, and ask
+  how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to bail.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
 - If the rebase replayed commits (it was not a no-op), re-run the step 2 tests before
   proceeding — the branch was tested on its old base, not on top of the current `TARGET`.
@@ -134,6 +134,11 @@ If that label is not in the list, STOP and report — do not pop a stash you can
 
 ## 5. Clean up
 
+A branch created per the `worktree` skill tracks `origin/<TARGET>`, and `git branch -d` checks a
+branch against its upstream, not HEAD — so it refuses a branch that was only landed locally. Run
+`git branch --unset-upstream <BRANCH> || true` right before every `branch -d` below, so `-d`
+checks against `TARGET` instead.
+
 - If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: delete the branch from
   here with `git branch -d <BRANCH>`, then skip the rest of this step. The two bullets below need
   `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it. When `IN_WORKTREE` is false you
@@ -155,8 +160,11 @@ If that label is not in the list, STOP and report — do not pop a stash you can
 - Then delete the landed branch, from a checkout that is NOT on `BRANCH` (it's now an ancestor of
   `TARGET`, so `-d` is safe and refuses if it somehow isn't):
   ```sh
+  git -C <MAIN_WT> branch --unset-upstream <BRANCH> || true
   git -C <MAIN_WT> branch -d <BRANCH>
   ```
+  When `IN_WORKTREE` is false, `BRANCH` is still checked out here and git refuses the delete:
+  leave the branch and say so in the step 6 report.
 
 ## 6. Report
 

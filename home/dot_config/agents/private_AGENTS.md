@@ -19,7 +19,7 @@ Load the skill before the first action in its area. The skill is the single sour
 - Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns tier selection, prompts, monitoring, escalation, and re-validation. A model I name, or an external tool I request, always overrides the skill's choice
 - Code review: `review`. Run it automatically, once per task, after a task that changed 5+ non-doc files or touched non-trivial logic. Prototypes and throwaway demo code are exempt unless I ask
 - Branch work: `worktree`, before any work on a branch, including a single sequential task. Never switch branches in the main checkout
-- Commits: `commit`. Push plus MR/PR: `/ship`. Local merge to the default branch: `/land`. The last two are yours to invoke — I will read the skill file and follow it only when you ask
+- Commits: `commit`. Push plus MR/PR: `/ship`. Local merge to the default branch: `/land`. The last two are mine to invoke: read the skill file and follow it only when I ask
 - Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
 - Documentation: `write-docs` before you create, edit, or restructure any docs page
 
@@ -40,8 +40,8 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ### Code comments
 
-- Comment only what the code cannot show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code. Never narrate the code or the change. Delete any comment the code already states; update or delete a comment when its code changes
-- Put the comment at the method or block level, in 1–2 complete sentences. A single self-descriptive line gets no comment
+- Comment only what the code cannot show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code. Never narrate the code or the change. A single self-descriptive line gets no comment. Delete any comment the code already states; update or delete a comment when its code changes
+- Put the comment at the method or block level, in 1–2 complete sentences
 - State what the code does and the contract it upholds, not the backstory. The bug, the investigation, and the ticket belong in the commit message. A comment MUST make sense to a reader who never saw the conversation
 - State a real requirement with a capitalized RFC 2119 keyword (MUST, SHOULD, MAY, …) https://www.rfc-editor.org/rfc/rfc2119 : `Callers MUST hold the lock`. Lowercase in ordinary prose
 - Link external context at the point of use: the source of copied code, the spec tricky logic implements, the issue a workaround works around, and `TODO` plus an issue reference for known-incomplete code
@@ -66,14 +66,11 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 - Handle undefined/null cases; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
 - Comment per "Code comments" above
 - Add logs at appropriate levels; be generous with trace logs — they are how LLM agents debug
-
-## File Organization
-
-For new projects, or when the repo has no convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`).
+- New project, or no repo convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
 
 ## Git
 
-- Never push, or merge to the default branch, unless I ask or give consent — and then only through the `ship` or `land` procedure (see "Skills own the detail")
+- Never push, or merge to the default branch, unless I ask or give consent — and then only through the `ship` or `land` procedure (see "Skills own the detail"), or `review --fix` on an MR/PR, which pushes to that MR/PR's source branch
 - Commit finished work to the worktree branch before you report done: no uncommitted or untracked changes left. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change

@@ -159,8 +159,9 @@ Brief beats complete-sounding: no padding, no restating the diff.
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do NOT post anything to the MR/PR unless the user asks; print for the user
 to post. Remove any worktree this review created — never a pre-existing one — with
-`git worktree remove <the .worktrees/review-… path from step 0>`. When continuing to
-`--fix`, keep it until the end of step 4 and remove it there.
+`git worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
+**Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
+until the end of step 4 and remove it there.
 
 ### Link formats (MR/PR only)
 

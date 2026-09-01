@@ -29,6 +29,8 @@ git worktree add .worktrees/<branch> -b <branch> origin/<default>
   `git worktree add .worktrees/<branch> <branch>`.
 - `.worktrees/` is ignored through the global excludes file
   (`~/.config/git/ignore`), so it needs no per-repo `.gitignore` entry.
+- The new branch tracks `origin/<default>` — git's default for a remote-tracking
+  start point. `ship` and `land` account for that when they push or delete it.
 
 Work inside `.worktrees/<branch>` for the whole task.
 

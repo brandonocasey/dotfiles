@@ -19,12 +19,16 @@ Optional argument: a target file or chunk. Commit only that target.
    and keep secrets out of it. When you amend, keep the existing message unless the purpose
    of the commit changed.
 4. **Commit.** Stage each chunk explicitly, including new and untracked files. Stage only
-   the target when the user gave one. Then run one of:
+   the target when the user gave one. When one file spans two chunks, stage the first
+   chunk's hunks non-interactively: `git diff -U0 -- <file> > <patch>`, delete the hunks
+   that belong to the other chunk, then `git apply --cached --unidiff-zero <patch>`. Then
+   run one of:
    - New commit: `git commit -m '<message>'`.
    - Amend, message unchanged: `git commit --amend -C HEAD`.
    - Amend, message changed (the commit's purpose changed): `git commit --amend -m '<message>'`.
 
-   Fix the cause of any hook error and commit again.
+   Fix the cause of any hook error and commit again. Never `--no-verify` a failing hook
+   unless the user has said the failure is irrelevant to the change.
 
 Split the commits by concern, by type, or by pattern. One commit is one reviewable idea.
 Do not bundle a refactor with a feature, or a fix with docs.
@@ -45,6 +49,6 @@ Do not bundle a refactor with a feature, or a fix with docs.
 ## Constraints
 
 - Do not push unless the user asks
-- Do not use the `-i` flag
+- Do not use the `-i` flag or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
 - Pass a multi-line message through a heredoc: `git commit -m "$(cat <<'EOF'...EOF)"`

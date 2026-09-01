@@ -66,14 +66,10 @@ git status --short
 git remote -v
 ```
 
-Determine the default target in this order:
-
-1. `origin/HEAD`, if it resolves to a local remote-tracking branch.
-2. Local `main`, if it exists.
-3. Local `master`, if it exists.
-
-If no target can be established, stop and ask. Do not choose a branch from naming convention
-alone. Record the target worktree path and the checkout in which the skill is running.
+Resolve the default target per the `worktree` skill's order — it owns this rule (`origin/HEAD`
+when it resolves to a remote-tracking branch, then local `main`, then local `master`; stop and
+ask when none resolves; never from a naming convention alone). Record the target worktree path
+and the checkout in which the skill is running.
 
 Refresh remote-tracking refs when an `origin` remote exists (this refreshes local evidence; it
 does not delete remote branches):
@@ -216,7 +212,9 @@ worktrees have no branch to delete). Evaluate local branches without worktrees a
 cleanup targets too; do not retain them merely because no worktree is attached. For every eligible
 branch, recheck its current tip, protection status, merged-PR evidence, and attached worktree
 state immediately before deletion. Delete eligible branches from the checkout that has the target
-branch when that worktree exists, so Git's normal deletion check uses the target tip:
+branch when that worktree exists, so Git's normal deletion check uses the target tip. A branch
+with an upstream is checked against that upstream instead, so `-d` may refuse a branch merged
+only locally — retain it and report why:
 
 ```sh
 git -C <target-worktree-path> branch -d -- <branch>   # local ancestry proves the merge

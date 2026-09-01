@@ -11,13 +11,14 @@ Establish these first and hold them for the whole run:
 ```sh
 git rev-parse --abbrev-ref HEAD                         # current branch
 git symbolic-ref --short refs/remotes/origin/HEAD       # origin's default, e.g. origin/main
-git rev-parse --git-common-dir                          # shared dir → are we in a worktree?
+git rev-parse --git-dir --git-common-dir                # the two differ → linked worktree
 git worktree list --porcelain                           # paths + which branch is where
 git status --short                                      # is the tree dirty?
 git log --oneline -8
 ```
 
-- `BRANCH` — current branch.
+- `BRANCH` — current branch. `HEAD` here means a detached checkout (for example a review
+  worktree): STOP and ask which branch to use.
 - `TARGET` — the default branch, resolved per the `worktree` skill's order, which owns this
   rule: the branch `refs/remotes/origin/HEAD` names (strip the `origin/` prefix), then local
   `main`, then local `master`. Never pick a name from a naming convention alone. `TARGET` must
@@ -35,14 +36,9 @@ git log --oneline -8
 Skip if the tree is already clean (nothing staged, unstaged, or untracked).
 
 - Run the `commit` skill (`Skill` tool, `skill: "commit"`) and follow it — it owns reading the
-  diff, the split rules, staging (new and untracked files included), the message format, and the
-  amend-vs-new decision. Do not restate or re-derive any of that here. Defer to a project-level
-  `commit` skill/command if one exists.
-- Deltas this gate adds: when a single file spans two chunks, stage the first chunk's hunks
-  non-interactively — `git diff -U0 -- <file> > <patch>`, delete the hunks that belong to the
-  other chunk, then `git apply --cached --unidiff-zero <patch>`. `git add -p` and `git add -i`
-  are interactive and cannot run here. Never `--no-verify` a failing pre-commit hook unless the
-  user has said the failure is irrelevant to the change — fix the cause and re-commit instead.
+  diff, the split rules, staging (new and untracked files included, hunk-level splits within one
+  file), the message format, the amend-vs-new decision, and the hook-failure rule. Do not restate
+  or re-derive any of that here. Defer to a project-level `commit` skill/command if one exists.
 - Repeat until `git status --short` is empty.
 
 **Gate — the tree must be fully committed before anything moves.** Re-run `git status --short`
@@ -55,8 +51,9 @@ move.
 ## Shared rules
 
 - Never rebase, merge, push, or remove a worktree while the tree is dirty.
-- Stop and ask on any rebase/merge conflict or unexpected worktree state — never auto-resolve
-  by guessing or by picking a side.
+- Rebase/merge conflicts: resolve them when the combined result is clear — the global rules own
+  this — then continue; STOP and ask when the intended result is ambiguous, and never guess or
+  pick a side. Stop and ask on any unexpected worktree state.
 - Never `rebase --skip` past a conflict.
 - If anything is ambiguous, STOP and ask — never paper over a problem to keep the pipeline
   moving.
