@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PATH="$HOME/.local/bin:$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required to install Antigravity CLI" >&2
+  exit 1
+fi
+
+mkdir -p "$HOME/.local/bin"
+
+echo "Installing/updating Antigravity CLI"
+installer_script="$(curl -fsSL https://antigravity.google/cli/install.sh)"
+
+# The published bootstrapper does not pass its documented --skip-path option to
+# the binary handoff, so remove that handoff and invoke the supported binary
+# command directly. This keeps shell profile changes under Chezmoi.
+if [[ "$installer_script" != *'# 7. Native Setup Handoff'* ]]; then
+  echo "Antigravity CLI installer format is not recognized" >&2
+  exit 1
+fi
+
+printf '%s\n' "$installer_script" |
+  sed '/^# 7\. Native Setup Handoff/,$d' |
+  bash -s -- --dir "$HOME/.local/bin"
+
+"$HOME/.local/bin/agy" install \
+  --dir "$HOME/.local/bin" \
+  --skip-path \
+  --skip-aliases
+
+if ! command -v agy >/dev/null 2>&1; then
+  echo "Antigravity CLI installation did not provide the agy command" >&2
+  exit 1
+fi
