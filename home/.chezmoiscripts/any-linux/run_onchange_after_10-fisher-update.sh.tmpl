@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# .config/fish/fish_plugins hash: {{ include "dot_config/private_fish/fish_plugins" | sha256sum }}
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+OUTPUT=/dev/stdout
+if [ -n "$RUNNING_IN_DOCKER" ]; then
+  OUTPUT=/dev/null
+fi
+
+if command -v fish 2>/dev/null 1>/dev/null; then
+  echo "Updating fisher plugins"
+  if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
+    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update" 1>$OUTPUT
+  fi
+  fish -c "fish_update_completions" 1>$OUTPUT
+fi

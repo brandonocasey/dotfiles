@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+
+cmd_exists() {
+  if command -v "$1" 2>/dev/null 1>/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
+if cmd_exists chezmoi; then
+  if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+    echo "writing chezmoi config"
+    FILE="$(chezmoi execute-template < "$(chezmoi source-path)/.chezmoi.toml.tmpl")"
+    echo "$FILE" > "$HOME/.config/chezmoi/chezmoi.toml"
+  fi
+
+  _cmgit() {
+    git -C "$CHEZMOI_SOURCE_DIR" "$@"
+    return $?
+  }
+  GIT_ORIGIN="$(_cmgit config --get remote.origin.url)"
+  if ! echo "$GIT_ORIGIN" | grep -q ssh; then
+    echo "changing chezmoi origin to ssh"
+    _cmgit remote remove origin
+    SSH_ORIGIN="${GIT_ORIGIN/https:\/\/github.com\//git@github.com:}"
+    _cmgit remote add origin "$SSH_ORIGIN"
+  fi
+  USER_NAME="$(_cmgit config --get user.name)"
+  USER_EMAIL="$(_cmgit config --get user.email)"
+
+  if [ -z "$USER_NAME" ]; then
+    echo "Setting chezmoi git user.name"
+    _cmgit config user.name "Brandon Casey"
+  fi
+
+  if [ -z "$USER_EMAIL" ]; then
+    echo "Setting chezmoi git user.email"
+    _cmgit config user.email "brandonocasey@gmail.com"
+  fi
+fi

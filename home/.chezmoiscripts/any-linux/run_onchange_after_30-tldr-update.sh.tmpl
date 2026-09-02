@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+
+if command -v tldr 2>/dev/null 1>/dev/null; then
+  echo "updating tldr"
+  tldr --update
+fi

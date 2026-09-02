@@ -147,8 +147,7 @@ if [ "$(uname)" = "Darwin" ]; then
   BUNDLE+=$(
     cat <<EOF
 
-# Claude Code and codex use their native installers on every platform (see below)
-# Cursor CLI: cask on macOS, official installer on Linux (see below)
+# Cursor CLI uses a cask on macOS and its official installer on Linux.
 cask 'cursor-cli'
 # Antigravity CLI: macOS-only (no standalone Linux CLI; it ships inside the IDE)
 cask 'antigravity-cli'
@@ -263,24 +262,6 @@ if [ -n "$(brew bundle cleanup --file="$BREWFILE")" ]; then
   brew cleanup --prune=all
 fi
 rm -f "$BREWFILE"
-
-# Claude Code and codex use their native installers on every platform (not the
-# brew casks). No install guard: re-run every apply so they self-update.
-mkdir -p "$HOME/.local/bin"
-
-echo "Installing/updating Claude Code (native installer)"
-curl -fsSL https://claude.ai/install.sh | bash || echo "Claude Code install failed (continuing)"
-
-# codex ships an official node-free installer (arch-aware, always latest).
-echo "Installing/updating codex (official installer)"
-curl -fsSL https://chatgpt.com/codex/install.sh | sh || echo "codex install failed (continuing)"
-
-# Cursor's CLI is a macOS-only cask, so install it natively on Linux.
-if [ "$UNAME" = "Linux" ]; then
-  # Cursor CLI: official installer, handles Linux x86_64 and arm64.
-  echo "Installing/updating Cursor CLI (official installer)"
-  curl -fsSL https://cursor.com/install | bash || echo "cursor install failed (continuing)"
-fi
 
 if [ "$RUNNING_IN_DOCKER" != "true" ] && cmd_exists fish; then
   fish_loc="$(which fish)"

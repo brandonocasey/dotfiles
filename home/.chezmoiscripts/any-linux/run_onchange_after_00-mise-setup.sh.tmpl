@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+
+cmd_exists() {
+  if command -v "$1" 2>/dev/null 1>/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
+if cmd_exists mise; then
+  echo "installing mise"
+  mkdir -p "$HOME/.local/share/gnupg"
+  find "$HOME/.local/share/gnupg" -type f -exec chmod 600 {} \;
+  find "$HOME/.local/share/gnupg" -type d -exec chmod 700 {} \;
+  mise install
+fi

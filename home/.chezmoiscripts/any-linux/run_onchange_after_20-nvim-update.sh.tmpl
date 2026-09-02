@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+export PATH="$PATH:./bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/home/linuxbrew/.linuxbrew/bin"
+export MANPATH="$MANPATH:./man:/usr/share/man:/usr/local/man:/usr/local/share/man"
+OUTPUT=/dev/stdout
+if [ -n "$RUNNING_IN_DOCKER" ]; then
+  OUTPUT=/dev/null
+fi
+
+cmd_exists() {
+  if command -v "$1" 2>/dev/null 1>/dev/null; then
+    return 0
+  fi
+
+  return 1
+}
+
+nvim_command_exists() {
+  local command_name="$1"
+  nvim --headless \
+    "+lua os.exit(vim.fn.exists(\":$command_name\") == 2 and 0 or 1)" \
+    +qa 1>/dev/null 2>&1
+}
+
+if cmd_exists mise; then
+  mise install
+  eval "$(mise activate bash)"
+fi
+
+# for vale-ls, a writing linter
+if [ ! -d "$HOME/.local/share/vale/styles" ]; then
+  mkdir -p "$HOME/.local/share/vale/styles"
+fi
+
+if cmd_exists nvim; then
+  echo "updating nvim plugins / lsp servers"
+  if [ ! -d "$HOME/.local/share/nvim/lazy/lazy.nvim" ]; then
+    git clone --filter=blob:none https://github.com/folke/lazy.nvim.git --branch=stable "$HOME/.local/share/nvim/lazy/lazy.nvim" 1>$OUTPUT
+  fi
+
+  nvim --headless "+Lazy! sync" +qa 1>$OUTPUT
+  if nvim_command_exists MasonToolsInstallSync; then
+    nvim --headless "+MasonToolsInstallSync" +qall 1>$OUTPUT
+  fi
+  if nvim_command_exists MasonToolsUpdateSync; then
+    nvim --headless "+MasonToolsUpdateSync" +qall 1>$OUTPUT
+  fi
+  if cmd_exists vale; then
+    nvim --headless "+!vale sync" +qall 1>$OUTPUT
+  fi
+fi

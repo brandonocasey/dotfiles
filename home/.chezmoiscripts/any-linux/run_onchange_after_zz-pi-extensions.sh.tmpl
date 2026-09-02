@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MCP_ADAPTER_VERSION='2.32.1'
+SUBAGENTS_VERSION='0.63.0'
+
+if ! command -v pi >/dev/null 2>&1; then
+  echo "Pi is required to install its extensions" >&2
+  exit 1
+fi
+
+echo "Installing Pi MCP and sub-agent extensions"
+pi install "npm:pi-mcp-adapter@${MCP_ADAPTER_VERSION}"
+pi install "npm:pi-subagents@${SUBAGENTS_VERSION}"
