@@ -1,0 +1,13 @@
+# shellcheck shell=sh
+
+# Login-shell environment.
+
+shell_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/shell"
+if [ -r "$shell_config_dir/env.sh" ]; then
+    . "$shell_config_dir/env.sh"
+fi
+unset shell_config_dir
+
+if [ -n "${BASH_VERSION:-}" ] && [ -r "$HOME/.bashrc" ]; then
+    . "$HOME/.bashrc"
+fi

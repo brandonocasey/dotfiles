@@ -2,6 +2,8 @@ if test -z "$UNAME"
     set -gx UNAME $(uname)
 end
 
+# Keep these values aligned with ~/.config/shell/env.sh. Fish reads this file
+# directly because it cannot source POSIX shell syntax.
 if test -z "$XDG_DATA_HOME"
     set -gx XDG_DATA_HOME "$HOME/.local/share"
 end
@@ -17,6 +19,15 @@ end
 if test -z "$XDG_CACHE_HOME"
     set -gx XDG_CACHE_HOME "$HOME/.cache"
 end
+
+set -l cleaned_path
+for path_entry in $PATH
+    if test "$path_entry" = './node_modules/.bin'; or test "$path_entry" = '/Users/bcasey/.lmstudio/bin'
+        continue
+    end
+    set -a cleaned_path "$path_entry"
+end
+set -gx PATH $cleaned_path
 
 if [ $UNAME = Darwin ]
     set -gx MACPREFS_BACKUP_DIR "$XDG_DATA_HOME/macprefs/"
@@ -55,10 +66,10 @@ for brew_location in /usr/local /opt/homebrew "/home/linuxbrew/.linuxbrew"
 
         set -gx HOMEBREW_REPOSITORY "$brew_location/Homebrew"
 
-        fish_add_path -a "$brew_location/bin"
-        fish_add_path -a "$brew_location/sbin"
-        fish_add_path -a "$brew_location/opt/python/libexec/bin"
-        fish_add_path -a "$brew_location/opt/trash/bin"
+        fish_add_path --path -a "$brew_location/bin"
+        fish_add_path --path -a "$brew_location/sbin"
+        fish_add_path --path -a "$brew_location/opt/python/libexec/bin"
+        fish_add_path --path -a "$brew_location/opt/trash/bin"
 
         if ! contains "$brew_location/share/man" $MANPATH
             set -gx MANPATH "$brew_location/share/man" $MANPATH
@@ -72,25 +83,34 @@ for brew_location in /usr/local /opt/homebrew "/home/linuxbrew/.linuxbrew"
     end
 end
 
-for man_loc in /usr/local/main /usr/share/man /usr/local/share/man
+for man_loc in /usr/local/man /usr/share/man /usr/local/share/man
     if ! contains "$man_loc" $MANPATH
         set -gx MANPATH "$man_loc" $MANPATH
     end
 end
 
-fish_add_path -a "$HOME/.local/bin"
-fish_add_path -a "$HOME/.cargo/bin"
-fish_add_path -a "$HOME/bin"
-set -gx PATH $PATH ./node_modules/.bin
+fish_add_path --path -a "$HOME/.local/bin"
+fish_add_path --path -a "$HOME/.cargo/bin"
+fish_add_path --path -a "$XDG_DATA_HOME/npm/bin"
+fish_add_path --path -a "$HOME/bin"
+
+if type -q fd
+    set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix'
+    set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
+end
 
 # ~/.local/bin must resolve before Homebrew — its `brew` wrapper (and other
 # shims) live there and need to shadow the real binaries. Prepend + move so it
 # lands first even if a stale universal fish_user_paths ordered Homebrew ahead.
-fish_add_path -pm "$HOME/.local/bin"
+fish_add_path --path -pm "$HOME/.local/bin"
 
-set -gx PAGER less
-set -gx GIT_PAGER less
-# Set default command editor to vim
+# Keep pager and editor defaults consistent with env.sh.
+if test -z "$PAGER"
+    set -gx PAGER less
+end
+if test -z "$GIT_PAGER"
+    set -gx GIT_PAGER less
+end
 if type -q delta
     set -gx GIT_PAGER delta
 else if type -q bat
@@ -98,28 +118,43 @@ else if type -q bat
     set -gx GIT_PAGER bat
 end
 
-set -gx EDITOR nano
-# Set default command editor to vim
-if type -q nvim
+if test -z "$EDITOR"
+    if type -q nvim
+        set -gx EDITOR nvim
+    else if type -q vim
+        set -gx EDITOR vim
+    else if type -q vi
+        set -gx EDITOR vi
+    else
+        set -gx EDITOR nano
+    end
+end
+
+if test -z "$MANPAGER"; and test "$EDITOR" = nvim
     set -gx MANPAGER "nvim +Man!"
-    set -gx EDITOR nvim
-else if type -q vim
-    set -gx EDITOR vim
-else if type -q vi
-    set -gx EDITOR vi
 end
 
 set -gx FCEDIT $EDITOR
-set -gx VISUAL $EDITOR
-set -gx VISUAL_EDITOR $EDITOR
-set -gx SVN_EDITOR $EDITOR
-set -gx GIT_EDITOR $EDITOR
+if test -z "$VISUAL"
+    set -gx VISUAL $EDITOR
+end
+if test -z "$VISUAL_EDITOR"
+    set -gx VISUAL_EDITOR $EDITOR
+end
+if test -z "$SVN_EDITOR"
+    set -gx SVN_EDITOR $EDITOR
+end
+if test -z "$GIT_EDITOR"
+    set -gx GIT_EDITOR $EDITOR
+end
 
 # XDG config location overrides
 set -gx ANDROID_USER_HOME "$XDG_DATA_HOME/android"
 set -gx DOCKER_CONFIG "$XDG_CONFIG_HOME/docker"
 set -gx GNUPGHOME "$XDG_DATA_HOME/gnupg"
-set -gx GPG_TTY (tty)
+if isatty stdin
+    set -gx GPG_TTY (tty)
+end
 set -gx LESSHISTFILE "$XDG_CACHE_HOME/less/history"
 set -gx NODE_REPL_HISTORY "$XDG_DATA_HOME/node_repl_history"
 set -gx NPM_CONFIG_USERCONFIG "$XDG_CONFIG_HOME/npm/npmrc"
@@ -127,7 +162,9 @@ set -gx PGPASSFILE "$XDG_CONFIG_HOME/pg/pgpass"
 set -gx GEM_HOME "$XDG_DATA_HOME/gem"
 set -gx GEM_SPEC_CACHE "$XDG_CACHE_HOME/gem"
 set -gx MYSQL_HISTFILE "$XDG_DATA_HOME/mysql_history"
-set -gx XAUTHORITY "$XDG_RUNTIME_DIR/Xauthority"
+if test -n "$XDG_RUNTIME_DIR"
+    set -gx XAUTHORITY "$XDG_RUNTIME_DIR/Xauthority"
+end
 set -gx KODI_DATA "$XDG_DATA_HOME/kodi"
 set -gx WGETRC "$XDG_CONFIG_HOME/wgetrc"
 set -gx VALE_CONFIG_PATH "$XDG_CONFIG_HOME/vale/.vale.ini"
@@ -154,9 +191,6 @@ set -gx PYTHONSTARTUP "$XDG_CONFIG_HOME/python/pythonrc"
 set -gx RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgrep/config"
 set -gx PASSWORD_STORE_DIR "$XDG_DATA_HOME/pass"
 
-# finding things
-set -gx GREP_OPTIONS "--color=auto"
-
 # themed ls colors
 if type -q vivid
     set -gx LS_COLORS "$(vivid generate one-dark)"
@@ -171,11 +205,9 @@ set -gx LESS -R
 
 set -gx _ZO_DATA_DIR "$XDG_DATA_HOME/zoxide"
 
-fish_add_path -a "$HOME/.local/share/npm/bin"
-
 # LM Studio CLI (lms) — only on machines where it's installed
 if test -d "$HOME/.lmstudio/bin"
-    fish_add_path -a "$HOME/.lmstudio/bin"
+    fish_add_path --path -a "$HOME/.lmstudio/bin"
 end
 
 set -gx LANG "en_US.UTF-8"

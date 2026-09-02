@@ -3,13 +3,6 @@ if status is-interactive
         abbr --add cd z
     end
 
-    if type -q fzf
-        if type -q fd
-            set -gx FZF_DEFAULT_COMMAND 'fd --type f --strip-cwd-prefix'
-            set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
-        end
-    end
-
     function journal -a filename --description "Open a journal entry in your editor for quick notes"
         if [ -z "$filename" ]
             set filename default
@@ -17,11 +10,15 @@ if status is-interactive
         if [ (path extension "$filename") != '.md' ]
             set filename "$filename.md"
         end
-        set -l file "$HOME/Journal/$filename"
-        if [ ! -d "$HOME/Journal" ]
-            mkdir -p "$HOME/Journal"
+        set -l journal_dir "$XDG_DATA_HOME/journal"
+        if [ ! -d "$journal_dir" ] && [ -d "$HOME/Journal" ]
+            set journal_dir "$HOME/Journal"
+        end
+        if [ ! -d "$journal_dir" ]
+            mkdir -p "$journal_dir"
         end
 
+        set -l file "$journal_dir/$filename"
         $EDITOR "$file"
         if [ ! -s "$file" ]
             rm -f "$file"
@@ -84,7 +81,3 @@ if status is-interactive
     end
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
 end
-
-# Added by LM Studio CLI (lms)
-set -gx PATH $PATH /Users/bcasey/.lmstudio/bin
-# End of LM Studio CLI section

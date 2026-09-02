@@ -1,0 +1,53 @@
+# shellcheck shell=bash
+
+# Bash interactive startup.
+
+case $- in
+    *i*) ;;
+    *) return ;;
+esac
+
+shell_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/shell"
+if [ -r "$shell_config_dir/env.sh" ]; then
+    . "$shell_config_dir/env.sh"
+fi
+if [ -r "$shell_config_dir/aliases.sh" ]; then
+    . "$shell_config_dir/aliases.sh"
+fi
+unset shell_config_dir
+
+if [ -r "$HOME/.bash_aliases" ]; then
+    . "$HOME/.bash_aliases"
+fi
+
+HISTCONTROL=ignoreboth
+HISTSIZE=10000
+HISTFILESIZE=20000
+HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/bash/history"
+mkdir -p "$(dirname "$HISTFILE")"
+if [ ! -e "$HISTFILE" ] && [ -f "$HOME/.bash_history" ]; then
+    cp "$HOME/.bash_history" "$HISTFILE"
+fi
+
+shopt -s histappend
+shopt -s cmdhist
+shopt -s checkwinsize
+
+if [ -x /usr/bin/lesspipe ]; then
+    eval "$(SHELL=/bin/sh lesspipe)"
+fi
+
+if [ -r /etc/bash_completion ]; then
+    . /etc/bash_completion
+elif [ -r /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+fi
+
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]\u@\h:\w\$ "
+    ;;
+*)
+    PS1='\u@\h:\w\$ '
+    ;;
+esac
