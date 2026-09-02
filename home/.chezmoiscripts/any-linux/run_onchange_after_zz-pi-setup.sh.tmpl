@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PI_VERSION='0.84.4'
+MCP_ADAPTER_VERSION='2.32.1'
+SUBAGENTS_VERSION='0.63.0'
+
+if command -v mise >/dev/null 2>&1; then
+  mise install
+  eval "$(mise activate bash)"
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "npm is required to install Pi" >&2
+  exit 1
+fi
+
+echo "Installing Pi coding agent ${PI_VERSION}"
+npm install --global "@earendil-works/pi-coding-agent@${PI_VERSION}"
+
+NPM_GLOBAL_BIN="$(npm prefix --global)/bin"
+case ":${PATH}:" in
+  *":${NPM_GLOBAL_BIN}:"*) ;;
+  *) export PATH="${NPM_GLOBAL_BIN}:${PATH}" ;;
+esac
+
+if ! command -v pi >/dev/null 2>&1; then
+  echo "Pi installation did not provide the pi command" >&2
+  exit 1
+fi
+
+echo "Installing Pi MCP and sub-agent extensions"
+pi install "npm:pi-mcp-adapter@${MCP_ADAPTER_VERSION}"
+pi install "npm:pi-subagents@${SUBAGENTS_VERSION}"

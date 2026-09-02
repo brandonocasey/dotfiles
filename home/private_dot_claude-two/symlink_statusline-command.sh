@@ -1,1 +1,1 @@
-/Users/bcasey/.claude/statusline-command.sh
+../.claude/statusline-command.sh

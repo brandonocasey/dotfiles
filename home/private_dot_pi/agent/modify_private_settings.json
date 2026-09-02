@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# chezmoi modify_ script for Pi's global settings. Keep Pi-owned settings such
+# as the selected model and theme, but enforce the extensions used by this setup.
+set -euo pipefail
+
+managed='{
+  "packages": [
+    "npm:pi-mcp-adapter@2.32.1",
+    "npm:pi-subagents@0.63.0"
+  ],
+  "enableSkillCommands": true
+}'
+
+live=$(cat)
+
+if ! command -v jq >/dev/null 2>&1; then
+  if [ -n "${live//[[:space:]]/}" ]; then
+    printf '%s\n' "$live"
+  else
+    printf '%s\n' "$managed"
+  fi
+  exit 0
+fi
+
+live=$(printf '%s' "$live" | jq -s -c \
+  'first // {} | if type == "object" then . else {} end' 2>/dev/null) || live='{}'
+[ -n "$live" ] || live='{}'
+
+jq -n --argjson live "$live" --argjson managed "$managed" \
+  '$live * $managed'
