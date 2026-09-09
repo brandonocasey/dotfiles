@@ -3,15 +3,13 @@ disable-model-invocation: true
 name: ship
 description: >
   Ship the current branch for review: commit remaining work in logical chunks, push, open (or
-  update) the GitLab MR / GitHub PR, then babysit CI — diagnose failing jobs, separate flaky
-  from real, fix and re-push until the pipeline is green. The remote counterpart to the
-  local-only land skill. Use when the user says "ship this", "push up an MR/PR", "open a merge
-  request / pull request", "create an MR for this", "push and make sure CI passes", or invokes
-  /ship.
+  update) the GitLab MR / GitHub PR, then report. Does not wait for CI. The remote counterpart
+  to the local-only land skill. Use when the user says "ship this", "push up an MR/PR", "open a
+  merge request / pull request", "create an MR for this", or invokes /ship.
 ---
 
-Ship the current branch: push it, open or update the MR/PR, and stay on the pipeline until it
-is green. Never merge, approve, close, or mark ready unless the user asks.
+Ship the current branch: push it, open or update the MR/PR, and report. Do not watch the
+pipeline. Never merge, approve, close, or mark ready unless the user asks.
 
 ## 0. Detect context (always run first)
 
@@ -64,27 +62,21 @@ Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill 
   checklists.
 - Target the remote default branch unless told otherwise. Leave draft state alone unless asked.
 
-## 4. Babysit CI until green
+## 4. Do not watch CI
 
-- Watch the pipeline without blocking: delegate the watching to a background agent per the
-  `sub-agents` skill's monitoring section (poll `glab ci status` / `gh run watch`, or list+get
-  loops), and keep the user posted on state changes.
-- On a failed job, pull its log (`glab ci trace <job>` / `gh run view --log-failed`), find the
-  real error under the boilerplate, and classify:
-  - **Flaky** — the project's docs/skills name known-flaky suites (e.g. web-player `test-pw`
-    shards / ad-suite Playwright specs), or it is an infra hiccup (runner died, registry
-    timeout): retry the job once (`glab ci retry <job>` / `gh run rerun --failed`). Fails
-    again → treat as real.
-  - **Real** — fix it in this checkout, commit via the `commit` skill, push, and re-watch.
-    Failing CI on a branch you shipped is yours to fix; do not hand it back to the user.
-- Repeat until the pipeline is green. STOP and ask only when the fix would change the scope of
-  the MR or needs a decision only the user can make — include the failing log excerpt.
+- Do not poll the pipeline, and do not spawn a background agent to watch it. Report the
+  pipeline URL and stop.
+- Handle CI only when the user asks for it in a later turn. Then: pull the failing job's log
+  (`glab ci trace <job>` / `gh run view --log-failed`), find the real error under the
+  boilerplate, fix it in this checkout, commit via the `commit` skill, and push. Retry a job
+  once (`glab ci retry <job>` / `gh run rerun --failed`) when the project's docs name that
+  suite as flaky or the failure is an infra hiccup; a second failure is real.
 
 ## 5. Report
 
 State plainly: the commits shipped (`<short> <subject>` each), whether the MR/PR was created
-or updated, and the final pipeline state. End with a **Links** section — MR/PR URL, pipeline
-URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
+or updated, and the pipeline state at push time (do not wait for it to finish). End with a
+**Links** section — MR/PR URL, pipeline URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
 
 ## Hard rules
 

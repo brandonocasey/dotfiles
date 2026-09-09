@@ -60,6 +60,10 @@ background agent at low effort. It reports back only the outcome and the relevan
 details. The main session continues other work or ends its turn; it never polls the
 same target itself.
 
+Exception: never watch an MR/PR or its pipeline for success on your own — no watcher
+agent, no polling. Report the pipeline URL and stop. Watch one only when the user
+asks for it.
+
 ## Escalate to a stronger tier
 
 Only the main session — the one the user drives — may escalate. Sub-agents never
