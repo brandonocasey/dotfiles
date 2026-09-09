@@ -1,0 +1,4 @@
+# Codex counterpart of the `disable-model-invocation` frontmatter in SKILL.md:
+# fanning work out to parallel agents is the user's call, so only an explicit $run-task-list runs it.
+policy:
+  allow_implicit_invocation: false

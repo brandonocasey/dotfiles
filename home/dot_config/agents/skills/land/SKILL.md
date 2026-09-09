@@ -103,7 +103,9 @@ Do the fast-forward:
   ```sh
   git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
-- **`TARGET` is not checked out anywhere** (`MAIN_WT` unset): switch to it here first:
+- **`TARGET` is not checked out anywhere** (`MAIN_WT` unset): switch to it here first. This is
+  the one sanctioned `git switch` in a main checkout: `TARGET` is checked out nowhere, and the
+  switch returns the main checkout to the default branch the `worktree` skill expects:
   ```sh
   git switch <TARGET>
   git merge --ff-only <BRANCH>
@@ -140,7 +142,8 @@ branch against its upstream, not HEAD — so it refuses a branch that was only l
 checks against `TARGET` instead.
 
 - If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: delete the branch from
-  here with `git branch -d <BRANCH>`, then skip the rest of this step. The two bullets below need
+  here with `git branch --unset-upstream <BRANCH> || true` then `git branch -d <BRANCH>`, and
+  skip the rest of this step. The two bullets below need
   `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it. When `IN_WORKTREE` is false you
   are standing in the main checkout and there is no worktree to remove. When `IN_WORKTREE` is
   true, `TARGET` now lives in a linked worktree that this step cannot remove — a worktree cannot

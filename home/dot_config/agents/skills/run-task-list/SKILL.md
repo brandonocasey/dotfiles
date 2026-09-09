@@ -3,7 +3,7 @@ disable-model-invocation: true
 name: run-task-list
 description: >
   Run a set of user-given tasks in parallel: split them across sub-agents (one
-  worktree per task), adversarially review each result via the review skill, fix
+  worktree per agent), adversarially review each result via the review skill, fix
   verified findings, and report when everything the user asked for is done. Takes
   any number of explicit tasks or endpoints, or a list source (TODO.md, a ticket
   list, a file) with instructions to pick the tasks that can run in tandem. Use
@@ -21,7 +21,7 @@ skill; review follows the `review` skill; commits follow the `commit` skill.
 ## Modes and arguments
 
 - **End mode** — from the invocation: `ship` / "run-task-list-ship" (after review, follow
-  `ship` per branch: push, open MR, babysit CI), `land` / "run-task-list-land" (follow
+  `ship` per branch: push, open MR, report the pipeline URL — `ship` does not watch CI), `land` / "run-task-list-land" (follow
   `land` per branch: local merge to default, cleanup). Default: neither — branches stay
   local and committed. `ship` and `land` set `disable-model-invocation`, so the `Skill`
   tool cannot load them: read `<skills-dir>/ship/SKILL.md` or `<skills-dir>/land/SKILL.md`
@@ -84,8 +84,9 @@ For every returned task, in the main session:
 
 - Check the result against its acceptance criteria first. A "done" claim with no
   evidence is treated as unverified.
-- Code tasks: run the `review` skill on the task's diff in its worktree. This is
-  the session's own work, so fix verified findings without asking, then re-run
+- Code tasks: run the `review` skill on the task's diff in its worktree; the skill
+  delegates to an independent reviewer because this session's sub-agents wrote the
+  code. This is the session's own work, so fix verified findings without asking, then re-run
   the project's tests and lint in that worktree (fixes are yours; never
   "pre-existing"). Do not re-review after fixes.
 - Non-code tasks: spawn one verifier agent prompted to **refute** the result

@@ -66,10 +66,9 @@ git status --short
 git remote -v
 ```
 
-Resolve the default target per the `worktree` skill's order — it owns this rule (`origin/HEAD`
-when it resolves to a remote-tracking branch, then local `main`, then local `master`; stop and
-ask when none resolves; never from a naming convention alone). Record the target worktree path
-and the checkout in which the skill is running.
+Resolve the default target per the `worktree` skill's order — it owns this rule, including the
+stop-and-ask fallback. Record the target worktree path and the checkout in which the skill is
+running.
 
 Refresh remote-tracking refs when an `origin` remote exists (this refreshes local evidence; it
 does not delete remote branches):

@@ -41,6 +41,7 @@ so the main checkout stays clean:
 
 ```sh
 git stash push -u -m move-to-worktree
+git fetch origin
 git worktree add .worktrees/<branch> -b <branch> origin/<default>
 git -C .worktrees/<branch> stash pop
 ```
