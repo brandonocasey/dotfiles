@@ -94,5 +94,20 @@ jq -n \
   --argjson keep "$KEEP_KEYS" \
   --argjson managed "$managed" \
   --argjson live "$live" \
-  'reduce $keep[] as $k ($managed;
-     if ($live | has($k)) then .[$k] = $live[$k] else . end)'
+  '(
+     $live
+     | to_entries
+     | map(select(.key as $k |
+         (($managed | has($k)) or ($keep | index($k) != null))))
+     | map(
+         if (.key as $k | ($keep | index($k) != null)) then .
+         else .value = $managed[.key]
+         end
+       )
+     | from_entries
+   ) + (
+     $managed
+     | to_entries
+     | map(select(.key as $k | ($live | has($k) | not)))
+     | from_entries
+   )'
