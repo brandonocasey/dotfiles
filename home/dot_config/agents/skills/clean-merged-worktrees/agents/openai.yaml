@@ -2,8 +2,3 @@ interface:
   display_name: "Clean merged worktrees"
   short_description: "Safely remove merged and review worktrees"
   default_prompt: "Use $clean-merged-worktrees to inspect and safely clean merged, closed, and remote-PR review worktrees."
-
-# Codex counterpart of the `disable-model-invocation` frontmatter in SKILL.md:
-# deleting worktrees and branches is the user's call, so only an explicit $clean-merged-worktrees runs it.
-policy:
-  allow_implicit_invocation: false

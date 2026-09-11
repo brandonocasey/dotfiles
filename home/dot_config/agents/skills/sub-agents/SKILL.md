@@ -30,7 +30,7 @@ maintained models — "cheapest tier" means the smallest current model, not a st
 | Cheapest | Haiku | GPT 5.6 Luna | Mechanical, well-specified: data aggregation, reformatting, extraction, counting, bulk find-and-replace, web research, watch-and-wait. Low reasoning effort |
 | Middle | Sonnet | GPT 5.6 Luna | Codebase exploration and search: locating usages, tracing call paths, "where/how is X done" fan-out |
 | Judgement | Opus | GPT 5.6 Terra | Design, tricky debugging, cross-file reasoning, anything ambiguous |
-| Top | Fable | GPT 5.6 Sol | Only as the target of an escalation from the main session (see below). Never pick it for splits, monitoring, or review sub-agents: pick those by work class from the rows above. A split MAY instead go to a forked agent that inherits the parent model, where the harness offers one. A review sub-agent MUST NOT be a fork — a fork inherits the conversation, and the `review` skill needs an independent reviewer |
+| Top | Fable | GPT 5.6 Sol | Only as the target of an escalation from the main session (see below). Never for splits, monitoring, or review sub-agents; that work stays in the main session, or goes to a forked agent that inherits the parent model where the harness offers one |
 
 Escalate one tier when a simple-looking task turns out to need judgement.
 
