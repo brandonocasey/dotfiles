@@ -122,6 +122,11 @@ Only after the attack passes are exhausted, note style/simplification issues.
 
 ## 2. Verify — mandatory, before anything is shown
 
+For a finding about rendered UI, use the installed `ui-verify` skill when browser
+evidence is needed. For a ROM Weaver performance claim, use `benchmark-change`
+when measurements are needed. Reuse results for the same revision and inputs;
+these checks return evidence to this review, not another review cycle.
+
 Now switch sides: for EVERY candidate finding, try to REFUTE it. Read the full
 function/file in the checkout (not the diff hunk alone), trace the failure path, and hunt
 for the guard, caller contract, or earlier check that makes the scenario unreachable. A

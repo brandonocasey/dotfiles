@@ -62,6 +62,9 @@ source SHA makes earlier check results stale.
 
 ## Diagnose each pull request
 
+For a separate investigation of shared failures or CI throughput, the user can
+invoke `ci-investigate`. Do not start that explicit-only skill from this watcher.
+
 Use these read-only commands for each number `N`:
 
 ```sh
