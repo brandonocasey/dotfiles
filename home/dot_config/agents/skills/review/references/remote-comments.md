@@ -39,4 +39,3 @@ GitHub (replaces the line(s) the comment anchors to):
 <replacement lines>
 ```
 ````
-

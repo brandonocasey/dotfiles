@@ -43,6 +43,9 @@ after checking that every intended change was restored. Resolve a stash-list ref
 by its recorded commit ID immediately before dropping it; never use bare `pop`
 or choose a repeated label. On an ambiguous conflict, retain the stash and report
 its ID and both checkout paths.
+Resolve merge, rebase, and stash conflicts automatically when the intended combined
+result is clear. Ask only when the resolution is ambiguous; never discard either
+side just to make a conflict disappear.
 
 Check `git status --short` in both checkouts afterwards.
 

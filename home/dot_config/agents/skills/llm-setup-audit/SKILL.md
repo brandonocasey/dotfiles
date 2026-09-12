@@ -31,6 +31,12 @@ paper trail, and never silently drop a rule.
 - Read every target file whole. Record `wc -l` per file for the before/after report.
 - No backup step: the user keeps these files backed up. Edit in place; do not copy
   targets to the scratchpad or anywhere else first.
+- Find the manager's source files before editing, including source files not yet
+  deployed to the target. Check synchronization hooks and automatic Git settings
+  before any manager command. Synchronization MUST NOT commit, push, or apply
+  unrelated files without the user's authorization. For plain source files, a
+  targeted file edit can sync them without invoking manager hooks; otherwise use
+  a documented per-command setting that disables unauthorized side effects.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.
