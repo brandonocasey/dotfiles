@@ -15,7 +15,7 @@ over a problem to keep the pipeline moving.
 Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
 against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
 directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `IN_WORKTREE`,
-`MAIN_WT`, `TARGET_DIRTY`. Hold them for the whole run.
+`MAIN_WT`, `TARGET_DIRTY`. Refresh them before mutating the target or cleaning up.
 `MAIN_WT` matters here because you can't ff-merge a branch that is checked out elsewhere;
 `TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
 Record the initial checkout path and the primary checkout path from
@@ -44,10 +44,9 @@ unless the user asks.
 
 ## 1. Commit the working tree in logical chunks
 
-Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill until
-`git status --short` prints nothing, then show `git log --oneline <TARGET>..HEAD`. Nothing
-proceeds to rebase/ff while the tree is dirty — uncommitted work in the worktree is lost when
-the worktree is removed in step 5.
+Run the **Commit gate** from `shared/git-flow.md`. It owns task scope, the
+clean-tree check, and the commit report. Nothing proceeds to rebase/ff while
+the tree is dirty; cleanup requires every intended change to be committed.
 
 ## 2. Run tests
 

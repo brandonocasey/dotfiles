@@ -91,11 +91,13 @@ For every returned task, in the main session:
 
 - Commit each worktree via the `commit` skill so nothing is left uncommitted.
 - Apply the end mode by reading and following the skill file named in **Modes and
-  arguments**: `ship` — per branch, skipping blocked tasks' branches; `land` — per
-  branch, one at a time. No end mode: leave branches local.
+  arguments**. For both `ship` and `land`, process a branch only when every task
+  assigned to it is done and has passed step 3. Keep branches with blocked or
+  partial tasks local; land eligible branches one at a time. No end mode: leave
+  branches local.
 - Clean up everything the batch opened: stop servers, free ports, close browser
   pages. Keep worktrees with commits; remove empty ones.
-- Report, self-contained: per task — done / blocked / skipped, one plain
+- Report, self-contained: per task — done / blocked / partial / skipped, one plain
   sentence, its verification evidence, and its branch + worktree path for code
   tasks. Include what was picked vs skipped in pick-from-list mode. End with a
   **Links** section for external links only (tickets, MRs, CI), and one concrete

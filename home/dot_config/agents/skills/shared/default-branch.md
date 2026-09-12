@@ -16,19 +16,26 @@ is unambiguous; otherwise ask which local target to use. Do not invent `master`.
 This lookup is local and performs no fetch. `land` uses it for its local-only
 destination. Cleanup uses it for the local target whose ancestry it checks.
 
+## Remote default name
+
+Resolve a remote's live default name with
+`git ls-remote --symref <remote> HEAD`. If the server does not advertise a
+symbolic HEAD, use its forge's default-branch metadata or ask. A cached
+`refs/remotes/<remote>/HEAD` or the newest feature branch is not a live default
+lookup. Report lookup failures and ask before using stale data.
+
 ## Newest default base
 
 Use this for new branch work and default-based review comparisons, unless the
 user supplied a base. Existing branches and PR/MR heads keep their identity;
 do not recreate or rebase them as part of selecting a base.
 
-1. List every configured remote with `git remote`. For each remote, resolve
-   its live default name with `git ls-remote --symref <remote> HEAD`. Fetch that
+1. List every configured remote with `git remote`. For each remote, use
+   **Remote default name** above to resolve its live default. Fetch that
    branch with `git fetch <remote> refs/heads/<default>`, then immediately
    record `git rev-parse FETCH_HEAD`, the remote, and the branch name before
    another fetch overwrites `FETCH_HEAD`. This also works with restricted fetch
-   refspecs. If the server does not advertise a symbolic HEAD, use its forge's
-   default-branch metadata or ask; do not guess from its newest feature branch.
+   refspecs.
 2. Add the local target, if one resolves, and existing local branches with the
    verified remote-default names. A missing local target is not a blocker when
    remote candidates exist; do not prompt just for this optional lookup.

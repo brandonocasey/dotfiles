@@ -13,7 +13,8 @@ pipeline. Never merge, approve, close, or mark ready unless the user asks.
 
 Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
 against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
-directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARGET`. Additionally:
+directory, which is the user's repo. Establish its **Facts** using these remote
+target details:
 
 - `HOST` — from `git remote get-url origin`: `gitlab.com` → `glab`; `github.com` → `gh`;
   self-hosted GitLab → `glab` prefixed with `GITLAB_HOST=<host>`; anything else (forgejo/gitea)
@@ -21,29 +22,41 @@ directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARG
   and use the create-MR/PR URL the remote prints on push.
 - `TICKET` — issue/ticket key (e.g. `PUBS-1234`) from the branch name or unpushed commit
   subjects. Unset if none.
+- `REMOTE_DEFAULT` — resolve `origin` through **Remote default name** in
+  [default-branch.md](../shared/default-branch.md). Never use a cached
+  `origin/HEAD` to decide whether a branch is safe to push.
+- `TARGET` — the user's explicit MR/PR target, or `REMOTE_DEFAULT`. Fetch it with
+  `git fetch origin refs/heads/<TARGET>` and immediately record
+  `git rev-parse FETCH_HEAD` as `COMMIT_BASE`. Do not require a local target branch
+  or assume that the fetch updated `origin/<TARGET>` under a restricted refspec.
 
-**If `BRANCH` == `TARGET`** (you are on the default branch):
+**If `BRANCH` equals `REMOTE_DEFAULT` or `TARGET`**:
 
-- Only a dirty tree, no unpushed commits: move the work onto a properly named branch (repo
+- Fetch `refs/heads/<BRANCH>` from `origin` and record its commit ID before
+  comparing it with local `HEAD`. If local commits are ahead or histories
+  diverge, ask which commits should ship on a new branch. Never guess, reset,
+  or force the checked-out branch. Stop on a missing remote branch or failed fetch.
+- With a dirty tree and no local-only commits, move the work onto a properly named branch (repo
   naming convention — e.g. `<type>/<jira>/<description>` in jwpconnatix repos) using the
   `worktree` skill's **Recover changes made in the main checkout** steps. Never
   `git switch` in the main checkout — the `worktree` skill owns that
-  rule. Continue from inside the new worktree.
-- Local `TARGET` is ahead of `origin/<TARGET>`: STOP and ask which commits should ship on the
-  branch — never guess, and never reset or force `TARGET` yourself. Refresh the remote-tracking
-  ref first (`git fetch origin <TARGET>`), or a stale ref decides this for you.
+  rule. Continue from inside the new worktree and refresh `BRANCH`.
+- With a clean tree and no local-only commits, report that there is nothing to ship and stop.
 
 ## 1. Commit gate
 
-Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill until
-`git status --short` prints nothing, then show `git log --oneline <TARGET>..HEAD`.
+Run the **Commit gate** from `shared/git-flow.md`. It owns task scope, the
+clean-tree check, and the commit report against `COMMIT_BASE`.
 
 ## 2. Push
+
+Immediately before any push, refresh `BRANCH` and resolve the live
+`REMOTE_DEFAULT` again. Stop if `BRANCH` equals it or `TARGET`.
 
 - First push, or new commits on an already-pushed branch: `git push -u origin <BRANCH>`.
 - Branch exists on the remote but histories diverged (rebase/amend since last push):
   `git push --force-with-lease origin <BRANCH>`. Never plain `--force`; never any force on
-  `TARGET`; never push `TARGET` at all from this skill.
+  `TARGET` or `REMOTE_DEFAULT`; never push either from this skill.
 - Confirm the push landed (`git status -sb` shows no ahead-count) and say so — the user should
   never have to ask "did you push?".
 
@@ -58,7 +71,7 @@ Run the **Commit gate** from `shared/git-flow.md`: chunk via the `commit` skill 
 - **Description**: 2 sentences max — what changed and the approach. Add the config/data used
   for testing when the repo convention asks for it. No product framing, no filler, no
   checklists.
-- Target the remote default branch unless told otherwise. Leave draft state alone unless asked.
+- Use the recorded `TARGET`. Leave draft state alone unless asked.
 
 ## 4. Do not watch CI
 
@@ -79,7 +92,7 @@ or updated, and the pipeline state at push time (do not wait for it to finish). 
 ## Hard rules
 
 - Never merge, approve, close, or mark ready unless the user asks.
-- `--force-with-lease` only, only on `BRANCH`, never on `TARGET`.
+- `--force-with-lease` only, only on `BRANCH`, never on `TARGET` or the live remote default.
 - Never create or transition tickets from this skill unless asked — reuse keys you find.
 - Always confirm the push happened before talking about the MR/PR.
 - Everything in **Shared rules** of `shared/git-flow.md`.
