@@ -68,7 +68,10 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ## Git
 
-- Never push or merge to the default branch unless I ask or give consent. Use `ship` for a push plus MR/PR and `land` for local landing. A request for `review --fix` on an MR/PR authorizes pushing the agreed fixes to that MR/PR's source branch. Read and follow `ship` or `land` only when I authorize that workflow.
+- Never push or merge to the default branch unless I ask or give consent.
+  A request for `review --fix` on an MR/PR authorizes pushing the agreed
+  fixes to that MR/PR's source branch. Read and follow `ship` or `land`
+  only when I authorize that workflow.
 - Commit finished task changes to the worktree branch before reporting done, unless the invoked workflow explicitly leaves committing to me. Leave no uncommitted or untracked task changes under the normal commit workflow. Preserve unrelated user files and edits. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout.
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change
