@@ -2,12 +2,8 @@
 disable-model-invocation: true
 name: land
 description: >
-  Finish a feature branch: split the working tree into logical Conventional-Commit chunks,
-  rebase onto the local main/master, fast-forward main to the branch, then delete the branch
-  and remove the worktree. When already on the default branch, degrades to just running the
-  commit skill. Local-only — never fetches, pushes, or force-anything. Use when the user says
-  "land this", "land the branch", "merge into main and clean up", or invokes /land. For pushing
-  and opening an MR/PR use the ship skill instead. Designed for the dedicated-worktree workflow.
+  Commit and land a branch into the local default branch, then clean up. Use
+  for local landing requests; never fetch or push.
 ---
 
 Land the current branch into the local `main`/`master` and clean up after it. Everything is
@@ -22,6 +18,8 @@ directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`
 `MAIN_WT`, `TARGET_DIRTY`. Hold them for the whole run.
 `MAIN_WT` matters here because you can't ff-merge a branch that is checked out elsewhere;
 `TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
+Record the initial checkout path and the primary checkout path from
+`git worktree list --porcelain` so cleanup can run from a surviving directory.
 
 ### Already on the target branch → commit only
 
@@ -29,7 +27,8 @@ If `BRANCH` == `TARGET`, there is nothing to rebase, fast-forward, or clean up: 
 already on the target. Do **not** stop, and do **not** invent a branch to land. Instead, run the
 `commit` skill over the working tree and finish there.
 
-- Invoke the `commit` skill (`Skill` tool, `skill: "commit"`) and follow it — it owns the
+- Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
+  file directly, and follow it — it owns the
   chunking, message format, and amend-vs-new decision. Do not re-implement that logic here.
 - If the tree is already clean, say so plainly and stop. A clean tree on `TARGET` means the work
   is already committed; there is no no-op "landing" to perform and nothing to report beyond the
@@ -87,14 +86,14 @@ should stop and investigate rather than create a merge commit.
 fast-forward lands on a clean tree, then restore it afterward. Run the stash in `MAIN_WT` — the
 worktree that holds `TARGET`. `TARGET_DIRTY` can only be true when `MAIN_WT` is set: an
 unchecked-out branch has no working tree to dirty, so this block never runs without a path. Use a labelled, include-untracked stash so it's identifiable and
-nothing is left behind:
+nothing is left behind. Use a unique `<stash-label>` for this run:
 
 ```sh
-git -C <MAIN_WT> stash push --include-untracked -m "land: pre-ff autostash"
+git -C <MAIN_WT> stash push --include-untracked -m <stash-label>
 ```
 
-Confirm it was created (`git -C <MAIN_WT> stash list | head -1`) and record its ref. If
-`stash push` reports "No local changes to save", treat the tree as clean and skip the pop below.
+Verify the entry has this run's label and record its commit ID, not its stack
+position. If `stash push` reports "No local changes to save", skip restoration.
 
 Do the fast-forward:
 
@@ -103,49 +102,48 @@ Do the fast-forward:
   ```sh
   git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
-- **`TARGET` is not checked out anywhere** (`MAIN_WT` unset): switch to it here first:
+- **`TARGET` is not checked out anywhere** (`MAIN_WT` unset): create a temporary
+  worktree for the existing target and set `MAIN_WT` to its absolute path. Do not
+  switch the main checkout:
   ```sh
-  git switch <TARGET>
-  git merge --ff-only <BRANCH>
+  git worktree add <unused-target-worktree-path> <TARGET>
+  git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
+  Record that this run created it; remove it without force after successful
+  cleanup, from a surviving checkout outside that directory. On failure, keep
+  it if needed for recovery and report its path.
 
 If `--ff-only` fails, STOP and report — do not fall back to a non-ff merge. (If you stashed, the
 work is safe in the stash; tell the user it's there and how to restore it.)
 
-**Restore the stash** after a successful ff (only if you created one above). Pop the entry by
-its label, not by position — a bare `stash pop` takes `stash@{0}`, which is the wrong entry if
-any other stash was pushed in the meantime:
+**Restore the stash** after a successful ff, only if this run created one. Apply
+the recorded commit ID so another stash cannot change which work is restored:
 
 ```sh
-REF=$(git -C <MAIN_WT> stash list | grep -F 'land: pre-ff autostash' | head -1 | cut -d: -f1)
-git -C <MAIN_WT> stash pop "$REF"
+git -C <MAIN_WT> stash apply --index <stash-commit>
 ```
 
-If that label is not in the list, STOP and report — do not pop a stash you cannot identify.
+If that commit cannot be identified as this run's stash, stop and report.
 
-- Clean pop → done; verify `git -C <MAIN_WT> status` looks as expected.
-- **Conflicts on pop** (the landed commits touched the same lines as the stashed local work):
+- Clean apply: verify the restored files and staging state against the recorded
+  pre-stash status, then find the entry by commit ID in
+  `git stash list --format='%gd %H'` and drop only that matching entry. Recheck
+  the ref's commit immediately before dropping it; retain it on any mismatch.
+- **Conflicts on apply** (the landed commits touched the same lines as the stashed local work):
   resolve them. For each conflicted file, read both sides, reconcile by intent (the landed change
   is now the base; reapply the local edit on top so neither is lost — never just delete a side),
-  then `git -C <MAIN_WT> add <file>`. When all are resolved, **drop the now-applied stash entry**
-  with `git -C <MAIN_WT> stash drop "$REF"` (a conflicted `stash pop` does NOT auto-drop). Do not create
+  then `git -C <MAIN_WT> add <file>`. When all are resolved, check the restored work
+  and drop only the entry matching the recorded commit ID as above. Do not create
   a commit — the restored changes stay as uncommitted local work, matching how they started.
-  If a conflict is genuinely ambiguous, STOP and ask rather than guessing; the stash is intact.
+  If a conflict is ambiguous, stop and ask; the stash is intact.
 
 ## 5. Clean up
 
-A branch created per the `worktree` skill tracks `origin/<TARGET>`, and `git branch -d` checks a
-branch against its upstream, not HEAD — so it refuses a branch that was only landed locally. Run
+A branch may track a remote upstream, and `git branch -d` checks against that upstream,
+not HEAD — so it can refuse a branch that was only landed locally. Run
 `git branch --unset-upstream <BRANCH> || true` right before every `branch -d` below, so `-d`
 checks against `TARGET` instead.
 
-- If `MAIN_WT` was unset and step 4 switched this checkout to `TARGET`: delete the branch from
-  here with `git branch -d <BRANCH>`, then skip the rest of this step. The two bullets below need
-  `MAIN_WT`; `git -C <MAIN_WT>` has no path to run in without it. When `IN_WORKTREE` is false you
-  are standing in the main checkout and there is no worktree to remove. When `IN_WORKTREE` is
-  true, `TARGET` now lives in a linked worktree that this step cannot remove — a worktree cannot
-  remove itself while you stand in it. Leave it in place and say so in the step 6 report, naming
-  the worktree path and that `TARGET` is checked out there instead of in the main checkout.
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
   owns that rule (`git -C <MAIN_WT>` does not move your cwd):
@@ -154,9 +152,9 @@ checks against `TARGET` instead.
   git worktree remove <worktree-path>
   git worktree prune
   ```
-  If `worktree remove` complains about leftover untracked/build artifacts that you trust are
-  disposable (e.g. a worktree-local `target/`, symlinked `node_modules`), report what they are and
-  ask before using `--force`.
+  If removal refuses because of leftover artifacts, list them and retain the worktree.
+  Ask before deleting disposable artifacts, then retry without force. Never force-remove
+  the worktree.
 - Then delete the landed branch, from a checkout that is NOT on `BRANCH` (it's now an ancestor of
   `TARGET`, so `-d` is safe and refuses if it somehow isn't):
   ```sh
@@ -165,12 +163,17 @@ checks against `TARGET` instead.
   ```
   When `IN_WORKTREE` is false, `BRANCH` is still checked out here and git refuses the delete:
   leave the branch and say so in the step 6 report.
+- If step 4 created a temporary target worktree, move to the primary checkout and
+  remove that temporary worktree without force after the merge and source cleanup.
+  Do this even when the source branch must stay checked out in the primary checkout.
+  If the temporary tree has become dirty or active, retain it and report its path.
+  Never remove a target worktree that existed before this run.
 
 ## 6. Report
 
 End by stating, plainly: which commits landed (`<short> <subject>` each), the new `TARGET` tip,
 what was cleaned up (branch deleted, worktree removed), and — if you stashed — that the target's
-local changes were restored (and whether the pop needed conflict resolution). Do not push —
+local changes were restored (and whether restoration needed conflict resolution). Do not push —
 pushing is a separate, explicit step the user must ask for.
 
 ## Hard rules
@@ -180,8 +183,8 @@ pushing is a separate, explicit step the user must ask for.
 - Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
   (step 4) — never fall back to a merge commit.
 - Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).
-- Dirty target tree: the one exception to the shared dirty-tree rule — handled by stash/ff/pop
-  (step 4), not a hard stop; but stop and ask if the stash pop conflicts ambiguously, and never
+- Dirty target tree: the one exception to the shared dirty-tree rule — handled by stash/ff/apply
+  (step 4), not a hard stop; but stop and ask if restoration conflicts ambiguously, and never
   drop a stash you haven't successfully reapplied.
 - Being on `TARGET` already is not an error state: hand off to the `commit` skill (step 0) rather
   than stopping or fabricating a branch to land.

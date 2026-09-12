@@ -1,11 +1,8 @@
 ---
 name: split-task
 description: >
-  Decide whether to split the current task across parallel sub-agents: tasks that
-  change 5+ non-doc files and divide into independent parts get split automatically;
-  small, sequential, or context-sharing tasks run inline. Spawn mechanics, tiers,
-  monitoring, and escalation live in the sub-agents skill. Use when starting any task
-  that might split, or /split-task.
+  Decide whether to split an implementation task with independent parts. Apply
+  when estimating a multi-file change or when asked to split a task.
 ---
 
 Split a task across sub-agents only when it saves cost or keeps the main session

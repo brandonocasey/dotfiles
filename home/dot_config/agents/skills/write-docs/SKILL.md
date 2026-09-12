@@ -1,9 +1,8 @@
 ---
 name: write-docs
 description: >
-  Diátaxis rules for documentation. Load before creating, editing, or restructuring
-  any docs page — README sections, docs/ trees, tutorials, how-tos, reference pages,
-  or explanations.
+  Use when creating, editing, or restructuring documentation pages. Apply
+  Diátaxis to tutorials, how-tos, reference, and explanations.
 ---
 
 - Structure docs by [Diátaxis](https://diataxis.fr/): every page serves exactly one

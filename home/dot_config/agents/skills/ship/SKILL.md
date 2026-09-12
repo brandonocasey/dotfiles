@@ -2,10 +2,8 @@
 disable-model-invocation: true
 name: ship
 description: >
-  Ship the current branch for review: commit remaining work in logical chunks, push, open (or
-  update) the GitLab MR / GitHub PR, then report. Does not wait for CI. The remote counterpart
-  to the local-only land skill. Use when the user says "ship this", "push up an MR/PR", "open a
-  merge request / pull request", "create an MR for this", or invokes /ship.
+  Commit, push, and open or update a GitHub PR or GitLab MR. Use for shipping
+  or PR/MR creation requests; do not wait for CI.
 ---
 
 Ship the current branch: push it, open or update the MR/PR, and report. Do not watch the
@@ -28,8 +26,8 @@ directory, which is the user's repo. Establish its **Facts**: `BRANCH` and `TARG
 
 - Only a dirty tree, no unpushed commits: move the work onto a properly named branch (repo
   naming convention — e.g. `<type>/<jira>/<description>` in jwpconnatix repos) using the
-  `worktree` skill's **Recover changes made in the main checkout** steps (stash `-u`, add the
-  worktree, pop there). Never `git switch` in the main checkout — the `worktree` skill owns that
+  `worktree` skill's **Recover changes made in the main checkout** steps. Never
+  `git switch` in the main checkout — the `worktree` skill owns that
   rule. Continue from inside the new worktree.
 - Local `TARGET` is ahead of `origin/<TARGET>`: STOP and ask which commits should ship on the
   branch — never guess, and never reset or force `TARGET` yourself. Refresh the remote-tracking

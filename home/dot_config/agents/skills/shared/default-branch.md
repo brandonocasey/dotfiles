@@ -1,0 +1,52 @@
+# Default branch identity and base selection
+
+Use this file when a workflow needs a default branch name or a starting commit.
+These are separate decisions: choosing a base MUST NOT move a local branch,
+change a checkout, merge histories, or push anything.
+
+## Local target name
+
+Use the user's explicit target when given. Otherwise use the first existing
+local branch in this order: the branch named by `refs/remotes/origin/HEAD`,
+`main`, then `master`. Verify each ref with `git show-ref --verify`.
+If none exists, check the default names of other remotes from their available
+`refs/remotes/<remote>/HEAD` refs. Use a matching local branch only if the name
+is unambiguous; otherwise ask which local target to use. Do not invent `master`.
+
+This lookup is local and performs no fetch. `land` uses it for its local-only
+destination. Cleanup uses it for the local target whose ancestry it checks.
+
+## Newest default base
+
+Use this for new branch work and default-based review comparisons, unless the
+user supplied a base. Existing branches and PR/MR heads keep their identity;
+do not recreate or rebase them as part of selecting a base.
+
+1. List every configured remote with `git remote`. For each remote, resolve
+   its live default name with `git ls-remote --symref <remote> HEAD`. Fetch that
+   branch with `git fetch <remote> refs/heads/<default>`, then immediately
+   record `git rev-parse FETCH_HEAD`, the remote, and the branch name before
+   another fetch overwrites `FETCH_HEAD`. This also works with restricted fetch
+   refspecs. If the server does not advertise a symbolic HEAD, use its forge's
+   default-branch metadata or ask; do not guess from its newest feature branch.
+2. Add the local target, if one resolves, and existing local branches with the
+   verified remote-default names. A missing local target is not a blocker when
+   remote candidates exist; do not prompt just for this optional lookup.
+   Record their exact commit IDs. A repository
+   with no remotes uses its verified local default. If no candidate resolves,
+   ask for a base. If a remote lookup or fetch fails, retry when appropriate;
+   otherwise report the failure and ask before excluding it or using stale data.
+3. Compare the recorded commits with
+   `git merge-base --is-ancestor <candidate> <other>`. Choose a commit only when
+   every candidate is an ancestor of it. Equal commits are one candidate;
+   prefer the local ref for the report when tied. Use the recorded commit ID
+   as the worktree start point so a ref moving later cannot change the choice.
+4. If no candidate contains all the others, the defaults diverge. Show the refs,
+   IDs, and unique commits, then ask which base to use. Commit timestamps do not
+   establish that one history contains another. An ancestry command error is
+   not proof of divergence: resolve missing or shallow history first, or report
+   that it could not be checked.
+
+Report the selected base ref and commit. Do not claim that a cached remote ref
+is current. If the user requires offline or local-only work, use local evidence
+within that scope and disclose that remote freshness was not checked.

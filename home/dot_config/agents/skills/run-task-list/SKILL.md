@@ -2,16 +2,8 @@
 disable-model-invocation: true
 name: run-task-list
 description: >
-  Run a set of user-given tasks in parallel: split them across sub-agents (one
-  worktree per task), adversarially review each result via the review skill, fix
-  verified findings, and report when everything the user asked for is done. Takes
-  any number of explicit tasks or endpoints, or a list source (TODO.md, a ticket
-  list, a file) with instructions to pick the tasks that can run in tandem. Use
-  when the user says "do these in parallel", "run these tasks in tandem", "work
-  through this list", "pick what can run together and do it", or invokes /run-task-list.
-  End modes: /run-task-list ship (or "run-task-list-ship") pushes each finished branch as an MR
-  via the ship skill; /run-task-list land (or "run-task-list-land") merges each branch locally
-  via the land skill; default is neither — branches stay local.
+  Run a user-given task list in parallel and review each result. Use for batch
+  or tandem requests; explicit ship/land modes control delivery.
 ---
 
 Take a batch of tasks, run them in parallel sub-agents, adversarially review every
@@ -21,10 +13,11 @@ skill; review follows the `review` skill; commits follow the `commit` skill.
 ## Modes and arguments
 
 - **End mode** — from the invocation: `ship` / "run-task-list-ship" (after review, follow
-  `ship` per branch: push, open MR, babysit CI), `land` / "run-task-list-land" (follow
+  `ship` per branch: push, open or update MR/PR, report without watching CI),
+  `land` / "run-task-list-land" (follow
   `land` per branch: local merge to default, cleanup). Default: neither — branches stay
-  local and committed. `ship` and `land` set `disable-model-invocation`, so the `Skill`
-  tool cannot load them: read `<skills-dir>/ship/SKILL.md` or `<skills-dir>/land/SKILL.md`
+  local and committed. `ship` and `land` are explicit-only: when the user selects
+  the end mode, read `<skills-dir>/ship/SKILL.md` or `<skills-dir>/land/SKILL.md`
   — resolve `<skills-dir>` against this file's path, not the user's repo — and follow it
   step by step. The end mode in the user's invocation is the authorization to run it.
 - **User-defined splits** — if the user says how to split the work ("3 agents",
@@ -66,7 +59,8 @@ State the selected set and the plan in one short message, then proceed.
   inside it); everything else gets its own agent.
 - Code tasks: one worktree per agent, created per the `worktree` skill — it owns the
   commands and the base-branch rule. This skill's only delta is the naming: path
-  `.worktrees/task-<slug>`, branch `<type>/<slug>`. Non-code tasks (research, docs
+  `.worktrees/task-<slug>`, branch `<type>/<slug>`. An invoking alias may supply
+  its own naming; `tandem` uses `.worktrees/tandem-<slug>` instead. Non-code tasks (research, docs
   lookups, external checks) run without a worktree.
 - Each prompt is self-contained per the `sub-agents` skill and must include: the
   task, its acceptance criteria, the worktree path (and its own `PORT` if it runs

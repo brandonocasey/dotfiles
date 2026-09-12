@@ -1,16 +1,14 @@
 ---
 name: commit
 description: >
-  Create a git commit: split the working tree into logical chunks, decide amend vs new,
-  and write Conventional Commit messages. Use when the user says "commit", "commit this",
-  "commit my changes", or invokes /commit. Other skills defer to it for chunking,
-  message format, and the amend-vs-new decision.
+  Create logical Conventional Commits and choose amend versus new. Use when
+  committing changes, directly or through another workflow.
 ---
 
 Optional argument: a target file or chunk. Commit only that target.
 
 1. **Gather** — skip if you already know the context. Run `git status --short`,
-   `git diff -w`, `git diff --staged -w`, and `git log --oneline -5`.
+   `git diff`, `git diff --staged`, and `git log --oneline -5`.
 2. **Decide amend or new.** Amend when HEAD is not pushed to any remote AND the change is
    directly related to HEAD. Amending a pushed commit forces a divergent history, so never
    do it. Make a new commit when there are no commits yet, when the change has a different
@@ -51,4 +49,5 @@ Do not bundle a refactor with a feature, or a fix with docs.
 - Do not push unless the user asks
 - Do not use the `-i` flag or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
-- Pass a multi-line message through a heredoc: `git commit -m "$(cat <<'EOF'...EOF)"`
+- Write a multi-line message to a temporary file and use `git commit -F <file>`.
+  Remove the file after the commit succeeds.

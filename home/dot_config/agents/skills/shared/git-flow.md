@@ -19,12 +19,10 @@ git log --oneline -8
 
 - `BRANCH` — current branch. `HEAD` here means a detached checkout (for example a review
   worktree): STOP and ask which branch to use.
-- `TARGET` — the default branch, resolved per the `worktree` skill's order, which owns this
-  rule: the branch `refs/remotes/origin/HEAD` names (strip the `origin/` prefix), then local
-  `main`, then local `master`. Never pick a name from a naming convention alone. `TARGET` must
-  be a **local** branch here, because `land` and `ship` rebase and fast-forward against it: if
-  `origin/HEAD` names a branch with no local ref, fall through to `main`/`master`. Ask the user
-  if none of the three resolves.
+- `TARGET` — resolve **Local target name** in
+  [default-branch.md](default-branch.md). This is a local destination name, not
+  a freshness comparison. `land` never fetches; `ship` uses its remote target
+  for the MR/PR and the `worktree` skill when it needs a new branch.
 - `IN_WORKTREE` — true if this checkout is a linked worktree (git-dir ≠ git-common-dir).
 - `MAIN_WT` — filesystem path of the worktree that has `TARGET` checked out (from
   `git worktree list`). Unset if `TARGET` is not checked out anywhere.
@@ -35,7 +33,8 @@ git log --oneline -8
 
 Skip if the tree is already clean (nothing staged, unstaged, or untracked).
 
-- Run the `commit` skill (`Skill` tool, `skill: "commit"`) and follow it — it owns reading the
+- Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
+  file directly, and follow it — it owns reading the
   diff, the split rules, staging (new and untracked files included, hunk-level splits within one
   file), the message format, the amend-vs-new decision, and the hook-failure rule. Do not restate
   or re-derive any of that here. Defer to a project-level `commit` skill/command if one exists.

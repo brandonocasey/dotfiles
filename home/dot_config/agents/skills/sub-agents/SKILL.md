@@ -1,10 +1,8 @@
 ---
 name: sub-agents
 description: >
-  Shared rules for spawning any sub-agent: tier and effort selection (Claude and GPT
-  tiers), model/tool overrides, self-contained prompts, raw-data returns, main-session
-  re-validation, background monitoring, and escalation of a hard sub-problem to a
-  stronger tier. Load whenever spawning a sub-agent for any reason.
+  Use when spawning, monitoring, or escalating sub-agents. Owns model
+  selection, prompts, handoffs, and result verification across harnesses.
 ---
 
 Rules for every sub-agent spawn, regardless of which skill or task triggers it. The
@@ -20,28 +18,35 @@ declaring done.
 
 ## Model tier and effort
 
-Pick the tier by task class and set the model explicitly in the spawn call. The tier is the rule; the
-names in brackets are only today's examples. Read the real tiers from the models the
-harness offers, cheapest to most capable. Choose only current-generation, actively
-maintained models — "cheapest tier" means the smallest current model, not a stale one.
+Pick the tier by task class from models actually offered by the harness. Use its
+model and effort controls when available. Do not infer current availability, price,
+or capability order from a model name. Prefer current, actively maintained models;
+check provider metadata or official docs when the roster does not establish this.
+These rules apply to Claude, GPT, and other model families.
 
-| Tier | Claude | GPT | Work |
-| --- | --- | --- | --- |
-| Cheapest | Haiku | GPT 5.6 Luna | Mechanical, well-specified: data aggregation, reformatting, extraction, counting, bulk find-and-replace, web research, watch-and-wait. Low reasoning effort |
-| Middle | Sonnet | GPT 5.6 Luna | Codebase exploration and search: locating usages, tracing call paths, "where/how is X done" fan-out |
-| Judgement | Opus | GPT 5.6 Terra | Design, tricky debugging, cross-file reasoning, anything ambiguous |
-| Top | Fable | GPT 5.6 Sol | Only as the target of an escalation from the main session (see below). Never for splits, monitoring, or review sub-agents; that work stays in the main session, or goes to a forked agent that inherits the parent model where the harness offers one |
+| Tier | Work |
+| --- | --- |
+| Cheapest | Mechanical, well-specified: aggregation, formatting, extraction, counting, bulk replacement, factual web lookup, watch-and-wait. Low effort |
+| Middle | Codebase exploration: locating usages and tracing call paths |
+| Judgement | Design, debugging, cross-file reasoning, research synthesis, ambiguous work |
+| Top | Escalation by the main session only; do not explicitly select it for splits, monitoring, or review. Those may run in the main session or inherit its model through a supported fork |
+
+Several task classes may map to the same offered model. If the harness cannot select
+a tier, use its supported inheritance behavior and disclose that limit. If no
+sub-agent tool exists, do the work inline and state when a review is not independent.
 
 Escalate one tier when a simple-looking task turns out to need judgement.
 
-Per-token price dominates cache savings: moving work from a top tier down one
-current tier usually saves money even though the sub-agent starts with a cold prompt
-cache. Do not keep work on an expensive tier just to preserve the cache.
+Compare total expected cost, including context, cache, output, and likely retries.
+Do not keep work on an expensive tier solely to preserve its cache, or assert a
+saving when current prices and usage are unknown.
 
 ## Prompts
 
 - Make each prompt self-contained: the task, the exact files/targets, and the
-  acceptance criteria. Sub-agents cannot see the conversation.
+  acceptance criteria. Conversation inheritance depends on the harness and spawn
+  options; do not rely on context that was not passed. Independent reviewers get
+  only the review skill's permitted context.
 - Sub-agents return raw results (data, findings, paths), not prose for the user.
 - Sub-agents do not spawn further sub-agents unless their prompt explicitly says to.
 
@@ -68,9 +73,9 @@ asks for it.
 
 Only the main session — the one the user drives — may escalate. Sub-agents never
 escalate; they report blocked and the main session decides. Each escalation goes one
-tier up from the session's tier, so a middle-tier session (Sonnet, Luna) calls the
-judgement tier (Opus, Terra), and a judgement-tier session calls the top tier
-(Fable, Sol). Escalate again only if the first escalation also fails.
+tier up from the session's mapped tier. Escalate again only if the first escalation
+also fails. If no stronger supported model exists, continue the investigation inline
+or report the concrete blocker; do not invent a model or a higher tier.
 
 - **A hard sub-problem, task stays here** — trigger: one failed attempt, or reasoning
   that spans files or systems beyond what the current tier resolved. Spawn one agent

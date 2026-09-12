@@ -2,10 +2,9 @@
 disable-model-invocation: true
 name: clean-merged-worktrees
 description: >
-  Safely clean local Git worktrees and branches after their changes have been merged.
-  Use when the user asks to clean up merged worktrees, stale merged branches, or completed
-  local checkout pairs. Ask before cleaning closed-without-merge PR branches. Preserve dirty,
-  active, detached, open-PR, review, and ambiguous work unless separately confirmed.
+  Clean local worktrees and branches after verified merges. Use for merged-
+  work cleanup; closed-without-merge and review worktrees need separate
+  confirmation.
 ---
 
 # Clean Merged Worktrees
@@ -51,6 +50,8 @@ These rules are the single authority; the workflow steps reference them instead 
   diverged work.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
   stale local ref.
+- Retain a branch used by an open PR even if an older PR for that branch was merged.
+  The review-worktree confirmation can remove only a qualifying worktree, not that ref.
 
 ## Workflow
 
@@ -66,10 +67,10 @@ git status --short
 git remote -v
 ```
 
-Resolve the default target per the `worktree` skill's order — it owns this rule (`origin/HEAD`
-when it resolves to a remote-tracking branch, then local `main`, then local `master`; stop and
-ask when none resolves; never from a naming convention alone). Record the target worktree path
-and the checkout in which the skill is running.
+Resolve **Local target name** in
+[default-branch.md](../shared/default-branch.md). Cleanup proves ancestry in
+that local target; it does not create a branch from the newest remote base.
+Record the target worktree path and the checkout in which the skill is running.
 
 Refresh remote-tracking refs when an `origin` remote exists (this refreshes local evidence; it
 does not delete remote branches):
@@ -120,6 +121,11 @@ glab api --paginate "projects/<url-encoded-project-path>/merge_requests?state=al
 GitLab fields map onto the same checks: `source_branch` → `headRefName`, `sha` → `headRefOid`
 (the MR head), `state` (`merged`/`closed`/`opened`) with `merged_at` → `state`/`mergedAt`,
 `target_branch` → `baseRefName`, `web_url` → `url`.
+
+If the GitHub list reaches its limit, increase it until the result is complete.
+Check live open-PR state for each candidate before deletion; a truncated history
+cannot prove that a branch has no open PR. Match source repository as well as branch
+name when forks make the identity ambiguous; fetch PR detail when needed.
 
 For a local branch to qualify from PR evidence, all of these must be true:
 
@@ -183,12 +189,12 @@ when forge state is unavailable rather than guessing.
 
 ### 4. Filter and confirm
 
-A worktree is removable only when its category has confirmed evidence — a merged PR whose head
-contains every local commit, a user-confirmed exact closed-PR head, or a user-confirmed review
-match — AND every safety rule passes. A local branch without a worktree is removable only with
-confirmed merged-PR-contained-history evidence or a user-confirmed exact closed-without-merge
-head, and never when it is the current, target, or otherwise protected branch — even if an unusual
-repository state makes it look eligible.
+A worktree is removable only when its category has evidence — local ancestry in the
+selected target, a merged PR whose head contains every local commit, a user-confirmed
+exact closed-PR head, or a user-confirmed review match — AND every safety rule passes.
+A local branch without a worktree can qualify through local ancestry, merged-PR
+evidence, or a user-confirmed exact closed-without-merge head. Current, target,
+open-PR, and otherwise protected branches remain protected in every category.
 
 Before mutating anything, show a compact table with `remove`, `keep`, and `reason` for every
 candidate. If the user asked for a dry run, stop after this table.

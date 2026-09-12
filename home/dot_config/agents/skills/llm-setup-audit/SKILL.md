@@ -2,14 +2,9 @@
 disable-model-invocation: true
 name: llm-setup-audit
 description: >
-  Audit the user's prompt files: SKILL.md skills, agent definitions, and always-loaded
-  rules files (AGENTS.md / CLAUDE.md). Finds bugs, contradictions, dead references,
-  duplication, and verbosity. Skills are fixed directly and reported after, with risky
-  semantic changes flagged as veto items; rules files are never edited before the user
-  approves numbered proposals showing the exact final wording. Use when the user says
-  "audit my prompt files", "go over my skill files", "audit my skills", "simplify/dedupe
-  my skills", "clean up AGENTS.md / CLAUDE.md", "audit my rules", or invokes
-  /llm-setup-audit.
+  Audit skills, agent definitions, and shared prompt rules for bugs,
+  duplication, and excess context. Fix skills directly; propose rules-file
+  edits for approval.
 ---
 
 Audit prompt files the way code gets audited: verify every claim on disk, fix with a
@@ -39,9 +34,13 @@ paper trail, and never silently drop a rule.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.
-- Check what the harness has switched off: `skillOverrides` in `settings.json`, and
-  `disable-model-invocation` in each skill's frontmatter. Audit a disabled skill as normal,
-  but report it as disabled — its fixes do nothing until the user turns it back on.
+- Check invocation controls for each harness that reads these files: settings overrides,
+  skill frontmatter, and any invocation policy in agent metadata. Distinguish disabled
+  from explicit-only: Claude Code's `disable-model-invocation` blocks automatic loading;
+  Codex documents `policy.allow_implicit_invocation` in `agents/openai.yaml` and
+  `skills.config` in its config. Report the observed settings; do not assume one
+  harness's flag controls another. Preserve settings unless the user asks to change
+  them. Check current harness docs if a setting is unclear.
 
 ## Checks
 
@@ -74,9 +73,14 @@ Skills mode additions:
   cleanup on every exit path, not just the happy one.
 - **Platform parity** — a skill that queries GitHub (`gh`) needs the GitLab path (`glab`)
   too, and vice versa, unless it is explicitly single-platform.
-- **Frontmatter quality** — description triggers neither overbroad (fires on any stale
-  file) nor missing the phrases the user actually says. Before renaming a skill, confirm
-  shadowing rules against the official docs (personal skills shadow built-ins).
+- **Frontmatter quality** — keep triggers concise and specific to the user's requests;
+  put operating detail in the body. Before renaming a skill, check name-collision
+  behavior in each harness's official docs; do not assume personal skills shadow
+  built-ins everywhere.
+- **Shared-model compatibility** — keep requirements needed by other models or tools.
+  Do not remove checks or authorization boundaries merely because one model supplies
+  them by default. Link substantial mode-specific detail when that saves irrelevant
+  reading; keep simple skills self-contained.
 
 Rules mode additions:
 
@@ -84,7 +88,8 @@ Rules mode additions:
 - **Wrong section** — move rules to the section that owns the topic; a one-bullet section
   does not earn a header.
 - **Restates tool defaults** — removal is gated on one question: "do other tools read this
-  file?" If yes, keep every such rule. Ask once for the whole category, not per rule.
+  file?" If yes, keep every such rule. Use an answer already given in the conversation;
+  otherwise ask once for the whole category, not per rule.
 - **Tool- or ecosystem-specific detail in a global file** — generalize ("follow semver and
   use the project's release tooling"), never add tool-specific commands.
 
@@ -105,8 +110,9 @@ Rules mode additions:
    **Combine / Simplify / Remove / Keep as-is**, numbered within each group.
 2. Every proposal shows the exact final wording that will land on disk. Prose
    descriptions of intended edits are not approvable.
-3. Ask the gating questions up front (other-tools gate for Remove; AskUserQuestion for
-   judgment calls with real options). A free-text answer overrides every offered option.
+3. Ask unresolved gating questions up front. Use the harness's available question tool
+   for judgment calls with real options, or a concise text question if none exists.
+   A free-text answer overrides every offered option.
 4. Apply only what the user approved — they answer by number ("combine: 1, 2, 3"), by
    group ("do combine and simplify"), or "do all". Re-read the file first; the user
    hand-edits between rounds, so use targeted Edits that preserve their additions.

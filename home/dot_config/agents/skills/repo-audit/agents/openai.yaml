@@ -1,4 +1,2 @@
-# Codex counterpart of the `disable-model-invocation` frontmatter in SKILL.md:
-# starting a multi-agent repo audit is the user's call, so only an explicit $repo-audit runs it.
 policy:
   allow_implicit_invocation: false

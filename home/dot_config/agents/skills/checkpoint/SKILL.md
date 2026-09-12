@@ -1,12 +1,9 @@
 ---
 name: checkpoint
 description: >
-  Dump the current session's working state into a checkpoint file in the repo so a fresh
-  session or a second agent can resume cold: goal, decisions made, work done, remaining
-  steps, key file paths, and gotchas. Use when the user says "checkpoint", "save a
-  checkpoint", "write a handoff", "make a plan file for another agent", "save state so we
-  can continue later", or invokes /checkpoint. Also resumes from an existing checkpoint
-  when invoked with a path or asked to continue from one.
+  Save or resume a session checkpoint or handoff so another agent can continue
+  the work. Use for checkpoint, save-state, or resume-from-checkpoint
+  requests.
 ---
 
 Write (or resume from) a checkpoint file that lets a context-free agent continue this work.

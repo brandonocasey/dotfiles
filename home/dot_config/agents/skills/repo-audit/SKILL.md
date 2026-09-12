@@ -2,13 +2,8 @@
 disable-model-invocation: true
 name: repo-audit
 description: >
-  Multi-agent repo audit pipeline: fan out dimension-scoped finder agents (bugs, performance,
-  duplication, legacy/back-compat, consistency), verify every finding against the real code,
-  present confirmed findings split into safe fixes vs decisions, then apply approved fixes with
-  parallel worktree agents under strict file-ownership boundaries. Also re-verifies or works
-  through an existing AUDIT.md. Use when the user says "audit this repo", "full audit", "get
-  this code base in tip-top shape", "re-verify the audit findings", "work through AUDIT.md", or
-  invokes /repo-audit.
+  Audit a repository with parallel finders and verified findings, or re-
+  verify/apply an existing AUDIT.md. Apply only user-selected fixes.
 ---
 
 Run a repo-wide audit as a staged multi-agent pipeline. Findings are never shown unverified,
@@ -42,8 +37,10 @@ legacy/back-compat, consistency), paths to include/exclude, and an agent model o
   writes code — create no worktree there. Finder and verifier agents are read-only and run
   against the main checkout; only fixers (step 5) write, and only inside this worktree.
 - Findings live as JSON in the session scratchpad, batched into files (`batches/batch_N.json`).
+  If the harness has no scratchpad directory, create a task-specific temporary directory
+  and remove it after the final findings are recorded.
 - Orchestrate with the Workflow tool when it is available (this skill is the user's opt-in);
-  otherwise fan out with the Agent tool. Keep any single workflow under ~15 agents — split the
+  otherwise use the harness's available sub-agent tool per `sub-agents`. Keep any single workflow under ~15 agents — split the
   pipeline into one workflow per phase (find, verify, fix) and read results between phases.
 
 ## 1. Find
@@ -100,8 +97,8 @@ they answer.
 - After all fixers return: run the project's lint and test commands in the worktree. Failures
   are yours to fix before reporting.
 - Commit via the `commit` skill (one logical commit per concern, referencing finding ids in
-  bodies). Hand the branch to `land` or `ship` only when the user asks. Those two set
-  `disable-model-invocation`, so the `Skill` tool cannot load them: read
+  bodies). Hand the branch to `land` or `ship` only when the user asks. Both are
+  explicit-only; after the user authorizes the workflow, read
   `<skills-dir>/land/SKILL.md` or `<skills-dir>/ship/SKILL.md` — resolve `<skills-dir>`
   against this file's path, not the user's repo — and follow it.
 
@@ -113,6 +110,9 @@ they answer.
   applied fixes, write it in the main checkout instead — an untracked file blocks the worktree
   removal below and would be deleted with it. This file is the input for the re-verify and
   apply modes later.
+- When fixes were applied, write the remainder before the final commit gate, or commit
+  the report separately through `commit`. Do not report a completed branch while its
+  generated audit report remains uncommitted.
 - If no fixes were applied (nothing confirmed, or the user approved nothing), remove the
   unused fix worktree and branch: `git worktree remove .worktrees/repo-audit`, then
   `git branch -d repo-audit` — don't leave an empty worktree behind.

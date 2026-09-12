@@ -1,11 +1,9 @@
 ---
 name: auto-merge-watch
 description: >
-  Monitor open GitHub pull requests with auto-merge enabled, diagnose CI,
-  review, conflict, and policy blockers, and resolve authorized blockers so
-  the pull requests merge. Use for requests to watch, unblock, or shepherd
-  existing auto-merge pull requests autonomously; do not use to create or
-  generally review a new pull request.
+  Watch and unblock existing GitHub auto-merge pull requests until merged or
+  blocked. Use for autonomous monitoring or repair requests, not new PR
+  creation or general review.
 ---
 
 # Auto-merge watch
@@ -24,7 +22,7 @@ the request to status or report-only work, follow that narrower instruction.
   origin` and use `gh`; if the remote is not GitHub, stop and report that this
   skill supports GitHub pull requests only.
 - Read the repository's `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, and CI
-  documentation before changing code or retrying a check. Apply the most
+  documentation relevant to the failing check or changed paths. Apply the most
   specific rules that exist in the repository.
 - A request to `watch`, `wait`, `fix`, or `unblock` authorizes read-only
   inspection, the smallest root-cause fix, required local checks, one normal
@@ -53,6 +51,9 @@ gh pr list --state open --limit 100 --json number,title,url,headRefName,headRefO
 
 Keep only entries whose `autoMergeRequest` is not `null`. If there are none,
 report that no open auto-merge pull requests exist and stop.
+
+If the list reaches its limit, increase the limit until the inventory is complete
+before filtering or reporting that no eligible pull requests exist.
 
 For each entry, record the pull request number, URL, source branch, source SHA,
 base branch, draft state, auto-merge method, merge state, review decision, and

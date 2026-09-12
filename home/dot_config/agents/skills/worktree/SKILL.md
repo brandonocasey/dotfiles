@@ -1,10 +1,8 @@
 ---
 name: worktree
 description: >
-  Create, use, and remove a git worktree for branch work. Owns the exact
-  commands, the base-branch rule, and the recovery step for changes made in the
-  main checkout by mistake. Load before you start work on any new or existing
-  branch. For push plus MR/PR use ship; for local merge and cleanup use land.
+  Use before branch work to create or reuse an isolated Git worktree. Select
+  the newest default base across local and remote copies; preserve existing work.
 ---
 
 # Git worktree
@@ -13,24 +11,21 @@ Do branch work in a worktree. Never switch branches in the main checkout.
 
 ## Create
 
+For a new branch, read [default-branch.md](../shared/default-branch.md) and
+follow **Newest default base**. It owns remote discovery and ancestry comparison.
+Use the selected commit as `<base-commit>`:
+
 ```sh
-git fetch origin
-git worktree add .worktrees/<branch> -b <branch> origin/<default>
+git worktree add .worktrees/<branch> -b <branch> <base-commit>
 ```
 
-- Find `<default>` in this order: the branch `git symbolic-ref --short
-  refs/remotes/origin/HEAD` names, then `main` if `refs/heads/main` exists, then
-  `master`. Ask the user if none of the three resolves. Do not pick a name from a
-  naming convention alone — a repo can have a local `master` and a remote
-  `origin/main`, and `origin/<default>` must name a ref that exists on the remote.
-- Base the branch on the freshly fetched default branch, unless the user asks
-  for a different base.
-- For a branch that already exists, drop `-b`:
-  `git worktree add .worktrees/<branch> <branch>`.
+- For an existing branch, first check `git worktree list --porcelain` and reuse
+  its worktree when available. Otherwise run
+  `git worktree add .worktrees/<branch> <branch>`. Do not reset its base.
 - `.worktrees/` is ignored through the global excludes file
   (`~/.config/git/ignore`), so it needs no per-repo `.gitignore` entry.
-- The new branch tracks `origin/<default>` — git's default for a remote-tracking
-  start point. `ship` and `land` account for that when they push or delete it.
+- A branch created from a commit ID has no automatic remote upstream. Existing
+  branches may have one; `ship` and `land` account for that.
 
 Work inside `.worktrees/<branch>` for the whole task.
 
@@ -39,15 +34,15 @@ Work inside `.worktrees/<branch>` for the whole task.
 If you already changed files in the main checkout, move them into the worktree
 so the main checkout stays clean:
 
-```sh
-git stash push -u -m move-to-worktree
-git worktree add .worktrees/<branch> -b <branch> origin/<default>
-git -C .worktrees/<branch> stash pop
-```
-
-The bare `stash pop` is safe only because nothing else stashes between the push and
-the pop. If any other stash was pushed in between, pop the `move-to-worktree` entry
-by the ref that `git stash list` shows for that label.
+Select the base as above before moving files. Stash only this task's changes;
+leave unrelated user work in place. If ownership overlaps within a file and
+cannot be separated safely, ask before moving it. Use a unique stash label and
+record the created stash commit ID. Create the worktree, then apply that ID there
+with `git stash apply --index <stash-commit>`. Drop the matching stash entry only
+after checking that every intended change was restored. Resolve a stash-list ref
+by its recorded commit ID immediately before dropping it; never use bare `pop`
+or choose a repeated label. On an ambiguous conflict, retain the stash and report
+its ID and both checkout paths.
 
 Check `git status --short` in both checkouts afterwards.
 
@@ -71,12 +66,12 @@ Move your shell out of the worktree before you remove it. Git removes the
 directory under you, and a shell left in a deleted directory fails every later
 command with "Unable to read current working directory".
 
-To clean up several merged worktrees at once, use the `clean-merged-worktrees`
-skill. It sets `disable-model-invocation`, so only the user can invoke it with
-`/clean-merged-worktrees` — say so instead of trying to load it yourself.
+For batch cleanup, the user invokes `clean-merged-worktrees` explicitly. Its
+Claude frontmatter and Codex metadata both mark it explicit-only. Do not start
+batch cleanup merely because a worktree task has ended.
 
 ## Related skills
 
-- `ship` — push, open the MR/PR, watch CI.
+- `ship` — push, open or update the MR/PR, and report without watching CI.
 - `land` — local merge into the default branch, then cleanup.
 - `commit` — chunking and Conventional Commit messages.

@@ -1,11 +1,8 @@
 ---
 name: browser
 description: >
-  Pick and drive a browser MCP for any web task: page checks, DOM or network
-  inspection, screenshots, media playback checks, DevTools traces. Owns the
-  headless-vs-headed choice, the mute rules, and the no-focus-stealing rule.
-  Load before the first browser MCP call. For real Safari use the real-safari
-  skill instead.
+  Use before browser MCP automation: page checks, screenshots, DOM/network
+  inspection, or playback. For real Safari, use real-safari.
 ---
 
 # Browser automation

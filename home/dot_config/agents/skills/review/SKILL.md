@@ -1,12 +1,9 @@
 ---
 name: review
 description: >
-  Adversarial, verified code review of any change: an MR/PR URL, a local branch, a
-  commit or range, or the uncommitted working diff. Every candidate finding is
-  verified against the real code before it is shown; output is findings with
-  severity, a plain-language explanation, the exact location, and a ready-to-post
-  comment or concrete fix. Use for any review request or /review. Optional --fix
-  applies the agreed fixes (and pushes, for an MR/PR).
+  Review a PR/MR, branch, commit range, or working diff for verified defects.
+  Use for review requests; --fix applies agreed fixes and pushes remote
+  reviews.
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The
@@ -52,10 +49,10 @@ Classify the argument:
 - **GitLab or GitHub URL** → remote review. Parse host, project path, and MR/PR number.
   GitLab (any host) → `glab`, prefixed with `GITLAB_HOST=<host>` when self-hosted;
   GitHub → `gh`.
-- **Branch name** → local branch review against the default branch, resolved per the
-  `worktree` skill's order (`origin/HEAD`, then local `main`, then local `master`) —
-  never from a naming convention alone: `git log <default>..<branch>` for the commits,
-  `git diff <default>...<branch>` (three-dot: changes since the merge-base) for the diff.
+- **Branch name** → local branch review against **Newest default base** in
+  [default-branch.md](../shared/default-branch.md), unless the user supplied a base.
+  Use `git log <base-commit>..<branch>` for commits and
+  `git diff <base-commit>...<branch>` for changes since their merge-base.
 - **Commit sha or range** (`<sha>`, `<a>..<b>`) → `git show <sha>` / `git diff <a>..<b>`.
 - **No argument** → the working diff (`git diff`, `git diff --staged`, plus untracked
   files) if the tree is dirty; otherwise the current branch against the default branch as
@@ -66,7 +63,7 @@ Remote fetch — GitLab:
 ```sh
 glab mr view <iid> --repo <project-path>    # title, description, state, branches
 glab mr diff <iid> --repo <project-path>
-glab api "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"  # existing discussion — skip already-raised points
+glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"  # existing discussion — skip already-raised points
 ```
 
 Remote fetch — GitHub:
@@ -86,9 +83,9 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 
   ```sh
   git fetch origin <source-branch>                             # GitLab, or same-repo GitHub PR
-  git worktree add .worktrees/review-<number> origin/<source-branch>
-  # GitHub PR from a fork: git fetch origin pull/<n>/head, then worktree add from FETCH_HEAD
-  # GitLab MR from a fork: git fetch origin refs/merge-requests/<iid>/head, then worktree add from FETCH_HEAD
+  git worktree add --detach .worktrees/review-<number> FETCH_HEAD
+  # GitHub fork: fetch origin pull/<n>/head, then add --detach from FETCH_HEAD
+  # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
   ```
 
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
@@ -163,50 +160,15 @@ to post. Remove any worktree this review created — never a pre-existing one �
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
 until the end of step 4 and remove it there.
 
-### Link formats (MR/PR only)
-
-GitLab — diff-line anchor in the Changes tab:
-`https://<host>/<project-path>/-/merge_requests/<iid>/diffs#<sha1>_<old>_<new>`
-where `<sha1>` = `printf '<repo-relative-file-path>' | shasum -a 1 | cut -d' ' -f1`
-(`shasum` appends two spaces and `-`; the anchor breaks if you paste that) and `<old>`/`<new>` are
-the diff positions of the line (walk the hunk from `@@ -o,c +n,c @@`: context lines increment
-both counters, `-` only the old, `+` only the new; an added line's `<old>` is the current
-unincremented old counter). File-wide notes use `.../diffs#<sha1>`. Fall back to
-`https://<host>/<project-path>/-/blob/<source-branch>/<file>#L<line>` only for lines outside
-the diff.
-
-GitHub — diff-line anchor in the Files tab:
-`https://github.com/<owner>/<repo>/pull/<n>/files#diff-<sha256>R<new-line>`
-where `<sha256>` = `printf '<repo-relative-file-path>' | shasum -a 256 | cut -d' ' -f1`;
-use `L<old-line>`
-for a deleted line. File-wide notes use `...#diff-<sha256>`. Fall back to
-`https://github.com/<owner>/<repo>/blob/<source-branch>/<file>#L<line>` for lines outside
-the diff.
-
-### Suggestion blocks (MR/PR only)
-
-GitLab (`-0+0` widens the replaced line range when needed):
-
-````markdown
-```suggestion:-0+0
-<replacement lines>
-```
-````
-
-GitHub (replaces the line(s) the comment anchors to):
-
-````markdown
-```suggestion
-<replacement lines>
-```
-````
+For MR/PR comment links and suggestion syntax, read
+[remote-comments.md](references/remote-comments.md). Local reviews do not need it.
 
 ## 4. Optional: --fix
 
 Only when the user asks (`--fix`, "fix them"):
 
 - **MR/PR**: in the review worktree, apply the agreed fixes, run the repo's tests/lint,
-  commit in the branch's existing style (carry any issue-tracker reference from the MR/PR
+  commit through the `commit` skill in the branch's existing style (carry any issue-tracker reference from the MR/PR
   title), and push to the source branch — the review worktree is detached, so use
   `git push origin HEAD:<source-branch>`. For a fork MR/PR, `origin` is the base repo — you
   need push access to the fork and must add it as a remote and push there instead. Print

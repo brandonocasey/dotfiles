@@ -1,9 +1,8 @@
 ---
 name: real-safari
 description: >
-  Drive real Safari (FairPlay DRM playback, Safari-only bugs) via safaridriver and the
-  W3C WebDriver REST API — no MCP exists for it. Always headed and visible, so confirm
-  with the user first. Load before any task that needs real Safari.
+  Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It
+  is visible and needs user confirmation before starting.
 ---
 
 Real Safari has no MCP. Start `safaridriver -p <open port>` and drive it with the
