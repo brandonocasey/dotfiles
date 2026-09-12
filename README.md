@@ -11,9 +11,15 @@
 ## Agent skills
 
 On Linux and macOS, `chezmoi apply` installs `frontend-design` for Codex through
-GitHub CLI when the skill is missing. GitHub CLI manages the skill files and
-source metadata. Later chezmoi applies preserve installed updates and local
-edits.
+GitHub CLI when the skill is missing. GitHub CLI manages the upstream skill
+files and source metadata. After installation, chezmoi sets the Codex invocation
+policy so `frontend-design` needs an explicit invocation. The managed Claude
+settings apply the same restriction to its plugin.
+
+Chezmoi also manages `ci-investigate`, `ui-verify`, `release-verify`, and
+`benchmark-change` in the shared skills directory. Of these four skills, Codex
+and Claude can select only `ui-verify` and `benchmark-change` automatically.
+Invoke `ci-investigate` and `release-verify` explicitly.
 
 Check for upstream updates:
 

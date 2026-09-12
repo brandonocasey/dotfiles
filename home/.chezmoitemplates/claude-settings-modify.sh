@@ -34,6 +34,10 @@ managed=$(
       "Write"
     ],
     "ask": [],
+    "deny": [
+      "Skill(frontend-design:frontend-design)",
+      "Skill(frontend-design:frontend-design *)"
+    ],
     "defaultMode": "auto"
   },
   "model": "claude-fable-5[1m]",
