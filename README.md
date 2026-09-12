@@ -8,6 +8,29 @@
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
+## Agent skills
+
+On Linux and macOS, `chezmoi apply` installs `frontend-design` for Codex through
+GitHub CLI when the skill is missing. GitHub CLI manages the skill files and
+source metadata. Later chezmoi applies preserve installed updates and local
+edits.
+
+Check for upstream updates:
+
+```bash
+gh skill update frontend-design --dry-run
+```
+
+Apply an update:
+
+```bash
+gh skill update frontend-design
+```
+
+The GitHub CLI skill commands are in preview. See the
+[installation](https://cli.github.com/manual/gh_skill_install) and
+[update](https://cli.github.com/manual/gh_skill_update) documentation.
+
 ## Docker
 
 Build and run your dotfiles in a containerized environment.
