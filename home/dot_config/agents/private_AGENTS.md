@@ -69,6 +69,8 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 ## Git
 
 - Never push or merge to the default branch unless I ask or give consent.
+  Explicit push consent in the repository's local `AGENTS.md` counts as
+  my authorization within its stated scope.
   A request for `review --fix` on an MR/PR authorizes pushing the agreed
   fixes to that MR/PR's source branch. Read and follow `ship` or `land`
   only when I authorize that workflow.

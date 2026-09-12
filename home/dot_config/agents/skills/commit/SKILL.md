@@ -46,7 +46,7 @@ Do not bundle a refactor with a feature, or a fix with docs.
 
 ## Constraints
 
-- Do not push unless the user asks
+- Push only with authorization under the global Git rules.
 - Do not use the `-i` flag or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
 - Write a multi-line message to a temporary file and use `git commit -F <file>`.
