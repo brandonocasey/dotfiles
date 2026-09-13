@@ -56,6 +56,13 @@ goals = true
 hooks = true
 js_repl = false
 
+[features.multi_agent_v2]
+enabled = true
+wait_agent_enabled = true
+min_wait_timeout_ms = 300000
+default_wait_timeout_ms = 1500000
+max_wait_timeout_ms = 3600000
+
 [mcp_servers.computer-use]
 command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
 args = ["mcp"]
