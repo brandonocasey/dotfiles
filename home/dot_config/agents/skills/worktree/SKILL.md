@@ -92,12 +92,14 @@ git rev-parse <branch>                  # local tip; MUST be the same ID
 
 If the IDs differ, `ls-remote` prints nothing, or the command fails, keep the
 worktree and the branch and report both IDs. Otherwise, with your shell in the
-main checkout:
+main checkout (`<main-checkout>` below: the first `worktree` entry of
+`git worktree list --porcelain`; it is not `land`'s `MAIN_WT`, which can be
+unset when the target branch is checked out nowhere):
 
 ```sh
-git -C <MAIN_WT> worktree remove .worktrees/<branch>
-git -C <MAIN_WT> branch -d <branch>
-git -C <MAIN_WT> worktree prune
+git -C <main-checkout> worktree remove .worktrees/<branch>
+git -C <main-checkout> branch -d <branch>
+git -C <main-checkout> worktree prune
 ```
 
 `branch -d` checks the branch against its upstream and refuses a tip the
@@ -134,7 +136,7 @@ initialized submodule (an entry of `git -C <worktree-path> submodule status
    `git -C <sub-path> fetch --quiet` and then
    `git -C <sub-path> branch -r --contains HEAD` prints a remote branch, or
    the main checkout's clone holds it:
-   `git -C <MAIN_WT>/<sub-path> merge-base --is-ancestor <commit> <sub-target>`
+   `git -C <main-checkout>/<sub-path> merge-base --is-ancestor <commit> <sub-target>`
    succeeds (the `land` path in `shared/submodules.md`). Neither: push the
    commit to the submodule's remote first, or keep the worktree and report the
    submodule path and commit ID.
@@ -177,7 +179,7 @@ initialized submodule passes **Submodules**.
    paths. Saved files need no copy; record the commit that holds them.
 5. Remove with a single `--force`, from outside the worktree:
    ```sh
-   git -C <MAIN_WT> worktree remove --force <worktree-path>
+   git -C <main-checkout> worktree remove --force <worktree-path>
    ```
    Never pass `--force` twice. A locked worktree (`locked` in
    `git worktree list --porcelain`) is never removed; report it.

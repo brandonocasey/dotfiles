@@ -72,7 +72,10 @@ Each worktree has its own submodule clone under
 `.git/worktrees/<name>/modules/<SUB_NAME>`. The clone that persists is the
 main checkout's, under `.git/modules/<SUB_NAME>`, so the submodule branch
 lands there. The fetch below reads a local path, not a remote; it is the one
-fetch `land` allows.
+fetch `land` allows. This flow requires `MAIN_WT` to be that main checkout (the
+first `worktree` entry of `git worktree list --porcelain`). If `TARGET` is
+checked out in a linked worktree instead, stop and ask: that worktree's
+submodule clone does not persist, so landing the submodule branch there loses it.
 
 1. In the worktree, rebase `SUB_BRANCH` onto the main clone's `SUB_TARGET`
    commit before the superproject rebase: `git -C <SUB_PATH> rebase

@@ -149,14 +149,14 @@ Brief beats complete-sounding: no padding, no restating the diff.
 3. **One block per surviving finding**, most-severe first, each led by a severity label:
    `bug` (wrong behavior reachable in production), `question` (design choice worth confirming
    with the author), `nit` (cosmetic/noise). Per block:
-   - **Where**: file + line. For an MR/PR, add a clickable link (formats below) so the
+   - **Where**: file + line. For an MR/PR, add a clickable link (formats in `remote-comments.md`, linked at the end of this step) so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
    - **Why it matters**: 1–3 plain-language sentences — what goes wrong, when, and why it
      matters. Jargon spelled out.
    - **Comment to post** (MR/PR) — ready-to-paste text (this one can be technical): factual,
      no hedging, no AI-flavored preamble; state the failure scenario concretely. Where a
-     small code change fixes it, include a suggestion block (syntax below).
+     small code change fixes it, include a suggestion block (syntax in the same file).
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
 4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
    did NOT survive verification and why each was killed. This is the proof the review was real.

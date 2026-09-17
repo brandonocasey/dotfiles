@@ -23,7 +23,8 @@ effort: Claude Code from `~/.claude/agents/<role>.md`, Codex from
 `~/.codex/agents/<role>.toml`. Never spawn a sub-agent without a role, never pass
 a `model` or effort that differs from the role's pin, and never use the harness's
 generic default agent (`general-purpose`, `claude`, `default`) for work a role
-covers. A spawn that omits the role inherits the parent model, which is a defect.
+covers. A spawn that omits the role gets the parent model (Claude Code) or the
+harness's `default_subagent_model` (Codex) instead of the pin, which is a defect.
 The user's named model or external tool is the only override.
 
 | Role | Work | Claude Code | Codex |
@@ -50,7 +51,8 @@ Do not keep work on an expensive role solely to preserve its cache.
   options; do not rely on context that was not passed. Independent reviewers get
   only the review skill's permitted context.
 - Sub-agents return raw results (data, findings, paths), not prose for the user.
-- Sub-agents do not spawn further sub-agents; the role definitions deny it.
+- Sub-agents do not spawn further sub-agents. The Claude Code role files deny the
+  `Agent` tool; the Codex role files forbid it by instruction only.
 
 ## Prompt caching
 

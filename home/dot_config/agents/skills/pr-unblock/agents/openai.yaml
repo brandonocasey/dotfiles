@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unblock pull requests"
+  short_description: "Get open PRs green: rebase, fix CI, watch, merge"
+  default_prompt: "Use $pr-unblock to get my open pull requests passing: rebase, fix failing checks, and watch CI until they are green or merged."

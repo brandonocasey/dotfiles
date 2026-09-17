@@ -18,7 +18,7 @@ Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when
 - Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 30 days.
 - Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 30 days.
 - Backups: `$XDG_STATE_HOME/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/` (`~/.local/state/agents/backups/`). Copies of files taken before a force-remove, overwrite, or migration, with their relative paths kept. Never auto-pruned. Name the backup path in the report.
-- A file that a tool must find at a fixed path (for example a `.checkpoints/` file in a repo) stays where the tool expects it.
+- A file that a tool must find at a fixed path (for example a config file a linter reads from the repo root) stays where the tool expects it.
 
 ## Skills own the detail
 
@@ -31,8 +31,8 @@ Load the skill before the first action in its area. The skill is the single sour
   - a new or changed branch, condition, or error path has no test that ran green in this task
   - more than ~150 changed lines of hand-written logic remain after you exclude tests, docs, lockfiles, snapshots, generated files, and pure moves, renames, or formatting
 
-  Skip when every change is mechanical (rename, move, format, import order, dependency bump, config value), or only tests and docs changed, or the code is a prototype or throwaway demo, unless I ask. End the task recap with one line: `Review: ran` or `Review: skipped (<reason>)`, so I can correct the call.
-- Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns selecting the newest default base across local and all remote copies. Use an explicit base when I give one; ask if default histories diverge. Preserve existing branch history. Never switch branches in the main checkout.
+  Skip when every change is mechanical (rename, move, format, import order, dependency bump, config value), or only tests and docs changed, or the code is a prototype or throwaway demo, unless I ask. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`, so I can correct the call.
+- Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns base selection and branch preservation. Never switch branches in the main checkout.
 - Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`, which remains local-only. The Git section owns authorization for these workflows.
 - Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
 - Documentation: `write-docs` before you create, edit, or restructure any docs page
@@ -41,7 +41,7 @@ Load the skill before the first action in its area. The skill is the single sour
 
 Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard: ASD-STE100 Simplified Technical English https://asd-ste100.org — its writing rules, not its word list. Keep the domain's own technical names and verbs (`hydrate`, `transpile`, `seek`).
 
-- Start with the answer. No preamble, no recap closers. State uncertainty as fact: "I have not checked X". Never invent a specific you cannot check (a version, a date, a flag, a line number) — name the command or file that would settle it
+- Start with the answer. No preamble, no closing summary that restates the answer. State uncertainty as fact: "I have not checked X". Never invent a specific you cannot check (a version, a date, a flag, a line number) — name the command or file that would settle it
 - Plain words, active voice, simple tenses. Short sentences, one idea each. No idioms, no hedging adverbs. Keep articles and pronouns explicit
 - One term per concept. Plain verb over formal: `check`, `make sure`, `start`, `stop`, `use`, `show`, `find`, `change`, `remove`, `need`. `verify` = prove against code or data; `confirm` = get my approval before an irreversible step
 - Accuracy beats style: never drop a fact, number, condition, or scope qualifier to shorten a sentence

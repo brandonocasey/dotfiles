@@ -57,8 +57,8 @@ estimates. If the evidence is incomplete, name the missing log or timestamp.
 
 Use the installed `worktree` and `commit` skills for code changes. Use `review`
 under the existing review rules, and `ship` only when the user authorized a
-push and PR/MR workflow. For explicitly requested monitoring of auto-merge PRs,
-continue through `auto-merge-watch`. Diagnosis alone does not start a watcher.
+push and PR/MR workflow. For explicitly requested watching or unblocking of PRs,
+continue through `pr-unblock`. Diagnosis alone does not start a watcher.
 
 Report the cause, supporting run/job URLs and head SHAs, the fix or next action,
 and the observed effect. Reuse those observations in the calling workflow.

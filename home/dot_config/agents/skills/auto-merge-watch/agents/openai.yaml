@@ -1,4 +1,0 @@
-interface:
-  display_name: "Auto-merge watch"
-  short_description: "Unblock and monitor auto-merge PRs"
-  default_prompt: "Use $auto-merge-watch to autonomously unblock auto-merge pull requests and watch CI until they merge."

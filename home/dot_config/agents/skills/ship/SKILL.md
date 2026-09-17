@@ -100,8 +100,10 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 
 When `IN_WORKTREE` is true, run the `worktree` skill's **Remove after push** for `BRANCH`:
 it proves the remote tip equals the local tip, then removes the worktree and deletes the
-local branch with `branch -d`, and stops on any difference. Move your shell to `MAIN_WT`
-first. Worktrees with initialized submodules need its **Submodules** checks before the one
+local branch with `branch -d`, and stops on any difference. Move your shell to the main
+checkout first (the first `worktree` entry of `git worktree list --porcelain`; `MAIN_WT`
+can be unset here because `TARGET` is a remote branch). Worktrees with initialized
+submodules need its **Submodules** checks before the one
 `--force`. When `IN_WORKTREE` is false, `BRANCH` sits in the main checkout: leave it and say
 so. Skip a `locked` worktree and report it.
 
