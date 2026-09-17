@@ -59,8 +59,8 @@ State the selected set and the plan in one short message, then proceed.
   inside it); everything else gets its own agent.
 - Code tasks: one worktree per agent, created per the `worktree` skill — it owns the
   commands and the base-branch rule. This skill's only delta is the naming: path
-  `.worktrees/task-<slug>`, branch `<type>/<slug>`. An invoking alias may supply
-  its own naming; `tandem` uses `.worktrees/tandem-<slug>` instead. Non-code tasks (research, docs
+  `.worktrees/task-<slug>`, branch `<type>/<slug>`. An invoking alias (such as
+  `tandem`) may supply its own naming; its file owns that. Non-code tasks (research, docs
   lookups, external checks) run without a worktree.
 - Each prompt is self-contained per the `sub-agents` skill and must include: the
   task, its acceptance criteria, the worktree path (and its own `PORT` if it runs
@@ -78,10 +78,10 @@ For every returned task, in the main session:
 
 - Check the result against its acceptance criteria first. A "done" claim with no
   evidence is treated as unverified.
-- Code tasks: run the `review` skill on the task's diff in its worktree. This is
-  the session's own work, so fix verified findings without asking, then re-run
-  the project's tests and lint in that worktree (fixes are yours; never
-  "pre-existing"). Do not re-review after fixes.
+- Code tasks: run the `review` skill on the task's diff in its worktree. The
+  batch is this session's own work, so the review skill's own-work rules apply
+  (it owns fix-and-re-review). Test and lint failures in that worktree are yours
+  to fix; never "pre-existing".
 - Non-code tasks: spawn one verifier agent prompted to **refute** the result
   against the acceptance criteria; uncertain means refuted. Refuted results go
   back for one redo (per the `sub-agents` skill, at most one respawn per part —

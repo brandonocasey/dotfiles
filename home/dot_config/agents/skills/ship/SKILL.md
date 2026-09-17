@@ -43,10 +43,16 @@ target details:
   rule. Continue from inside the new worktree and refresh `BRANCH`.
 - With a clean tree and no local-only commits, report that there is nothing to ship and stop.
 
+When `.gitmodules` exists, also read `shared/submodules.md` next to `git-flow.md` and
+establish its **Facts** (`SUB_CHANGED`, `SUB_OWNED`, `SUB_BRANCH`, `SUB_TARGET`). A changed
+owned submodule ships together with `BRANCH`: same branch name, its own MR/PR, pushed first.
+
 ## 1. Commit gate
 
 Run the **Commit gate** from `shared/git-flow.md`. It owns task scope, the
-clean-tree check, and the commit report against `COMMIT_BASE`.
+clean-tree check, and the commit report against `COMMIT_BASE`. With a changed
+submodule, run the **Commit gate** in `shared/submodules.md` first; it gates the
+submodule and the gitlink bump before the superproject.
 
 ## 2. Push
 
@@ -57,6 +63,11 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 - Branch exists on the remote but histories diverged (rebase/amend since last push):
   `git push --force-with-lease origin <BRANCH>`. Never plain `--force`; never any force on
   `TARGET` or `REMOTE_DEFAULT`; never push either from this skill.
+- With a changed owned submodule, follow **Ship** in `shared/submodules.md` first: push
+  `SUB_BRANCH` from the submodule and open its MR/PR, then push the superproject with
+  `--recurse-submodules=check`. Git refuses that push while a recorded submodule commit
+  exists on no submodule remote; never retry without the flag. `on-demand` is not used:
+  it fails on a detached submodule HEAD with `src refspec ... must name a ref`.
 - Confirm the push landed (`git status -sb` shows no ahead-count) and say so — the user should
   never have to ask "did you push?".
 
@@ -79,15 +90,30 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   pipeline URL and stop.
 - Handle CI only when the user asks for it in a later turn. Then: pull the failing job's log
   (`glab ci trace <job>` / `gh run view --log-failed`), find the real error under the
-  boilerplate, fix it in this checkout, commit via the `commit` skill, and push. Retry a job
+  boilerplate, fix it, commit via the `commit` skill, push, and run step 5 again. Step 5
+  removed the worktree, so recreate it first with the two commands at the end of the
+  `worktree` skill's **Remove after push**. Retry a job
   once (`glab ci retry <job>` / `gh run rerun --failed`) when the project's docs name that
   suite as flaky or the failure is an infra hiccup; a second failure is real.
 
-## 5. Report
+## 5. Clean up
+
+When `IN_WORKTREE` is true, run the `worktree` skill's **Remove after push** for `BRANCH`:
+it proves the remote tip equals the local tip, then removes the worktree and deletes the
+local branch with `branch -d`, and stops on any difference. Move your shell to `MAIN_WT`
+first. Worktrees with initialized submodules need its **Submodules** checks before the one
+`--force`. When `IN_WORKTREE` is false, `BRANCH` sits in the main checkout: leave it and say
+so. Skip a `locked` worktree and report it.
+
+## 6. Report
 
 State plainly: the commits shipped (`<short> <subject>` each), whether the MR/PR was created
-or updated, and the pipeline state at push time (do not wait for it to finish). End with a
-**Links** section — MR/PR URL, pipeline URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
+or updated, the same for each submodule MR/PR with the merge order (submodule first, and the
+squash warning from `shared/submodules.md` when it applies), the pipeline state at push time
+(do not wait for it to finish), and the cleanup
+result: the removed worktree path and the deleted branch with its last commit ID, or the
+reason both stayed. End with a
+**Links** section — MR/PR URL, submodule MR/PR URLs, pipeline URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
 
 ## Hard rules
 
@@ -95,4 +121,6 @@ or updated, and the pipeline state at push time (do not wait for it to finish). 
 - `--force-with-lease` only, only on `BRANCH`, never on `TARGET` or the live remote default.
 - Never create or transition tickets from this skill unless asked — reuse keys you find.
 - Always confirm the push happened before talking about the MR/PR.
+- Remove the worktree and local branch only after the `ls-remote` check in **Remove after
+  push** passes. Never `branch -D`.
 - Everything in **Shared rules** of `shared/git-flow.md`.

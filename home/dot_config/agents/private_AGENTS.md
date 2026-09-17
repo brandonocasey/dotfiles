@@ -32,8 +32,8 @@ Load the skill before the first action in its area. The skill is the single sour
   - more than ~150 changed lines of hand-written logic remain after you exclude tests, docs, lockfiles, snapshots, generated files, and pure moves, renames, or formatting
 
   Skip when every change is mechanical (rename, move, format, import order, dependency bump, config value), or only tests and docs changed, or the code is a prototype or throwaway demo, unless I ask. End the task recap with one line: `Review: ran` or `Review: skipped (<reason>)`, so I can correct the call.
-- Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns selecting the newest default base across local and all remote copies. Use an explicit base when I give one; ask if default histories diverge. Preserve existing branch history. Never switch branches in the main checkout. `land` remains local-only.
-- Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`. The Git section owns authorization for these workflows.
+- Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns selecting the newest default base across local and all remote copies. Use an explicit base when I give one; ask if default histories diverge. Preserve existing branch history. Never switch branches in the main checkout.
+- Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`, which remains local-only. The Git section owns authorization for these workflows.
 - Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
 - Documentation: `write-docs` before you create, edit, or restructure any docs page
 
@@ -83,12 +83,7 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ## Git
 
-- Never push or merge to the default branch unless I ask or give consent.
-  Explicit push consent in the repository's local `AGENTS.md` counts as
-  my authorization within its stated scope.
-  A request for `review --fix` on an MR/PR authorizes pushing the agreed
-  fixes to that MR/PR's source branch. Read and follow `ship` or `land`
-  only when I authorize that workflow.
+- Never push or merge to the default branch unless I ask or give consent. Explicit push consent in the repository's local `AGENTS.md` counts as my authorization within its stated scope. A request for `review --fix` on an MR/PR authorizes pushing the agreed fixes to that MR/PR's source branch. Read and follow `ship` or `land` only when I authorize that workflow.
 - Commit finished task changes to the worktree branch before reporting done, unless the invoked workflow explicitly leaves committing to me. Leave no uncommitted or untracked task changes under the normal commit workflow. Preserve unrelated user files and edits. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout.
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change

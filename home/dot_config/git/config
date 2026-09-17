@@ -29,7 +29,6 @@
   # show moved lines in a different color than add/remove
   colorMoved = default
   # only give a commit summary of submodules not a diff
-  ignoreSubmodules = dirty
   # better diff than default
   algorithm = histogram
 
@@ -118,6 +117,7 @@
 [push]
   # assume the remote branch has the same name as the local one
   autoSetupRemote = true
+	recurseSubmodules = check
 
 [pull]
   # apply remote changes before my local changes as they already exist
@@ -192,3 +192,7 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
+[submodule]
+	recurse = true
+[status]
+	submoduleSummary = true

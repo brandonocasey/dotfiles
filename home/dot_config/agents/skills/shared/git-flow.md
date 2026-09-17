@@ -1,7 +1,8 @@
 # Shared git flow — facts, commit gate, rules
 
 Shared by the `land` and `ship` skills. Skills reference this file instead of duplicating it;
-per-skill deltas live in each SKILL.md. (No `SKILL.md` here on purpose — this directory is not
+per-skill deltas live in each SKILL.md. Submodule handling lives in
+[submodules.md](submodules.md). (No `SKILL.md` here on purpose — this directory is not
 a skill.)
 
 ## Facts
@@ -12,7 +13,7 @@ Establish these first; refresh any fact after an action that changes it:
 git rev-parse --abbrev-ref HEAD                         # current branch
 git rev-parse --git-dir --git-common-dir                # the two differ → linked worktree
 git worktree list --porcelain                           # paths + which branch is where
-git status --short                                      # is the tree dirty?
+git status --short --ignore-submodules=none             # dirty? (flag defeats diff.ignoreSubmodules)
 git log --oneline -8
 ```
 
@@ -27,7 +28,8 @@ git log --oneline -8
 - `MAIN_WT` — filesystem path of the worktree that has `TARGET` checked out (from
   `git worktree list`). Unset if `TARGET` is not checked out anywhere.
 - `TARGET_DIRTY` — true when the worktree holding `TARGET` has uncommitted changes (staged,
-  unstaged, or untracked — check with `git -C <MAIN_WT> status --short`).
+  unstaged, or untracked — check with
+  `git -C <MAIN_WT> status --short --ignore-submodules=none`).
 
 ## Commit gate
 

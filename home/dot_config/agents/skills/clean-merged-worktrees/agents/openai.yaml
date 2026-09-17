@@ -1,7 +1,7 @@
 interface:
   display_name: "Clean merged worktrees"
-  short_description: "Safely remove merged and review worktrees"
-  default_prompt: "Use $clean-merged-worktrees to inspect and safely clean merged, closed, and remote-PR review worktrees."
+  short_description: "Safely remove merged worktrees; assess retained branches"
+  default_prompt: "Use $clean-merged-worktrees to inspect and safely clean merged, closed, and remote-PR review worktrees, and report whether retained branches are still relevant, superseded, or no longer useful."
 
 policy:
   allow_implicit_invocation: false

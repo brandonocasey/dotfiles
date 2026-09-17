@@ -127,9 +127,8 @@ After the retry, return to the inventory and classify the new result.
 
 ## Watch while CI runs
 
-When checks are pending and the user asks to watch, load the `delegate` and
-`sub-agents` skills and start one `cheap` background watcher
-for the repository. Give it the current pull request numbers, source SHAs, and
+When checks are pending and the user asks to watch, load the `sub-agents`
+skill and start one `cheap` background watcher for the repository. Give it the current pull request numbers, source SHAs, and
 URLs. It must:
 
 - use read-only `gh pr view` and `gh pr checks` snapshots;

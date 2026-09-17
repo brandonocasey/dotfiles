@@ -90,6 +90,9 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git worktree add .worktrees/review-<branch> <branch>`.
+- When `.gitmodules` exists and the review runs tests, initialize submodules per the
+  `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
+  same skill's **Submodules** section owns the `--force` decision.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
 
 Read the surrounding code of every changed hunk you intend to comment on.
@@ -163,7 +166,9 @@ is a valid result. Do NOT post anything to the MR/PR unless the user asks; print
 to post. Remove any worktree this review created — never a pre-existing one — with
 `git worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
-until the end of step 4 and remove it there.
+until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
+behind is incomplete: when a sub-agent ran steps 0–2, the main session removes the worktree
+after re-verification, and the report's last line names the removed path or the blocker.
 
 For MR/PR comment links and suggestion syntax, read
 [remote-comments.md](references/remote-comments.md). Local reviews do not need it.

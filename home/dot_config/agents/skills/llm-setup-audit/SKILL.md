@@ -14,7 +14,8 @@ paper trail, and never silently drop a rule.
 
 - **Skills mode** — every file in the skills tree: `SKILL.md` files, agent definitions, and
   the shared helper files that skills read (e.g. `shared/git-flow.md`). Fix directly, report
-  after. Default target: `~/.config/agents/skills/`.
+  after. Default targets: `~/.config/agents/skills/`, the Claude/Gemini/pi agent definitions
+  in `~/.config/agents/agents/`, and the Codex ones in `~/.codex/agents/`.
 - **Rules mode** — always-loaded instruction files: AGENTS.md, CLAUDE.md, and project
   equivalents. Talk first; zero edits before explicit approval. Default target:
   `~/.config/agents/AGENTS.md`.
@@ -25,9 +26,12 @@ paper trail, and never silently drop a rule.
 ## 0. Setup (both modes)
 
 - Resolve symlinks first (`readlink`, inode compare) to find the single real file or dir.
-  Known chains: `~/.claude/skills` and `~/.claude-two/skills` → `~/.config/agents/skills`;
-  `~/.claude*/CLAUDE.md` → `~/.config/agents/AGENTS.md`. Symlinked copies are not
-  duplicates, and one edit propagates everywhere — say so before proposing moves.
+  Known chains: `~/.claude*/skills`, `~/.agents/skills` (Codex), and `~/.gemini/config/skills`
+  → `~/.config/agents/skills`; `~/.claude*/CLAUDE.md`, `~/.codex/AGENTS.md`,
+  `~/.gemini/GEMINI.md`, and `~/.pi/agent/AGENTS.md` → `~/.config/agents/AGENTS.md`.
+  Symlinked copies are not duplicates, and one edit propagates everywhere — say so before
+  proposing moves. These chains also answer rules mode's "do other tools read this file?":
+  yes, so keep tool-default restatements.
 - Read every target file whole. Record `wc -l` per file for the before/after report.
 - No backup step: the user keeps these files backed up. Edit in place; do not copy
   targets to the scratchpad or anywhere else first.
@@ -37,6 +41,10 @@ paper trail, and never silently drop a rule.
   unrelated files without the user's authorization. For plain source files, a
   targeted file edit can sync them without invoking manager hooks; otherwise use
   a documented per-command setting that disables unauthorized side effects.
+  Known manager: chezmoi, source `~/.local/share/chezmoi/home/`, plain files (no
+  templates), with `git.autoCommit` and `git.autoPush` on. Sync by copying the edited
+  target over its source file; never run `chezmoi add`, `re-add`, or `edit`, which commit
+  and push. `chezmoi status` must print nothing for the target afterwards.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.

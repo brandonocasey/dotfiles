@@ -6,7 +6,7 @@ description: >
   for local landing requests; never fetch or push.
 ---
 
-Land the current branch into the local `main`/`master` and clean up after it. Everything is
+Land the current branch into the local default branch (`TARGET`, resolved in step 0) and clean up after it. Everything is
 local: no `fetch`, no `push`, no force-push. If anything is ambiguous, STOP and ask — never paper
 over a problem to keep the pipeline moving.
 
@@ -20,6 +20,11 @@ directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`
 `TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
 Record the initial checkout path and the primary checkout path from
 `git worktree list --porcelain` so cleanup can run from a surviving directory.
+When `.gitmodules` exists, also read `shared/submodules.md` next to `git-flow.md` and
+establish its **Facts**. A changed owned submodule lands together with `BRANCH`: its
+**Commit gate** runs before step 1, its **Land** steps 1–3 run before the superproject
+rebase and fast-forward, and its step 4 check runs after step 4 here. The local-path
+fetch in its step 2 is the one fetch this skill allows.
 
 ### Already on the target branch → commit only
 
@@ -154,7 +159,10 @@ checks against `TARGET` instead.
   ```
   If removal refuses, follow the `worktree` skill's **Blocked removal** section. It
   owns the classification, the backup, and the single `--force`; ask only when it says
-  to.
+  to. A worktree with initialized submodules always refuses plain removal; the same
+  skill's **Submodules** section decides whether `--force` is allowed.
+  Cleanup is not optional: the step 6 report names the removed path and the deleted
+  branch, or the exact blocker (path, class, evidence) that kept them.
 - Then delete the landed branch, from a checkout that is NOT on `BRANCH` (it's now an ancestor of
   `TARGET`, so `-d` is safe and refuses if it somehow isn't):
   ```sh
@@ -179,7 +187,8 @@ pushing is a separate, explicit step the user must ask for.
 ## Hard rules
 
 - Everything in **Shared rules** of `shared/git-flow.md`.
-- Local only: never `git fetch`/`pull`/`push` here.
+- Local only: never `git fetch`/`pull`/`push` here. The one exception is the local-path
+  fetch between two submodule clones in `shared/submodules.md` **Land** step 2.
 - Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
   (step 4) — never fall back to a merge commit.
 - Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).
