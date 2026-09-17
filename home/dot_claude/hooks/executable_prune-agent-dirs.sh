@@ -11,7 +11,7 @@ CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/agents"
 
 for dir in "$CACHE/scratch" "$CACHE/copy"; do
   [ -d "$dir" ] || continue
-  "$FIND" "$dir" -mindepth 1 -type f -mtime +"$DAYS" -delete
+  "$FIND" "$dir" -mindepth 1 -type f ! -name .keep -mtime +"$DAYS" -delete
   "$FIND" "$dir" -mindepth 1 -type d -empty -delete
 done
 
