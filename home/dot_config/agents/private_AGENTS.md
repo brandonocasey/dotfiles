@@ -24,7 +24,7 @@ Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when
 
 Load the skill before the first action in its area. The skill is the single source of its rules.
 
-- Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns tier selection, prompts, monitoring, escalation, and re-validation. A model I name, or an external tool I request, always overrides the skill's choice
+- Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns role selection, prompts, monitoring, escalation, and re-validation. Every sub-agent spawn MUST use one of its roles (`cheap`, `explorer`, `worker`, `consult`); never spawn without a role or with a model that differs from the role's pin. When you are stuck on a sub-problem, or I report a failure in your work, escalate to `consult` once before you retry or report blocked. A model I name, or an external tool I request, always overrides the skill's choice
 - Code review: `review`. Run it automatically, once per task, when the task changed behavior and any of these hold:
   - a shared function, module, or API contract with 3+ callers changed
   - a trust boundary or irreversible path changed: auth, permissions, money, input parsing, persistence, migration, deletion, external writes, concurrency, crypto

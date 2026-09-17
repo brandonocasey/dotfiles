@@ -23,13 +23,13 @@ medium-sized task costs MORE than doing it inline.
 ## How to split
 
 - Give each part non-overlapping file ownership. This is the only rule this skill owns.
-- Everything else — self-contained prompts, tier choice and the user's model/tool
+- Everything else — self-contained prompts, role choice and the user's model/tool
   override, the shared prompt prefix for cache reuse, and re-validating results before
   declaring done — comes from the `sub-agents` skill. Do not restate it here.
 
 ## Not this skill
 
 - Watching CI, logs, builds: the `sub-agents` skill's monitoring section.
-- Handing a hard sub-problem or the whole task to a stronger tier: the `sub-agents`
+- Handing a hard sub-problem or the whole task to `consult`: the `sub-agents`
   skill's escalation section.
 - Several independent user-given tasks, one branch each: the `run-task-list` skill.

@@ -27,7 +27,7 @@ skill; review follows the `review` skill; commits follow the `commit` skill.
   call.
 - **User-defined agents** — if the user names what runs a task or group (a custom
   agent type from the harness's roster, a specific model, or an external tool),
-  use exactly that; it overrides the `sub-agents` skill's tier choice for that
+  use exactly that; it overrides the `sub-agents` skill's role choice for that
   assignment. Unknown agent names are a blocker: ask before spawning.
 
 ## 1. Collect the tasks

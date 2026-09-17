@@ -10,7 +10,7 @@ Read only the route needed for the task. Resolve these paths relative to this fi
 - Splitting one task: [split-task](../split-task/SKILL.md) owns the threshold and
   file ownership rules.
 - Monitoring, model choice, or a whole-task handoff:
-  [sub-agents](../sub-agents/SKILL.md) owns authorization, tier selection,
+  [sub-agents](../sub-agents/SKILL.md) owns authorization, role selection,
   prompts, monitoring, escalation, and result verification.
 - Running a user-given task list: [run-task-list](../run-task-list/SKILL.md).
 

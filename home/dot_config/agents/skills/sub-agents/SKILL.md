@@ -11,35 +11,37 @@ declaring done.
 
 ## Overrides (check first)
 
-- If the user names a specific model, use that model — it overrides tier choice.
+- If the user names a specific model, use that model — it overrides the role's pin.
 - If the user asks for an external tool or agent (another CLI agent, a hosted
   service), use it in place of a sub-agent. Treat its output like any sub-agent's:
   verify before acting.
 
-## Model tier and effort
+## Roles (mandatory)
 
-Pick the tier by task class from models actually offered by the harness. Use its
-model and effort controls when available. Do not infer current availability, price,
-or capability order from a model name. Prefer current, actively maintained models;
-check provider metadata or official docs when the roster does not establish this.
-These rules apply to Claude, GPT, and other model families.
+Every spawn MUST name one of these roles. The harness pins each role's model and
+effort: Claude Code from `~/.claude/agents/<role>.md`, Codex from
+`~/.codex/agents/<role>.toml`. Never spawn a sub-agent without a role, never pass
+a `model` or effort that differs from the role's pin, and never use the harness's
+generic default agent (`general-purpose`, `claude`, `default`) for work a role
+covers. A spawn that omits the role inherits the parent model, which is a defect.
+The user's named model or external tool is the only override.
 
-| Tier | Work |
-| --- | --- |
-| Cheapest | Mechanical, well-specified: aggregation, formatting, extraction, counting, bulk replacement, factual web lookup, watch-and-wait. Low effort |
-| Middle | Codebase exploration: locating usages and tracing call paths |
-| Judgement | Design, debugging, cross-file reasoning, research synthesis, ambiguous work |
-| Top | Escalation by the main session only; do not explicitly select it for splits, monitoring, or review. Those may run in the main session or inherit its model through a supported fork |
+| Role | Work | Claude Code | Codex |
+| --- | --- | --- | --- |
+| `cheap` | Mechanical, well-specified: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-5.6-luna, low |
+| `explorer` | Codebase exploration: locating usages, tracing call paths. Read-only | sonnet, medium | gpt-5.6-luna, xhigh |
+| `worker` | Design, debugging, implementation of one split part, review, research synthesis | opus, low | gpt-5.6-sol, low |
+| `consult` | Escalation by the main session only (see below). Read-only | fable, low | gpt-6-astra, low |
 
-Several task classes may map to the same offered model. If the harness cannot select
-a tier, use its supported inheritance behavior and disclose that limit. If no
-sub-agent tool exists, do the work inline and state when a review is not independent.
+Harness forks (`subagent_type: "fork"` in Claude Code) inherit the parent model and
+are allowed only where a skill explicitly asks for an inherited-context fork.
 
-Escalate one tier when a simple-looking task turns out to need judgement.
+Escalate to `worker` when a `cheap` or `explorer` task turns out to need judgement.
+If the harness has no sub-agent tool, do the work inline and state when a review is
+not independent.
 
 Compare total expected cost, including context, cache, output, and likely retries.
-Do not keep work on an expensive tier solely to preserve its cache, or assert a
-saving when current prices and usage are unknown.
+Do not keep work on an expensive role solely to preserve its cache.
 
 ## Prompts
 
@@ -48,7 +50,7 @@ saving when current prices and usage are unknown.
   options; do not rely on context that was not passed. Independent reviewers get
   only the review skill's permitted context.
 - Sub-agents return raw results (data, findings, paths), not prose for the user.
-- Sub-agents do not spawn further sub-agents unless their prompt explicitly says to.
+- Sub-agents do not spawn further sub-agents; the role definitions deny it.
 
 ## Prompt caching
 
@@ -60,8 +62,8 @@ saving when current prices and usage are unknown.
 
 ## Monitoring and long waits
 
-Polling CI, watching logs, waiting on builds or deploys: spawn a cheapest-tier
-background agent at low effort. It reports back only the outcome and the relevant
+Polling CI, watching logs, waiting on builds or deploys: spawn a `cheap`
+background agent. It reports back only the outcome and the relevant
 details. The main session continues other work or ends its turn; it never polls the
 same target itself.
 
@@ -69,25 +71,29 @@ Exception: never watch an MR/PR or its pipeline for success on your own — no w
 agent, no polling. Report the pipeline URL and stop. Watch one only when the user
 asks for it.
 
-## Escalate to a stronger tier
+## Escalate with `consult`
 
 Only the main session — the one the user drives — may escalate. Sub-agents never
-escalate; they report blocked and the main session decides. Each escalation goes one
-tier up from the session's mapped tier. Escalate again only if the first escalation
-also fails. If no stronger supported model exists, continue the investigation inline
-or report the concrete blocker; do not invent a model or a higher tier.
+escalate; they report blocked and the main session decides. The session's own model
+is stated in its system prompt. If the session already runs on the `consult` model
+(fable, gpt-6-astra), no stronger model exists: continue inline or report the
+concrete blocker. Do not invent a model.
 
-- **A hard sub-problem, task stays here** — trigger: one failed attempt, or reasoning
-  that spans files or systems beyond what the current tier resolved. Spawn one agent
-  on the next tier up with a self-contained question: the problem, the evidence
-  gathered so far, the files involved, and what a good answer must settle. No user
-  approval is needed because the session keeps the task. Re-validate the answer
-  before acting on it.
-- **The whole task, on a different tier** — stronger because the current tier already
+- **A hard sub-problem, task stays here** — trigger: one failed attempt, a failure the
+  user reports in your work ("still broken", a wrong result, a regression), or
+  reasoning that spans files or systems beyond what the session resolved. Spawn one `consult`
+  agent with a self-contained question: the problem, the evidence gathered so far,
+  the files involved, and what a good answer must settle. No user approval is
+  needed because the session keeps the task. Re-validate the answer before acting
+  on it. Escalate the same sub-problem at most once.
+- **The whole task, on a different model** — stronger because the session already
   failed an attempt or the task needs subtle cross-cutting reasoning; weaker because
-  the task is simple enough that a cheaper current tier suffices. Warn the user
-  first, with the reason. On approval, hand the whole task to one sub-agent on that
-  tier with the full context it needs.
+  the task is simple enough for a cheaper role. Warn the user first, with the reason.
+  On approval, hand the whole task to one `worker` (or `consult` when `worker` is the
+  current model) with the full context it needs.
+- Before reporting blocked, or before a second fix attempt after the user reports a
+  failure, on a `cheap`, `explorer`, or `worker` model: check that you spawned
+  `consult` once for that sub-problem.
 
 ## After they return
 
