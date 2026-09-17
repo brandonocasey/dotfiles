@@ -7,9 +7,18 @@
 - `TODO.md` is my personal list. Only `/todo` adds to it, and only when I run it. Removing an item you finished is fine
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
-  - Always show proposals and their exact final wording in chat, even when they are also written to a file for copying. Copy files supplement chat; they never replace the proposal shown there. For other copyable content longer than ~80 characters, put commands in `/tmp/run-<task>.sh` and text in `/tmp/<task>.md` instead of chat. Use these short paths even when the harness provides a scratchpad.
-  - Give me one short line to use the file: `bash /tmp/run-<task>.sh` or `copy /tmp/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
+  - Always show proposals and their exact final wording in chat, even when they are also written to a file for copying. Copy files supplement chat; they never replace the proposal shown there. For other copyable content longer than ~80 characters, put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` instead of chat (the copy directory, see Directories).
+  - Give me one short line to use the file: `bash ~/.cache/agents/copy/run-<task>.sh` or `copy ~/.cache/agents/copy/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
   - Short content goes in a fenced code block: one item per block, one line, nothing else, no backslash continuations
+
+## Directories
+
+Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when the harness tells you to. Use these directories and create them with `mkdir -p` when missing. Paths follow XDG; `~/.cache` and `~/.local/state` are the defaults when the variables are unset.
+
+- Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 7 days.
+- Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 7 days.
+- Backups: `$XDG_STATE_HOME/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/` (`~/.local/state/agents/backups/`). Copies of files taken before a force-remove, overwrite, or migration, with their relative paths kept. Never auto-pruned. Name the backup path in the report.
+- A file that a tool must find at a fixed path (for example a `.checkpoints/` file in a repo) stays where the tool expects it.
 
 ## Skills own the detail
 

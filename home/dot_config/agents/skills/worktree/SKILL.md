@@ -62,12 +62,46 @@ Remove the worktree once the branch is merged:
 git worktree remove .worktrees/<branch>
 ```
 
-The tree must be clean first. `git worktree remove` refuses a dirty tree, and
-you must never force it — commit or ask the user instead.
-
 Move your shell out of the worktree before you remove it. Git removes the
 directory under you, and a shell left in a deleted directory fails every later
 command with "Unable to read current working directory".
+
+### Blocked removal
+
+`git worktree remove` refuses a tree with modified tracked files or untracked
+files. Ignored files never block it. Never commit, stash, or discard to clear
+the block. Classify every blocker first; `--force` is allowed only when every
+blocker is either already saved in the repository or disposable.
+
+1. List the blockers:
+   ```sh
+   git -C <worktree-path> status --porcelain --untracked-files=all
+   ```
+2. Classify each path:
+   - **Saved**: the file's current content already exists in the repository
+     (a commit on any branch, or a stash). Evidence: this prints a commit:
+     ```sh
+     git -C <worktree-path> log --all -n 1 --oneline \
+       --find-object=$(git -C <worktree-path> hash-object <file>)
+     ```
+   - **Disposable**: untracked (`??`) and generated: build or test output
+     (`dist/`, `build/`, `coverage/`, `*.log`, `*.tsbuildinfo`, `.DS_Store`),
+     dependency directories (`node_modules/`, `.venv/`, `vendor/`, `target/`),
+     editor swap files. Source files, notes, `.env*`, and credentials are
+     never disposable, even when untracked.
+   - **Unknown**: anything else.
+3. If any blocker is Unknown, retain the worktree, show a table with
+   `path`, `class`, `evidence`, and ask.
+4. Otherwise back up every Disposable file except dependency directories to
+   the backups directory (AGENTS.md, **Directories**), keeping the relative
+   paths. Saved files need no copy; record the commit that holds them.
+5. Remove with a single `--force`, from outside the worktree:
+   ```sh
+   git -C <MAIN_WT> worktree remove --force <worktree-path>
+   ```
+   Never pass `--force` twice. A locked worktree (`locked` in
+   `git worktree list --porcelain`) is never removed; report it.
+6. Report each blocker with its class, evidence, and backup path.
 
 For batch cleanup, the user invokes `clean-merged-worktrees` explicitly. Its
 Claude frontmatter and Codex metadata both mark it explicit-only. Do not start

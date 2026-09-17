@@ -46,7 +46,19 @@ managed=$(
     "repo-audit": "off"
   },
   "hooks": {
-    "PreToolUse": []
+    "PreToolUse": [],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/prune-agent-dirs.sh",
+            "async": true,
+            "timeout": 120
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",

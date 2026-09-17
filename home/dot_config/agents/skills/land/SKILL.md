@@ -7,7 +7,7 @@ description: >
 ---
 
 Land the current branch into the local `main`/`master` and clean up after it. Everything is
-local: no `fetch`, no `push`, no force. If anything is ambiguous, STOP and ask — never paper
+local: no `fetch`, no `push`, no force-push. If anything is ambiguous, STOP and ask — never paper
 over a problem to keep the pipeline moving.
 
 ## 0. Detect context (always run first)
@@ -108,8 +108,9 @@ Do the fast-forward:
   git worktree add <unused-target-worktree-path> <TARGET>
   git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
-  Record that this run created it; remove it without force after successful
-  cleanup, from a surviving checkout outside that directory. On failure, keep
+  Record that this run created it; remove it after successful cleanup, from a
+  surviving checkout outside that directory (**Blocked removal** applies if it
+  refuses). On failure, keep
   it if needed for recovery and report its path.
 
 If `--ff-only` fails, STOP and report — do not fall back to a non-ff merge. (If you stashed, the
@@ -151,9 +152,9 @@ checks against `TARGET` instead.
   git worktree remove <worktree-path>
   git worktree prune
   ```
-  If removal refuses because of leftover artifacts, list them and retain the worktree.
-  Ask before deleting disposable artifacts, then retry without force. Never force-remove
-  the worktree.
+  If removal refuses, follow the `worktree` skill's **Blocked removal** section. It
+  owns the classification, the backup, and the single `--force`; ask only when it says
+  to.
 - Then delete the landed branch, from a checkout that is NOT on `BRANCH` (it's now an ancestor of
   `TARGET`, so `-d` is safe and refuses if it somehow isn't):
   ```sh
@@ -163,7 +164,7 @@ checks against `TARGET` instead.
   When `IN_WORKTREE` is false, `BRANCH` is still checked out here and git refuses the delete:
   leave the branch and say so in the step 6 report.
 - If step 4 created a temporary target worktree, move to the primary checkout and
-  remove that temporary worktree without force after the merge and source cleanup.
+  remove that temporary worktree after the merge and source cleanup.
   Do this even when the source branch must stay checked out in the primary checkout.
   If the temporary tree has become dirty or active, retain it and report its path.
   Never remove a target worktree that existed before this run.

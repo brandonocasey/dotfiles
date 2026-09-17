@@ -24,7 +24,7 @@ These rules are the single authority; the workflow steps reference them instead 
   worktree.
 - Remove only worktrees that are clean (including no untracked files), attached to a named local
   branch, not in use by a running process, and unambiguous in path and identity — except an exact
-  detached PR-head match covered by review confirmation. Never use `git worktree remove --force`.
+  detached PR-head match covered by review confirmation. Force-remove only under the `worktree` skill's **Blocked removal** rules.
 - Use `git branch -d` for branches whose tip is an ancestor of the selected local target. Let Git
   refuse deletion if that normal merge check fails.
 - **Squash-merge exception**: `git branch -D` is allowed when the exact local tip equals a
@@ -39,7 +39,7 @@ These rules are the single authority; the workflow steps reference them instead 
   merely closed, named like a feature, or believed to be merged.
 - **Closed-without-merge exception**: `git branch -D` only after the user explicitly confirms this
   category, the exact local tip equals the closed PR head, and any attached worktree is clean and
-  idle. A confirmation never authorizes force-removing a dirty worktree.
+  idle. A confirmation never authorizes force-removing a worktree with Unknown blockers; **Blocked removal** in the `worktree` skill owns the classification.
 - **Review-worktree confirmation**: may remove every clean, idle worktree whose HEAD exactly
   matches a remote PR head, including detached worktrees and multiple worktrees for one PR. It
   never authorizes deleting local branch refs unless those branches separately qualify.
@@ -202,15 +202,16 @@ candidate. If the user asked for a dry run, stop after this table.
 ### 5. Remove one target at a time
 
 For each approved worktree, recheck its path, branch, cleanliness, and HEAD immediately before
-removal, then remove it without force:
+removal, then remove it:
 
 ```sh
 git worktree remove -- <worktree-path>
 ```
 
 If the repository provides a purpose-built helper such as `scripts/remove-worktree.mjs`, inspect
-its behavior and use it when it is the project's documented path. If removal refuses because the
-tree is dirty or otherwise unsafe, retain the target and report the exact reason.
+its behavior and use it when it is the project's documented path. If removal refuses, follow the
+`worktree` skill's **Blocked removal** section: force only when every blocker is Saved or
+Disposable; otherwise retain the target and report the exact reason.
 
 After the worktree is gone, decide separately whether its local branch is eligible under the
 safety rules (a review-worktree confirmation alone means keep an attached local branch; detached
