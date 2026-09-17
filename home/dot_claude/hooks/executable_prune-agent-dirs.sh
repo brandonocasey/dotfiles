@@ -5,7 +5,7 @@
 # user's shell aliases `find` to bfs, which rejects BSD find flags.
 # Run by hand with DAYS=0 to clear everything, after closing other agent sessions.
 set -u
-DAYS="${DAYS:-7}"
+DAYS="${DAYS:-30}"
 FIND=/usr/bin/find
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/agents"
 

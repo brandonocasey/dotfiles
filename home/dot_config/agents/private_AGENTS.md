@@ -15,8 +15,8 @@
 
 Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when the harness tells you to. Use these directories and create them with `mkdir -p` when missing. Paths follow XDG; `~/.cache` and `~/.local/state` are the defaults when the variables are unset.
 
-- Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 7 days.
-- Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 7 days.
+- Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 30 days.
+- Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 30 days.
 - Backups: `$XDG_STATE_HOME/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/` (`~/.local/state/agents/backups/`). Copies of files taken before a force-remove, overwrite, or migration, with their relative paths kept. Never auto-pruned. Name the backup path in the report.
 - A file that a tool must find at a fixed path (for example a `.checkpoints/` file in a repo) stays where the tool expects it.
 
@@ -25,7 +25,13 @@ Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when
 Load the skill before the first action in its area. The skill is the single source of its rules.
 
 - Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns tier selection, prompts, monitoring, escalation, and re-validation. A model I name, or an external tool I request, always overrides the skill's choice
-- Code review: `review`. Run it automatically, once per task, after a task that changed 5+ non-doc files or touched non-trivial logic. Prototypes and throwaway demo code are exempt unless I ask
+- Code review: `review`. Run it automatically, once per task, when the task changed behavior and any of these hold:
+  - a shared function, module, or API contract with 3+ callers changed
+  - a trust boundary or irreversible path changed: auth, permissions, money, input parsing, persistence, migration, deletion, external writes, concurrency, crypto
+  - a new or changed branch, condition, or error path has no test that ran green in this task
+  - more than ~150 changed lines of hand-written logic remain after you exclude tests, docs, lockfiles, snapshots, generated files, and pure moves, renames, or formatting
+
+  Skip when every change is mechanical (rename, move, format, import order, dependency bump, config value), or only tests and docs changed, or the code is a prototype or throwaway demo, unless I ask. End the task recap with one line: `Review: ran` or `Review: skipped (<reason>)`, so I can correct the call.
 - Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns selecting the newest default base across local and all remote copies. Use an explicit base when I give one; ask if default histories diverge. Preserve existing branch history. Never switch branches in the main checkout. `land` remains local-only.
 - Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`. The Git section owns authorization for these workflows.
 - Browser: `browser` before the first browser MCP call. Real Safari: `real-safari`
