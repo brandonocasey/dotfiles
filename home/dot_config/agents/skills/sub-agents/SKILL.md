@@ -12,21 +12,26 @@ declaring done.
 ## Overrides (check first)
 
 - If the user names a specific model, use that model — it overrides the role's pin.
+- If the user names a custom harness agent, use it for the assignment. Check
+  that it exists in the loaded roster; ask if the name is unknown.
 - If the user asks for an external tool or agent (another CLI agent, a hosted
   service), use it in place of a sub-agent. Treat its output like any sub-agent's:
   verify before acting.
 
 ## Roles (mandatory)
 
-Every spawn MUST name one of these roles. The harness pins each role's model and
-effort: Claude Code, Gemini, and pi from `~/.config/agents/agents/<role>.md` (each
-harness's `agents` directory is a symlink to it), Codex from
-`~/.codex/agents/<role>.toml`. Never spawn a sub-agent without a role, never pass
+Every spawn MUST name one of these roles unless the user names another agent.
+Claude Code reads `~/.config/agents/agents/<role>.md`; Codex reads
+`~/.codex/agents/<role>.toml`. A symlink for another harness does not prove that
+it loads these files or supports their metadata. Check its loaded roster,
+effective model, thinking setting, and tools before spawning. If the required
+role is unavailable or incompatible, work inline and report the limitation.
+Never spawn a sub-agent without a role or a user-named agent, never pass
 a `model` or effort that differs from the role's pin, and never use the harness's
 generic default agent (`general-purpose`, `claude`, `default`) for work a role
 covers. A spawn that omits the role gets the parent model (Claude Code) or the
 harness's `default_subagent_model` (Codex) instead of the pin, which is a defect.
-The user's named model or external tool is the only override.
+The user's named model, custom harness agent, or external tool is the only override.
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
@@ -94,9 +99,10 @@ concrete blocker. Do not invent a model.
   the task is simple enough for a cheaper role. Warn the user first, with the reason.
   On approval, hand the whole task to one `worker` (or `consult` when `worker` is the
   current model) with the full context it needs.
-- Before reporting blocked, or before a second fix attempt after the user reports a
+- In the main session, before reporting blocked or a second fix attempt after the user reports a
   failure, on a `cheap`, `explorer`, or `worker` model: check that you spawned
-  `consult` once for that sub-problem.
+  `consult` once for that sub-problem. Sub-agents report the concrete blocker to
+  the main session without spawning.
 
 ## After they return
 

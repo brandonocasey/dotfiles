@@ -48,6 +48,6 @@ you took.
 
 ## Real Safari
 
-Real Safari (FairPlay DRM, Safari-only bugs) has no MCP. It is always headed
-and visible, so confirm with the user first, then follow the `real-safari`
-skill.
+The configured `safari` MCP is WebKit, not real Safari. For real Safari
+(FairPlay DRM, Safari-only bugs), follow the `real-safari` skill. It owns
+driver selection and confirmation before starting the visible browser.

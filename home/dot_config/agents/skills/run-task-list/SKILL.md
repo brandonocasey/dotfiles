@@ -83,9 +83,9 @@ For every returned task, in the main session:
   (it owns fix-and-re-review). Test and lint failures in that worktree are yours
   to fix; never "pre-existing".
 - Non-code tasks: spawn one verifier agent prompted to **refute** the result
-  against the acceptance criteria; uncertain means refuted. Refuted results go
-  back for one redo (per the `sub-agents` skill, at most one respawn per part —
-  after that, fix inline or mark the task blocked).
+  against the acceptance criteria; uncertain means refuted. If verification
+  fails, fix or redo the task inline in the main session per the `sub-agents`
+  skill, then check it against the acceptance criteria again.
 
 ## 4. Close out
 
@@ -95,8 +95,10 @@ For every returned task, in the main session:
   assigned to it is done and has passed step 3. Keep branches with blocked or
   partial tasks local; land eligible branches one at a time. No end mode: leave
   branches local.
-- Clean up everything the batch opened: stop servers, free ports, close browser
-  pages. Keep worktrees with commits; remove empty ones.
+- On completion, failure, cancellation, or a blocked exit, clean up everything
+  the batch opened: stop servers, free ports, and close browser pages. Keep
+  worktrees with commits or partial changes needed for recovery; remove empty
+  worktrees.
 - Report, self-contained: per task — done / blocked / partial / skipped, one plain
   sentence, its verification evidence, and its branch + worktree path for code
   tasks. Include what was picked vs skipped in pick-from-list mode. End with a

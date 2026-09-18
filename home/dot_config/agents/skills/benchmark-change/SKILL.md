@@ -11,7 +11,7 @@ Measure the change against a recorded baseline and check that the result still m
 
 ## Select an existing harness
 
-Read `docs/development/performance.md` for the harness map and measurement method, then inspect only the script relevant to the question. Reuse the repository's command-path, disc-tool, checksum-threading, solid-extraction, or browser WASM benchmarks. Use `run-rom-weaver` for runtime setup and smoke tests when needed. Avoid adding another benchmark framework.
+Read `docs/development/performance.md` for the harness map and measurement method, then inspect only the script relevant to the question. Reuse the repository's command-path, disc-tool, checksum-threading, solid-extraction, or browser WASM benchmarks. Use the repository's `run-rom-weaver` skill for runtime setup and smoke tests when needed. Avoid adding another benchmark framework.
 
 For identify-data changes, locate the index builder in the target revision and inspect the data format it emits. Older revisions may use `scripts/build-identify-index.mjs`; check that it exists before using that path. Use separate output directories and the same source datasets. Compare compressed transfer bytes, build/search time when affected, and record counts, names, aliases, dump tags, and checksum lookup behavior that the change promises to preserve. A smaller raw file may compress worse.
 
@@ -19,7 +19,7 @@ For identify-data changes, locate the index builder in the target revision and i
 
 Record the baseline and candidate revisions, executable or WASM artifact, toolchain, input checksums and sizes, operation, codec, level, thread count, and hardware. Use the baseline given by the user or parent task; otherwise state the change's merge-base revision used for comparison.
 
-Use the `worktree` skill for separate revision checkouts. Give each checkout its own Cargo target directory; use the repository's compiler caches for reuse. Do not benchmark concurrent builds or multiple contenders on the same hardware. Check that each command uses the intended revision's artifact.
+Use the `worktree` skill for separate revision checkouts, and remove the checkouts this skill created once the measurements are recorded, per that skill's **Remove** section. Give each checkout its own Cargo target directory; use the repository's compiler caches for reuse. Do not benchmark concurrent builds or multiple contenders on the same hardware. Check that each command uses the intended revision's artifact.
 
 Match the operation's work, including nested extraction, common-file filtering, and codec settings. Preserve the existing parity contract; compare payload bytes for cross-tool archives where metadata differs, and byte-identical outputs where the repository requires them. Use `scripts/parity-check.mjs` and the affected tests for their supported cases.
 

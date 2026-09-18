@@ -63,12 +63,15 @@ open port per worktree, released when the task ends.
 
 ## Remove
 
-Every worktree a skill creates is removed by that skill when its task ends:
-`review` after the report or the `--fix` push, `land` after the fast-forward,
-`ship` after the verified push (**Remove after push**). Removal is part of the
-deliverable: the report names the removed path, or the exact blocker that
-stopped it. Never remove the main checkout, a `locked` worktree, or a worktree
-another task still uses.
+Every worktree a skill creates is removed by that skill when its task ends,
+unless that skill's own file says the worktree stays: `review` after the report
+or the `--fix` push, `land` after the fast-forward, `ship` after the verified
+push (**Remove after push**), `benchmark-change` after the measurements are
+recorded. `run-task-list`, `repo-audit`, and `pr-unblock` keep a worktree that
+holds unlanded or unpushed commits and name it in their reports. Removal is
+part of the deliverable: the report names the removed path, or the exact
+blocker that stopped it. Never remove the main checkout, a `locked` worktree,
+or a worktree another task still uses.
 
 Remove the worktree once the branch is merged or pushed:
 

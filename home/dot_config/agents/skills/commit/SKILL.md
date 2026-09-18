@@ -49,6 +49,6 @@ Do not bundle a refactor with a feature, or a fix with docs.
 - Push only with authorization under the global Git rules.
 - Do not use the `-i` flag or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
-- Write a multi-line message to a file in the scratch directory (AGENTS.md,
-  **Directories**), never `/tmp`, and use `git commit -F <file>`. Remove the file
-  after the commit succeeds.
+- Write temporary files in the scratch directory (AGENTS.md, **Directories**),
+  never `/tmp`: a multi-line message, used with `git commit -F <file>`, and the
+  hunk `<patch>` from step 4. Remove them after the commit succeeds.

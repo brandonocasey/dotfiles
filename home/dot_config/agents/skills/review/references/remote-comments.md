@@ -2,7 +2,7 @@
 
 Read this only when preparing comments for a GitHub PR or GitLab MR.
 
-### Link formats (MR/PR only)
+## Link formats (MR/PR only)
 
 GitLab — diff-line anchor in the Changes tab:
 `https://<host>/<project-path>/-/merge_requests/<iid>/diffs#<sha1>_<old>_<new>`
@@ -22,7 +22,7 @@ for a deleted line. File-wide notes use `...#diff-<sha256>`. Fall back to
 `https://github.com/<owner>/<repo>/blob/<source-branch>/<file>#L<line>` for lines outside
 the diff.
 
-### Suggestion blocks (MR/PR only)
+## Suggestion blocks (MR/PR only)
 
 GitLab (`-0+0` widens the replaced line range when needed):
 

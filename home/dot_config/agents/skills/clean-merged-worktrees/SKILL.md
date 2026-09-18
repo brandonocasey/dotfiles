@@ -69,7 +69,7 @@ Run these checks before changing anything:
 git rev-parse --show-toplevel
 git rev-parse --abbrev-ref HEAD
 git worktree list --porcelain
-git status --short
+git status --short --ignore-submodules=none
 git remote -v
 ```
 
@@ -92,7 +92,7 @@ Read all worktrees from `git worktree list --porcelain`. For each worktree, reco
 - absolute path;
 - branch or detached state;
 - HEAD commit;
-- `git -C <path> status --short` output;
+- `git -C <path> status --short --ignore-submodules=none` output;
 - whether a process has that path as its current directory.
 
 On macOS or another system with `lsof`, inspect active directories with:
@@ -223,9 +223,10 @@ git log --oneline <merge-base>..<target> -- <files changed by the branch>
 
 Read the evidence as follows:
 
-- `git cherry` prefixes every commit with `-` when its patch already exists in the target under
-  another commit. This is the strongest local proof of a superseded branch, for example after a
-  squash merge from a renamed branch or a cherry-pick.
+- `git cherry` marks a commit with `-` when its individual patch already exists
+  in the target under another commit, for example after a cherry-pick. A squash
+  of several commits can contain all branch changes without matching those
+  individual patch IDs; use the merged-PR evidence from step 3 for that case.
 - `git diff <target>...<branch>` empty means the branch changes nothing against the target.
 - `git merge-tree` reports conflicts when the same lines changed in the target since the merge
   base. Conflicts plus later target commits in the same files suggest the work was redone.

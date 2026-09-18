@@ -6,9 +6,9 @@ description: >
   for local landing requests; never fetch or push.
 ---
 
-Land the current branch into the local default branch (`TARGET`, resolved in step 0) and clean up after it. Everything is
-local: no `fetch`, no `push`, no force-push. If anything is ambiguous, STOP and ask — never paper
-over a problem to keep the pipeline moving.
+Land the current branch into the local default branch (`TARGET`, resolved in step 0) and clean up
+after it. The **Hard rules** at the end (local only: no `fetch`, no `push`, no force-push) and the
+**Shared rules** of `shared/git-flow.md` apply to every step.
 
 ## 0. Detect context (always run first)
 

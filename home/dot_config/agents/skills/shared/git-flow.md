@@ -46,7 +46,8 @@ is already clean.
   or re-derive any of that here. Defer to a project-level `commit` skill/command if one exists.
 - Repeat for the authorized chunks, then check the gate below.
 
-**Gate — the tree must be fully committed before anything moves.** Re-run `git status --short`
+**Gate — the tree must be fully committed before anything moves.** Re-run
+`git status --short --ignore-submodules=none`
 and confirm it prints nothing. If anything remains, do NOT proceed: commit it only
 if it is authorized task work; otherwise preserve it and ask what to do with it.
 

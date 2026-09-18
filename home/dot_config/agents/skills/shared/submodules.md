@@ -73,7 +73,10 @@ at a commit the remote lacks.
    submodule project squash-merges, the gitlink then points at a commit that
    is no longer on `SUB_TARGET`; the superproject needs a bump commit to the
    squashed commit before its own merge. Say so in the report when the
-   project's merge method is squash (`glab mr view` / `gh pr view` show it).
+   intended merge method is squash. Read the repository's merge policy and
+   the forge's project or repository settings; PR/MR detail alone does not
+   establish the intended method. If the method is unknown, report the
+   conditional squash warning.
 
 ## Land
 

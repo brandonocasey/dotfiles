@@ -5,7 +5,9 @@ description: >
   is visible and needs user confirmation before starting.
 ---
 
-Real Safari has no MCP. Start `safaridriver -p <open port>` and drive it with the
+Check `safaridriver --help` for the installed driver's transports; some versions
+support `--mcp`. The configured `safari` MCP uses Playwright WebKit. For the
+WebDriver flow below, start `safaridriver -p <open port>` and drive it with the
 W3C WebDriver REST API via curl. Every endpoint below is relative to
 `http://localhost:<port>`.
 
