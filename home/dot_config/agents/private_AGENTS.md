@@ -2,21 +2,32 @@
 
 - Follow my task instructions. Before implementation, check factual claims in my prompts, Jira tickets, MR descriptions, Slack messages, and docs against the relevant code and data. If a premise is wrong or a better approach exists, give concrete evidence (file:line, a failing case, or a measured cost), propose the alternative, and ask: proceed anyway, or take the alternative? If the claim checks out, proceed without ceremony.
 - Pushback never shelves work. Cancelling is my call alone. If I overrule you, state your position once, then do it my way
+- NEVER stop a task that still has defined steps to complete, unless the next step is destructive or another rule forbids it. Finish every remaining step before you hand work back
 - When I ask a question about something you could change ("why is X still like this?", "shouldn't this be Y?"), treat it as a probable request: give the short answer, then do the change if it is reversible and in scope, or ask "want me to do it now?". Never answer and stop. If I start with "just explain:", only explain
 - When I hand you a new task mid-task, add it to your internal todo list and keep going, unless I say do it now. Finish every internal todo before you hand work back
 - `TODO.md` is my personal list. Only `/todo` adds to it, and only when I run it. Removing an item you finished is fine
+- Always check a change manually before you report it done: drive it with a browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count as a manual check
 - Run every command you can run safely yourself: builds, tests, linters, scripts, and especially servers. Start dev servers and background processes; do not ask me to start them. Ask only for commands that need my credentials or that are destructive
-- Bind every server you start to `0.0.0.0` so it is reachable over the LAN, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0`
-- Never link visual output (screenshots, rendered pages, diagrams, reports) as local files. Serve it over a LAN HTTP server and give me the `http://<lan-ip>:<port>/...` URL
+- Bind every server you start to `0.0.0.0` so it is reachable over the LAN, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with the OS's own tool (`ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, `ipconfig` on Windows). The same applies to visual output (screenshots, rendered pages, diagrams, reports): never link it as a local file; serve it over a LAN HTTP server and give me the `http://<lan-ip>:<port>/...` URL
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
-  - Always show proposals and their exact final wording in chat, even when they are also written to a file for copying. Copy files supplement chat; they never replace the proposal shown there. For other copyable content longer than ~80 characters, put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` instead of chat (the copy directory, see Directories).
-  - Give me one short line to use the file: `bash ~/.cache/agents/copy/run-<task>.sh` or `copy ~/.cache/agents/copy/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
+  - Always show the exact final wording of every copyable item in chat, verbatim, in a fenced code block, once. A copy file never replaces the chat text; it only adds a wrap-safe copy. For content longer than ~80 characters, also put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` (the copy directory, see Directories). Keep context flat: write the file in one command, do not re-read it, and do not paraphrase, summarize, or repeat the content elsewhere in the reply.
+  - Give me one short line to use the file: `bash ~/.cache/agents/copy/run-<task>.sh` (Git Bash on Windows) or `copy ~/.cache/agents/copy/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy or clip. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
   - Short content goes in a fenced code block: one item per block, one line, nothing else, no backslash continuations
+- Skill code blocks are POSIX `sh`. On Windows run them in Git Bash; translate to PowerShell only when Git Bash is unavailable, and keep every git flag unchanged
+
+## Cost
+
+Keep token use and cost low without lowering quality or stopping before the task is complete.
+
+- Keep the prompt cache warm: never change `CLAUDE.md`, skills, settings, or MCP servers mid-task unless the task is about them; do that at the start of a new session. Do not repeat or re-read content already in context. Read only the lines you need (`sed -n`, `grep -n`), never whole large files or build output. Send long command output to a scratch log and grep it
+- Use the cheapest role that can do the work, as soon as the work is well specified: `cheap` for mechanical work, lookups, and watch-and-wait; `explorer` for read-only search; `worker` for one split part; `consult` only to escalate. Keep judgement, integration, and the final check in the main session. Never let a cheaper role's result skip re-validation
+- Do not spawn to save tokens when inline is fewer than ~10 tool calls; the handoff costs more than it saves
+- Do not batch questions or pause to report progress as a way to save tokens. Finish the task; report once
 
 ## Directories
 
-Never write to `/tmp`, `$TMPDIR`, or the harness scratchpad directory, even when the harness tells you to. Use these directories and create them with `mkdir -p` when missing. Paths follow XDG; `~/.cache` and `~/.local/state` are the defaults when the variables are unset.
+Never write to the OS temp directory (`/tmp`, `$TMPDIR`, `%TEMP%`) or the harness scratchpad directory, even when the harness tells you to. Use these directories and create them, parents included, when missing. Paths follow XDG; `~/.cache` and `~/.local/state` are the defaults when the variables are unset, on Windows too, under the user profile.
 
 - Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 30 days.
 - Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 30 days.
@@ -76,6 +87,7 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ## Code Quality
 
+- Always avoid optional complexity. Find the smallest solution that solves the problem, and nothing more
 - Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; then the minimum new code that works. Prefer deletion and simple solutions. Add a dependency only when it saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies.
 - Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
@@ -90,4 +102,5 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 - Commit finished task changes to the worktree branch before reporting done, unless the invoked workflow explicitly leaves committing to me. Leave no uncommitted or untracked task changes under the normal commit workflow. Preserve unrelated user files and edits. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout.
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change
+- NEVER watch, poll, or babysit a merge/pull request (CI, approvals, merge state) unless I ask you to
 - Keep MR/PR title and description in sync with the code only when I ask, or when you actively work on an MR/PR you pushed or that is out of date. The title takes the conventional commit type of the most user-facing change (`feat` over `refactor` over `chore`)

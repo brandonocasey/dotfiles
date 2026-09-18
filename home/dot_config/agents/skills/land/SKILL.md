@@ -14,8 +14,8 @@ over a problem to keep the pipeline moving.
 
 Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
 against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
-directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `IN_WORKTREE`,
-`MAIN_WT`, `TARGET_DIRTY`. Refresh them before mutating the target or cleaning up.
+directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `COMMIT_BASE`,
+`IN_WORKTREE`, `MAIN_WT`, `TARGET_DIRTY`. Refresh them before mutating the target or cleaning up.
 `MAIN_WT` matters here because you can't ff-merge a branch that is checked out elsewhere;
 `TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
 Record the initial checkout path and the primary checkout path from
@@ -24,7 +24,7 @@ When `.gitmodules` exists, also read `shared/submodules.md` next to `git-flow.md
 establish its **Facts**. A changed owned submodule lands together with `BRANCH`: its
 **Commit gate** runs before step 1, its **Land** steps 1–3 run before the superproject
 rebase and fast-forward, and its step 4 check runs after step 4 here. The local-path
-fetch in its step 2 is the one fetch this skill allows.
+fetches in its steps 1–2 are the only fetches this skill allows.
 
 ### Already on the target branch → commit only
 
@@ -187,8 +187,8 @@ pushing is a separate, explicit step the user must ask for.
 ## Hard rules
 
 - Everything in **Shared rules** of `shared/git-flow.md`.
-- Local only: never `git fetch`/`pull`/`push` here. The one exception is the local-path
-  fetch between two submodule clones in `shared/submodules.md` **Land** step 2.
+- Local only: never `git fetch`/`pull`/`push` here. The exceptions are the local-path
+  fetches between two submodule clones in `shared/submodules.md` **Land** steps 1–2.
 - Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
   (step 4) — never fall back to a merge commit.
 - Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).

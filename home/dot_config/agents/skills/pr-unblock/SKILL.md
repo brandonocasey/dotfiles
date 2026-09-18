@@ -126,9 +126,13 @@ For the user's own branch:
 
 1. Load the `worktree` skill and create a dedicated worktree for the head
    branch. Never switch the main checkout.
-2. Fetch, then verify that the remote head SHA still equals the observed SHA.
-   If it moved, refresh the inventory and start over for this pull request.
-3. Run `git rebase origin/BASE`. Resolve conflicts when the combined result is
+2. Fetch the head branch and verify that its fetched SHA and the worktree
+   HEAD equal the observed SHA. If either differs, preserve local work,
+   refresh the inventory, and reconcile it before proceeding. Fetch the base
+   explicitly with `git fetch origin refs/heads/BASE`, then immediately record
+   `git rev-parse FETCH_HEAD` as `BASE_SHA`; a restricted fetch refspec may
+   leave `origin/BASE` absent or stale.
+3. Run `git rebase BASE_SHA`. Resolve conflicts when the combined result is
    clear; keep both sides' intent. Stop and report the conflicting files when
    the intended result is ambiguous.
 4. Run the repository's targeted checks for the touched paths.
@@ -136,14 +140,15 @@ For the user's own branch:
    A rejected lease means someone else pushed; refresh and start over.
 6. Refresh the inventory and record the new head SHA.
 
-For another author's branch, use `gh pr update-branch N`, or
-`gh pr update-branch N --rebase` when the repository requires a linear history.
-If the update reports conflicts, report them to the author.
+For another author's branch, use `gh pr update-branch N` only when the
+repository permits a merge update. If linear history requires rebasing,
+report that the author must rebase; do not rewrite another author's branch
+through `--rebase`. If the update reports conflicts, report them to the author.
 
 ## Fix failing checks
 
 Unless the invocation is read-only, use this order for each pull request with
-a failing check on the user's own branch or a branch the user can push to:
+a failing check on the user's own non-fork branch:
 
 1. Capture the head SHA, the failing check, and the run URL.
 2. Load the `worktree` skill and reuse or create the worktree for the head
@@ -159,8 +164,8 @@ a failing check on the user's own branch or a branch the user can push to:
    normal push. Use the lease-protected force-push only when a rebase happened
    in this pass.
 6. Refresh the inventory and record the new head SHA and the started checks.
-   Remove the worktree only after it is clean and its pull request is passing
-   or merged.
+   Keep the worktree while local work is needed; use the cleanup section on
+   every completed or blocked outcome.
 
 For an eligible infrastructure failure, capture the run URL and failure reason,
 then run `gh run rerun RUN_ID --failed` at most once per run. Do not rerun a
@@ -188,6 +193,21 @@ Do not poll the same pull request in the main session while the watcher runs.
 When the watcher reports a new failure or a branch that fell behind, apply the
 rebase and fix sections under the standing authorization.
 
+## Clean up task resources
+
+Record which worktrees this invocation created; never remove a pre-existing
+worktree. Before this invocation returns with completed, closed, or blocked
+outcomes, stop task-created watchers and servers, free their ports, and close
+task-created browser pages. Keep a repository watcher running while other
+selected pull requests in that repository still need it.
+For each task-created worktree, move to a surviving checkout first. If its
+work is fully committed and pushed, use the `worktree` skill's **Remove after
+push** checks and cleanup even when a review or policy blocker remains.
+A merge alone does not prove a changed local tip is preserved. Retain dirty,
+unpushed, active, locked, or recovery worktrees and report their paths and exact
+blockers. Do not delete a branch or recovery state merely to finish cleanup.
+Rebase-only and code-fix paths both pass through this section before reporting.
+
 ## Merge and report
 
 Let an enabled auto-merge complete. Merge manually only when the pull request
@@ -203,4 +223,5 @@ required check, conflict, queue, policy, or permission blocker. Without
 End with one line per pull request: number, URL, author, state, head SHA,
 blocker or completed action, and next step. State clearly when the skill is
 waiting on CI, a reviewer, an author, repository policy, or the user. Include
-direct pull request and check-run URLs when available.
+direct pull request and check-run URLs when available. Report each removed
+worktree and local branch, or its exact retention blocker.

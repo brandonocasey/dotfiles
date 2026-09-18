@@ -81,8 +81,10 @@ Skills mode additions:
 - **Command correctness under the skill's own preconditions** — run each command mentally
   from the state the skill creates (detached-HEAD worktree needs
   `git push origin HEAD:<branch>`, not `git push`).
-- **Environment portability** — literal `.git/` paths break in linked worktrees; use
-  `git rev-parse --git-common-dir`. Same test for OS- and shell-specific assumptions.
+- **Environment portability** — literal `.git/` paths break in linked worktrees. Use
+  `git rev-parse --git-common-dir` for shared metadata and `git rev-parse --git-path
+  <name>` for metadata that may belong to one worktree. Same test for OS- and
+  shell-specific assumptions.
 - **Resource leaks** — everything the skill creates (worktree, server, browser page) needs
   cleanup on every exit path, not just the happy one.
 - **Platform parity** — a skill that queries GitHub (`gh`) needs the GitLab path (`glab`)

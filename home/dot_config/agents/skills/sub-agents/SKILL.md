@@ -19,7 +19,8 @@ declaring done.
 ## Roles (mandatory)
 
 Every spawn MUST name one of these roles. The harness pins each role's model and
-effort: Claude Code from `~/.claude/agents/<role>.md`, Codex from
+effort: Claude Code, Gemini, and pi from `~/.config/agents/agents/<role>.md` (each
+harness's `agents` directory is a symlink to it), Codex from
 `~/.codex/agents/<role>.toml`. Never spawn a sub-agent without a role, never pass
 a `model` or effort that differs from the role's pin, and never use the harness's
 generic default agent (`general-purpose`, `claude`, `default`) for work a role

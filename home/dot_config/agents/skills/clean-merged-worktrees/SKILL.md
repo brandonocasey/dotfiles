@@ -101,7 +101,8 @@ On macOS or another system with `lsof`, inspect active directories with:
 lsof -a -d cwd -Fpcn
 ```
 
-If process inspection is unavailable or inconclusive, retain the worktree and report that it was
+Windows has no built-in equivalent that reports a process's current directory. If process
+inspection is unavailable or inconclusive, retain the worktree and report that it was
 not safe to prove idle.
 
 Also list local branches with their upstreams and tips:
@@ -235,9 +236,17 @@ Read the evidence as follows:
 When a forge CLI is authenticated, add forge evidence:
 
 ```sh
+# GitHub
 gh pr list --state all --search "<branch>" --json number,title,state,url,headRefName,body
 gh pr list --state merged --base <target> --search "<ticket-key>" --json number,title,url
+
+# GitLab (any host; prefix with GITLAB_HOST=<host> when self-hosted)
+glab mr list --all --source-branch <branch> --output json
+glab mr list --all --search "<branch>" --output json
+glab mr list --merged --target-branch <target> --search "<ticket-key>" --output json
 ```
+
+GitLab fields map as in step 3; `description` stands in for `body`.
 
 Look for a merged PR whose title, body, or head name references the branch or its ticket key, or
 uses words such as "supersedes", "replaces", or "reland". For a closed-without-merge PR, read its
@@ -310,9 +319,11 @@ git -C <target-worktree-path> branch -D -- <branch>   # exact-head or contained-
 Before any `-D`, re-verify the matching exception's exact-tip and state conditions immediately
 before the command, including the ancestry check for contained-history cleanup, and report which
 exception — exact squash-merged PR head, merged-PR-contained history, or user-confirmed
-closed-without-merge head — backed the forced local ref deletion. If the target branch is not
-checked out anywhere, retain candidates requiring `-d` rather than switching a user's checkout;
-an explicitly confirmed PR-head deletion may use `-D` from the current checkout instead.
+closed-without-merge head, or user-confirmed relevance removal — backed the forced local ref
+deletion. Relevance removal requires the named-branch confirmation and recorded recovery tip
+from step 5; it is not merge evidence. If the target branch is not checked out anywhere, retain
+candidates requiring `-d` rather than switching a user's checkout; an eligible confirmed
+PR-head or relevance deletion may use `-D` from the current checkout instead.
 
 After each successful mutation, refresh and show:
 
