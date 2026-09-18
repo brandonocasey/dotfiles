@@ -1,17 +1,17 @@
 ## General
 
-- Follow my task instructions. Before implementation, check factual claims in my prompts, Jira tickets, MR descriptions, Slack messages, and docs against the relevant code and data. If a premise is wrong or a better approach exists, give concrete evidence (file:line, a failing case, or a measured cost), propose the alternative, and ask: proceed anyway, or take the alternative? If the claim checks out, proceed without ceremony.
-- Pushback never shelves work. Cancelling is my call alone. If I overrule you, state your position once, then do it my way
-- NEVER stop a task that still has defined steps to complete, unless the next step is destructive or another rule forbids it. Finish every remaining step before you hand work back
+- Follow my task instructions. Before implementation, check factual claims in my prompts, Jira tickets, MR descriptions, Slack messages, and docs against the relevant code and data. If a claim is wrong or a better approach exists, show evidence (file:line, a failing case, or a measured cost), propose the alternative, and ask: proceed anyway, or take the alternative? If the claim is correct, proceed without asking.
+- A disagreement does not cancel the task. Only I can cancel it. If I overrule you, state your objection once, then follow my decision.
+- Complete every remaining task step and internal todo before handing work back, unless the next step is destructive or another rule forbids it.
 - When I ask a question about something you could change ("why is X still like this?", "shouldn't this be Y?"), treat it as a probable request: give the short answer, then do the change if it is reversible and in scope, or ask "want me to do it now?". Never answer and stop. If I start with "just explain:", only explain
-- When I hand you a new task mid-task, add it to your internal todo list and keep going, unless I say do it now. Finish every internal todo before you hand work back
+- When I give you a new task during another task, add it to your internal todo list and continue the current task, unless I say to do the new task now.
 - `TODO.md` is my personal list. Only `/todo` adds to it, and only when I run it. Removing an item you finished is fine
 - Always check a change manually before you report it done: drive it with a browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count as a manual check
 - Run every command you can run safely yourself: builds, tests, linters, scripts, and especially servers. Start dev servers and background processes; do not ask me to start them. Ask only for commands that need my credentials or that are destructive
 - Bind every server you start to `0.0.0.0` so it is reachable over the LAN, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with the OS's own tool (`ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, `ipconfig` on Windows). The same applies to visual output (screenshots, rendered pages, diagrams, reports): never link it as a local file; serve it over a LAN HTTP server and give me the `http://<lan-ip>:<port>/...` URL
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
-  - Always show proposals and their exact final wording in chat, even when they are also written to a file for copying. Copy files supplement chat; they never replace the proposal shown there. For other copyable content longer than ~80 characters, put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` instead of chat (the copy directory, see Directories).
+  - Show the exact final wording of every proposal in chat, even if you also provide a copy file. For other copyable content longer than ~80 characters, put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` instead of chat (see Directories).
   - Give me one short line to use the file: `bash ~/.cache/agents/copy/run-<task>.sh` (Git Bash on Windows) or `copy ~/.cache/agents/copy/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy or clip. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
   - Short content goes in a fenced code block: one item per block, one line, nothing else, no backslash continuations
 - Skill code blocks are POSIX `sh`. On Windows run them in Git Bash; translate to PowerShell only when Git Bash is unavailable, and keep every git flag unchanged
@@ -59,9 +59,8 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ### Code comments
 
-- Comment only what the code cannot show: why, a constraint, a workaround, or a warning on intentionally unidiomatic code. Never narrate the code or the change. A single self-descriptive line gets no comment. Delete any comment the code already states; update or delete a comment when its code changes
+- Comment only what the code cannot show: a reason, constraint, workaround, required behavior, or warning about code that deliberately breaks convention. Do not repeat what the code says or describe the change. Do not comment a single line that already explains itself. Remove redundant comments; update or remove comments when the code changes. Put the bug, investigation, and ticket in the commit message. Each comment MUST make sense to someone who has not read the conversation.
 - Put the comment at the method or block level, in 1–2 complete sentences
-- State what the code does and the contract it upholds, not the backstory. The bug, the investigation, and the ticket belong in the commit message. A comment MUST make sense to a reader who never saw the conversation
 - State a real requirement with a capitalized RFC 2119 keyword (MUST, SHOULD, MAY, …) https://www.rfc-editor.org/rfc/rfc2119 : `Callers MUST hold the lock`. Lowercase in ordinary prose
 - Link external context at the point of use: the source of copied code, the spec tricky logic implements, the issue a workaround works around, and `TODO` plus an issue reference for known-incomplete code
 
