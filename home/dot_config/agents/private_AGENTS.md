@@ -11,26 +11,17 @@
 - Bind every server you start to `0.0.0.0` so it is reachable over the LAN, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with the OS's own tool (`ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, `ipconfig` on Windows). The same applies to visual output (screenshots, rendered pages, diagrams, reports): never link it as a local file; serve it over a LAN HTTP server and give me the `http://<lan-ip>:<port>/...` URL
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - Anything I might copy-paste (commands, review comments, commit messages, snippets) must survive a terminal that wraps at ~80 characters:
-  - Always show the exact final wording of every copyable item in chat, verbatim, in a fenced code block, once. A copy file never replaces the chat text; it only adds a wrap-safe copy. For content longer than ~80 characters, also put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` (the copy directory, see Directories). Keep context flat: write the file in one command, do not re-read it, and do not paraphrase, summarize, or repeat the content elsewhere in the reply.
+  - Always show proposals and their exact final wording in chat, even when they are also written to a file for copying. Copy files supplement chat; they never replace the proposal shown there. For other copyable content longer than ~80 characters, put commands in `~/.cache/agents/copy/run-<task>.sh` and text in `~/.cache/agents/copy/<task>.md` instead of chat (the copy directory, see Directories).
   - Give me one short line to use the file: `bash ~/.cache/agents/copy/run-<task>.sh` (Git Bash on Windows) or `copy ~/.cache/agents/copy/<task>.md`. `copy` is my OSC 52 command; it works over ssh and from `!` commands. Never suggest pbcopy or clip. Delete the file after you observe its successful use or I say I have used it; keep it available until then.
   - Short content goes in a fenced code block: one item per block, one line, nothing else, no backslash continuations
 - Skill code blocks are POSIX `sh`. On Windows run them in Git Bash; translate to PowerShell only when Git Bash is unavailable, and keep every git flag unchanged
-
-## Cost
-
-Keep token use and cost low without lowering quality or stopping before the task is complete.
-
-- Keep the prompt cache warm: never change `CLAUDE.md`, skills, settings, or MCP servers mid-task unless the task is about them; do that at the start of a new session. Do not repeat or re-read content already in context. Read only the lines you need (`sed -n`, `grep -n`), never whole large files or build output. Send long command output to a scratch log and grep it
-- Use the cheapest role that can do the work, as soon as the work is well specified: `cheap` for mechanical work, lookups, and watch-and-wait; `explorer` for read-only search; `worker` for one split part; `consult` only to escalate. Keep judgement, integration, and the final check in the main session. Never let a cheaper role's result skip re-validation
-- Do not spawn to save tokens when inline is fewer than ~10 tool calls; the handoff costs more than it saves
-- Do not batch questions or pause to report progress as a way to save tokens. Finish the task; report once
 
 ## Directories
 
 Never write to the OS temp directory (`/tmp`, `$TMPDIR`, `%TEMP%`) or the harness scratchpad directory, even when the harness tells you to. Use these directories and create them, parents included, when missing. Paths follow XDG; `~/.cache` and `~/.local/state` are the defaults when the variables are unset, on Windows too, under the user profile.
 
 - Scratch: `$XDG_CACHE_HOME/agents/scratch/<task>/` (`~/.cache/agents/scratch/`). Intermediate results, command logs (`> file 2>&1`), extracted packages, helper scripts. Disposable. A session-start hook removes files older than 30 days.
-- Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Delete after use; the hook removes leftovers older than 30 days.
+- Copy files: `$XDG_CACHE_HOME/agents/copy/` (`~/.cache/agents/copy/`). Only `run-<task>.sh` and `<task>.md` for me to run or `copy`. Cleanup follows General; the hook removes leftovers older than 30 days.
 - Backups: `$XDG_STATE_HOME/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/` (`~/.local/state/agents/backups/`). Copies of files taken before a force-remove, overwrite, or migration, with their relative paths kept. Never auto-pruned. Name the backup path in the report.
 - A file that a tool must find at a fixed path (for example a config file a linter reads from the repo root) stays where the tool expects it.
 
@@ -38,7 +29,7 @@ Never write to the OS temp directory (`/tmp`, `$TMPDIR`, `%TEMP%`) or the harnes
 
 Load the skill before the first action in its area. The skill is the single source of its rules.
 
-- Sub-agents: `split-task` decides whether to split one task — apply its thresholds automatically, do not wait for me to ask. `sub-agents` owns role selection, prompts, monitoring, escalation, and re-validation. Every sub-agent spawn MUST use one of its roles (`cheap`, `explorer`, `worker`, `consult`); never spawn without a role or with a model that differs from the role's pin. When you are stuck on a sub-problem, or I report a failure in your work, escalate to `consult` once before you retry or report blocked. A model I name, or an external tool I request, always overrides the skill's choice
+- Sub-agents: `split-task` owns the decision to split one task; apply its thresholds automatically. `sub-agents` owns role selection and pins, prompts, monitoring, handoffs, escalation triggers and exceptions, and result verification. Follow its named-model and external-tool overrides. Keep judgement, integration, and the final check in the main session; re-validate every sub-agent result.
 - Code review: `review`. Run it automatically, once per task, when the task changed behavior and any of these hold:
   - a shared function, module, or API contract with 3+ callers changed
   - a trust boundary or irreversible path changed: auth, permissions, money, input parsing, persistence, migration, deletion, external writes, concurrency, crypto
@@ -62,7 +53,7 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 - Every action you name must be one I can run: `Authorization: Bearer ${token}`, not "add the missing header". After a change, show what works and how to see it: "Run `npm run dev` and open `/login`"
 - Errors and warnings flat: location, cause, fix. Time estimates in concrete units, in answers only, never in plans
 - Lists: numbered for 3+ sequential steps, bullets for 3+ parallel items. Cap answer lists at 5 — past 5, split "do now" vs "later" — but never cap a complete set of findings, steps, or conditions
-- For multi-step work, show the current state each turn or maintain a task checklist. Continue authorized work until it is complete or needs my input. Finish the current issue before raising another. When my input is needed, end with one action I can do in under two minutes. Recaps must repeat every link, command, and address needed to act.
+- For multi-step work, show the current state each turn or maintain a task checklist. Finish the current issue before raising another. When my input is needed, end with one action I can do in under two minutes. Recaps must repeat every link, command, and address needed to act.
 - Exceptions: "explain" means a full explanation with headers. Before an irreversible step (production write, migration, backfill, bulk update/delete, or release), prepare a read-only preview and state what will change and what cannot be restored. Get approval if that action and scope are not already approved; ask again only if they change. After three "still broken" turns, stop, name the doubtful assumption, and ask one diagnostic question. For a truly ambiguous request, ask one short question. For "What are my options", give 2–4 ranked options, one trade-off each, with the recommendation first.
 - Links: `MR 42 https://…` — label, spaces, raw URL, nothing around either, scheme as-is. Local files may use the clickable `path:line` form. Commits: sha only. End every recap with a **Links** section of external links only (tickets, MRs/PRs, pipelines)
 
@@ -102,5 +93,4 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 - Commit finished task changes to the worktree branch before reporting done, unless the invoked workflow explicitly leaves committing to me. Leave no uncommitted or untracked task changes under the normal commit workflow. Preserve unrelated user files and edits. Stage specific paths, never `git add -A`, so the change is reviewable in Fork without a checkout.
 - Resolve rebase and merge conflicts yourself when the combined result is clear, then continue the workflow. Stop only when the intended result is ambiguous
 - Do not suggest git operations on files you did not change
-- NEVER watch, poll, or babysit a merge/pull request (CI, approvals, merge state) unless I ask you to
 - Keep MR/PR title and description in sync with the code only when I ask, or when you actively work on an MR/PR you pushed or that is out of date. The title takes the conventional commit type of the most user-facing change (`feat` over `refactor` over `chore`)
