@@ -42,8 +42,7 @@ managed=$(
   },
   "model": "claude-fable-5[1m]",
   "skillOverrides": {
-    "checkpoint": "off",
-    "repo-audit": "off"
+    "frontend-design": "user-invocable-only"
   },
   "hooks": {
     "PreToolUse": [],

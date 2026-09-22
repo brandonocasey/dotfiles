@@ -75,7 +75,7 @@ Every worktree a skill creates is removed by that skill when its task ends,
 unless that skill's own file says the worktree stays: `review` after the report
 or the `--fix` push, `land` after the fast-forward, `ship` after the verified
 push (**Remove after push**), `benchmark-change` after the measurements are
-recorded. `run-task-list`, `repo-audit`, and `pr-unblock` keep a worktree that
+recorded. `run-task-list` and `pr-unblock` keep a worktree that
 holds unlanded or unpushed commits and name it in their reports. Removal is
 part of the deliverable: the report names the removed path, or the exact
 blocker that stopped it. Never remove the main checkout, a `locked` worktree,
