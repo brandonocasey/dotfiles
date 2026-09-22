@@ -14,8 +14,8 @@ paper trail, and never silently drop a rule.
 
 - **Skills mode** — every file in the skills tree: `SKILL.md` files, agent definitions, and
   the shared helper files that skills read (e.g. `shared/git-flow.md`). Fix directly, report
-  after. Default targets: `~/.config/agents/skills/`, the Claude/Gemini/pi agent definitions
-  in `~/.config/agents/agents/`, and the Codex ones in `~/.codex/agents/`.
+  after. Default targets: `~/.config/agents/skills/`, the Claude/Gemini/pi/opencode agent
+  definitions in `~/.config/agents/agents/`, and the Codex ones in `~/.codex/agents/`.
 - **Rules mode** — always-loaded instruction files: AGENTS.md, CLAUDE.md, and project
   equivalents. Talk first; zero edits before explicit approval. Default target:
   `~/.config/agents/AGENTS.md`.
@@ -27,8 +27,10 @@ paper trail, and never silently drop a rule.
 
 - Resolve symlinks first (`readlink`, inode compare) to find the single real file or dir.
   Known chains: `~/.claude*/skills`, `~/.agents/skills` (Codex), and `~/.gemini/config/skills`
-  → `~/.config/agents/skills`; `~/.claude*/CLAUDE.md`, `~/.codex/AGENTS.md`,
-  `~/.gemini/GEMINI.md`, and `~/.pi/agent/AGENTS.md` → `~/.config/agents/AGENTS.md`.
+  → `~/.config/agents/skills`; `~/.claude*/agents`, `~/.gemini/config/agents`,
+  `~/.pi/agent/agents`, and `~/.config/opencode/agents` → `~/.config/agents/agents`;
+  `~/.claude*/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.gemini/GEMINI.md`,
+  `~/.pi/agent/AGENTS.md`, and `~/.config/opencode/AGENTS.md` → `~/.config/agents/AGENTS.md`.
   Symlinked copies are not duplicates, and one edit propagates everywhere — say so before
   proposing moves. These chains also answer rules mode's "do other tools read this file?":
   yes, so keep tool-default restatements.
@@ -43,15 +45,23 @@ paper trail, and never silently drop a rule.
   a documented per-command setting that disables unauthorized side effects.
   Known manager: chezmoi, source `~/.local/share/chezmoi/home/`, plain files (no
   templates), with `git.autoCommit` and `git.autoPush` on. Sync by copying the edited
-  target over its source file; never run `chezmoi add`, `re-add`, or `edit`, which commit
-  and push. `chezmoi status` must print nothing for the target afterwards.
+  target over its source file; find that file with `chezmoi source-path <target>`,
+  because source names carry prefixes (`AGENTS.md` is
+  `dot_config/agents/private_AGENTS.md`). Never run `chezmoi add`, `re-add`, or `edit`,
+  which commit and push. `chezmoi status` must print nothing for the target afterwards.
+- Some target files have another owner that overwrites edits: the Claude app syncs
+  `skills/synced/`, and `gh skill` installs skills whose frontmatter has
+  `metadata.github-*` keys. Report their findings instead of editing them. When
+  `chezmoi source-path` fails for a file, the file is unmanaged: edit it in place and
+  report that no source copy exists.
 - Check mtimes. A file modified in the last few minutes may belong to a concurrent agent:
   leave it untouched and report its issues instead. On a "modified since read" error,
   re-read and merge around the new content — never clobber it.
 - Check invocation controls for each harness that reads these files: settings overrides,
   skill frontmatter, and any invocation policy in agent metadata. Distinguish disabled
-  from explicit-only: Claude Code's `disable-model-invocation` blocks automatic loading;
-  Codex documents `policy.allow_implicit_invocation` in `agents/openai.yaml` and
+  from explicit-only: Claude Code's `disable-model-invocation` blocks automatic loading,
+  and its `skillOverrides` setting can hide a skill (`off` also removes it from the `/`
+  menu); Codex documents `policy.allow_implicit_invocation` in `agents/openai.yaml` and
   `skills.config` in its config. Report the observed settings; do not assume one
   harness's flag controls another. Preserve settings unless the user asks to change
   them. Check current harness docs if a setting is unclear.
@@ -92,7 +102,8 @@ Skills mode additions:
 - **Frontmatter quality** — keep triggers concise and specific to the user's requests;
   put operating detail in the body. Before renaming a skill, check name-collision
   behavior in each harness's official docs; do not assume personal skills shadow
-  built-ins everywhere.
+  built-ins everywhere. Compare names with the current repository's skills too: Claude
+  Code runs the personal skill when a project skill has the same name; Codex lists both.
 - **Shared-model compatibility** — keep requirements needed by other models or tools.
   Do not remove checks or authorization boundaries merely because one model supplies
   them by default. Link substantial mode-specific detail when that saves irrelevant

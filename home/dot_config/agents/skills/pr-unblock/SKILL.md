@@ -1,13 +1,10 @@
 ---
 name: pr-unblock
 description: >
-  Get open GitHub pull requests passing and merged: watch checks, fix failing
-  checks, rebase onto the base branch, retry infrastructure failures, and
-  report each remaining blocker. Use whenever the user asks to watch, babysit,
-  unblock, rebase, fix CI on, or get their pull requests green or merged, with
-  or without auto-merge. Defaults to the user's own open pull requests; accepts
-  auto-merge, a list, or any pull request filter. Not for creating pull
-  requests or general code review.
+  Get open GitHub pull requests passing and merged: rebase, fix failing
+  checks, retry infrastructure failures, and report blockers. Use when the
+  user asks to watch, babysit, unblock, rebase, fix CI on, or get their pull
+  requests green or merged. Not for creating pull requests or code review.
 ---
 
 # Unblock pull requests
@@ -214,8 +211,10 @@ Let an enabled auto-merge complete. Merge manually only when the pull request
 has auto-merge enabled but auto-merge cannot complete, or when the invocation
 includes `merge`. Before a manual merge, run a final read-only preflight: open,
 not a draft, mergeable, approved, and passing every required check. Then use
-the configured merge method or the repository default with
-`gh pr merge N --match-head-commit HEAD_SHA`. Never use `--admin` or
+the configured merge method or the repository default, passed as its flag:
+`gh pr merge N --<METHOD> --match-head-commit HEAD_SHA`, where `METHOD` is
+`merge`, `squash`, or `rebase`. Outside a merge queue, `gh` refuses a
+non-interactive merge without a method flag. Never use `--admin` or
 `--delete-branch`. Do not merge a pull request that still has a review,
 required check, conflict, queue, policy, or permission blocker. Without
 `merge` or auto-merge, a passing pull request is complete; report it as ready.

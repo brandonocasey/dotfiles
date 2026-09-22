@@ -8,20 +8,28 @@ description: >
 # Git worktree
 
 Do branch work in a worktree. Never switch branches in the main checkout.
+`<main-checkout>` below is the first `worktree` entry of
+`git worktree list --porcelain`. It is not `land`'s `MAIN_WT`, which can be
+unset when the target branch is checked out nowhere.
 
 ## Create
 
 For a new branch, read [default-branch.md](../shared/default-branch.md) and
 follow **Newest default base**. It owns remote discovery and ancestry comparison.
-Use the selected commit as `<base-commit>`:
+Use the selected commit as `<base-commit>`. Create every worktree under
+`<main-checkout>/.worktrees/`, even when the session starts in a subdirectory
+or in another worktree: removing an outer worktree also deletes a worktree
+nested in it, because ignored files never block removal. If the first entry is
+marked `bare`, it is the repository itself: ask where to create the worktree.
 
 ```sh
-git worktree add .worktrees/<branch> -b <branch> <base-commit>
+git -C <main-checkout> worktree add .worktrees/<branch> -b <branch> <base-commit>
 ```
 
 - For an existing branch, first check `git worktree list --porcelain` and reuse
   its worktree when available. Otherwise run
-  `git worktree add .worktrees/<branch> <branch>`. Do not reset its base.
+  `git -C <main-checkout> worktree add .worktrees/<branch> <branch>`. Do not
+  reset its base.
 - `.worktrees/` is ignored through the global excludes file
   (`~/.config/git/ignore`), so it needs no per-repo `.gitignore` entry.
 - A branch created from a commit ID has no automatic remote upstream. Existing
@@ -29,12 +37,12 @@ git worktree add .worktrees/<branch> -b <branch> <base-commit>
 
 - A new worktree leaves every submodule directory empty. When `.gitmodules`
   exists, initialize them before work:
-  `git -C .worktrees/<branch> submodule update --init --recursive`.
+  `git -C <main-checkout>/.worktrees/<branch> submodule update --init --recursive`.
   This leaves each submodule on a detached HEAD. Before you commit inside a
   submodule, create a branch there (`git -C <sub-path> switch -c <branch>`),
   so the commit has a ref to push and cannot be orphaned by the next update.
 
-Work inside `.worktrees/<branch>` for the whole task.
+Work inside `<main-checkout>/.worktrees/<branch>` for the whole task.
 
 ## Recover changes made in the main checkout
 
@@ -73,10 +81,11 @@ part of the deliverable: the report names the removed path, or the exact
 blocker that stopped it. Never remove the main checkout, a `locked` worktree,
 or a worktree another task still uses.
 
-Remove the worktree once the branch is merged or pushed:
+Remove the worktree once the branch is merged or pushed. Take `<worktree-path>`
+from `git worktree list --porcelain`, because older worktrees can live elsewhere:
 
 ```sh
-git worktree remove .worktrees/<branch>
+git -C <main-checkout> worktree remove <worktree-path>
 ```
 
 Move your shell out of the worktree before you remove it. Git removes the
@@ -89,18 +98,18 @@ Use when the branch's work lives on the remote and the task has nothing more
 to commit. Prove the remote holds the local tip before touching anything:
 
 ```sh
-git ls-remote --heads origin <branch>   # remote tip
-git rev-parse <branch>                  # local tip; MUST be the same ID
+git ls-remote origin refs/heads/<branch>   # remote tip
+git rev-parse <branch>                     # local tip; MUST be the same ID
 ```
 
+Pass the full ref: a bare `<branch>` pattern also matches
+`refs/heads/<prefix>/<branch>` and can print a second ID.
 If the IDs differ, `ls-remote` prints nothing, or the command fails, keep the
-worktree and the branch and report both IDs. Otherwise, with your shell in the
-main checkout (`<main-checkout>` below: the first `worktree` entry of
-`git worktree list --porcelain`; it is not `land`'s `MAIN_WT`, which can be
-unset when the target branch is checked out nowhere):
+worktree and the branch and report both IDs. Otherwise, with your shell in
+`<main-checkout>`:
 
 ```sh
-git -C <main-checkout> worktree remove .worktrees/<branch>
+git -C <main-checkout> worktree remove <worktree-path>
 git -C <main-checkout> branch -d <branch>
 git -C <main-checkout> worktree prune
 ```
@@ -116,7 +125,7 @@ To work on the branch again later (CI fix, review feedback):
 
 ```sh
 git fetch origin <branch>:refs/remotes/origin/<branch>
-git worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
+git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
 ```
 
 ### Submodules

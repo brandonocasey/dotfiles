@@ -6,8 +6,7 @@ description: >
 ---
 
 Split a task across sub-agents only when it saves cost or keeps the main session
-free. The main session always owns the result: it re-validates whatever comes back
-before declaring done. Every spawn follows the `sub-agents` skill.
+free. Every spawn follows the `sub-agents` skill.
 
 ## When to split
 
@@ -22,7 +21,8 @@ medium-sized task costs MORE than doing it inline.
 
 ## How to split
 
-- Give each part non-overlapping file ownership. This is the only rule this skill owns.
+- Give each part non-overlapping file ownership. With the thresholds in **When to
+  split**, this is the only rule this skill owns.
 - Everything else — self-contained prompts, role choice and the user's model/tool
   override, the shared prompt prefix for cache reuse, and re-validating results before
   declaring done — comes from the `sub-agents` skill. Do not restate it here.

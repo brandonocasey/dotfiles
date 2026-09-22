@@ -48,6 +48,6 @@ you took.
 
 ## Real Safari
 
-The configured `safari` MCP is WebKit, not real Safari. For real Safari
-(FairPlay DRM, Safari-only bugs), follow the `real-safari` skill. It owns
-driver selection and confirmation before starting the visible browser.
+For real Safari (FairPlay DRM, Safari-only bugs), follow the `real-safari`
+skill. It owns driver selection and confirmation before starting the visible
+browser.

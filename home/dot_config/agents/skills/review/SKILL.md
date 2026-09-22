@@ -78,18 +78,19 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 
 - **Remote target**: check out the source branch in a worktree per the `worktree` skill —
   never the main checkout. The repo may not be the current working directory: locate the
-  local checkout for the project first and create the worktree there. A review worktree is
+  project's main checkout (the `worktree` skill's `<main-checkout>`) and run both commands
+  against it, because `FETCH_HEAD` belongs to the checkout that fetched. A review worktree is
   detached on purpose, so it takes a commit-ish rather than `-b <branch>`.
 
   ```sh
-  git fetch origin <source-branch>                             # GitLab, or same-repo GitHub PR
-  git worktree add --detach .worktrees/review-<number> FETCH_HEAD
+  git -C <main-checkout> fetch origin <source-branch>          # GitLab, or same-repo GitHub PR
+  git -C <main-checkout> worktree add --detach .worktrees/review-<number> FETCH_HEAD
   # GitHub fork: fetch origin pull/<n>/head, then add --detach from FETCH_HEAD
   # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
   ```
 
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
-  otherwise `git worktree add .worktrees/review-<branch> <branch>`.
+  otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
 - When `.gitmodules` exists and the review runs tests, initialize submodules per the
   `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
   same skill's **Submodules** section owns the `--force` decision.
@@ -164,7 +165,7 @@ Brief beats complete-sounding: no padding, no restating the diff.
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do NOT post anything to the MR/PR unless the user asks; print for the user
 to post. Remove any worktree this review created — never a pre-existing one — with
-`git worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
+`git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
 until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
 behind is incomplete: when a sub-agent ran steps 0–2, the main session removes the worktree

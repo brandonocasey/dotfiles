@@ -6,8 +6,7 @@ description: >
 ---
 
 Rules for every sub-agent spawn, regardless of which skill or task triggers it. The
-spawning session always owns the result: it re-validates whatever comes back before
-declaring done.
+spawning session always owns the result (**After they return**).
 
 ## Overrides (check first)
 
