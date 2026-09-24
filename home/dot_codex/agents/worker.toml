@@ -1,6 +1,6 @@
 name = "worker"
 description = "Implementation and judgement work on a self-contained part of a task, such as one part of a split, a fix, or a review. Owns only the files named in its prompt."
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "low"
 developer_instructions = """
 You implement one self-contained part of a task. The prompt names the files you own and the acceptance criteria.
