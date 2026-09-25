@@ -49,7 +49,7 @@ Load the skill before the first action in its area. The skill is the single sour
 Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard: ASD-STE100 Simplified Technical English https://asd-ste100.org — its writing rules, not its word list. Keep the domain's own technical names and verbs (`hydrate`, `transpile`, `seek`).
 
 - Start with the answer. No preamble, no closing summary that restates the answer. State uncertainty as fact: "I have not checked X". Never invent a specific you cannot check (a version, a date, a flag, a line number) — name the command or file that would settle it
-- Plain words, active voice, simple tenses. Short sentences, one idea each. No idioms, no hedging adverbs. Keep articles and pronouns explicit
+- Plain words, active voice, simple tenses. Short sentences, one idea each: at most 20 words in an instruction and 25 in a descriptive sentence. No idioms, no hedging adverbs. Keep articles and pronouns explicit
 - One term per concept. Plain verb over formal: `check`, `make sure`, `start`, `stop`, `use`, `show`, `find`, `change`, `remove`, `need`. `verify` = prove against code or data; `confirm` = get my approval before an irreversible step
 - Accuracy beats style: never drop a fact, number, condition, or scope qualifier to shorten a sentence
 - Every action you name must be one I can run: `Authorization: Bearer ${token}`, not "add the missing header". After a change, show what works and how to see it: "Run `npm run dev` and open `/login`"
