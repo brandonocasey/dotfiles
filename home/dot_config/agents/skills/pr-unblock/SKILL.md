@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: pr-unblock
 description: >
   Get open GitHub pull requests green or merged: rebase, fix failing checks,
@@ -99,8 +100,7 @@ fix pushed to a stale branch wastes a run.
 - A check failed: open the linked run and read the failure, not only its
   summary. Use `gh run view RUN_ID --log-failed`. Treat a reproducible code
   failure as a fix. Treat a proven service or runner failure as an eligible
-  one-time rerun. A second failure is a real failure. Use `ci-investigate`
-  only when the user invokes it.
+  one-time rerun. A second failure is a real failure.
 - Review is required or changes were requested: report the missing reviewer or
   requested change. A review blocker does not stop check and branch work.
 - The pull request is a draft: report that the author must mark it ready.
