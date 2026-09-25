@@ -9,6 +9,7 @@
 - When I give you a new task during another task, add it to your internal todo list and continue the current task, unless I say to do the new task now.
 - `TODO.md` is my personal list. Only the `todo` skill adds to it, and only when I invoke it. Removing an item you finished is fine
 - Always check a change manually before you report it done: drive it with a browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count as a manual check
+- Never skip, remove, or weaken tests, add disable comments for the linter or type checker, or edit test/lint/type-check config without my consent. Updating a test because the intended behavior changed is allowed — say so when you do
 - Run every command you can run safely yourself: builds, tests, linters, scripts, and especially servers. Start dev servers and background processes; do not ask me to start them. Ask only for commands that need my credentials or that are destructive
 - Bind every application, preview, and artifact HTTP server you start to `0.0.0.0`, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` (macOS), `hostname -I` (Linux), or `ipconfig` (Windows). Serve visual output (screenshots, rendered pages, diagrams, reports) the same way, never as a local-file link. Tool-control endpoints keep the binding their tool requires.
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
@@ -34,8 +35,8 @@ Never write to the OS temp directory (`/tmp`, `$TMPDIR`, `%TEMP%`) or the harnes
 Load the skill before the first action in its area. The skill is the single source of its rules.
 
 - Sub-agents: `split-task` owns the decision to split one task; apply its thresholds automatically. `sub-agents` owns every spawn: roles and pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Keep judgement, integration, and the final check in the main session.
-- Code review: `review`, once per task. Every model except Fable and Astra MUST run it before it reports a task done. Fable and Astra first read the skill's `references/when-to-run.md`, which owns their triggers and skip rules. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`.
-- Code: `code-standards` before you write or change code or tests, write a plan, or review code.
+- Code review: `review`, once per task. Every model except Fable and Astra MUST run it before it reports a task done. Before Fable or Astra reports a task done, it reads `~/.config/agents/skills/review/references/when-to-run.md`, which owns their triggers and skip rules. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`.
+- Code: `code-standards` before you write or change code, tests, config, or dependencies, write a plan, or review code.
 - Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns base selection and branch preservation. Never switch branches in the main checkout.
 - Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`. The Git section owns authorization for these workflows.
 

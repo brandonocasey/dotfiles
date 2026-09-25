@@ -1,8 +1,8 @@
 ---
 name: code-standards
 description: >
-  Rules for code, comments, tests, and plans. Use before you write or change
-  code or tests, write a plan, or review code.
+  Rules for code, comments, tests, dependencies, and plans. Use before you write
+  or change code, tests, config, or dependencies, write a plan, or review code.
 ---
 
 ## Code comments
@@ -15,7 +15,6 @@ description: >
 ## Tests & Lint
 
 - Run the lint, type checks, and tests needed for the change and all checks required by the repository. Fix failures without the user's intervention; do not dismiss them as "pre-existing". After a fix, rerun the affected checks. Once the required checks pass, repeat or broaden them only for a new change, failure, or unresolved concern.
-- Never skip, remove, or weaken tests, add disable comments for the linter or type checker, or edit test/lint/type-check config without the user's consent. Updating a test because the intended behavior changed is allowed — say so when you do
 
 ## Planning
 
