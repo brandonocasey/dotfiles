@@ -10,7 +10,7 @@
 - `TODO.md` is my personal list. Only the `todo` skill adds to it, and only when I invoke it. Removing an item you finished is fine
 - Always check a change manually before you report it done: drive it with a browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count as a manual check
 - Run every command you can run safely yourself: builds, tests, linters, scripts, and especially servers. Start dev servers and background processes; do not ask me to start them. Ask only for commands that need my credentials or that are destructive
-- Bind every application, preview, and artifact HTTP server you start to `0.0.0.0` so it is reachable over the LAN, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with the OS's own tool (`ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, `ipconfig` on Windows). The same applies to visual output (screenshots, rendered pages, diagrams, reports): serve it over a LAN HTTP server and give me its HTTP URL, never a local-file link. Tool-control endpoints use the binding required by their tool; do not expose them merely to make them reachable over the LAN.
+- Bind every application, preview, and artifact HTTP server you start to `0.0.0.0`, and report its URL as `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` (macOS), `hostname -I` (Linux), or `ipconfig` (Windows). Serve visual output (screenshots, rendered pages, diagrams, reports) the same way, never as a local-file link. Tool-control endpoints keep the binding their tool requires.
 - Give each dev server and worktree its own `PORT` from the open ports, and export it. When the task ends, release what you opened: close MCP resources, stop dev servers and background processes you started, free the ports
 - When you write a helper script or tool for a task, decide at the end whether it is reusable. If a teammate or a later task could use it, propose adding it to the project (name the path, for example `scripts/`) and let me decide. Do not leave it in the repo without my consent
 - At the end of a task, remove every temporary thing I am not expected to use again: scratch files, helper scripts, test data, extra branches, debug output, and log files. Keep only copy files awaiting my use (see the copy-file rule) and files I asked for
@@ -37,8 +37,6 @@ Load the skill before the first action in its area. The skill is the single sour
 - Code review: `review`, once per task. Every model except Fable and Astra MUST run it before it reports a task done. Fable and Astra first read the skill's `references/when-to-run.md`, which owns their triggers and skip rules. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`.
 - Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns base selection and branch preservation. Never switch branches in the main checkout.
 - Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`. The Git section owns authorization for these workflows.
-- Browser: `browser` before the first browser MCP call
-- Documentation: `write-docs` before you create, edit, or restructure any docs page
 
 ## Writing
 
@@ -57,7 +55,7 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ### Code comments
 
-- Comment only what the code cannot show: a reason, constraint, workaround, required behavior, or warning about code that deliberately breaks convention. Do not repeat what the code says or describe the change. Do not comment a single line that already explains itself. Remove redundant comments; update or remove comments when the code changes. Put the bug, investigation, and ticket in the commit message. Each comment MUST make sense to someone who has not read the conversation.
+- Comment only what the code cannot show: a reason, constraint, workaround, required behavior, or warning about code that deliberately breaks convention. Do not repeat what the code says or describe the change; put the bug, investigation, and ticket in the commit message. Remove redundant comments, and update or remove comments when the code changes. Each comment MUST make sense to someone who has not read the conversation.
 - Put the comment at the method or block level, in 1–2 complete sentences
 - State a real requirement with a capitalized RFC 2119 keyword (MUST, SHOULD, MAY, …) https://www.rfc-editor.org/rfc/rfc2119 : `Callers MUST hold the lock`. Lowercase in ordinary prose
 - Link external context at the point of use: the source of copied code, the spec tricky logic implements, the issue a workaround works around, and `TODO` plus an issue reference for known-incomplete code
@@ -75,7 +73,7 @@ Apply to all writing: chat, docs, code comments, commit and MR/PR text. Standard
 
 ## Code Quality
 
-- Avoid optional complexity. Choose the smallest solution that solves the problem. Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; then the minimum new code that works. Prefer deletion and simple solutions. Add a dependency only when it saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies.
+- Choose the smallest solution that solves the problem, and prefer deletion. Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; then the minimum new code that works. Add a dependency only when it saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies.
 - Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
 - Keep each piece of code small and single-purpose; break up components that grow too complex; reduce duplication
