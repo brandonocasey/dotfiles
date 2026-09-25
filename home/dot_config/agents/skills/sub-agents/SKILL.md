@@ -53,6 +53,8 @@ Do not keep work on an expensive role solely to preserve its cache.
   acceptance criteria. Conversation inheritance depends on the harness and spawn
   options; do not rely on context that was not passed. Independent reviewers get
   only the review skill's permitted context.
+- The Claude Code `cheap` role loads no rules files (`omitClaudeMd`). Name every
+  output path and every rule it needs in its prompt.
 - Sub-agents return raw results (data, findings, paths), not prose for the user.
 - Sub-agents do not spawn further sub-agents. The Claude Code role files deny the
   `Agent` tool; the Codex role files forbid it by instruction only.
