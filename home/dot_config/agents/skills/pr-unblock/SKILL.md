@@ -1,10 +1,8 @@
 ---
 name: pr-unblock
 description: >
-  Get open GitHub pull requests passing and merged: rebase, fix failing
-  checks, retry infrastructure failures, and report blockers. Use when the
-  user asks to watch, babysit, unblock, rebase, fix CI on, or get their pull
-  requests green or merged. Not for creating pull requests or code review.
+  Get open GitHub pull requests green or merged: rebase, fix failing checks,
+  and watch CI. Use to babysit or unblock PRs. Not for creating PRs or review.
 ---
 
 # Unblock pull requests

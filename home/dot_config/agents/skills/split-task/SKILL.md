@@ -6,26 +6,19 @@ description: >
 ---
 
 Split a task across sub-agents only when it saves cost or keeps the main session
-free. Every spawn follows the `sub-agents` skill.
+free. Every spawn follows the `sub-agents` skill: prompts, roles, the user's
+model or tool override, cache reuse, and result checks.
 
 ## When to split
 
-Split automatically — without being asked — when the task will change 5+ files
-(excluding documentation) and divides into independent parts that each need
-substantial reading or editing on their own: multi-file migrations, broad audits,
-repetitive edits.
+Split automatically when the task will change 5+ files (excluding documentation)
+and divides into independent parts that each need substantial reading or editing
+on their own: multi-file migrations, broad audits, repetitive edits. Give each part
+non-overlapping file ownership.
 
 Run inline when the parts share most of their context, or the task is small or
 sequential. Each spawned agent re-pays the shared context, so splitting a
-medium-sized task costs MORE than doing it inline.
-
-## How to split
-
-- Give each part non-overlapping file ownership. With the thresholds in **When to
-  split**, this is the only rule this skill owns.
-- Everything else — self-contained prompts, role choice and the user's model/tool
-  override, the shared prompt prefix for cache reuse, and re-validating results before
-  declaring done — comes from the `sub-agents` skill. Do not restate it here.
+medium-sized task costs more than doing it inline.
 
 ## Not this skill
 

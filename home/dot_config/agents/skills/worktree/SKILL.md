@@ -1,8 +1,7 @@
 ---
 name: worktree
 description: >
-  Use before branch work to create or reuse an isolated Git worktree. Select
-  the newest default base across local and remote copies; preserve existing work.
+  Use before branch work to create, reuse, or remove an isolated Git worktree.
 ---
 
 # Git worktree
@@ -32,9 +31,6 @@ git -C <main-checkout> worktree add .worktrees/<branch> -b <branch> <base-commit
   reset its base.
 - `.worktrees/` is ignored through the global excludes file
   (`~/.config/git/ignore`), so it needs no per-repo `.gitignore` entry.
-- A branch created from a commit ID has no automatic remote upstream. Existing
-  branches may have one; `ship` and `land` account for that.
-
 - A new worktree leaves every submodule directory empty. When `.gitmodules`
   exists, initialize them before work:
   `git -C <main-checkout>/.worktrees/<branch> submodule update --init --recursive`.
@@ -49,37 +45,30 @@ Work inside `<main-checkout>/.worktrees/<branch>` for the whole task.
 If you already changed files in the main checkout, move them into the worktree
 so the main checkout stays clean:
 
-Select the base as above before moving files. Stash only this task's changes;
-leave unrelated user work in place. If ownership overlaps within a file and
-cannot be separated safely, ask before moving it. Use a unique stash label and
-record the created stash commit ID. Create the worktree, then apply that ID there
-with `git stash apply --index <stash-commit>`. Drop the matching stash entry only
-after checking that every intended change was restored. Resolve a stash-list ref
-by its recorded commit ID immediately before dropping it; never use bare `pop`
-or choose a repeated label. On an ambiguous conflict, retain the stash and report
-its ID and both checkout paths.
-Resolve merge, rebase, and stash conflicts automatically when the intended combined
-result is clear. Ask only when the resolution is ambiguous; never discard either
-side just to make a conflict disappear.
-
-Check `git status --short` in both checkouts afterwards.
-
-## Ports
-
-The global rules (AGENTS.md, **General**) own the `PORT` rule: one exported
-open port per worktree, released when the task ends.
+1. Select the base as above. Stash only this task's paths, new files included,
+   under a unique label, and leave unrelated user work in place:
+   `git -C <main-checkout> stash push --include-untracked -m <label> -- <paths>`.
+   If ownership overlaps within a file and cannot be separated safely, ask
+   before you move it.
+2. Check that `stash@{0}` has your label, then record its commit ID:
+   `git -C <main-checkout> rev-parse stash@{0}`.
+3. Create the worktree, then apply that ID there:
+   `git -C <main-checkout>/.worktrees/<branch> stash apply --index <stash-commit>`.
+4. Check that every intended change was restored. Immediately before you drop
+   the stash, find the entry whose commit is the recorded ID in
+   `git stash list --format='%gd %H'`, and drop only that entry. Never use bare
+   `pop`.
+5. Resolve a conflict when the combined result is clear (AGENTS.md, **Git**);
+   never discard either side just to make a conflict disappear. On an ambiguous
+   conflict, retain the stash and report its ID and both checkout paths.
+6. Check `git status --short` in both checkouts.
 
 ## Remove
 
-Every worktree a skill creates is removed by that skill when its task ends,
-unless that skill's own file says the worktree stays: `review` after the report
-or the `--fix` push, `land` after the fast-forward, `ship` after the verified
-push (**Remove after push**), `benchmark-change` after the measurements are
-recorded. `run-task-list` and `pr-unblock` keep a worktree that
-holds unlanded or unpushed commits and name it in their reports. Removal is
-part of the deliverable: the report names the removed path, or the exact
-blocker that stopped it. Never remove the main checkout, a `locked` worktree,
-or a worktree another task still uses.
+A skill that creates a worktree removes it when its task ends, unless its own
+file says to keep it. Removal is part of the deliverable: the report names the
+removed path, or the exact blocker that stopped it. Never remove the main
+checkout, a `locked` worktree, or a worktree another task still uses.
 
 Remove the worktree once the branch is merged or pushed. Take `<worktree-path>`
 from `git worktree list --porcelain`, because older worktrees can live elsewhere:
@@ -124,7 +113,7 @@ branch keeps the history.
 To work on the branch again later (CI fix, review feedback):
 
 ```sh
-git fetch origin <branch>:refs/remotes/origin/<branch>
+git -C <main-checkout> fetch origin <branch>:refs/remotes/origin/<branch>
 git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
 ```
 
@@ -142,12 +131,13 @@ initialized submodule (an entry of `git -C <worktree-path> submodule status
    commit differs from the gitlink the superproject records, which is an
    uncommitted change; `U` is a merge conflict. Treat either like a modified
    tracked file.
-2. **Clean**: `git -C <sub-path> status --porcelain --ignore-submodules=none`
+2. **Clean**:
+   `git -C <worktree-path>/<sub-path> status --porcelain --ignore-submodules=none`
    prints nothing.
 3. **Preserved**: the commit exists outside this worktree's clone. Either
-   `git -C <sub-path> fetch --quiet` and then
-   `git -C <sub-path> branch -r --contains HEAD` prints a remote branch, or
-   the main checkout's clone holds it:
+   `git -C <worktree-path>/<sub-path> fetch --quiet` and then
+   `git -C <worktree-path>/<sub-path> branch -r --contains HEAD` prints a
+   remote branch, or the main checkout's clone holds it:
    `git -C <main-checkout>/<sub-path> merge-base --is-ancestor <commit> <sub-target>`
    succeeds (the `land` path in `shared/submodules.md`). Neither: push the
    commit to the submodule's remote first, or keep the worktree and report the
@@ -165,8 +155,9 @@ the block. Classify every blocker first; `--force` is allowed only when every
 blocker is either already saved in the repository or disposable, and every
 initialized submodule passes **Submodules**.
 
-1. List the blockers. `--ignore-submodules=none` is required: the global
-   `diff.ignoreSubmodules=dirty` setting hides dirty submodules otherwise.
+1. List the blockers. `--ignore-submodules=none` is required: a
+   `diff.ignoreSubmodules` setting or a `.gitmodules` `ignore` entry hides
+   dirty submodules otherwise.
    ```sh
    git -C <worktree-path> status --porcelain --untracked-files=all \
      --ignore-submodules=none
@@ -197,13 +188,5 @@ initialized submodule passes **Submodules**.
    `git worktree list --porcelain`) is never removed; report it.
 6. Report each blocker with its class, evidence, and backup path.
 
-For batch cleanup, the user invokes `clean-merged-worktrees` explicitly. Its
-Claude frontmatter and Codex metadata both mark it explicit-only. Do not start
-batch cleanup merely because a worktree task has ended.
-
-## Related skills
-
-- `ship` — push, open or update the MR/PR, remove the pushed worktree, and
-  report without watching CI.
-- `land` — local merge into the default branch, then cleanup.
-- `commit` — chunking and Conventional Commit messages.
+Batch cleanup runs only when the user invokes `clean-merged-worktrees`. Do not
+start it because a worktree task ended.

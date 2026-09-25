@@ -25,12 +25,10 @@ Claude Code reads `~/.config/agents/agents/<role>.md`; Codex reads
 it loads these files or supports their metadata. Check its loaded roster,
 effective model, thinking setting, and tools before spawning. If the required
 role is unavailable or incompatible, work inline and report the limitation.
-Never spawn a sub-agent without a role or a user-named agent, never pass
-a `model` or effort that differs from the role's pin, and never use the harness's
-generic default agent (`general-purpose`, `claude`, `default`) for work a role
-covers. A spawn that omits the role gets the parent model (Claude Code) or the
+Unless an override above applies, never pass a `model` or effort that differs from the
+role's pin, and never use the harness's generic default agent (`general-purpose`,
+`claude`, `default`) for work a role covers. A spawn that omits the role gets the parent model (Claude Code) or the
 harness's `default_subagent_model` (Codex) instead of the pin, which is a defect.
-The user's named model, custom harness agent, or external tool is the only override.
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
@@ -69,14 +67,15 @@ Do not keep work on an expensive role solely to preserve its cache.
 
 ## Monitoring and long waits
 
-Polling CI, watching logs, waiting on builds or deploys: spawn a `cheap`
-background agent. It reports back only the outcome and the relevant
+For a command the session started, use the harness's own completion notice or
+monitor tool when it has one. For other targets (CI, deploys, remote logs), spawn a
+`cheap` background agent. It reports back only the outcome and the relevant
 details. The main session continues other work or ends its turn; it never polls the
 same target itself.
 
 Exception: never watch an MR/PR or its pipeline for success on your own — no watcher
 agent, no polling. Report the pipeline URL and stop. Watch one only when the user
-asks for it.
+asks for it; a `pr-unblock` run counts as that request.
 
 ## Escalate with `consult`
 
@@ -100,8 +99,7 @@ concrete blocker. Do not invent a model.
   current model) with the full context it needs.
 - In the main session, before reporting blocked or a second fix attempt after the user reports a
   failure, on a `cheap`, `explorer`, or `worker` model: check that you spawned
-  `consult` once for that sub-problem. Sub-agents report the concrete blocker to
-  the main session without spawning.
+  `consult` once for that sub-problem.
 
 ## After they return
 

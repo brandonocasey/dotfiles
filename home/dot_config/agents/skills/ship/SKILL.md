@@ -6,15 +6,12 @@ description: >
   or PR/MR creation requests; do not wait for CI.
 ---
 
-Ship the current branch: push it, open or update the MR/PR, and report. Do not watch the
-pipeline. Never merge, approve, close, or mark ready unless the user asks.
+Ship the current branch: push it, open or update the MR/PR, and report.
 
 ## 0. Detect context (always run first)
 
-Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
-against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
-directory, which is the user's repo. Establish its **Facts** using these remote
-target details:
+Read [git-flow.md](../shared/git-flow.md), resolved against this file's path, not the
+user's repo. Establish its **Facts** using these remote target details:
 
 - `HOST` — from `git remote get-url origin`: `gitlab.com` → `glab`; `github.com` → `gh`;
   self-hosted GitLab → `glab` prefixed with `GITLAB_HOST=<host>`; anything else (forgejo/gitea)
@@ -36,14 +33,12 @@ target details:
   comparing it with local `HEAD`. If local commits are ahead or histories
   diverge, ask which commits should ship on a new branch. Never guess, reset,
   or force the checked-out branch. Stop on a missing remote branch or failed fetch.
-- With a dirty tree and no local-only commits, move the work onto a properly named branch (repo
-  naming convention — e.g. `<type>/<jira>/<description>` in jwpconnatix repos) using the
-  `worktree` skill's **Recover changes made in the main checkout** steps. Never
-  `git switch` in the main checkout — the `worktree` skill owns that
-  rule. Continue from inside the new worktree and refresh `BRANCH`.
+- With a dirty tree and no local-only commits, move the work onto a branch named by the repo
+  convention, using the `worktree` skill's **Recover changes made in the main checkout**
+  steps. Continue from inside the new worktree and refresh `BRANCH`.
 - With a clean tree and no local-only commits, report that there is nothing to ship and stop.
 
-When `.gitmodules` exists, also read `shared/submodules.md` next to `git-flow.md` and
+When `.gitmodules` exists, also read [submodules.md](../shared/submodules.md) and
 establish its **Facts** (`SUB_CHANGED`, `SUB_OWNED`, `SUB_BRANCH`, `SUB_TARGET`). A changed
 owned submodule ships together with `BRANCH`: same branch name, its own MR/PR, pushed first.
 
@@ -68,17 +63,16 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   `--recurse-submodules=check`. Git refuses that push while a recorded submodule commit
   exists on no submodule remote; never retry without the flag. `on-demand` is not used:
   it fails on a detached submodule HEAD with `src refspec ... must name a ref`.
-- Confirm the push landed (`git status -sb` shows no ahead-count) and say so — the user should
-  never have to ask "did you push?".
+- Check that the push landed (`git status -sb` shows no ahead-count) and say so — the user
+  should never have to ask "did you push?".
 
 ## 3. Open or update the MR/PR
 
 - Check for an existing open MR/PR for `BRANCH` first (`glab mr list --source-branch <BRANCH>`
   / `gh pr list --head <BRANCH>`). Update it instead of creating a duplicate.
 - **Title**: the repo's commit/MR convention — read the repo's AGENTS.md / CLAUDE.md /
-  CONTRIBUTING for it (e.g. jwpconnatix: `<type>(<scope>): <subject> [PUBS-1234]`). Include
-  `TICKET` when set. If the repo requires a ticket and there is none, ask the user for the key
-  — never invent one, never create tickets from this skill unless asked.
+  CONTRIBUTING for it. Include `TICKET` when set. If the repo requires a ticket and there is
+  none, ask the user for the key — never invent one.
 - **Description**: 2 sentences max — what changed and the approach. Add the config/data used
   for testing when the repo convention asks for it. No product framing, no filler, no
   checklists.
@@ -88,13 +82,14 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 
 - Do not poll the pipeline, and do not spawn a background agent to watch it. Report the
   pipeline URL and stop.
-- Handle CI only when the user asks for it in a later turn. Then: pull the failing job's log
-  (`glab ci trace <job>` / `gh run view --log-failed`), find the real error under the
-  boilerplate, fix it, commit via the `commit` skill, push, and run step 5 again. Step 5
-  removed the worktree, so recreate it first with the two commands at the end of the
-  `worktree` skill's **Remove after push**. Retry a job
-  once (`glab ci retry <job>` / `gh run rerun --failed`) when the project's docs name that
-  suite as flaky or the failure is an infra hiccup; a second failure is real.
+- Handle CI only when the user asks for it in a later turn, or once for jobs that already
+  failed when the global review rule requires it (AGENTS.md, **Skills own the detail**).
+  Then: pull the failing job's log (`glab ci trace <job>` / `gh run view --log-failed`), find
+  the real error under the boilerplate, fix it, commit via the `commit` skill, push, and run
+  step 5 again. Step 5 removed the worktree, so recreate it first with the two commands at
+  the end of the `worktree` skill's **Remove after push**. Retry a job once
+  (`glab ci retry <job>` / `gh run rerun --failed`) when the project's docs name that suite
+  as flaky or the log shows an infrastructure failure; a second failure is real.
 
 ## 5. Clean up
 
@@ -114,15 +109,12 @@ or updated, the same for each submodule MR/PR with the merge order (submodule fi
 squash warning from `shared/submodules.md` when it applies), the pipeline state at push time
 (do not wait for it to finish), and the cleanup
 result: the removed worktree path and the deleted branch with its last commit ID, or the
-reason both stayed. End with a
-**Links** section — MR/PR URL, submodule MR/PR URLs, pipeline URL, ticket URL (when set) — as bare URLs: no markdown, no brackets, no OSC 8 escapes.
+reason both stayed. End with a **Links** section in the global link format (AGENTS.md,
+**Writing**), with no OSC 8 escapes: the MR/PR URL, submodule MR/PR URLs, pipeline URL, and
+ticket URL (when set).
 
 ## Hard rules
 
 - Never merge, approve, close, or mark ready unless the user asks.
-- `--force-with-lease` only, only on `BRANCH`, never on `TARGET` or the live remote default.
 - Never create or transition tickets from this skill unless asked — reuse keys you find.
-- Always confirm the push happened before talking about the MR/PR.
-- Remove the worktree and local branch only after the `ls-remote` check in **Remove after
-  push** passes. Never `branch -D`.
 - Everything in **Shared rules** of `shared/git-flow.md`.

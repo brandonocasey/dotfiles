@@ -9,7 +9,7 @@ Optional argument: a target file or chunk. Commit only that target.
 
 1. **Gather** — skip if you already know the context. Run `git status --short`,
    `git diff`, `git diff --staged`, and `git log --oneline -5`.
-2. **Decide amend or new.** Amend when HEAD is not pushed to any remote AND the change is
+2. **Decide amend or new.** Amend when HEAD is not pushed to any remote and the change is
    directly related to HEAD. Amending a pushed commit forces a divergent history, so never
    do it. Make a new commit when there are no commits yet, when the change has a different
    purpose, when HEAD is already pushed, or when the change is a distinct unit.
@@ -46,7 +46,6 @@ Do not bundle a refactor with a feature, or a fix with docs.
 
 ## Constraints
 
-- Push only with authorization under the global Git rules.
 - Do not use the `-i` flag or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
 - Write temporary files in the scratch directory (AGENTS.md, **Directories**),

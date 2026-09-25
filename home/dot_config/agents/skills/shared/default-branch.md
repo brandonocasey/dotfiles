@@ -13,8 +13,7 @@ If none exists, check the default names of other remotes from their available
 `refs/remotes/<remote>/HEAD` refs. Use a matching local branch only if the name
 is unambiguous; otherwise ask which local target to use. Do not invent `master`.
 
-This lookup is local and performs no fetch. `land` uses it for its local-only
-destination. Cleanup uses it for the local target whose ancestry it checks.
+This lookup is local and performs no fetch.
 
 ## Remote default name
 

@@ -2,18 +2,13 @@
 disable-model-invocation: true
 name: todo
 description: >
-  Add a concise todo entry to TODO.md at the project root. Use when the user says
-  "add a todo", "put this on the todo list", "note this for later", or invokes /todo.
+  Add a one-line entry to TODO.md at the project root. Runs only when the user
+  invokes it.
 ---
 
 Add a todo item to `TODO.md` at the project root.
 
-`TODO.md` is the user's personal list. This skill is the only sanctioned way to
-add to it, and only on the user's explicit request. Never invoke it to track
-your own tasks — those go in the internal todo list and must be completed before
-handing work back.
-
 1. If no description argument was provided, reply "Error: /todo requires a description. Usage: /todo <description>" and stop.
-2. Find the project root. In a Git repository, use the main checkout (the first `worktree` entry of `git worktree list --porcelain`, unless it is marked `bare`), so the entry stays in the user's list after a linked worktree is removed. Otherwise look for `.git`, `package.json`, or similar; fall back to the current directory.
+2. Find the project root. In a Git repository, use the main checkout (the first `worktree` entry of `git worktree list --porcelain`), so the entry stays in the user's list after a linked worktree is removed. When that entry is marked `bare`, use `git rev-parse --show-toplevel`. Outside Git, look for `package.json` or a similar project marker; fall back to the current directory.
 3. Append the item to the end of `TODO.md` as `- <description>`, creating the file with a `# TODO` header if it doesn't exist.
 4. Keep the entry to one line: clear, specific, and actionable. Tighten vague input into an actionable item without changing its meaning.

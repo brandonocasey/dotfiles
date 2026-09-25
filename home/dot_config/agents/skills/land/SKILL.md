@@ -12,40 +12,28 @@ after it. The **Hard rules** at the end (local only: no `fetch`, no `push`, no f
 
 ## 0. Detect context (always run first)
 
-Read `git-flow.md` from the `shared/` directory next to this skill's own directory — resolve it
-against this file's path (`<skills-dir>/shared/git-flow.md`), not against the current working
-directory, which is the user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `COMMIT_BASE`,
-`IN_WORKTREE`, `MAIN_WT`, `TARGET_DIRTY`. Refresh them before mutating the target or cleaning up.
-`MAIN_WT` matters here because you can't ff-merge a branch that is checked out elsewhere;
-`TARGET_DIRTY` means you'll stash those changes around the ff-merge (step 4), not bail.
+Read [git-flow.md](../shared/git-flow.md), resolved against this file's path, not the
+user's repo. Establish its **Facts**: `BRANCH`, `TARGET`, `COMMIT_BASE`, `IN_WORKTREE`,
+`MAIN_WT`, `TARGET_DIRTY`. Refresh them before mutating the target or cleaning up.
 Record the initial checkout path and the primary checkout path from
 `git worktree list --porcelain` so cleanup can run from a surviving directory.
-When `.gitmodules` exists, also read `shared/submodules.md` next to `git-flow.md` and
+When `.gitmodules` exists, also read [submodules.md](../shared/submodules.md) and
 establish its **Facts**. A changed owned submodule lands together with `BRANCH`: its
 **Commit gate** runs before step 1, its **Land** steps 1–3 run before the superproject
-rebase and fast-forward, and its step 4 check runs after step 4 here. The local-path
-fetches in its steps 1–2 are the only fetches this skill allows.
+rebase and fast-forward, and its step 4 check runs after step 4 here.
 
 ### Already on the target branch → commit only
 
-If `BRANCH` == `TARGET`, there is nothing to rebase, fast-forward, or clean up: the work is
-already on the target. Do **not** stop, and do **not** invent a branch to land. Instead, run the
-`commit` skill over the working tree and finish there.
+If `BRANCH` == `TARGET`, the work is already on the target. Do not stop, and do not invent a
+branch to land. This is the expected path in repos where work happens directly on the default
+branch: do not warn about it or suggest moving the commits onto a branch unless the user asks.
 
 - Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
-  file directly, and follow it — it owns the
-  chunking, message format, and amend-vs-new decision. Do not re-implement that logic here.
-- If the tree is already clean, say so plainly and stop. A clean tree on `TARGET` means the work
-  is already committed; there is no no-op "landing" to perform and nothing to report beyond the
-  current tip.
-- Skip steps 2–5 entirely (tests, rebase, ff-merge, cleanup). Those exist to move a branch onto
-  `TARGET` and tear it down; none of it applies when you are already standing on `TARGET`.
+  file directly, and follow it over the working tree.
+- If the tree is already clean, say so plainly and stop.
+- Skip steps 2–5 (tests, rebase, ff-merge, cleanup).
 - Report as step 6 describes, minus the branch/worktree lines: which commits were created (or
   that the tree was already clean) and the current `TARGET` tip. Still do not push.
-
-This is the expected path in repos where work happens directly on the default branch. It is not
-an error, so do not warn about it or suggest retroactively moving the commits onto a branch
-unless the user asks.
 
 ## 1. Commit the working tree in logical chunks
 
@@ -62,9 +50,9 @@ Run the project's test suite to verify the committed changes are green before re
   etc.) if no `package.json` is present.
 - Run the test command and capture output.
 - If tests fail: fix the failures. Make the minimal changes needed to make tests pass, then commit
-  the fix as a separate logical commit following the same Conventional Commit rules as step 1.
-  Re-run tests to confirm green before proceeding. If you cannot determine how to fix the failures,
-  STOP and ask the user.
+  the fix as a separate logical commit through the `commit` skill. Re-run tests to check that
+  they pass before proceeding. If you cannot determine how to fix the failures, stop and ask
+  the user.
 - If tests pass: continue.
 
 ## 3. Rebase onto the local target
@@ -75,8 +63,8 @@ git rebase <TARGET>
 
 - This replays `BRANCH` onto the current local `TARGET` tip. No fetch — local only.
 - On conflict: follow the **Shared rules** of `shared/git-flow.md` — resolve it when the
-  combined result is clear; otherwise STOP, show `git status` and the conflicting hunks, and ask
-  how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to bail.
+  combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
+  how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
 - If the rebase replayed commits (it was not a no-op), re-run the step 2 tests before
   proceeding — the branch was tested on its old base, not on top of the current `TARGET`.
@@ -88,9 +76,8 @@ should stop and investigate rather than create a merge commit.
 
 **If `TARGET_DIRTY`** (the target tree has local uncommitted work): stash it first so the
 fast-forward lands on a clean tree, then restore it afterward. Run the stash in `MAIN_WT` — the
-worktree that holds `TARGET`. `TARGET_DIRTY` can only be true when `MAIN_WT` is set: an
-unchecked-out branch has no working tree to dirty, so this block never runs without a path. Use a labelled, include-untracked stash so it's identifiable and
-nothing is left behind. Use a unique `<stash-label>` for this run:
+worktree that holds `TARGET`. Use a labelled, include-untracked stash with a unique
+`<stash-label>` for this run, so it is identifiable and nothing is left behind:
 
 ```sh
 git -C <MAIN_WT> stash push --include-untracked -m <stash-label>
@@ -107,19 +94,20 @@ Do the fast-forward:
   git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
 - **`TARGET` is not checked out anywhere** (`MAIN_WT` unset): create a temporary
-  worktree for the existing target and set `MAIN_WT` to its absolute path. Do not
-  switch the main checkout:
+  worktree for the existing target under the primary checkout, never nested in
+  another worktree, and set `MAIN_WT` to its absolute path. Do not switch the main
+  checkout:
   ```sh
-  git worktree add <unused-target-worktree-path> <TARGET>
+  git -C <primary-checkout> worktree add .worktrees/<unused-name> <TARGET>
   git -C <MAIN_WT> merge --ff-only <BRANCH>
   ```
   Record that this run created it; remove it after successful cleanup, from a
-  surviving checkout outside that directory (**Blocked removal** applies if it
-  refuses). On failure, keep
-  it if needed for recovery and report its path.
+  surviving checkout outside that directory (the `worktree` skill's **Blocked
+  removal** applies if it refuses). On failure, keep it if needed for recovery and
+  report its path.
 
-If `--ff-only` fails, STOP and report — do not fall back to a non-ff merge. (If you stashed, the
-work is safe in the stash; tell the user it's there and how to restore it.)
+If `--ff-only` fails, stop and report — do not fall back to a non-ff merge. If you stashed, the
+work is safe in the stash; tell the user it is there and how to restore it.
 
 **Restore the stash** after a successful ff, only if this run created one. Apply
 the recorded commit ID so another stash cannot change which work is restored:
@@ -145,9 +133,8 @@ If that commit cannot be identified as this run's stash, stop and report.
 ## 5. Clean up
 
 A branch may track a remote upstream, and `git branch -d` checks against that upstream,
-not HEAD — so it can refuse a branch that was only landed locally. Run
-`git branch --unset-upstream <BRANCH> || true` right before every `branch -d` below, so `-d`
-checks against `TARGET` instead.
+not HEAD — so it can refuse a branch that was only landed locally. The delete below unsets the
+upstream first, so `-d` checks against `TARGET` instead.
 
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
@@ -163,8 +150,8 @@ checks against `TARGET` instead.
   skill's **Submodules** section decides whether `--force` is allowed.
   Cleanup is not optional: the step 6 report names the removed path and the deleted
   branch, or the exact blocker (path, class, evidence) that kept them.
-- Then delete the landed branch, from a checkout that is NOT on `BRANCH` (it's now an ancestor of
-  `TARGET`, so `-d` is safe and refuses if it somehow isn't):
+- Then delete the landed branch, from a checkout that is not on `BRANCH` (it is now an ancestor
+  of `TARGET`, so `-d` is safe and refuses if it somehow is not):
   ```sh
   git -C <MAIN_WT> branch --unset-upstream <BRANCH> || true
   git -C <MAIN_WT> branch -d <BRANCH>
@@ -181,19 +168,14 @@ checks against `TARGET` instead.
 
 End by stating, plainly: which commits landed (`<short> <subject>` each), the new `TARGET` tip,
 what was cleaned up (branch deleted, worktree removed), and — if you stashed — that the target's
-local changes were restored (and whether restoration needed conflict resolution). Do not push —
-pushing is a separate, explicit step the user must ask for.
+local changes were restored (and whether restoration needed conflict resolution).
 
 ## Hard rules
 
 - Everything in **Shared rules** of `shared/git-flow.md`.
 - Local only: never `git fetch`/`pull`/`push` here. The exceptions are the local-path
   fetches between two submodule clones in `shared/submodules.md` **Land** steps 1–2.
-- Never force-push, never `git merge` without `--ff-only`; on any non-ff, STOP and report
-  (step 4) — never fall back to a merge commit.
-- Never delete a branch that isn't fully merged into `TARGET` (rely on `branch -d`, not `-D`).
-- Dirty target tree: the one exception to the shared dirty-tree rule — handled by stash/ff/apply
-  (step 4), not a hard stop; but stop and ask if restoration conflicts ambiguously, and never
-  drop a stash you haven't successfully reapplied.
-- Being on `TARGET` already is not an error state: hand off to the `commit` skill (step 0) rather
-  than stopping or fabricating a branch to land.
+- Never `git merge` without `--ff-only`, and never fall back to a merge commit (step 4).
+- Never delete a branch that is not fully merged into `TARGET` (rely on `branch -d`, not `-D`).
+- A dirty target tree is the one exception to the shared dirty-tree rule: step 4 stashes and
+  restores it. Never drop a stash you have not successfully reapplied.

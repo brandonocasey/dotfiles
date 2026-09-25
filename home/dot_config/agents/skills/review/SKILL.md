@@ -13,18 +13,16 @@ explained in plain language.
 
 ## Delegation
 
-Delegate the review to a sub-agent ONLY when the reviewer would otherwise be the same
-agent that implemented the change — i.e. this session (or its sub-agents) wrote the
-code. That is what buys an independent reviewer. When the change was written by someone
-else (an MR/PR from a colleague, an arbitrary commit), run the review inline — no
-sub-agent needed.
+Delegate the review to a sub-agent only when this session or its sub-agents wrote the
+change, so that the reviewer is independent. Review anyone else's change inline (an
+MR/PR from a colleague, an arbitrary commit).
 
 When delegating: spawn one sub-agent per the `sub-agents` skill. Pass it the review
 target verbatim plus the text of steps 0–2 only — never the implementation rationale
 or the conversation, or the reviewer is not independent. The sub-agent runs steps 0–2
 and returns candidate findings as raw data (file, line, severity, failure scenario,
-evidence, and which tests it ran). It must NOT remove the review worktree; it returns
-the worktree path with its findings. An external tool's findings still go through the
+evidence, and which tests it ran). It keeps any review worktree it created and returns
+its path with the findings. An external tool's findings still go through the
 re-verification below.
 
 When the sub-agent returns, the main session re-verifies each finding in that
@@ -36,11 +34,10 @@ result the sub-agent did not show. The main session then runs steps 3–4 itself
 auth, no checkout), fall back to running the review inline and note that the reviewer
 is not independent.
 
-This skill is the authority for the fix-and-re-review rules. Reviews of this session's
-own work skip the `--fix` gate, whether auto-triggered or user-requested: apply verified
-fixes immediately, re-run tests/lint after applying them, and do not review again.
-Reviews of someone else's change print the comments and wait for `--fix`. Auto-reviews
-run once per task.
+Reviews of this session's own work skip the `--fix` gate, whether auto-triggered or
+user-requested: apply verified fixes immediately, re-run tests/lint after applying them,
+and do not review again. Reviews of someone else's change print the comments and wait
+for `--fix`.
 
 ## 0. Identify the target and get the diff
 
@@ -126,18 +123,18 @@ Only after the attack passes are exhausted, note style/simplification issues.
 
 ## 2. Verify — mandatory, before anything is shown
 
-For a finding about rendered UI, use the installed `ui-verify` skill when browser
-evidence is needed. For a ROM Weaver performance claim, use `benchmark-change`
-when measurements are needed. Reuse results for the same revision and inputs;
-these checks return evidence to this review, not another review cycle.
-
-Now switch sides: for EVERY candidate finding, try to REFUTE it. Read the full
+Now switch sides: for every candidate finding, try to refute it. Read the full
 function/file in the checkout (not the diff hunk alone), trace the failure path, and hunt
 for the guard, caller contract, or earlier check that makes the scenario unreachable. A
-finding survives only if refutation fails AND you can state the concrete input/state that
+finding survives only if refutation fails and you can state the concrete input/state that
 triggers it. Kill everything else. A plausible-sounding comment that turns out false is
 worse than no comment. If tests exist for the area, run the relevant ones when a finding
 claims broken behavior — a passing test that covers the exact scenario refutes the finding.
+
+For a finding about rendered UI, use the `ui-verify` skill when browser evidence is
+needed. For a ROM Weaver performance claim, use `benchmark-change` when measurements
+are needed. Reuse results for the same revision and inputs; these checks return
+evidence to this review, not another review cycle.
 
 ## 3. Output
 
@@ -163,13 +160,12 @@ Brief beats complete-sounding: no padding, no restating the diff.
    did NOT survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. Do NOT post anything to the MR/PR unless the user asks; print for the user
+is a valid result. Do not post anything to the MR/PR unless the user asks; print for the user
 to post. Remove any worktree this review created — never a pre-existing one — with
 `git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
 until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
-behind is incomplete: when a sub-agent ran steps 0–2, the main session removes the worktree
-after re-verification, and the report's last line names the removed path or the blocker.
+behind is incomplete: the report's last line names the removed path or the blocker.
 
 For MR/PR comment links and suggestion syntax, read
 [remote-comments.md](references/remote-comments.md). Local reviews do not need it.
@@ -181,12 +177,12 @@ Only when the user asks (`--fix`, "fix them"):
 - **MR/PR**: in the review worktree, apply the agreed fixes, run the repo's tests/lint,
   commit through the `commit` skill in the branch's existing style (carry any issue-tracker reference from the MR/PR
   title), and push to the source branch — the review worktree is detached, so use
-  `git push origin HEAD:<source-branch>`. For a fork MR/PR, `origin` is the base repo — you
-  need push access to the fork and must add it as a remote and push there instead. Print
-  branch, HEAD sha, and the MR/PR link afterwards. Clean up the worktree when done either way.
+  `git push origin HEAD:<source-branch>`. For a fork MR/PR, `origin` is the base repo: push
+  to the fork's URL instead (`git push <fork-url> HEAD:<source-branch>`). That needs push
+  access to the fork and leaves `.git/config` unchanged. Print branch, HEAD sha, and the
+  MR/PR link afterwards. Clean up the worktree when done either way.
 - **Local branch or commit**: apply the agreed fixes in the target's checkout/worktree, run
   the repo's tests/lint, and commit per the `commit` skill. Do not push. Then remove the
-  worktree if step 0 created it — the commits stay on the branch. Never remove a pre-existing
-  worktree.
+  worktree if step 0 created it — the commits stay on the branch.
 - **Working diff**: apply the agreed fixes in place and leave them uncommitted unless the
   user asks to commit.

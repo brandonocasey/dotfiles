@@ -112,5 +112,4 @@ For every returned task, in the main session:
   acceptance criteria.
 - Agents write only inside their own worktree; disjoint ownership between
   parallel agents.
-- Push only with authorization under the global Git rules. Merge or touch
-  tickets/MRs only when the user asks.
+- Merge or touch tickets/MRs only when the user asks.

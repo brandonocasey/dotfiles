@@ -25,10 +25,9 @@ reduced motion when their styling or transitions changed.
 
 ## Exercise the UI
 
-Load the installed `browser` skill before browser MCP calls. It owns engine
-selection, focus, audio, and browser cleanup. Use a repository run/test skill
-when available to start the app with its required headers and assets. Allocate
-and export an unused `PORT` for any new server.
+Load the `browser` skill before browser MCP calls. It owns engine selection,
+focus, audio, and browser cleanup. Use a repository run/test skill when
+available to start the app with its required headers and assets.
 
 Inspect the rendered DOM before choosing selectors. Prefer roles and accessible
 names. Wait for the state under test, such as a visible result or completed

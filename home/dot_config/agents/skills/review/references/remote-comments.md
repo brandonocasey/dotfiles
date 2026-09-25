@@ -1,7 +1,5 @@
 # Remote review comments
 
-Read this only when preparing comments for a GitHub PR or GitLab MR.
-
 ## Link formats (MR/PR only)
 
 GitLab — diff-line anchor in the Changes tab:

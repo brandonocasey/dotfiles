@@ -41,13 +41,13 @@ behavior.
   copied from. Change the source too. Before you run a sync command, check its hooks and
   automatic Git settings. A sync MUST NOT commit, push, or overwrite other files without the
   user's approval.
-- chezmoi manages `~/.config/agents/` as plain files, with `git.autoCommit` and
-  `git.autoPush` on:
+- chezmoi manages `~/.config/agents/` and `~/.codex/agents/` as plain files, with
+  `git.autoCommit` and `git.autoPush` on:
   - Never run a chezmoi command that writes the source (`add`, `re-add`, `edit`), because
     it commits and pushes. Never run `chezmoi apply` without a target.
-  - First run `chezmoi status ~/.config/agents`. Leave each listed target that exists alone,
-    and report it. For a listed source file with no target yet, audit and fix the source
-    file itself.
+  - First run `chezmoi status ~/.config/agents ~/.codex/agents`. Leave each listed target
+    that exists alone, and report it. For a listed source file with no target yet, audit
+    and fix the source file itself.
   - After the last edit, copy each changed or new target to its source path.
     `chezmoi source-path` prints that path for the target or its directory. A new name can
     need a prefix such as `private_`. Then `chezmoi status <target>` must print nothing for
@@ -85,11 +85,14 @@ Both modes:
 - **Token cost** — spend effort where text costs the most, and cut there first:
   - Rules files load in every session, and again in every sub-agent that loads them.
   - The listing of each model-invocable skill loads in every session. Propose making a
-    rarely used skill explicit-only (`disable-model-invocation`, or `skillOverrides` for a
-    skill you do not own).
+    rarely used skill explicit-only: `disable-model-invocation` for a skill you own, or a
+    `skillOverrides` state (`name-only`, `user-invocable-only`) for one you do not.
+    `skillOverrides` does not affect plugin skills; manage those through `/plugin`.
   - A skill body loads each time the skill runs, then stays for the session. Weigh it by
     its `/<name>` or `$<name>` count in the history files (`~/.claude*/history.jsonl`,
-    `~/.codex/history.jsonl`).
+    `~/.codex/history.jsonl`). History holds only typed invocations. For a
+    model-invocable skill, also count its `"name":"Skill"` tool calls in the Claude
+    transcripts (`~/.claude*/projects/*/*.jsonl`).
   - Each file that a skill tells the agent to read adds its tokens. Make each read
     conditional ("read X when Y").
   - After compaction, Claude Code keeps only the first 5,000 tokens of a skill (about
@@ -183,9 +186,10 @@ Rules mode:
 Read a page only when a finding depends on it, and cite it. Do not read every page on each
 run.
 
-- Skills:
+- Skills and agent definitions:
   - Anthropic skill best practices https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
   - Claude Code skills https://code.claude.com/docs/en/skills
+  - Claude Code sub-agents https://code.claude.com/docs/en/sub-agents
   - Codex skills https://learn.chatgpt.com/docs/build-skills
 - Rules files:
   - Claude Code memory https://code.claude.com/docs/en/memory
