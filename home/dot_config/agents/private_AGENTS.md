@@ -10,6 +10,7 @@
 - Add new tasks to your internal list and finish the current task first, unless I say to do the new task now.
 - Only the explicitly invoked `todo` skill adds to my personal `TODO.md`. You may remove completed items.
 - Manually check every change before reporting done: use browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count.
+- For visible UI or behavior changes, capture screenshots or short videos, with before and after when useful. Show them in answers as examples. Attach them to MR/PR descriptions. Skip them when text or a diff shows the change clearly.
 - Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
 - Run safe commands yourself: builds, tests, linters, scripts, servers, and background processes. Ask only for commands needing my credentials or destructive actions.
 - Bind application, preview, and artifact HTTP servers to `0.0.0.0`. Report `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` (macOS), `hostname -I` (Linux), or `ipconfig` (Windows). Serve screenshots, rendered pages, diagrams, and reports the same way; never link local files. Tool-control endpoints keep their required binding. Do not publish to hosted artifact or document services unless I ask.
