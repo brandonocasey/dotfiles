@@ -1,7 +1,6 @@
 # Shared git flow — facts, commit gate, rules
 
-Shared by the `land` and `ship` skills. (No `SKILL.md` here on purpose — this directory
-is not a skill.)
+Shared by the `land` and `ship` skills. This directory is not a skill.
 
 ## Facts
 
@@ -33,11 +32,10 @@ git log --oneline -8
 
 ## Commit gate
 
-Commit only the work authorized for this task. Identify unrelated staged,
-unstaged, and untracked changes before invoking `commit`. Preserve them; if
-they prevent the clean-tree gate below, ask how to handle them. Do not commit,
-stash, or discard them just to clear the gate. Skip committing when the tree
-is already clean.
+Commit only authorized task work. Before invoking `commit`, identify unrelated
+staged, unstaged, and untracked changes. Preserve them. If they block the gate,
+ask how to handle them. Never commit, stash, or discard them to clear the gate.
+Skip committing when the tree is clean.
 
 - Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
   file directly, and follow it for the diff, the split, staging, the message, amend or
@@ -45,9 +43,8 @@ is already clean.
 - Repeat for the authorized chunks, then check the gate below.
 
 **Gate — the tree must be fully committed before anything moves.** Re-run
-`git status --short --ignore-submodules=none`
-and check that it prints nothing. If anything remains, do not proceed: commit it only
-if it is authorized task work; otherwise preserve it and ask what to do with it.
+`git status --short --ignore-submodules=none`. If it prints anything, stop.
+Commit only authorized task work; preserve anything else and ask what to do.
 
 After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees what is about to
 move.

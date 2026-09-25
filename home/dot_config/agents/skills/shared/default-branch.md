@@ -1,15 +1,15 @@
 # Default branch identity and base selection
 
 Use this file when a workflow needs a default branch name or a starting commit.
-These are separate decisions: choosing a base MUST NOT move a local branch,
-change a checkout, merge histories, or push anything.
+These decisions are separate. Base selection MUST NOT move a local branch,
+change a checkout, merge histories, or push.
 
 ## Local target name
 
 Use the user's explicit target when given. Otherwise use the first existing
 local branch in this order: the branch named by `refs/remotes/origin/HEAD`,
 `main`, then `master`. Verify each ref with `git show-ref --verify`.
-If none exists, check the default names of other remotes from their available
+Otherwise, check the default names of other remotes from their available
 `refs/remotes/<remote>/HEAD` refs. Use a matching local branch only if the name
 is unambiguous; otherwise ask which local target to use. Do not invent `master`.
 
@@ -25,9 +25,8 @@ lookup. Report lookup failures and ask before using stale data.
 
 ## Newest default base
 
-Use this for new branch work and default-based review comparisons, unless the
-user supplied a base. Existing branches and PR/MR heads keep their identity;
-do not recreate or rebase them as part of selecting a base.
+Use this for new branches and default-based review comparisons unless the user
+supplied a base. Do not recreate or rebase existing branches or PR/MR heads.
 
 1. List every configured remote with `git remote`. For each remote, use
    **Remote default name** above to resolve its live default. Fetch that
@@ -38,8 +37,8 @@ do not recreate or rebase them as part of selecting a base.
 2. Add the local target, if one resolves, and existing local branches with the
    verified remote-default names. A missing local target is not a blocker when
    remote candidates exist; do not prompt just for this optional lookup.
-   Record their exact commit IDs. A repository
-   with no remotes uses its verified local default. If no candidate resolves,
+   Record exact commit IDs. A repository without remotes uses its verified
+   local default. If no candidate resolves,
    ask for a base. If a remote lookup or fetch fails, retry when appropriate;
    otherwise report the failure and ask before excluding it or using stale data.
 3. Compare the recorded commits with

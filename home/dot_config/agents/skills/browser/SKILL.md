@@ -5,49 +5,23 @@ description: >
   inspection, or playback. For real Safari, use real-safari.
 ---
 
-# Browser automation
-
-## Never interrupt the user
-
-- Never bring a browser window to the foreground.
-- Never play audible sound.
-- Never steal focus from the user's active window.
+Never foreground a browser, steal focus, or play audible sound.
+Audio tasks are the exception to muting playback.
 
 ## Pick the MCP
 
-Default to the headless MCPs:
+| Engine | Headless default | Headed |
+| --- | --- | --- |
+| Chrome | `chrome-devtools` | `chrome-headed` |
+| Firefox | `firefox-devtools` | `firefox-headed` |
+| WebKit | `safari` | `safari-headed` |
 
-| Engine  | Headless (default) | Headed (only when needed) |
-| ------- | ------------------ | ------------------------- |
-| Chrome  | `chrome-devtools`  | `chrome-headed`           |
-| Firefox | `firefox-devtools` | `firefox-headed`          |
-| WebKit  | `safari`           | `safari-headed`           |
+Use headed mode only for DRM, fullscreen, picture-in-picture, a real user gesture,
+or when the user asks to watch.
+The `safari` MCP uses Playwright WebKit; it has no FairPlay DRM.
+For real Safari or Safari-only bugs, follow `real-safari` for driver selection and approval before starting the visible browser.
 
-The `safari` MCP is Playwright WebKit, not real Safari. It has no FairPlay DRM.
+Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
+Keep playback muted unless checking the audio itself.
 
-Use a headed MCP only when the task needs one of these:
-
-- DRM playback
-- fullscreen
-- picture-in-picture
-- a real user gesture
-- the user asks to watch
-
-## Mute the audio
-
-Only `chrome-headed` starts muted (`--mute-audio`). In every other headed MCP,
-mute the page yourself before playback starts.
-
-When you check playback, keep the player muted. The one exception is a task
-about the audio itself.
-
-## Clean up
-
-Close the pages and connections you opened when the task ends. Free any port
-you took.
-
-## Real Safari
-
-For real Safari (FairPlay DRM, Safari-only bugs), follow the `real-safari`
-skill. It owns driver selection and confirmation before starting the visible
-browser.
+Close pages and connections you opened when the task ends. Free ports you took.

@@ -9,10 +9,9 @@ Optional argument: a target file or chunk. Commit only that target.
 
 1. **Gather** — skip if you already know the context. Run `git status --short`,
    `git diff`, `git diff --staged`, and `git log --oneline -5`.
-2. **Decide amend or new.** Amend when HEAD is not pushed to any remote and the change is
-   directly related to HEAD. Amending a pushed commit forces a divergent history, so never
-   do it. Make a new commit when there are no commits yet, when the change has a different
-   purpose, when HEAD is already pushed, or when the change is a distinct unit.
+2. **Decide amend or new.** Amend only when HEAD is not pushed to any remote and the change relates
+   directly to it. Never amend a pushed commit. Make a new commit when none exist,
+   HEAD is pushed, or the change has a different purpose or is a distinct unit.
 3. **Write the message** per the Format section below. Use no emojis and no attribution,
    and keep secrets out of it. When you amend, keep the existing message unless the purpose
    of the commit changed.
@@ -28,8 +27,8 @@ Optional argument: a target file or chunk. Commit only that target.
    Fix the cause of any hook error and commit again. Never `--no-verify` a failing hook
    unless the user has said the failure is irrelevant to the change.
 
-Split the commits by concern, by type, or by pattern. One commit is one reviewable idea.
-Do not bundle a refactor with a feature, or a fix with docs.
+Split by concern, type, or pattern. One commit is one reviewable idea. Do not
+bundle a refactor with a feature, or a fix with docs.
 
 ## Format
 
@@ -37,9 +36,8 @@ Do not bundle a refactor with a feature, or a fix with docs.
 
 - Types: build, ci, docs, dx, feat, fix, perf, refactor, revert, style, test
 - The scope is optional. Include one when the repo's commitlint config requires it
-- The repo's own conventions override these defaults — the commitlint config, AGENTS.md, or
-  CONTRIBUTING. An example is a required ticket suffix such as `[PUBS-1234]`, or a header
-  limit longer than 50 characters
+- Repository conventions override these defaults: commitlint config, AGENTS.md,
+  or CONTRIBUTING. They can require a ticket suffix or a longer header limit
 - Mark a breaking change as `feat!:` or `feat(api)!:`
 - Keep the description minimal, with no filler, and make it say why the change happened
 - Add a body only when it gives context the description cannot hold

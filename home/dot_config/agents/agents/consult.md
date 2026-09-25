@@ -1,6 +1,6 @@
 ---
 name: consult
-description: Escalation only. The main session spawns this agent for a hard sub-problem after one failed attempt or when reasoning spans files or systems. Read-only. Returns an answer with evidence.
+description: "Read-only escalation by the main session after one failed attempt or reasoning across files or systems. Returns evidence."
 model: fable
 effort: low
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch

@@ -1,6 +1,6 @@
 ---
 name: explorer
-description: Read-only codebase exploration. Locate usages, trace call paths, map the files a change touches. Returns paths, symbols, and excerpts, not prose.
+description: "Read-only code exploration: locate usages, trace calls, and map affected files. Returns paths, symbols, and excerpts, not prose."
 model: sonnet
 effort: medium
 tools: Read, Grep, Glob, Bash

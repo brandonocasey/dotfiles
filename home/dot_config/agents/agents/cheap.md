@@ -1,6 +1,6 @@
 ---
 name: cheap
-description: Mechanical, well-specified work. Aggregation, formatting, extraction, counting, bulk replacement, factual lookup, and watch-and-wait on CI, logs, or builds.
+description: "Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, and monitoring CI, logs, or builds."
 model: haiku
 effort: low
 disallowedTools: Agent

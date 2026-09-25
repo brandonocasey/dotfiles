@@ -7,195 +7,162 @@ description: >
   approval.
 ---
 
-Goal: each target gives every agent that reads it what that agent needs, once, in plain
-words and few tokens. Fix bugs, remove text with no effect, and keep every rule that changes
-behavior.
+Give each reader every needed rule once, in plain words and few tokens.
+Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 
-## Modes
+## Scope and authority
 
-- **Skills mode** audits skill files: each `SKILL.md`, the shared files that skills read
-  (such as `shared/git-flow.md`), and agent definitions. Fix directly, then report.
-  Default targets: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and
-  `~/.codex/agents/`.
-- **Rules mode** audits rules files: the always-loaded `AGENTS.md`, `CLAUDE.md`, and
-  project equivalents. Propose first, and edit only what the user approves. Default
-  target: `~/.config/agents/AGENTS.md`.
-- The user's invocation sets the scope: a project's `.claude/skills/`, one skill, or one
-  rules file. With no scope, audit both defaults.
-- When the user says "talk before making changes", use the rules-mode flow for every target.
-- A **veto item** is an applied change that alters behavior or picks one reading of unclear
-  text. Give each one a revert instruction. **Left alone** lists each finding you did not
-  fix and each target you did not change, with the reason.
+- **Skills:** audit whole `SKILL.md` files, linked shared instructions, and agent definitions. Fix directly, then report.
+  Defaults: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and `~/.codex/agents/`.
+- **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Propose edits; apply only approved proposals.
+  Default: `~/.config/agents/AGENTS.md`.
+- Use the invocation's scope; without one, audit both defaults.
+  “Talk before making changes” applies the rules flow to every target.
+- A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
+  **Left alone** includes every unedited target and unresolved finding, with reasons.
 
 ## Setup
 
-- Resolve links (`realpath`) before you compare files: a linked path is the same file, not a
-  duplicate. Every file under `~/.config/agents/` reaches several harnesses through links,
-  so one edit changes all of them. Say so before you propose a move.
-- Read every target whole, and record its size in tokens for the before/after report.
-  `claude -p /context` prints exact Claude counts for rules files, skill listings, and
-  agent definitions. Run it in the project directory to include project files. Estimate
-  other files as bytes (`wc -c`) ÷ 3.
-- Do not back up targets or copy them anywhere before you edit; the user keeps backups.
-- Before you edit a target, find its source: chezmoi, or another repository that it is
-  copied from. Change the source too. Before you run a sync command, check its hooks and
-  automatic Git settings. A sync MUST NOT commit, push, or overwrite other files without the
-  user's approval.
-- chezmoi manages `~/.config/agents/` and `~/.codex/agents/` as plain files, with
-  `git.autoCommit` and `git.autoPush` on:
-  - Never run a chezmoi command that writes the source (`add`, `re-add`, `edit`), because
-    it commits and pushes. Never run `chezmoi apply` without a target.
-  - First run `chezmoi status ~/.config/agents ~/.codex/agents`. Leave each listed target
-    that exists alone, and report it. For a listed source file with no target yet, audit
-    and fix the source file itself.
-  - After the last edit, copy each changed or new target to its source path.
-    `chezmoi source-path` prints that path for the target or its directory. A new name can
-    need a prefix such as `private_`. Then `chezmoi status <target>` must print nothing for
-    each target that you changed.
-  - When `chezmoi source-path` fails, the target is unmanaged: edit it in place and report
-    that it has no source copy.
-- Two kinds of targets have an owner that overwrites edits: the Claude app syncs
-  `skills/synced/`, and `gh skill` installs skills whose frontmatter has `metadata.github-*`
-  keys. Report their findings; do not edit them.
-- A target modified in the last few minutes can belong to a concurrent agent. Leave it
-  alone, and report its findings. On a "modified since read" error, read the file again and
-  merge your change into the new content.
-- Keep each skill's invocation settings unless the user asks. Report them for each harness,
-  and tell explicit-only apart from off. Claude Code: `disable-model-invocation` in
-  frontmatter, and the `skillOverrides` setting (`off` also removes the skill from the `/`
-  menu). Codex: `policy.allow_implicit_invocation` in `agents/openai.yaml`, and
-  `skills.config` in its config. One harness's setting does not control another.
+Resolve links with `realpath` before comparing files; aliases are not duplicates.
+Files under `~/.config/agents/` reach multiple harnesses through links.
+State that shared impact before proposing a move.
 
-## Checks
+Read every target whole and record before/after tokens.
+Run `claude -p /context` in the project directory for reported rules, skill-listing, and agent counts.
+Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
+Do not back up or copy targets before editing; the user keeps backups.
 
-Both modes:
+Find each target's source before editing: chezmoi or another repository. Update that source too.
+Before any sync, check hooks and automatic Git settings.
+A sync must not commit, push, or overwrite other files without approval.
 
-- **Dead references and false claims** — paths, files, step numbers, skill names, memory
-  pointers, and statements about harness behavior. Check each on disk (`ls`, `grep -n`)
-  or in current docs before you flag it. Also check that the fix target exists.
-- **Contradictions and duplication** — two statements that disagree, or one rule in two
-  places, in one file or across files. Keep the rule in its natural owner. Make the other
-  place refer to it ("per the `commit` skill — it owns the split rules").
-- **Text with no effect** — remove a sentence when no agent that reads the file would act
-  differently without it. This covers general knowledge, a restated rule or heading,
-  history, and an example that repeats its rule. A shorter sentence keeps every fact,
-  number, condition, and scope qualifier. Keep a reason or clause that changes behavior,
-  even if it looks verbose, and list it under **Left alone**. Examples: a tool ignores
-  `PORT`; a note stops edits to `.gitignore`.
-- **Token cost** — spend effort where text costs the most, and cut there first:
-  - Rules files load in every session, and again in every sub-agent that loads them.
-  - The listing of each model-invocable skill loads in every session. Propose making a
-    rarely used skill explicit-only: `disable-model-invocation` for a skill you own, or a
-    `skillOverrides` state (`name-only`, `user-invocable-only`) for one you do not.
-    `skillOverrides` does not affect plugin skills; manage those through `/plugin`.
-  - A skill body loads each time the skill runs, then stays for the session. Weigh it by
-    its `/<name>` or `$<name>` count in the history files (`~/.claude*/history.jsonl`,
-    `~/.codex/history.jsonl`). History holds only typed invocations. For a
-    model-invocable skill, also count its `"name":"Skill"` tool calls in the Claude
-    transcripts (`~/.claude*/projects/*/*.jsonl`).
-  - Each file that a skill tells the agent to read adds its tokens. Make each read
-    conditional ("read X when Y").
-  - After compaction, Claude Code keeps only the first 5,000 tokens of a skill (about
-    15 KB). Flag a longer skill, and put its essential rules first.
-  - Codex stops reading `AGENTS.md` files at `project_doc_max_bytes` (32 KiB by default).
-  - A sub-agent role that needs none of the rules can skip them (Claude Code
-    `omitClaudeMd: true`). Propose it; do not apply it.
-- **Restated defaults** — keep a rule that restates one harness's or model's default when
-  several harnesses read the file. Never remove a check or an authorization boundary for
-  that reason alone. For a file that one harness reads, ask once for the whole category,
-  unless the user already answered.
-- **Stop points** — each instruction that makes the agent ask, confirm, wait, or stop. Keep
-  it when it guards an irreversible, outward-facing, or unauthorized action. Narrow or
-  remove the rest. Agents follow these literally.
-- **Language** — every line you keep follows the Writing rules in
-  `~/.config/agents/AGENTS.md`, including the sentence-length limits. Also check:
-  - the same term for a concept in every target;
-  - the action to take, not only a ban; keep "never" for hard boundaries;
-  - no emphasis (capitals, "IMPORTANT") on a rule that agents follow without it, because
-    agents over-apply emphasized rules.
-- **Ambiguity that changes behavior** — pick the safer reading, and give the reason. Flag
-  it as a veto item or a proposal. Never end with the ambiguity as an open question.
+### Chezmoi
 
-Skills mode:
+It manages `~/.config/agents/` and `~/.codex/agents/` as plain files with automatic commits and pushes enabled.
 
-- **Command correctness under the skill's own preconditions** — run each command mentally
-  from the state that the skill creates. A detached-HEAD worktree needs
-  `git push origin HEAD:<branch>`, not `git push`.
-- **Environment portability** — literal `.git/` paths break in linked worktrees. Use
-  `git rev-parse --git-common-dir` for shared metadata and
-  `git rev-parse --git-path <name>` for metadata that can belong to one worktree. Test OS
-  and shell assumptions the same way.
-- **Resource leaks** — everything the skill creates (worktree, server, browser page) needs
-  cleanup on every exit path.
-- **Platform parity** — a skill that queries GitHub (`gh`) needs the GitLab path (`glab`)
-  too, and the reverse, unless it is explicitly single-platform.
-- **Frontmatter** — a short description: the use case first, then specific triggers, then
-  the neighbor skill for a nearby case. Move operating detail to the body. Before you rename
-  a skill, check name-collision behavior in each harness's docs. Do not assume that a
-  personal skill shadows a built-in everywhere. Also compare names with the current
-  repository's skills. On a clash, Claude Code runs the personal skill; Codex lists both.
-- **Structure** — move long detail that only one mode or case needs into a linked file.
-  Keep simple skills in one file.
-- **Whole skills** — a skill that another skill, a built-in, or a rules file covers.
-  Propose its merge or removal, but do not apply it. Do the same for an explicit-only skill
-  that nothing uses. Such a skill has no `/<name>` or `$<name>` in the history files, and no
-  target refers to it.
+1. Run `chezmoi status ~/.config/agents ~/.codex/agents` first.
+   Leave listed targets that exist untouched and report them.
+   If a listed source has no target, audit and edit the source itself.
+2. Never run source-writing commands (`add`, `re-add`, `edit`); they commit and push.
+   Never run `chezmoi apply` without a target.
+3. After the final edit, copy each changed or new target to its source.
+   Find the path with `chezmoi source-path <target-or-directory>`; new names can require prefixes such as `private_`.
+   Require empty `chezmoi status <target>` output for every changed target.
+4. If `source-path` fails, edit the unmanaged target in place and report that it has no source copy.
 
-Rules mode:
+### Ownership and invocation
 
-- **General rule and its specific case** — merge them into one bullet.
-- **Wrong section** — move a rule to the section that owns its topic. A section with one
-  bullet does not need its own header.
-- **Tool- or ecosystem-specific detail in a global file** — generalize it ("follow semver
-  and use the project's release tooling"). Never add tool-specific commands.
+Report findings without editing Claude-app-owned `skills/synced/` or `gh skill` installs with `metadata.github-*` frontmatter.
+Leave targets modified within the last few minutes alone; another agent may own them.
+On “modified since read,” reread and merge with the new content.
 
-## Skills mode flow
+Preserve invocation settings unless the user asks to change them. Report each harness separately:
 
-1. Do the setup, then apply the fixes, and record each veto item.
-2. Verify: `head` the frontmatter of each edited file, and compare token counts before and
-   after. Re-derive each algorithm or calculation that you changed or chose to keep.
-3. Report in these categories: **Bugs fixed / Deduped / Improved / Veto items / Left
-   alone**. For each finding, give what was wrong, why it matters for the user's workflow,
-   and the fix.
+- Claude Code: `disable-model-invocation` frontmatter and `skillOverrides`.
+  `user-invocable-only` is explicit-only; `name-only` still lists the name; `off` also removes the `/` entry.
+- Codex: `policy.allow_implicit_invocation` in `agents/openai.yaml`, and `skills.config` in its config.
 
-## Rules mode flow
+One harness's setting does not control another.
 
-1. Do the setup, then present the full analysis. Group proposals under
-   **Combine / Simplify / Remove / Left alone**, numbered within each group.
-2. Show the exact final wording of each proposal.
-3. Ask unresolved gating questions first. Use the harness's question tool for a judgment
-   call with real options. If the harness has none, ask a short text question. A free-text
-   answer overrides every offered option.
-4. Apply only what the user approved. The user approves by number ("combine: 1, 2, 3"), by
-   group ("do combine and simplify"), or with "do all". Read the file again first. The user
-   edits by hand between rounds, so use targeted edits that keep their additions.
-5. Report what changed, with the token delta. Then list each item not applied, with its
-   before/after text. The user will ask "what was skipped", so answer it first.
+## Checks for all targets
 
-## Every run
+- **References and claims:** check paths, files, steps, skill names, memory pointers, and harness claims on disk or in current documentation.
+  Verify the proposed fix target exists before flagging a defect.
+- **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
+  Example: “The `commit` skill owns commit splitting.”
+- **Ineffective text:** remove general knowledge, repeated rules/headings, history, and examples only when no reader would act differently.
+  Preserve every fact, number, condition, scope qualifier, and reason that changes behavior.
+  List retained clauses under **Left alone**, including tool-specific exceptions such as ignored `PORT` values or protection against `.gitignore` edits.
+- **Defaults:** keep restated defaults in files shared across harnesses.
+  For a single-harness file, ask once about removing this category unless already answered.
+  Never remove a check or authorization boundary merely because it restates a default.
+- **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
+  Narrow or remove other stop points; agents follow them literally.
+- **Language:** apply `~/.config/agents/AGENTS.md` Writing rules, including sentence limits.
+  Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
+  Remove unnecessary capitals and emphasis, which can cause over-application.
+- **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.
+  Do not leave it as an open question.
 
-- Start the report with the tokens that load in every session, before and after.
-- When you merge, move, or remove text, map each original rule to its new place or its
-  removal reason. Say in the report that you checked every rule.
-- When a pass finds little, say that the files are in good shape; do not invent findings.
-- Cite files as bare `path:line`, never as Markdown links.
-- Committing is the user's decision; offer it once at the end.
+## Token priorities
+
+Prioritize recurring cost over raw file size:
+
+1. Rules load every session and in sub-agents that include them.
+2. Model-invocable skill listings load every session.
+   Propose explicit-only invocation for rarely used skills: `disable-model-invocation` for owned skills;
+   `skillOverrides: user-invocable-only` for other Claude skills.
+   `name-only` saves description tokens while keeping model visibility.
+   Plugin skills ignore `skillOverrides`; manage them through `/plugin`.
+3. Skill bodies load on invocation and remain in context.
+   Weight cost by `/<name>` or `$<name>` counts in `~/.claude*/history.jsonl` and `~/.codex/history.jsonl`.
+   History records typed invocations only. For model-invocable skills, also count Claude `"name":"Skill"` calls in `~/.claude*/projects/*/*.jsonl`.
+4. Linked reads add tokens. Make each conditional: “Read X when Y.”
+
+Claude Code compaction retains at most the first 5,000 tokens per invoked skill, about 15 KB by this estimate.
+Flag longer skills and put essential rules first. Its shared retention budget can also drop older skills.
+Codex caps `AGENTS.md` reads at `project_doc_max_bytes`, 32 KiB by default.
+For a Claude sub-agent needing no rules, propose `omitClaudeMd: true`; do not apply it.
+
+## Additional skill checks
+
+- **Commands:** trace each command from the skill's actual preconditions.
+  Detached review worktrees need `git push origin HEAD:<branch>`, not `git push`.
+- **Portability:** literal `.git/` paths fail in linked worktrees.
+  Use `git rev-parse --git-common-dir` for shared metadata and `git rev-parse --git-path <name>` for per-worktree metadata.
+  Check OS and shell assumptions too.
+- **Cleanup:** every created worktree, server, or browser page needs cleanup on every exit path.
+- **Platforms:** provide GitHub (`gh`) and GitLab (`glab`) paths unless the skill is explicitly single-platform.
+- **Frontmatter:** keep descriptions short: use case, specific triggers, then the neighbor skill for nearby tasks.
+  Move operating detail into the body.
+  Before renaming, check current harness collision behavior and repository skill names.
+  Do not assume personal skills shadow built-ins everywhere: Claude Code and Codex resolve names differently.
+- **Structure:** move long, case-specific detail into conditional references. Keep simple skills in one file.
+- **Whole skills:** propose, but never apply, mergers or removals when another skill, built-in, or rules file covers the workflow.
+  Also propose this for unused explicit-only skills: no typed invocation in either history and no target referring to them.
+
+## Additional rules checks
+
+Combine general rules with their specific cases.
+Move misplaced rules to their owning section; remove single-bullet section headings.
+Generalize ecosystem-specific details in global rules, such as “Follow semver and use the project's release tooling.”
+Never add tool-specific commands there.
+
+## Skills flow
+
+1. Complete setup, apply fixes, and record veto items.
+2. Check edited frontmatter with `head`, compare token counts, and re-derive algorithms or calculations changed or retained.
+3. Report **Bugs fixed / Deduped / Improved / Veto items / Left alone**.
+   For each finding, state the defect, its workflow effect, and the fix.
+
+## Rules flow
+
+1. Complete setup. Present the full analysis under **Combine / Simplify / Remove / Left alone**, numbered within each group.
+2. Show every proposal's exact final wording.
+3. Ask unresolved gating questions first. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
+   Free text overrides offered choices.
+4. Apply only approved numbers, groups, or “do all.” Reread first; use targeted edits that preserve the user's intervening changes.
+5. Report changes and token deltas. List each unapplied item with its before/after text so skipped work is explicit.
+
+## Every report
+
+Start with before/after tokens that load every session.
+Map each original rule to its retained location or removal reason when merging, moving, or removing text.
+State that every rule was checked. If little needs changing, say the files are in good shape; do not invent findings.
+Cite files as bare `path:line`, never Markdown links.
+Leave committing to the user; offer it once at the end.
 
 ## Sources
 
-Read a page only when a finding depends on it, and cite it. Do not read every page on each
-run.
+Read and cite a page only when a finding depends on it.
 
-- Skills and agent definitions:
-  - Anthropic skill best practices https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
-  - Claude Code skills https://code.claude.com/docs/en/skills
-  - Claude Code sub-agents https://code.claude.com/docs/en/sub-agents
-  - Codex skills https://learn.chatgpt.com/docs/build-skills
-- Rules files:
-  - Claude Code memory https://code.claude.com/docs/en/memory
-  - Codex AGENTS.md https://learn.chatgpt.com/docs/agent-configuration/agents-md
-- Model behavior and tokens:
-  - Claude prompting best practices https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
-  - Claude token counting https://platform.claude.com/docs/en/build-with-claude/token-counting
-  - GPT-6 model guidance https://developers.openai.com/api/docs/guides/latest-model
-  - GPT-6 skills and prompts https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra
+- Anthropic skill practices: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
+- Claude Code skills: https://code.claude.com/docs/en/skills
+- Claude Code sub-agents: https://code.claude.com/docs/en/sub-agents
+- Codex skills: https://learn.chatgpt.com/docs/build-skills
+- Claude Code memory: https://code.claude.com/docs/en/memory
+- Codex AGENTS.md: https://learn.chatgpt.com/docs/agent-configuration/agents-md
+- Claude prompting: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
+- Claude token counting: https://platform.claude.com/docs/en/build-with-claude/token-counting
+- GPT-6 guidance: https://developers.openai.com/api/docs/guides/latest-model
+- GPT-6 skills and prompts: https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra

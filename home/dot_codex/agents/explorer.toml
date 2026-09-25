@@ -1,5 +1,5 @@
 name = "explorer"
-description = "Read-only codebase exploration. Locate usages, trace call paths, map the files a change touches. Returns paths, symbols, and excerpts, not prose."
+description = "Read-only code exploration: locate usages, trace calls, and map affected files. Returns paths, symbols, and excerpts, not prose."
 model = "gpt-5.6-luna"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"

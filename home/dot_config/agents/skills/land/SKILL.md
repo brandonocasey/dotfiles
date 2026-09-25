@@ -6,9 +6,9 @@ description: >
   for local landing requests; never fetch or push.
 ---
 
-Land the current branch into the local default branch (`TARGET`, resolved in step 0) and clean up
-after it. The **Hard rules** at the end (local only: no `fetch`, no `push`, no force-push) and the
-**Shared rules** of `shared/git-flow.md` apply to every step.
+Land the current branch into the local default branch (`TARGET`, resolved in
+step 0), then clean up. The **Hard rules** and `shared/git-flow.md` **Shared
+rules** apply to every step.
 
 ## 0. Detect context (always run first)
 
@@ -24,9 +24,8 @@ rebase and fast-forward, and its step 4 check runs after step 4 here.
 
 ### Already on the target branch → commit only
 
-If `BRANCH` == `TARGET`, the work is already on the target. Do not stop, and do not invent a
-branch to land. This is the expected path in repos where work happens directly on the default
-branch: do not warn about it or suggest moving the commits onto a branch unless the user asks.
+If `BRANCH` == `TARGET`, do not stop or invent a branch. Do not warn or suggest
+moving commits unless the user asks.
 
 - Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
   file directly, and follow it over the working tree.
@@ -43,17 +42,16 @@ the tree is dirty; cleanup requires every intended change to be committed.
 
 ## 2. Run tests
 
-Run the project's test suite to verify the committed changes are green before rebasing.
+Run the project's test suite before rebasing.
 
 - Detect the test command from the project: check `package.json` scripts for `test`, `test:unit`,
   or `test:ci`; fall back to common runners (`npm test`, `cargo test`, `go test ./...`, `pytest`,
   etc.) if no `package.json` is present.
-- Run the test command and capture output.
+- Run the test command and capture its output.
 - If tests fail: fix the failures. Make the minimal changes needed to make tests pass, then commit
   the fix as a separate logical commit through the `commit` skill. Re-run tests to check that
   they pass before proceeding. If you cannot determine how to fix the failures, stop and ask
   the user.
-- If tests pass: continue.
 
 ## 3. Rebase onto the local target
 
@@ -71,8 +69,7 @@ git rebase <TARGET>
 
 ## 4. Fast-forward the target to the branch
 
-The merge must be a clean fast-forward; if it can't be, the rebase in step 3 didn't take and you
-should stop and investigate rather than create a merge commit.
+The merge must fast-forward. If it cannot, stop and investigate the rebase.
 
 **If `TARGET_DIRTY`** (the target tree has local uncommitted work): stash it first so the
 fast-forward lands on a clean tree, then restore it afterward. Run the stash in `MAIN_WT` — the
@@ -106,8 +103,8 @@ Do the fast-forward:
   removal** applies if it refuses). On failure, keep it if needed for recovery and
   report its path.
 
-If `--ff-only` fails, stop and report — do not fall back to a non-ff merge. If you stashed, the
-work is safe in the stash; tell the user it is there and how to restore it.
+If `--ff-only` fails, stop and report. If you stashed, report the stash and how
+to restore it. Never fall back to a non-fast-forward merge.
 
 **Restore the stash** after a successful ff, only if this run created one. Apply
 the recorded commit ID so another stash cannot change which work is restored:

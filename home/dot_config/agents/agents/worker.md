@@ -1,6 +1,6 @@
 ---
 name: worker
-description: Implementation and judgement work on a self-contained part of a task, such as one part of a split, a fix, or a review. Owns only the files named in its prompt.
+description: "Implementation and judgement for one task, split part, fix, or review. Owns only assigned files."
 model: opus
 effort: low
 disallowedTools: Agent

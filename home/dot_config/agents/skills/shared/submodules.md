@@ -1,9 +1,8 @@
 # Shared submodule flow — owned submodules ship and land with the branch
 
-Shared by the `ship` and `land` skills. A superproject branch that changes a
-submodule's recorded commit (gitlink) is incomplete without the submodule
-commits it points to. When the submodule is owned together with the
-superproject, both skills carry the submodule branch through the same steps.
+Shared by `ship` and `land`. A superproject gitlink change is incomplete
+without its submodule commits. For owned submodules, both skills carry the
+submodule branch through the same steps.
 
 ## Facts
 
@@ -54,8 +53,7 @@ The gate covers each changed submodule first, then the superproject:
 
 ## Ship
 
-Order: submodule first, superproject last, so the superproject never points
-at a commit the remote lacks.
+Ship submodules first so the superproject never points at a missing commit.
 
 1. Push each changed owned submodule from its worktree clone:
    `git -C <SUB_PATH> push -u origin <SUB_BRANCH>` (`--force-with-lease` after a

@@ -10,14 +10,11 @@ description: >
 
 # Clean Merged Worktrees
 
-Clean only local state that is demonstrably safe to remove. Use live pull-request state when the
-repository has GitHub or GitLab metadata, because squash merges do not make the original branch an
-ancestor of the default branch. Report every retained target and why it was skipped. "PR" below
-means a GitHub pull request or a GitLab merge request.
+Clean only local state proven safe to remove. Use live PR state for GitHub or
+GitLab repositories because squash merges break ancestry evidence. Report why
+each target was retained. "PR" means a GitHub pull request or GitLab merge request.
 
 ## Safety rules
-
-These rules are the single authority; the workflow steps reference them instead of restating them.
 
 - Work locally. Never delete a remote branch, close a pull request, push, force-push, reset, or
   discard files as part of this skill.
@@ -78,8 +75,8 @@ Resolve **Local target name** in
 that local target; it does not create a branch from the newest remote base.
 Record the target worktree path and the checkout in which the skill is running.
 
-Refresh remote-tracking refs when an `origin` remote exists (this refreshes local evidence; it
-does not delete remote branches):
+Refresh remote-tracking refs when `origin` exists. This updates local evidence
+and does not delete remote branches:
 
 ```sh
 git fetch origin --prune
@@ -186,8 +183,8 @@ Local ancestry is sufficient only when the branch tip is an ancestor of the sele
 git merge-base --is-ancestor <branch> <target>
 ```
 
-If that check fails, retain the branch. This deliberately leaves squash-merged branches in place
-when forge state is unavailable rather than guessing.
+If that check fails, retain the branch. Without forge state, retain
+squash-merged branches rather than guess.
 
 ### 4. Filter and confirm
 

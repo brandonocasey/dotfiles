@@ -6,110 +6,69 @@ description: >
   or tandem requests; explicit ship/land modes control delivery.
 ---
 
-Take a batch of tasks, run them in parallel sub-agents, adversarially review every
-result, and report when the batch is done. Spawn mechanics follow the `sub-agents`
-skill; review follows the `review` skill; commits follow the `commit` skill.
+Run tasks in parallel and review every result. Follow `sub-agents` for delegation,
+`review` for code review, and `commit` for commits.
 
 ## Modes and arguments
 
-- **End mode** — from the invocation: `ship` / "run-task-list-ship" (after review, follow
-  `ship` per branch: push, open or update MR/PR, report without watching CI),
-  `land` / "run-task-list-land" (follow
-  `land` per branch: local merge to default, cleanup). Default: neither — branches stay
-  local and committed. `ship` and `land` are explicit-only: when the user selects
-  the end mode, read `<skills-dir>/ship/SKILL.md` or `<skills-dir>/land/SKILL.md`
-  — resolve `<skills-dir>` against this file's path, not the user's repo — and follow it
-  step by step. The end mode in the user's invocation is the authorization to run it.
-- **User-defined splits** — if the user says how to split the work ("3 agents",
-  "one agent per package", "group tasks 1+3, run 2 alone", a model per group),
-  their split overrides step 2's automatic grouping. Warn once with a concrete
-  reason if a user split makes two parallel agents share files, then follow their
-  call.
-- **User-defined agents** — if the user names what runs a task or group (a custom
-  agent type from the harness's roster, a specific model, or an external tool),
-  use exactly that; it overrides the `sub-agents` skill's role choice for that
-  assignment. Unknown agent names are a blocker: ask before spawning.
+- **End mode:** `ship` / `run-task-list-ship` pushes branches and opens or updates MRs/PRs without watching CI.
+  `land` / `run-task-list-land` merges locally to default and cleans up.
+  Without either, leave branches local and committed.
+  The selected mode authorizes that explicit-only workflow after review.
+  Read [ship](../ship/SKILL.md) or [land](../land/SKILL.md) for the selected mode, then follow every step.
+- **User splits:** follow the requested grouping, agent count, package split, and model choices instead of step 2's grouping.
+  If parallel agents would share files, warn once with the concrete reason, then follow the user's decision.
+- **User agents:** a named custom agent, model, or external tool overrides the role choice for that assignment.
+  Check custom names against the loaded roster; ask before spawning an unknown agent.
 
-## 1. Collect the tasks
+## 1. Collect tasks
 
-Two input modes:
+Take explicitly listed tasks or outcomes verbatim.
+If asked to select from a source (TODO.md, Jira filter, file, earlier message), read it first.
+Choose independent tasks with separate files, checkable outcomes, and no user decisions needed mid-task.
+Skip destructive, outward-facing, or vague tasks; report each skipped task and reason.
+Never add to the source list. Removing completed items is allowed; report completions either way.
 
-- **Explicit** — the user lists the tasks (or endpoints/outcomes) directly. Take
-  them verbatim.
-- **Pick from a list** — the user points at a source (TODO.md, a Jira filter, a
-  file, an earlier message) and asks you to pick tasks that can run in tandem.
-  Read the source, then pick tasks that are: independent of each other, unlikely
-  to touch the same files, and completable without user decisions mid-flight.
-  Skip tasks that are destructive, outward-facing, or too vague to have
-  acceptance criteria — list the skipped ones and why in the final report.
-  Never add items to `TODO.md` or any other list source; removing items the
-  batch completed is fine. Report completions either way.
-
-For every selected task, write one line of acceptance criteria: what must be true
-for it to count as done. If a task has no checkable outcome, ask the user before
-spawning anything — this and an unknown agent name (see Modes) are the only
-up-front questions.
-
-State the selected set and the plan in one short message, then proceed.
+Write one line of acceptance criteria per selected task.
+Before spawning, ask only about unknown agent names or tasks without checkable outcomes.
+State the selected tasks and plan in one short message, then proceed.
 
 ## 2. Split and spawn
 
-- Use the user's split when they gave one (see Modes). Otherwise group tasks
-  whose expected file footprints overlap into the same agent (run sequentially
-  inside it); everything else gets its own agent.
-- Code tasks: one worktree per agent, created per the `worktree` skill — it owns the
-  commands and the base-branch rule. This skill's only delta is the naming: path
-  `.worktrees/task-<slug>`, branch `<type>/<slug>`. An invoking alias (such as
-  `tandem`) may supply its own naming; its file owns that. Non-code tasks (research, docs
-  lookups, external checks) run without a worktree.
-- Each prompt is self-contained per the `sub-agents` skill and must include: the
-  task, its acceptance criteria, the worktree path (and its own `PORT` if it runs
-  a server), the hard boundary (edit only inside your worktree), and the return
-  contract — a raw status report: done / blocked / partial, what changed, how it
-  was verified, files touched.
-- Spawn each group with its assigned agent type/model when the user set one (see
-  Modes); otherwise pick per the `sub-agents` skill.
-- Run the agents in parallel. While waiting, do not idle-poll; act on completion
-  notifications.
+- Follow user splits. Otherwise group tasks with overlapping files into one agent, which runs them sequentially.
+  Give each other task its own agent.
+- Code tasks use one worktree per agent, per `worktree`, with path `.worktrees/task-<slug>` and branch `<type>/<slug>`.
+  An invoking alias, such as `tandem`, owns its naming override.
+  Research, documentation lookups, and external checks need no worktree.
+- Each prompt includes the task, acceptance criteria, worktree path, and its own `PORT` when running a server.
+  Require edits only inside that worktree and disjoint file ownership between parallel agents.
+  Request raw status: done / blocked / partial, changes, verification, and touched files.
+- Use user-assigned agents or models; otherwise choose per `sub-agents`.
+  Run groups in parallel and use completion notices rather than idle polling.
 
 ## 3. Adversarial review
 
-For every returned task, in the main session:
+For each returned task, the main session checks its acceptance criteria.
+Treat completion without evidence as unverified.
 
-- Check the result against its acceptance criteria first. A "done" claim with no
-  evidence is treated as unverified.
-- Code tasks: run the `review` skill on the task's diff in its worktree. The
-  batch is this session's own work, so the review skill's own-work rules apply
-  (it owns fix-and-re-review). Test and lint failures in that worktree are yours
-  to fix; never "pre-existing".
-- Non-code tasks: spawn one verifier agent prompted to **refute** the result
-  against the acceptance criteria; uncertain means refuted. If verification
-  fails, fix or redo the task inline in the main session per the `sub-agents`
-  skill, then check it against the acceptance criteria again.
+- **Code:** run `review` on the worktree's diff under its own-work fix rules.
+  Fix test and lint failures; do not dismiss them as pre-existing.
+- **Non-code:** spawn one verifier to refute the result against its acceptance criteria.
+  Uncertain means refuted. Fix or redo failures inline per `sub-agents`, then check the criteria again.
+
+Never report completion without passing review or refutation against the acceptance criteria.
 
 ## 4. Close out
 
-- Commit each worktree via the `commit` skill so nothing is left uncommitted.
-- Apply the end mode by reading and following the skill file named in **Modes and
-  arguments**. For both `ship` and `land`, process a branch only when every task
-  assigned to it is done and has passed step 3. Keep branches with blocked or
-  partial tasks local; land eligible branches one at a time. No end mode: leave
-  branches local.
-- On completion, failure, cancellation, or a blocked exit, clean up everything
-  the batch opened: stop servers, free ports, and close browser pages. Keep
-  worktrees with commits or partial changes needed for recovery; remove empty
-  worktrees.
-- Report, self-contained: per task — done / blocked / partial / skipped, one plain
-  sentence, its verification evidence, and its branch + worktree path for code
-  tasks. Include what was picked vs skipped in pick-from-list mode. End with a
-  **Links** section for external links only (tickets, MRs, CI), and one concrete
-  next action (with no end mode, usually "say `ship <branch>` to open MRs"; with
-  `ship`, the MR links; with `land`, the landed default-branch state).
+- Commit every worktree through `commit`; leave no task changes uncommitted.
+- Follow the selected end-mode skill for branches whose assigned tasks all passed step 3.
+  Keep blocked or partial branches local. Land eligible branches one at a time.
+  Without an end mode, keep branches local.
+- On completion, failure, cancellation, or blocked exit, stop servers, free ports, and close browser pages opened by the batch.
+  Keep worktrees with commits or partial changes needed for recovery; remove empty worktrees.
+- Report each task as done / blocked / partial / skipped, with one plain sentence and verification evidence.
+  For code tasks, include branch and worktree paths. Include selections and skips when choosing from a list.
+  End with external links under **Links** (tickets, MRs/PRs, CI) and one concrete next action.
+  Without an end mode, suggest `ship <branch>`; after shipping, give MR/PR links; after landing, give the default-branch state.
 
-## Hard rules
-
-- Nothing is reported "done" without passing review (or refutation) against its
-  acceptance criteria.
-- Agents write only inside their own worktree; disjoint ownership between
-  parallel agents.
-- Merge or touch tickets/MRs only when the user asks.
+Merge or change tickets/MRs only when the user asks.

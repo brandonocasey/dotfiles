@@ -1,7 +1,7 @@
 ---
 name: worktree
 description: >
-  Use before branch work to create, reuse, or remove an isolated Git worktree.
+  Create, reuse, or remove an isolated Git worktree. Use before branch work.
 ---
 
 # Git worktree
@@ -15,7 +15,7 @@ unset when the target branch is checked out nowhere.
 
 For a new branch, read [default-branch.md](../shared/default-branch.md) and
 follow **Newest default base**. It owns remote discovery and ancestry comparison.
-Use the selected commit as `<base-commit>`. Create every worktree under
+Use the selected commit as `<base-commit>`. Create worktrees under
 `<main-checkout>/.worktrees/`, even when the session starts in a subdirectory
 or in another worktree: removing an outer worktree also deletes a worktree
 nested in it, because ignored files never block removal. If the first entry is
@@ -34,9 +34,9 @@ git -C <main-checkout> worktree add .worktrees/<branch> -b <branch> <base-commit
 - A new worktree leaves every submodule directory empty. When `.gitmodules`
   exists, initialize them before work:
   `git -C <main-checkout>/.worktrees/<branch> submodule update --init --recursive`.
-  This leaves each submodule on a detached HEAD. Before you commit inside a
-  submodule, create a branch there (`git -C <sub-path> switch -c <branch>`),
-  so the commit has a ref to push and cannot be orphaned by the next update.
+  This leaves submodules on detached HEADs. Before a submodule commit, create
+  a branch there: `git -C <sub-path> switch -c <branch>`. This gives the commit
+  a pushable ref and prevents the next update from orphaning it.
 
 Work inside `<main-checkout>/.worktrees/<branch>` for the whole task.
 
@@ -65,10 +65,9 @@ so the main checkout stays clean:
 
 ## Remove
 
-A skill that creates a worktree removes it when its task ends, unless its own
-file says to keep it. Removal is part of the deliverable: the report names the
-removed path, or the exact blocker that stopped it. Never remove the main
-checkout, a `locked` worktree, or a worktree another task still uses.
+The skill that creates a worktree removes it when its task ends unless its file
+says to keep it. Report the removed path or exact blocker. Never remove the
+main checkout, a `locked` worktree, or a worktree another task uses.
 
 Remove the worktree once the branch is merged or pushed. Take `<worktree-path>`
 from `git worktree list --porcelain`, because older worktrees can live elsewhere:
@@ -77,9 +76,8 @@ from `git worktree list --porcelain`, because older worktrees can live elsewhere
 git -C <main-checkout> worktree remove <worktree-path>
 ```
 
-Move your shell out of the worktree before you remove it. Git removes the
-directory under you, and a shell left in a deleted directory fails every later
-command with "Unable to read current working directory".
+Move your shell out before removal. A shell in the deleted directory makes
+later commands fail with "Unable to read current working directory".
 
 ### Remove after push
 
