@@ -16,11 +16,10 @@ files and source metadata. After installation, chezmoi sets the Codex invocation
 policy so `frontend-design` needs an explicit invocation. The managed Claude
 settings apply the same restriction to the installed skill and to its plugin.
 
-Chezmoi also manages `ci-investigate`, `ui-verify`, `rom-weaver-release-verify`,
-and `benchmark-change` in the shared skills directory. Of these four skills,
-Codex and Claude can select only `ui-verify` and `benchmark-change`
-automatically. Invoke `ci-investigate` and `rom-weaver-release-verify`
-explicitly.
+Chezmoi also manages `ui-verify`, `rom-weaver-release-verify`, and
+`benchmark-change` in the shared skills directory. Of these three skills,
+Codex and Claude can select only `ui-verify` automatically. Invoke
+`rom-weaver-release-verify` and `benchmark-change` explicitly.
 
 Check for upstream updates:
 

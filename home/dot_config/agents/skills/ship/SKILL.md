@@ -6,9 +6,10 @@ description: >
   or PR/MR creation requests; do not wait for CI.
 ---
 
-Ship the current branch: push it, open or update the MR/PR, and report. An
-argument naming a local branch ships that branch from its worktree; other
-argument text is a task to finish first.
+Ship the current branch: push it, open or update the MR/PR, and report. When
+the argument names a local branch, run every step from that branch's worktree.
+Create one with the `worktree` skill if none exists. Other argument text is a
+task to finish first.
 
 ## 0. Detect context (always run first)
 

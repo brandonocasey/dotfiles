@@ -45,7 +45,9 @@ It manages `~/.config/agents/` and `~/.codex/agents/` as plain files with automa
    If a listed source has no target, audit and edit the source itself.
 2. Never run source-writing commands (`add`, `re-add`, `edit`); they commit and push.
    Never run `chezmoi apply` without a target.
-3. After the final edit, copy each changed or new target to its source.
+3. Before any copy, review the changes with `diff -u "$(chezmoi source-path <target>)" <target>`.
+   After the review fixes, copy each changed or new target to its source.
+   Any later source-writing command, from any session, commits and pushes pending source copies.
    Find the path with `chezmoi source-path <target-or-directory>`; new names can require prefixes such as `private_`.
    Require empty `chezmoi status <target>` output for every changed target.
 4. If `source-path` fails, edit the unmanaged target in place and report that it has no source copy.

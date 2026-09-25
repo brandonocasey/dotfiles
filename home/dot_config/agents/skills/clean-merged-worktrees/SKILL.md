@@ -191,7 +191,8 @@ open-PR, and otherwise protected branches remain protected in every category.
 
 Before mutating anything, show a compact table with `remove`, `keep`, and `reason` for every
 candidate. Every `keep` row then goes through step 5. If the user asked for a dry run, stop after
-the step 5 report. Otherwise ask for approval of the `remove` rows with the step 5 question.
+the step 5 report. Otherwise ask the user to approve the `remove` rows before step 6. Ask in the
+same message as the step 5 question when step 5 asks one.
 
 ### 5. Assess retained candidates
 
