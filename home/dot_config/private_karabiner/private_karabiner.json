@@ -161,6 +161,25 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Hyper+V in Ghostty: upload clipboard image via clipimg and paste remote path",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": ["^com\\.mitchellh\\.ghostty$"],
+                                        "type": "frontmost_application_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "v",
+                                    "modifiers": { "mandatory": ["command", "control", "option", "shift"] }
+                                },
+                                "to": [{ "shell_command": "mkdir -p \"$HOME/.cache/clipimg\"; /Users/bcasey/.local/bin/clipimg --paste >/dev/null 2>>\"$HOME/.cache/clipimg/hotkey.log\"" }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },

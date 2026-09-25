@@ -34,9 +34,9 @@ The user's named model, custom harness agent, or external tool is the only overr
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `cheap` | Mechanical, well-specified: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
-| `explorer` | Codebase exploration: locating usages, tracing call paths. Read-only | sonnet, medium | gpt-6-luna, xhigh |
-| `worker` | Design, debugging, implementation of one split part, review, research synthesis | opus, low | gpt-6-sol, low |
+| `cheap` | Mechanical, well-specified: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-5.6-luna, low |
+| `explorer` | Codebase exploration: locating usages, tracing call paths. Read-only | sonnet, medium | gpt-5.6-luna, xhigh |
+| `worker` | Design, debugging, implementation of one split part, review, research synthesis | opus, low | gpt-5.6-sol, low |
 | `consult` | Escalation by the main session only (see below). Read-only | fable, low | gpt-6-astra, low |
 
 Harness forks (`subagent_type: "fork"` in Claude Code) inherit the parent model and
