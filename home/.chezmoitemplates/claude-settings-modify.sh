@@ -42,7 +42,9 @@ managed=$(
   },
   "model": "claude-fable-5[1m]",
   "skillOverrides": {
-    "frontend-design": "user-invocable-only"
+    "frontend-design": "user-invocable-only",
+    "dataviz": "name-only",
+    "claude-api": "name-only"
   },
   "hooks": {
     "PreToolUse": [],
@@ -66,7 +68,7 @@ managed=$(
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": false
   },
   "extraKnownMarketplaces": {},
   "feedbackSurveyRate": 0,
