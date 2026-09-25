@@ -6,7 +6,9 @@ description: >
   or PR/MR creation requests; do not wait for CI.
 ---
 
-Ship the current branch: push it, open or update the MR/PR, and report.
+Ship the current branch: push it, open or update the MR/PR, and report. An
+argument naming a local branch ships that branch from its worktree; other
+argument text is a task to finish first.
 
 ## 0. Detect context (always run first)
 
@@ -84,11 +86,11 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   pipeline URL and stop.
 - Handle CI only when the user asks for it in a later turn, or once for jobs that already
   failed when the `review` skill's own-work rule requires it.
-  Then: pull the failing job's log (`glab ci trace <job>` / `gh run view --log-failed`), find
+  Then: pull the failing job's log (`glab ci trace <job>` / `gh run view <run-id> --log-failed`), find
   the real error under the boilerplate, fix it, commit via the `commit` skill, push, and run
   step 5 again. Step 5 removed the worktree, so recreate it first with the two commands at
   the end of the `worktree` skill's **Remove after push**. Retry a job once
-  (`glab ci retry <job>` / `gh run rerun --failed`) when the project's docs name that suite
+  (`glab ci retry <job>` / `gh run rerun <run-id> --failed`) when the project's docs name that suite
   as flaky or the log shows an infrastructure failure; a second failure is real.
 
 ## 5. Clean up

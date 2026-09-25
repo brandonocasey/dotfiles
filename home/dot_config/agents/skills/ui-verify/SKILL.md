@@ -47,7 +47,7 @@ artifacts. Capture relevant console or network failures with the reproduction.
 
 ## Return the evidence
 
-Report the checked journey and states, concrete failures, screenshot paths,
+Report the checked journey and states, concrete failures, screenshots,
 and device or engine coverage that remains untested. Fix in-scope defects and
 rerun the affected checks. Reuse results for unchanged code and inputs.
 

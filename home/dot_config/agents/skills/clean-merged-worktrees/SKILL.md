@@ -26,10 +26,10 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 - Use `git branch -d` for branches whose tip is an ancestor of the selected local target. Let Git
   refuse deletion if that normal merge check fails.
 - **Squash-merge exception**: `git branch -D` is allowed when the exact local tip equals a
-  confirmed merged PR head, any attached worktree is clean and idle, and the branch has not moved
+  verified merged PR head, any attached worktree is clean and idle, and the branch has not moved
   since that PR.
 - **Merged-PR-contained-history exception**: `git branch -D` is also allowed when the exact local
-  tip is an ancestor of a confirmed merged PR head whose base/target and source-branch name match
+  tip is an ancestor of a verified merged PR head whose base/target and source-branch name match
   the local branch, and any attached worktree is clean and idle. This proves every commit
   reachable from the local tip was included in that PR. Recheck the exact tip immediately before
   deletion. Never use this exception when the local tip is a descendant of or diverges from the
@@ -41,11 +41,6 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 - **Review-worktree confirmation**: may remove every clean, idle worktree whose HEAD exactly
   matches a remote PR head, including detached worktrees and multiple worktrees for one PR. It
   never authorizes deleting local branch refs unless those branches separately qualify.
-- A merged PR proves the exact PR head and every commit reachable from that head. For a local tip
-  that differs from the PR head, run `git merge-base --is-ancestor <local-tip> <pr-head>`. If it
-  succeeds, every local commit was in the PR and the branch may qualify under the merged-PR-
-  contained-history exception. If it fails, retain the branch because it may contain new or
-  diverged work.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
   stale local ref.
 - Retain a branch used by an open PR even if an older PR for that branch was merged.
@@ -142,9 +137,8 @@ For a local branch to qualify from PR evidence, all of these must be true:
   `git merge-base --is-ancestor <local-tip> <pr-head>`.
 
 If the local tip is an ancestor of the PR head, report that the merged PR contains the complete
-local commit history. It is eligible for cleanup under the merged-PR-contained-history exception,
-subject to cleanliness, idleness, protection, and branch recheck rules. If the ancestry check
-fails, retain it and explain that the local history is newer or diverged from the merged PR.
+local commit history. If the ancestry check fails, retain it and explain that the local history
+is newer or diverged from the merged PR.
 
 #### Closed without merge
 
@@ -190,14 +184,14 @@ squash-merged branches rather than guess.
 
 A worktree is removable only when its category has evidence — local ancestry in the
 selected target, a merged PR whose head contains every local commit, a user-confirmed
-exact closed-PR head, or a user-confirmed review match — AND every safety rule passes.
+exact closed-PR head, or a user-confirmed review match — and every safety rule passes.
 A local branch without a worktree can qualify through local ancestry, merged-PR
 evidence, or a user-confirmed exact closed-without-merge head. Current, target,
 open-PR, and otherwise protected branches remain protected in every category.
 
 Before mutating anything, show a compact table with `remove`, `keep`, and `reason` for every
 candidate. Every `keep` row then goes through step 5. If the user asked for a dry run, stop after
-the step 5 report.
+the step 5 report. Otherwise ask for approval of the `remove` rows with the step 5 question.
 
 ### 5. Assess retained candidates
 
@@ -320,8 +314,8 @@ exception — exact squash-merged PR head, merged-PR-contained history, or user-
 closed-without-merge head, or user-confirmed relevance removal — backed the forced local ref
 deletion. Relevance removal requires the named-branch confirmation and recorded recovery tip
 from step 5; it is not merge evidence. If the target branch is not checked out anywhere, retain
-candidates requiring `-d` rather than switching a user's checkout; an eligible confirmed
-PR-head or relevance deletion may use `-D` from the current checkout instead.
+candidates requiring `-d` rather than switching a user's checkout; an eligible
+PR-head exception or relevance deletion may use `-D` from the current checkout instead.
 
 After each successful mutation, refresh and show:
 
@@ -331,7 +325,7 @@ git branch --list
 git worktree prune --dry-run
 ```
 
-Use `git worktree prune` only to remove stale administrative records after confirming that no
+Use `git worktree prune` only to remove stale administrative records after checking that no
 valid worktree path is missing. Do not overlap removal commands; wait for each command to finish.
 
 ### 7. Report the final state
@@ -344,7 +338,7 @@ End with:
 - the step 5 verdict for every retained branch, with the evidence behind it and the tip SHA of
   every branch removed on relevance grounds;
 - the final worktree and branch inventory;
-- confirmation that remote branches were not changed;
+- a statement that remote branches were not changed;
 - any inconclusive checks, such as unavailable forge or process evidence.
 
 Do not claim that all merged work is clean if any candidate was retained or any check was

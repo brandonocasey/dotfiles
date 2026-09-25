@@ -43,8 +43,8 @@ Skip committing when the tree is clean.
 - Repeat for the authorized chunks, then check the gate below.
 
 **Gate — the tree must be fully committed before anything moves.** Re-run
-`git status --short --ignore-submodules=none`. If it prints anything, stop.
-Commit only authorized task work; preserve anything else and ask what to do.
+`git status --short --ignore-submodules=none`. If it prints anything, stop and
+ask what to do.
 
 After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees what is about to
 move.

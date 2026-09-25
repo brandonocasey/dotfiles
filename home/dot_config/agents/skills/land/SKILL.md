@@ -7,8 +7,7 @@ description: >
 ---
 
 Land the current branch into the local default branch (`TARGET`, resolved in
-step 0), then clean up. The **Hard rules** and `shared/git-flow.md` **Shared
-rules** apply to every step.
+step 0), then clean up. The **Hard rules** apply to every step.
 
 ## 0. Detect context (always run first)
 
@@ -27,8 +26,8 @@ rebase and fast-forward, and its step 4 check runs after step 4 here.
 If `BRANCH` == `TARGET`, do not stop or invent a branch. Do not warn or suggest
 moving commits unless the user asks.
 
-- Load [commit](../commit/SKILL.md) through the harness's skill tool or read its
-  file directly, and follow it over the working tree.
+- Run the **Commit gate** from `shared/git-flow.md`, except its final clean-tree
+  check: nothing moves on this path.
 - If the tree is already clean, say so plainly and stop.
 - Skip steps 2–5 (tests, rebase, ff-merge, cleanup).
 - Report as step 6 describes, minus the branch/worktree lines: which commits were created (or
@@ -45,8 +44,8 @@ the tree is dirty; cleanup requires every intended change to be committed.
 Run the project's test suite before rebasing.
 
 - Detect the test command from the project: check `package.json` scripts for `test`, `test:unit`,
-  or `test:ci`; fall back to common runners (`npm test`, `cargo test`, `go test ./...`, `pytest`,
-  etc.) if no `package.json` is present.
+  or `test:ci`; without a `package.json`, fall back to common runners (`cargo test`,
+  `go test ./...`, `pytest`, etc.).
 - Run the test command and capture its output.
 - If tests fail: fix the failures. Make the minimal changes needed to make tests pass, then commit
   the fix as a separate logical commit through the `commit` skill. Re-run tests to check that

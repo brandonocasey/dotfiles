@@ -1,7 +1,7 @@
 # Default branch identity and base selection
 
 Use this file when a workflow needs a default branch name or a starting commit.
-These decisions are separate. Base selection MUST NOT move a local branch,
+These decisions are separate. Base selection must not move a local branch,
 change a checkout, merge histories, or push.
 
 ## Local target name

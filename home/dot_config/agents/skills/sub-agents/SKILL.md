@@ -31,6 +31,7 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-5.6-luna, xhigh |
 | `worker` | Design, debugging, split implementation, review, research synthesis | opus, low | gpt-5.6-sol, low |
 | `consult` | Main-session escalation only; read-only | fable, low | gpt-6-astra, low |
+| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6-sol, high |
 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
@@ -67,7 +68,7 @@ Otherwise, report the pipeline URL and stop: no watcher or polling.
 
 Only the main session may escalate. Sub-agents report blockers without escalating.
 Use the current model stated in the system prompt; do not invent one.
-If it already uses `consult` (fable, gpt-6-astra), continue inline or report the concrete blocker; no stronger model exists.
+If the current model is already `consult`'s (fable, gpt-6-astra), continue inline or report the concrete blocker; no stronger model exists.
 
 - **One hard sub-problem:** escalate after one failed attempt, a user-reported failure, or unresolved reasoning across files or systems.
   Spawn one `consult` with the problem, evidence, files, and points to settle.
@@ -76,7 +77,7 @@ If it already uses `consult` (fable, gpt-6-astra), continue inline or report the
 - **Whole task on another model:** use a stronger model after failure or for subtle reasoning across systems.
   Use a cheaper role when the task permits it. Warn the user with the reason and get approval.
   Then give the full context to one `worker`, or `consult` when the current model is `worker`.
-- On `cheap`, `explorer`, or `worker`, check that `consult` ran once before reporting blocked or attempting a second user-reported failure fix.
+- On a `cheap`, `explorer`, or `worker` model, check that `consult` ran once before reporting blocked or attempting a second user-reported failure fix.
 
 ## After they return
 

@@ -47,12 +47,14 @@ If this task already changed files in the main checkout, read
 
 ## Remove
 
-The skill that creates a worktree removes it when its task ends unless its file
-says to keep it. Report the removed path or exact blocker. Never remove the
-main checkout, a `locked` worktree, or a worktree another task uses.
+A skill that creates a worktree for its own use, such as `review`, removes it
+when its task ends unless its file says to keep it. Remove a task branch's
+worktree once the branch is merged or pushed. Report the removed path or exact
+blocker. Never remove the main checkout, a `locked` worktree, or a worktree
+another task uses.
 
-Remove the worktree once the branch is merged or pushed. Take `<worktree-path>`
-from `git worktree list --porcelain`, because older worktrees can live elsewhere:
+Take `<worktree-path>` from `git worktree list --porcelain`, because older
+worktrees can live elsewhere:
 
 ```sh
 git -C <main-checkout> worktree remove <worktree-path>
@@ -68,7 +70,7 @@ to commit. Prove the remote holds the local tip before touching anything:
 
 ```sh
 git ls-remote origin refs/heads/<branch>   # remote tip
-git rev-parse <branch>                     # local tip; MUST be the same ID
+git rev-parse <branch>                     # local tip; must be the same ID
 ```
 
 Pass the full ref: a bare `<branch>` pattern also matches
@@ -85,7 +87,7 @@ git -C <main-checkout> worktree prune
 
 `branch -d` checks the branch against its upstream and refuses a tip the
 upstream lacks. Never answer that refusal with `-D`; report it. The upstream
-MUST be set (`git push -u` sets it). Without one, `-d` checks against HEAD and
+must be set (`git push -u` sets it). Without one, `-d` checks against HEAD and
 refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
 `-d` once. Report the removed path and the branch's last commit ID; the remote
 branch keeps the history.

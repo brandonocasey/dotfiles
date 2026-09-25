@@ -34,7 +34,7 @@ For every entry in `.gitmodules`, establish:
   worktree's clone.
 
 A changed submodule that is not owned stops the skill: the recorded commit
-MUST already exist on the submodule's remote (`git -C <SUB_PATH> branch -r
+must already exist on the submodule's remote (`git -C <SUB_PATH> branch -r
 --contains HEAD` prints a branch). If it does not, report the submodule path
 and commit ID and stop; never push to a foreign remote.
 
@@ -45,10 +45,11 @@ The gate covers each changed submodule first, then the superproject:
 1. In `<SUB_PATH>`, run the `commit` skill for authorized changes, then
    require `git -C <SUB_PATH> status --porcelain --ignore-submodules=none` to
    print nothing.
-2. The superproject gitlink MUST equal the submodule HEAD: `git submodule
+2. The superproject gitlink must equal the submodule HEAD: `git submodule
    status` shows no `+` for `SUB_PATH`. A `+` means the submodule moved after
    the last superproject commit; stage `SUB_PATH` and commit the bump through
-   the `commit` skill (`build(<SUB_NAME>): bump to <short> <subject>`).
+   the `commit` skill: header `build(<SUB_NAME>): bump to <short>`, with the
+   submodule commit subject in the body.
 3. Then the superproject gate from [git-flow.md](git-flow.md).
 
 ## Ship
@@ -88,7 +89,7 @@ first `worktree` entry of `git worktree list --porcelain`). If `TARGET` is
 checked out in a linked worktree instead, stop and ask: that worktree's
 submodule clone does not persist, so landing the submodule branch there loses it.
 
-1. Before changing either clone, the main clone MUST be clean and either
+1. Before changing either clone, the main clone must be clean and either
    on `SUB_TARGET` or detached at the gitlink `TARGET` records. Otherwise stop
    and ask. In the worktree clone, fetch the main clone's local target:
    `git -C <SUB_PATH> fetch <MAIN_WT>/<SUB_PATH> refs/heads/<SUB_TARGET>`.
@@ -101,7 +102,7 @@ submodule clone does not persist, so landing the submodule branch there loses it
    rebase.
 2. Copy the branch into the main clone:
    `git -C <MAIN_WT>/<SUB_PATH> fetch <worktree-path>/<SUB_PATH> <SUB_BRANCH>:<SUB_BRANCH>`.
-   This fetch MUST NOT force-update an existing branch. A refusal can mean
+   This fetch must not force-update an existing branch. A refusal can mean
    divergent branch history or another fetch error; retain both clones and
    report the actual error before proceeding.
 3. Fast-forward the submodule in the main clone, before the superproject:
@@ -116,7 +117,7 @@ submodule clone does not persist, so landing the submodule branch there loses it
    deleting it so `branch -d` checks against `SUB_TARGET`, as `land` cleanup
    requires. A non-fast-forward means step 1 did not take: stop and report.
 4. Fast-forward the superproject (`land` step 4). Afterwards
-   `git -C <MAIN_WT> submodule status` MUST show no `+` for `SUB_PATH`; the
+   `git -C <MAIN_WT> submodule status` must show no `+` for `SUB_PATH`; the
    submodule HEAD equals the new gitlink.
 5. Cleanup follows `land` step 5. The worktree's submodule clone is deleted
    with the worktree; that is safe because step 3 made the commits reachable

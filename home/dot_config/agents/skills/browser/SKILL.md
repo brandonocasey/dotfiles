@@ -5,8 +5,8 @@ description: >
   inspection, or playback. For real Safari, use real-safari.
 ---
 
-Never foreground a browser, steal focus, or play audible sound.
-Audio tasks are the exception to muting playback.
+Never foreground a browser or steal focus. Never play audible sound unless the
+task checks the audio itself.
 
 ## Pick the MCP
 
@@ -22,6 +22,5 @@ The `safari` MCP uses Playwright WebKit; it has no FairPlay DRM.
 For real Safari or Safari-only bugs, follow `real-safari` for driver selection and approval before starting the visible browser.
 
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
-Keep playback muted unless checking the audio itself.
 
 Close pages and connections you opened when the task ends. Free ports you took.

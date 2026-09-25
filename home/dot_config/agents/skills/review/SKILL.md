@@ -15,7 +15,8 @@ explained in plain language.
 
 Delegate the review to a sub-agent only when this session or its sub-agents wrote the
 change, so that the reviewer is independent. Review anyone else's change inline (an
-MR/PR from a colleague, an arbitrary commit).
+MR/PR from a colleague, an arbitrary commit). When the user asks for a hard review, delegate
+every target to the `hard-review` role.
 
 When delegating: spawn one sub-agent per the `sub-agents` skill. Pass it the review
 target verbatim plus the text of steps 0–2 only — never the implementation rationale
@@ -27,7 +28,7 @@ its path with the findings. An external tool's findings still go through the
 re-verification below.
 
 When the sub-agent returns, the main session re-verifies each finding in that
-worktree before showing or fixing anything: read the cited code, confirm the failure
+worktree before showing or fixing anything: read the cited code, verify the failure
 scenario is reachable, and kill anything that isn't concrete. Do not re-run tests the
 sub-agent already reported running — re-run only when a finding hinges on a test
 result the sub-agent did not show. The main session then runs steps 3–4 itself
@@ -136,7 +137,7 @@ Brief beats complete-sounding: no padding, no restating the diff.
      small code change fixes it, include a suggestion block (syntax in the same file).
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
 4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
-   did NOT survive verification and why each was killed. This is the proof the review was real.
+   did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do not post anything to the MR/PR unless the user asks; print for the user

@@ -35,8 +35,6 @@ default; filters combine with AND.
 | `merge` | also merge pull requests that reach the passing state without auto-merge |
 | `report`, `status` | read-only |
 
-`auto-merge all` reproduces the old auto-merge-only watch across all authors.
-
 Run a fresh inventory at the start of every turn. Do not rely on a list from a
 previous turn.
 
@@ -119,8 +117,9 @@ request first.
 
 For the user's own branch:
 
-1. Load the `worktree` skill and create a dedicated worktree for the head
-   branch. Never switch the main checkout.
+1. Load the `worktree` skill and reuse or create the head branch's worktree.
+   Without a local branch, use the two commands at the end of its **Remove
+   after push**; they fetch the branch first.
 2. Fetch the head branch and verify that its fetched SHA and the worktree
    HEAD equal the observed SHA. If either differs, preserve local work,
    refresh the inventory, and reconcile it before proceeding. Fetch the base
@@ -146,9 +145,9 @@ Unless the invocation is read-only, use this order for each pull request with
 a failing check on the user's own non-fork branch:
 
 1. Capture the head SHA, the failing check, and the run URL.
-2. Load the `worktree` skill and reuse or create the worktree for the head
-   branch. Rebase first when the branch is behind, so the fix runs on the
-   current base.
+2. Reuse or create the head branch's worktree as **Rebase or update the
+   branch** step 1 describes. Rebase first when the branch is behind, so the
+   fix runs on the current base.
 3. Read the relevant code and the full failing log. Make the smallest
    root-cause fix. Preserve input validation, error handling, security
    controls, accessibility behavior, and repository output-parity rules.

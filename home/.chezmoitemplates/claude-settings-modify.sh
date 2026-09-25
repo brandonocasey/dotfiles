@@ -44,7 +44,22 @@ managed=$(
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
     "dataviz": "name-only",
-    "claude-api": "name-only"
+    "claude-api": "name-only",
+    "anthropic-skills:docs": "name-only",
+    "anthropic-skills:docx": "name-only",
+    "anthropic-skills:pdf": "name-only",
+    "anthropic-skills:pptx": "name-only",
+    "anthropic-skills:xlsx": "name-only",
+    "anthropic-skills:skill-creator": "name-only",
+    "anthropic-skills:morning": "user-invocable-only",
+    "anthropic-skills:import-memory": "user-invocable-only",
+    "keybindings-help": "name-only",
+    "fewer-permission-prompts": "name-only",
+    "simplify": "name-only",
+    "workflow-authoring": "name-only",
+    "loop": "name-only",
+    "schedule": "name-only",
+    "code-review": "user-invocable-only"
   },
   "hooks": {
     "PreToolUse": [],

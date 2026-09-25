@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: benchmark-change
 description: >
   Measure ROM Weaver changes to runtime, memory, compressed size, or data packs
@@ -13,7 +14,7 @@ Measure the change against a recorded baseline and check that the result still m
 
 Read `docs/development/performance.md` for the harness map and measurement method, then inspect only the script relevant to the question. Reuse the repository's command-path, disc-tool, checksum-threading, solid-extraction, or browser WASM benchmarks. Use the repository's `run-rom-weaver` skill for runtime setup and smoke tests when needed. Avoid adding another benchmark framework.
 
-For identify-data changes, locate the index builder in the target revision and inspect the data format it emits. Older revisions may use `scripts/build-identify-index.mjs`; check that it exists before using that path. Use separate output directories and the same source datasets. Compare compressed transfer bytes, build/search time when affected, and record counts, names, aliases, dump tags, and checksum lookup behavior that the change promises to preserve. A smaller raw file may compress worse.
+For identify-data changes, locate the index builder in the target revision and inspect the data format it emits. Check that `scripts/build-identify-index.mjs` exists in that revision before using that path. Use separate output directories and the same source datasets. Compare compressed transfer bytes, build/search time when affected, and record counts, names, aliases, dump tags, and checksum lookup behavior that the change promises to preserve. A smaller raw file may compress worse.
 
 ## Make the comparison equivalent
 
