@@ -19,7 +19,8 @@ MR/PR from a colleague, an arbitrary commit).
 
 When delegating: spawn one sub-agent per the `sub-agents` skill. Pass it the review
 target verbatim plus the text of steps 0–2 only — never the implementation rationale
-or the conversation, or the reviewer is not independent. The sub-agent runs steps 0–2
+or the conversation, or the reviewer is not independent. Resolve reference paths in
+the excerpt against this skill's directory. The sub-agent runs steps 0–2
 and returns candidate findings as raw data (file, line, severity, failure scenario,
 evidence, and which tests it ran). It keeps any review worktree it created and returns
 its path with the findings. An external tool's findings still go through the
@@ -60,37 +61,10 @@ Classify the argument:
   files) if the tree is dirty; otherwise the current branch against the default branch as
   above. If that is empty too, say there is nothing to review and stop.
 
-Remote fetch — GitLab:
-
-```sh
-glab mr view <iid> --repo <project-path>    # title, description, state, branches
-glab mr diff <iid> --repo <project-path>
-glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"  # existing discussion — skip already-raised points
-```
-
-Remote fetch — GitHub:
-
-```sh
-gh pr view <n> --repo <owner>/<repo>              # title, description, state, branches
-gh pr diff <n> --repo <owner>/<repo>
-gh pr view <n> --repo <owner>/<repo> --comments   # existing discussion — skip already-raised points
-```
-
 Get the full code, not just the diff — the diff alone is rarely enough context:
 
-- **Remote target**: check out the source branch in a worktree per the `worktree` skill —
-  never the main checkout. The repo may not be the current working directory: locate the
-  project's main checkout (the `worktree` skill's `<main-checkout>`) and run both commands
-  against it, because `FETCH_HEAD` belongs to the checkout that fetched. A review worktree is
-  detached on purpose, so it takes a commit-ish rather than `-b <branch>`.
-
-  ```sh
-  git -C <main-checkout> fetch origin <source-branch>          # GitLab, or same-repo GitHub PR
-  git -C <main-checkout> worktree add --detach .worktrees/review-<number> FETCH_HEAD
-  # GitHub fork: fetch origin pull/<n>/head, then add --detach from FETCH_HEAD
-  # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
-  ```
-
+- **Remote target**: read [remote-target.md](references/remote-target.md) for
+  metadata, discussion, diffs, and the source checkout before review.
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
 - When `.gitmodules` exists and the review runs tests, initialize submodules per the
