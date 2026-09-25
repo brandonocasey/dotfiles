@@ -83,7 +83,7 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 - Do not poll the pipeline, and do not spawn a background agent to watch it. Report the
   pipeline URL and stop.
 - Handle CI only when the user asks for it in a later turn, or once for jobs that already
-  failed when the global review rule requires it (AGENTS.md, **Skills own the detail**).
+  failed when the `review` skill's own-work rule requires it.
   Then: pull the failing job's log (`glab ci trace <job>` / `gh run view --log-failed`), find
   the real error under the boilerplate, fix it, commit via the `commit` skill, push, and run
   step 5 again. Step 5 removed the worktree, so recreate it first with the two commands at

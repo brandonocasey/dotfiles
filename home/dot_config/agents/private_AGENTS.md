@@ -34,13 +34,7 @@ Never write to the OS temp directory (`/tmp`, `$TMPDIR`, `%TEMP%`) or the harnes
 Load the skill before the first action in its area. The skill is the single source of its rules.
 
 - Sub-agents: `split-task` owns the decision to split one task; apply its thresholds automatically. `sub-agents` owns every spawn: roles and pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Keep judgement, integration, and the final check in the main session.
-- Code review: `review`. Run it automatically, once per task, when the task changed behavior and any of these hold:
-  - a shared function, module, or API contract with 3+ callers changed
-  - a trust boundary or irreversible path changed: auth, permissions, money, input parsing, persistence, migration, deletion, external writes, concurrency, crypto
-  - a new or changed branch, condition, or error path has no test that ran green in this task
-  - more than ~150 changed lines of hand-written logic remain after you exclude tests, docs, lockfiles, snapshots, generated files, and pure moves, renames, or formatting
-
-  Only Fable or Astra MAY skip it, and only when I did not ask for a review and one of these holds: every change is mechanical (rename, move, format, import order, dependency bump, config value), only tests and docs changed, or the code is a prototype or throwaway demo. Every other model MUST run `review` before it reports a task done, even when no condition above holds. For those models, when the Git section authorizes pushing the task branch, push it before the final review. Then inspect finished CI failures once and fix them; do not wait for a running CI. Without push authorization, review the local branch. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`.
+- Code review: `review`, once per task. Every model except Fable and Astra MUST run it before it reports a task done. Fable and Astra first read the skill's `references/when-to-run.md`, which owns their triggers and skip rules. Add one line to the task recap: `Review: ran` or `Review: skipped (<reason>)`.
 - Branch work: load `worktree` before work on a new or existing branch, including a single sequential task. It owns base selection and branch preservation. Never switch branches in the main checkout.
 - Commits: load `commit`. For push plus MR/PR, use `ship`; for local landing, use `land`. The Git section owns authorization for these workflows.
 - Browser: `browser` before the first browser MCP call

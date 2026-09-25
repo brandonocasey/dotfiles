@@ -39,6 +39,11 @@ user-requested: apply verified fixes immediately, re-run tests/lint after applyi
 and do not review again. Reviews of someone else's change print the comments and wait
 for `--fix`.
 
+Before the final review of this session's own work, on a model other than Fable or Astra:
+when the Git rules authorize pushing the task branch, push it first. Then inspect CI
+failures that already finished, once, and fix them; do not wait for a running CI.
+Without push authorization, review the local branch.
+
 ## 0. Identify the target and get the diff
 
 Classify the argument:
