@@ -1,8 +1,9 @@
 # Default branch identity and base selection
 
 Use this file when a workflow needs a default branch name or a starting commit.
-These decisions are separate. Base selection must not move a local branch,
-change a checkout, merge histories, or push.
+These decisions are separate. Base selection must not change a checkout's
+branch, merge histories, or push. It moves a local branch only through the
+fast-forward in **Newest default base** step 5.
 
 ## Local target name
 
@@ -46,12 +47,37 @@ supplied a base. Do not recreate or rebase existing branches or PR/MR heads.
    every candidate is an ancestor of it. Equal commits are one candidate;
    prefer the local ref for the report when tied. Use the recorded commit ID
    as the worktree start point so a ref moving later cannot change the choice.
-4. If no candidate contains all the others, the defaults diverge. Show the refs,
-   IDs, and unique commits, then ask which base to use. Commit timestamps do not
+4. If no candidate contains all the others, the defaults diverge. Do not ask.
+   Use the fetched default of `origin` as the base. Report each other
+   candidate's unique commits with
+   `git log --oneline <base-commit>..<candidate>`. Ask only when no `origin`
+   remote exists and the remote defaults diverge. Commit timestamps do not
    establish that one history contains another. An ancestry command error is
    not proof of divergence: resolve missing or shallow history first, or report
    that it could not be checked.
+5. Fast-forward the local target after step 3 or 4 selects a base. All of these
+   conditions must be true, or skip this step:
+   - The base is the commit fetched from the target's upstream remote
+     (`git config branch.<target>.remote`). A commit from another remote,
+     such as `upstream` in a fork, would make the target look ahead of its
+     upstream.
+   - The local target is a strict ancestor of the base.
+   - `git diff --raw <target> <base-commit>` shows no `160000` mode. A merge
+     does not update submodule checkouts, so a changed gitlink leaves the
+     checkout dirty.
 
-Report the selected base ref and commit. Do not claim that a cached remote ref
-is current. If the user requires offline or local-only work, use local evidence
-within that scope and disclose that remote freshness was not checked.
+   Never create a merge commit, rebase, or reset:
+   - Target checked out in a worktree (see `git worktree list --porcelain`)
+     with an empty
+     `git -C <that-worktree> status --porcelain --ignore-submodules=none`:
+     run `git -C <that-worktree> merge --ff-only <base-commit>`.
+   - Target checked out nowhere: run
+     `git fetch . <base-commit>:refs/heads/<target>` from any checkout of the
+     repository. Without `+`, Git refuses a non-fast-forward update.
+   - Target checked out in a dirty worktree, or the command fails: skip the
+     fast-forward and report why. The base choice does not change.
+
+Report the selected base ref and commit, and any fast-forward or skip. Do not
+claim that a cached remote ref is current. If the user requires offline or
+local-only work, use local evidence within that scope and disclose that remote
+freshness was not checked.
