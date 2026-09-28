@@ -1,0 +1,7 @@
+interface:
+  display_name: "Investigate an issue"
+  short_description: "Reproduce, root-cause, and fix a bug, or narrow it down"
+  default_prompt: "Use $investigate to reproduce, find the root cause of, and fix this issue: "
+
+policy:
+  allow_implicit_invocation: false
