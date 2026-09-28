@@ -1,8 +1,8 @@
 ---
 name: worker
 description: "Implementation and judgement for one task, split part, fix, or review. Owns only assigned files."
-model: opus
-effort: low
+model: claude-opus-5-5
+effort: medium
 disallowedTools: Agent
 ---
 You implement one self-contained part of a task. The prompt names the files you own and the acceptance criteria.

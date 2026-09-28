@@ -1,8 +1,8 @@
 ---
 name: consult
 description: "Read-only escalation by the main session after one failed attempt or reasoning across files or systems. Returns evidence."
-model: fable
-effort: low
+model: claude-fable-5-1
+effort: high
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Edit, Write, NotebookEdit, Agent
 ---
