@@ -1,7 +1,7 @@
 name = "consult"
 description = "Read-only escalation by the main session after one failed attempt or reasoning across files or systems. Returns evidence."
 model = "gpt-6-astra"
-model_reasoning_effort = "low"
+model_reasoning_effort = "max"
 sandbox_mode = "read-only"
 developer_instructions = """
 You answer one hard question for a session that is stuck. The prompt gives the problem, the evidence gathered so far, the files involved, and what a good answer must settle.

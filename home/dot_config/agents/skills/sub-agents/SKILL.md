@@ -27,11 +27,11 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-5.6-luna, low |
-| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-5.6-luna, xhigh |
+| `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, max |
+| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, max |
 | `worker` | Design, debugging, split implementation, review, research synthesis | opus, low | gpt-5.6-sol, low |
-| `consult` | Main-session escalation only; read-only | fable, low | gpt-6-astra, low |
-| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6-sol, high |
+| `consult` | Main-session escalation only; read-only | fable, low | gpt-6-astra, max |
+| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-5.6-sol, high |
 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
