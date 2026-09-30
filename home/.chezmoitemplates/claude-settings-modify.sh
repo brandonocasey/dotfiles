@@ -73,6 +73,29 @@ managed=$(
             "timeout": 120
           }
         ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fish -c 'claude-tmux-session'",
+            "async": true,
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "fish -c 'claude-tmux-session'",
+            "async": true,
+            "timeout": 3
+          }
+        ]
       }
     ]
   },
