@@ -103,7 +103,7 @@ esac
 # --- Context window ---
 ctx_remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty' 2>/dev/null)
 ctx_total=$(echo "$input" | jq -r '
-  (.context_window.total_tokens // .context_window.total // .context_window.size // .context_window.max_tokens // .context_window.window_tokens // empty)
+  (.context_window.context_window_size // .context_window.total_tokens // .context_window.total // .context_window.size // .context_window.max_tokens // .context_window.window_tokens // empty)
 ' 2>/dev/null)
 
 # --- Rate limits (each window: countdown to reset, then usage %) ---
