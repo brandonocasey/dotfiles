@@ -1,0 +1,43 @@
+#!/bin/bash
+# Jira Cloud REST API v3 caller. Neither Atlassian MCP nor acli can manage
+# versions (releases), so this covers what they can't.
+# Usage: jira-api <METHOD> <path> [json-body]
+#   jira-api GET /myself
+#   jira-api POST /version '{"name":"jwplayer-8.51.10","projectId":15864}'
+
+JIRA_SITE=${JIRA_SITE:-https://jwplayer.atlassian.net}
+
+if [ $# -lt 2 ]; then
+    echo "Usage: jira-api <METHOD> <path> [json-body]" >&2
+    exit 2
+fi
+
+if [ -z "$JIRA_EMAIL" ]; then
+    echo "Error: JIRA_EMAIL not set." >&2
+    exit 1
+fi
+
+if [ -z "$JIRA_API_TOKEN" ]; then
+    if command -v pass &>/dev/null; then
+        JIRA_API_TOKEN=$(pass show api/jira 2>/dev/null | head -1)
+    fi
+
+    if [ -z "$JIRA_API_TOKEN" ]; then
+        echo "Error: JIRA_API_TOKEN not set and could not retrieve from pass." >&2
+        echo "Either set JIRA_API_TOKEN or run: pass insert api/jira" >&2
+        exit 1
+    fi
+fi
+
+method=$1
+path=${2#/}
+body=$3
+
+# Pass credentials via a curl config on stdin so the token stays out of argv.
+args=(-sS -X "$method" -H "Accept: application/json" -w '\nHTTP %{http_code}\n')
+if [ -n "$body" ]; then
+    args+=(-H "Content-Type: application/json" --data "$body")
+fi
+
+printf 'user = "%s:%s"\n' "$JIRA_EMAIL" "$JIRA_API_TOKEN" |
+    curl -K - "${args[@]}" "$JIRA_SITE/rest/api/3/$path"
