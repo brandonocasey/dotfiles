@@ -2,8 +2,7 @@
 name: review
 description: >
   Review a PR/MR, branch, commit range, or working diff for verified defects.
-  Use for review requests; --fix applies agreed fixes and pushes remote
-  reviews.
+  Use for code reviews; --fix repairs defects, CI failures, and conflicts.
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The
@@ -42,8 +41,10 @@ and do not review again. Reviews of someone else's change print the comments and
 for `--fix`.
 
 Before the final review of this session's own work, on a model other than Fable or Astra:
-when the Git rules authorize pushing the task branch, push it first. Then inspect CI
-failures that already finished, once, and fix them; do not wait for a running CI.
+when the Git rules authorize pushing the task branch, push it first.
+Inspect completed CI failures and MR/PR conflicts through
+[ci-and-conflicts.md](references/ci-and-conflicts.md). Fix authorized blockers;
+do not wait for running CI unless the user asks.
 Without push authorization, review the local branch.
 
 ## 0. Identify the target and get the diff
@@ -72,6 +73,10 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
   same skill's **Submodules** section owns the `--force` decision.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
+
+For remote targets, read [ci-and-conflicts.md](references/ci-and-conflicts.md).
+Inspect current CI and mergeability before reviewing. Without fix authorization,
+report blockers without changing the branch or retrying jobs.
 
 Read the surrounding code of every changed hunk you intend to comment on.
 
@@ -141,7 +146,9 @@ Brief beats complete-sounding: no padding, no restating the diff.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do not post anything to the MR/PR unless the user asks; print for the user
-to post. Remove any worktree this review created — never a pre-existing one — with
+to post. Report CI and conflict status separately, with the observed source SHA
+and job or pipeline links. Pending checks are unverified, not passing.
+Remove any worktree this review created — never a pre-existing one — with
 `git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
 until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
@@ -153,6 +160,13 @@ For MR/PR comment links and suggestion syntax, read
 ## 4. Optional: --fix
 
 Only when the user asks (`--fix`, "fix them"):
+
+Fix authorization also covers CI failures and clear conflicts for the review
+target. This session's own work keeps its existing automatic fix authorization.
+Read [ci-and-conflicts.md](references/ci-and-conflicts.md) before these repairs.
+Apply the smallest root-cause fixes and resolve clear conflicts before final
+checks, commits, and pushes. Do not stop after fixing review comments while an
+authorized CI or conflict repair remains.
 
 - **MR/PR**: in the review worktree, apply the agreed fixes, run the repo's tests/lint,
   commit through the `commit` skill in the branch's existing style (carry any issue-tracker reference from the MR/PR
@@ -166,3 +180,7 @@ Only when the user asks (`--fix`, "fix them"):
   worktree if step 0 created it — the commits stay on the branch.
 - **Working diff**: apply the agreed fixes in place and leave them uncommitted unless the
   user asks to commit.
+
+After a remote push, refresh the source SHA, CI, and mergeability once.
+Reject stale results. Repair completed failures for that revision; report
+pending checks without waiting unless the user asked to watch.
