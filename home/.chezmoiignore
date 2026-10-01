@@ -48,3 +48,6 @@ Library/
 # WSL-specific code
 .chezmoiscripts/any-linux/**
 {{- end }}
+
+# Synced by Claude; do not track
+.config/agents/skills/synced
