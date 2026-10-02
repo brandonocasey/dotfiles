@@ -13,7 +13,10 @@ unset when the target branch is checked out nowhere.
 
 ## Create
 
-For a new branch, read [default-branch.md](../shared/default-branch.md) and
+For a separate task that depends on an unmerged MR/PR, first read
+[dependent-branches.md](../shared/dependent-branches.md). Use its parent base
+and record the child target and task boundary.
+For an independent new branch, read [default-branch.md](../shared/default-branch.md) and
 follow **Newest default base**. It owns remote discovery and ancestry comparison.
 Use the selected commit as `<base-commit>`. Create worktrees under
 `<main-checkout>/.worktrees/`, even when the session starts in a subdirectory

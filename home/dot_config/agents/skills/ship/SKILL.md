@@ -3,13 +3,16 @@ disable-model-invocation: true
 name: ship
 description: >
   Commit, push, and open or update a GitHub PR or GitLab MR. Use for shipping
-  or PR/MR creation requests; do not wait for CI.
+  or PR/MR creation requests. On GitHub, --merge continues through merge.
 ---
 
 Ship the current branch: push it, open or update the MR/PR, and report. When
 the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. Other argument text is a
-task to finish first.
+task to finish first. Parse `--merge` as an option, not a branch or task name.
+Ordinary shipping ends after the push and MR/PR update.
+With `--merge`, read [merge.md](references/merge.md) before mutations to check
+platform support and scope. Continue that workflow after shipping.
 
 When a `session-resume` record exists for the task, read it before the context
 check. Retain its recorded authorization only within its exact provenance and
@@ -30,7 +33,13 @@ user's repo. Establish its **Facts** using these remote target details:
 - `REMOTE_DEFAULT` — resolve `origin` through **Remote default name** in
   [default-branch.md](../shared/default-branch.md). Never use a cached
   `origin/HEAD` to decide whether a branch is safe to push.
-- `TARGET` — the user's explicit MR/PR target, or `REMOTE_DEFAULT`. Fetch it with
+- `EXISTING` — find an open MR/PR for `BRANCH` before selecting its target
+  (`glab mr list --source-branch <BRANCH>` / `gh pr list --head <BRANCH>`).
+  Read its base branch. A failed lookup does not establish that none exists.
+- `TARGET` — the user's explicit target, otherwise `EXISTING`'s base, otherwise
+  the verified parent branch for dependent work, otherwise `REMOTE_DEFAULT`.
+  For dependent work, read [dependent-branches.md](../shared/dependent-branches.md).
+  Preserve an existing base unless the user requests a different one. Fetch it with
   `git fetch origin refs/heads/<TARGET>` and immediately record
   `git rev-parse FETCH_HEAD` as `COMMIT_BASE`. Do not require a local target branch
   or assume that the fetch updated `origin/<TARGET>` under a restricted refspec.
@@ -76,8 +85,8 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 
 ## 3. Open or update the MR/PR
 
-- Check for an existing open MR/PR for `BRANCH` first (`glab mr list --source-branch <BRANCH>`
-  / `gh pr list --head <BRANCH>`). Update it instead of creating a duplicate.
+- Refresh `EXISTING` before creation. Update it instead of creating a duplicate.
+  If its base changed during this run, reread it before deciding the target.
 - **Title**: the repo's commit/MR convention — read the repo's AGENTS.md / CLAUDE.md /
   CONTRIBUTING for it. Include `TICKET` when set. If the repo requires a ticket and there is
   none, ask the user for the key — never invent one.
@@ -86,16 +95,18 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   checklists.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 
-## 4. Do not watch CI
+## 4. Finish the requested scope
 
-- Do not poll the pipeline, and do not spawn a background agent to watch it. Report the
-  pipeline URL and stop.
-- Handle CI only when the user asks for it in a later turn, or once for jobs that already
+- With `--merge`, read [merge.md](references/merge.md) and finish that workflow
+  before cleanup. It supports GitHub through `auto-merge-watch`.
+- Honor an explicit monitoring or repair request in the current turn. Keep the
+  worktree until that work ends. Without one, report the pipeline URL without waiting.
+- Handle CI when the user requests it, or once for jobs that already
   failed when the `review` skill's own-work rule requires it.
   Then: pull the failing job's log (`glab ci trace <job>` / `gh run view <run-id> --log-failed`), find
   the real error under the boilerplate, fix it, commit via the `commit` skill, push, and run
-  step 5 again. Step 5 removed the worktree, so recreate it first with the two commands at
-  the end of the `worktree` skill's **Remove after push**. Retry a job once
+  step 5 after the requested work ends. If an earlier run removed the worktree,
+  recreate it with the commands in `worktree`'s **Remove after push**. Retry a job once
   (`glab ci retry <job>` / `gh run rerun <run-id> --failed`) when the project's docs name that suite
   as flaky or the log shows an infrastructure failure; a second failure is real.
 
@@ -115,7 +126,7 @@ so. Skip a `locked` worktree and report it.
 State plainly: the commits shipped (`<short> <subject>` each), whether the MR/PR was created
 or updated, the same for each submodule MR/PR with the merge order (submodule first, and the
 squash warning from `shared/submodules.md` when it applies), the pipeline state at push time
-(do not wait for it to finish), and the cleanup
+(do not wait unless requested), the merge result or blocker when requested, and the cleanup
 result: the removed worktree path and the deleted branch with its last commit ID, or the
 reason both stayed. End with a **Links** section in the global link format (AGENTS.md,
 **Writing**), with no OSC 8 escapes: the MR/PR URL, submodule MR/PR URLs, pipeline URL, and
