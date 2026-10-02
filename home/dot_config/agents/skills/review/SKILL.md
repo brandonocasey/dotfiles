@@ -106,11 +106,18 @@ file, `review-<number>.md`, numbered by finding, and add follow-ups to it. Repor
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.
 
-Remove any worktree this review created — never a pre-existing one — with
+Clean up automatically when the review ends. Never ask first, and never hand cleanup to the
+user. Remove the worktree this review created — never a pre-existing one — with
 `git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
-**Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
-until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
-behind is incomplete: the report's last line names the removed path or the blocker.
+**Remove** section (clean tree, shell moved out first). Also remove this review's scratch
+directory, and stop the servers, browser pages, and ports it started. Run cleanup as its own
+command. Run it before approve, merge, or other outward steps, so a blocked outward step
+cannot block it. When continuing to `--fix`, keep the worktree until the remote source
+branch holds the review worktree's HEAD (`git ls-remote origin refs/heads/<source-branch>`
+equals `git rev-parse HEAD`) and no repair is pending. The remote is then the backup: clean
+up at once. If a later CI failure needs a repair, recreate the worktree from the remote
+branch. A review that leaves `.worktrees/review-…` behind is incomplete: the report's last
+line names the removed path or the blocker.
 
 For MR/PR comment links and suggestion syntax, read
 [remote-comments.md](references/remote-comments.md). Local reviews do not need it.
@@ -151,7 +158,7 @@ Read [ci-and-conflicts.md](references/ci-and-conflicts.md) before these repairs.
      leaves `.git/config` unchanged.
   6. Sync the title and description to the final diff, per `ship` step 3, and read them
      back. Then refresh the source SHA, CI, and mergeability once, per ci-and-conflicts.md.
-  7. When the request asks to approve or merge, run the `ship` skill's
+  7. Clean up per step 3. Then, when the request asks to approve or merge, run the `ship` skill's
      [merge.md](../ship/references/merge.md) after the push, only when no `bug` or
      `question` finding remains. Otherwise skip it and name the blocking findings.
 - **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's

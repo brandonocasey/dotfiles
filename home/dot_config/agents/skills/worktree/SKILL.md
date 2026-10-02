@@ -82,6 +82,13 @@ worktree once the branch is merged or pushed. Report the removed path or exact
 blocker. Never remove the main checkout, a `locked` worktree, or a worktree
 another task uses.
 
+When the remote holds a task's work, clean up automatically at task end, without asking.
+The remote holds the work when **Remove after push** proves that the remote tip equals the
+local tip; a detached review worktree compares `HEAD` with its source branch. Remove the
+worktree, the task's scratch directory, and the servers, browser pages, and ports the task
+started. Run cleanup as its own command. Never chain it with approve, merge, ticket, or
+other outward steps, so a blocked outward step cannot leave assets behind.
+
 Take `<worktree-path>` from `git worktree list --porcelain`, because older
 worktrees can live elsewhere:
 
