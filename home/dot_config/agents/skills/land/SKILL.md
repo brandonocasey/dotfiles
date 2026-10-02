@@ -1,13 +1,15 @@
 ---
-disable-model-invocation: true
 name: land
 description: >
-  Commit and land a branch into the local default branch, then clean up. Use
-  for local landing requests; never fetch or push.
+  Commit and fast-forward a branch into the local default branch, then clean
+  up. Use only when the user asks to land or merge locally; never fetch or push.
 ---
 
 Land the current branch into the local default branch (`TARGET`, resolved in
 step 0), then clean up. The **Hard rules** apply to every step.
+
+Start only when the user asked to land or merge locally. Otherwise ask one
+question and stop.
 
 ## 0. Detect context (always run first)
 
@@ -63,8 +65,9 @@ git rebase <TARGET>
   combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
   how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
-- If the rebase replayed commits (it was not a no-op), re-run the step 2 tests before
-  proceeding — the branch was tested on its old base, not on top of the current `TARGET`.
+- If the rebase replayed commits (it was not a no-op), re-run the step 2 tests and the
+  **Manual check** of `shared/git-flow.md` before proceeding — the branch was tested on its
+  old base, not on top of the current `TARGET`. The same applies after a step 2 fix commit.
 
 ## 4. Fast-forward the target to the branch
 
@@ -162,7 +165,8 @@ upstream first, so `-d` checks against `TARGET` instead.
 
 ## 6. Report
 
-End by stating, plainly: which commits landed (`<short> <subject>` each), the new `TARGET` tip,
+End by stating, plainly: which commits landed (`<short> <subject>` each), the `Checked:` line
+from the commit gate, the new `TARGET` tip,
 what was cleaned up (branch deleted, worktree removed), and — if you stashed — that the target's
 local changes were restored (and whether restoration needed conflict resolution).
 
