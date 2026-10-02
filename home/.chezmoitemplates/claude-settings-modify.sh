@@ -92,6 +92,16 @@ managed=$(
         "hooks": [
           {
             "type": "command",
+            "command": "sh ~/.claude/hooks/promote-ai-title.sh",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
             "timeout": 3
