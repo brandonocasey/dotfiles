@@ -22,11 +22,18 @@ json_string() {
 }
 
 tool_path() {
-  command -v "$1" 2>/dev/null || {
-    if [[ -x "$HOME/.local/bin/$1" ]]; then
-      printf '%s\n' "$HOME/.local/bin/$1"
+  local candidate
+  if command -v "$1" 2>/dev/null; then
+    return
+  fi
+  for candidate in "$HOME/.local/bin/$1" "$HOME/bin/$1" \
+    "/home/linuxbrew/.linuxbrew/bin/$1" "$HOME/.linuxbrew/bin/$1" \
+    "/opt/homebrew/bin/$1" "/usr/local/bin/$1"; do
+    if [[ -x $candidate ]]; then
+      printf '%s\n' "$candidate"
+      return
     fi
-  }
+  done
 }
 
 json_node=$(tool_path node)
@@ -50,7 +57,7 @@ printf '  "cwd": %s,\n' "$(json_string "$PWD")"
 printf '  "git": {"root": %s, "branch": %s},\n' \
   "$(json_string "$git_root")" "$(json_string "$git_branch")"
 printf '  "tools": {\n'
-tools=(node python3 rg codex claude gemini godot npx git gh chezmoi)
+tools=(node python3 rg codex claude gemini godot npx git gh chezmoi brew)
 for index in "${!tools[@]}"; do
   tool=${tools[$index]}
   comma=,
