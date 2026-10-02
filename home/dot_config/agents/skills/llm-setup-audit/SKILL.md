@@ -2,9 +2,9 @@
 disable-model-invocation: true
 name: llm-setup-audit
 description: >
-  Audit skills, agent definitions, and rules files for bugs, duplication, wasted
-  tokens, and complex language. Fix skills directly; propose rules-file edits for
-  approval.
+  Audit skills, agent definitions, rules files, and harness config for bugs,
+  duplication, drift, wasted tokens, and complex language. Fix skills directly;
+  propose rules-file and config edits for approval.
 ---
 
 Give each reader every needed rule once, in plain words and few tokens.
@@ -16,6 +16,9 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   Defaults: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and `~/.codex/agents/`.
 - **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Propose edits; apply only approved proposals.
   Default: `~/.config/agents/AGENTS.md`.
+- **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
+  `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
+  Propose edits; apply only approved proposals.
 - Use the invocation's scope; without one, audit both defaults.
   “Talk before making changes” applies the rules flow to every target.
 - A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
@@ -43,15 +46,20 @@ sync, check hashes and linked references again; report every remaining mismatch.
 
 ### Chezmoi
 
-It manages `~/.config/agents/` and `~/.codex/agents/` as plain files with automatic commits and pushes enabled.
+It manages `~/.config/agents/`, `~/.codex/`, `~/.claude/`, and `~/.claude-two/` with automatic commits and pushes enabled.
+Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, not plain files.
 
-1. Run `chezmoi status ~/.config/agents ~/.codex/agents` first.
-   Leave listed targets that exist untouched and report them.
+1. Run `chezmoi status ~/.config/agents ~/.codex ~/.claude ~/.claude-two` first.
+   For each listed target, summarize `chezmoi diff <target>` in one line.
+   Skip targets modified in the last few minutes; another agent may own them.
+   Recommend one action for each: copy the target to its source (step 3), or `chezmoi apply <target>`.
+   Ask once for all of them. Apply only the approved actions.
    If a listed source has no target, audit and edit the source itself.
 2. Never run source-writing commands (`add`, `re-add`, `edit`); they commit and push.
    Never run `chezmoi apply` without a target.
 3. Before any copy, review the changes with `diff -u "$(chezmoi source-path <target>)" <target>`.
    After the review fixes, copy each changed or new target to its source.
+   Copy only plain sources. For a `modify_`, `.tmpl`, or `symlink_` source, edit that script or template instead.
    Any later source-writing command, from any session, commits and pushes pending source copies.
    Find the path with `chezmoi source-path <target-or-directory>`; new names can require prefixes such as `private_`.
    Require empty `chezmoi status <target>` output for every changed target.
@@ -77,6 +85,11 @@ One harness's setting does not control another.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
   Example: “The `commit` skill owns commit splitting.”
+- **Invocation conflicts:** find each rule or skill that tells the model to run an explicit-only skill.
+  Propose one fix: make the skill model-invocable, or change the rule.
+- **Orphans:** list each file under `references/` or `shared/` that no skill links. Propose a link or a removal.
+- **Authorization owners:** give push, merge, git-settings, and destructive-action consent one owning rule.
+  Skills name that owner and keep their own stop points.
 - **Ineffective text:** remove general knowledge, repeated rules/headings, history, and examples only when no reader would act differently.
   Preserve every fact, number, condition, scope qualifier, and reason that changes behavior.
   List retained clauses under **Left alone**, including tool-specific exceptions such as ignored `PORT` values or protection against `.gitignore` edits.
@@ -141,6 +154,14 @@ Move misplaced rules to their owning section; remove single-bullet section headi
 Generalize ecosystem-specific details in global rules, such as “Follow semver and use the project's release tooling.”
 Never add tool-specific commands there.
 
+## Config coverage checks
+
+- **Coverage:** each file that a hook or `statusLine` command names must appear in `chezmoi managed`.
+- **Empty hooks:** report hook events with no commands, such as `"PreToolUse": []`.
+- **Parity:** list each Claude hook with no Codex equivalent in `~/.codex/hooks.json`, and the reverse.
+- **Secrets:** search the chezmoi source for tokens and keys. Report each match as `path:line` with the value replaced by [redacted].
+  Propose a move to the secret store for each.
+
 ## Skills flow
 
 1. Complete setup, apply fixes, and record veto items.
@@ -148,12 +169,12 @@ Never add tool-specific commands there.
    After workflow edits, replay relevant failures with
    [workflow-replays.md](references/workflow-replays.md). Record expected and
    observed behavior without external writes. Do not infer savings from counts.
-3. Report **Bugs fixed / Deduped / Improved / Veto items / Left alone**.
+3. Report **Bugs fixed / Deduped / Improved / Session evidence / Veto items / Left alone**.
    For each finding, state the defect, its workflow effect, and the fix.
 
 ## Rules flow
 
-1. Complete setup. Present the full analysis under **Combine / Simplify / Remove / Left alone**, numbered within each group.
+1. Complete setup. Present the full analysis under **Combine / Simplify / Remove / Session evidence / Left alone**, numbered within each group.
 2. Show every proposal's exact final wording.
 3. Ask unresolved gating questions first. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
    Free text overrides offered choices.
