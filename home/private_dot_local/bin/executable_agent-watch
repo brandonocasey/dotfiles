@@ -1,0 +1,425 @@
+#!/usr/bin/env node
+
+const { execFile } = require('node:child_process');
+
+const VIEW_FIELDS = 'number,url,state,mergedAt,closed,headRefOid';
+const CHECK_FIELDS = 'name,state,bucket,description,link,workflow,event';
+const DEFAULT_INTERVAL_MS = 15_000;
+const DEFAULT_MAX_INTERVAL_MS = 120_000;
+const DEFAULT_DEADLINE_SECONDS = 3_600;
+
+function usage() {
+  return [
+    'Usage: agent-watch --target OWNER/REPO#PR@HEAD_SHA [--target ...]',
+    '                   [--deadline-seconds N] [--interval-ms N]',
+    '                   [--max-interval-ms N]',
+    '',
+    'Watch required GitHub checks with read-only gh queries.',
+  ].join('\n');
+}
+
+function parsePositiveInteger(value, option, allowZero = false) {
+  if (!/^\d+$/.test(value)) {
+    throw new Error(`${option} must be an integer`);
+  }
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || (allowZero ? number < 0 : number < 1)) {
+    throw new Error(`${option} is out of range`);
+  }
+  return number;
+}
+
+function parseTarget(value) {
+  const match = /^([^\s/#]+\/[^\s/#]+)#([1-9]\d*)@([0-9A-Za-z._-]+)$/.exec(value);
+  if (!match) {
+    throw new Error(`invalid target: ${value}`);
+  }
+  return {
+    repo: match[1],
+    number: Number(match[2]),
+    head: match[3],
+    key: `${match[1]}#${match[2]}`,
+  };
+}
+
+function parseArgs(argv) {
+  const options = {
+    targets: [],
+    deadlineSeconds: DEFAULT_DEADLINE_SECONDS,
+    intervalMs: DEFAULT_INTERVAL_MS,
+    maxIntervalMs: DEFAULT_MAX_INTERVAL_MS,
+  };
+  for (let index = 0; index < argv.length; index += 1) {
+    const option = argv[index];
+    if (option === '--help' || option === '-h') {
+      options.help = true;
+      continue;
+    }
+    const value = argv[index + 1];
+    if (value === undefined) {
+      throw new Error(`${option} needs a value`);
+    }
+    index += 1;
+    if (option === '--target') {
+      options.targets.push(parseTarget(value));
+    } else if (option === '--deadline-seconds') {
+      options.deadlineSeconds = parsePositiveInteger(value, option, true);
+    } else if (option === '--interval-ms') {
+      options.intervalMs = parsePositiveInteger(value, option);
+    } else if (option === '--max-interval-ms') {
+      options.maxIntervalMs = parsePositiveInteger(value, option);
+    } else {
+      throw new Error(`unknown option: ${option}`);
+    }
+  }
+  if (!options.help && options.targets.length === 0) {
+    throw new Error('at least one --target is required');
+  }
+  if (options.intervalMs > options.maxIntervalMs) {
+    throw new Error('--interval-ms cannot exceed --max-interval-ms');
+  }
+  const keys = new Set();
+  for (const target of options.targets) {
+    if (keys.has(target.key)) {
+      throw new Error(`duplicate target: ${target.key}`);
+    }
+    keys.add(target.key);
+  }
+  return options;
+}
+
+function backoffDelay(attempt, intervalMs, maxIntervalMs) {
+  return Math.min(intervalMs * (2 ** attempt), maxIntervalMs);
+}
+
+function runGh(
+  args,
+  ghBin = process.env.AGENT_WATCH_GH_BIN || 'gh',
+  options = {},
+) {
+  return new Promise((resolve) => {
+    execFile(ghBin, args, {
+      maxBuffer: 64 * 1024 * 1024,
+      signal: options.signal,
+      timeout: options.timeoutMs,
+    },
+      (error, stdout, stderr) => {
+        resolve({
+          code: error ? (error.code ?? 1) : 0,
+          signal: error?.signal ?? null,
+          stdout,
+          stderr,
+          invocation: [ghBin, ...args],
+          timedOut: Boolean(error?.killed && error?.signal === 'SIGTERM'),
+        });
+      });
+  });
+}
+
+function commandFailure(result) {
+  const detail = [result.stderr, result.stdout].filter(Boolean).join('\n').trim();
+  const normalized = detail.toLowerCase();
+  let reason = result.timedOut ? 'query_timeout' : 'query_error';
+  if (!result.timedOut && /auth|login|token|credential/.test(normalized)) {
+    reason = 'authentication_error';
+  } else if (!result.timedOut && /forbidden|permission|resource not accessible|denied/.test(normalized)) {
+    reason = 'permission_error';
+  }
+  return {
+    status: 'blocked',
+    reason,
+    detail: detail || `gh exited with status ${result.code}`,
+    command: result.invocation,
+    exitCode: result.code,
+    signal: result.signal,
+  };
+}
+
+function parseJson(result, expected, allowedExitCodes = [0]) {
+  if (result.deadlineExceeded) {
+    return {
+      error: { status: 'blocked', reason: 'deadline_exceeded' },
+    };
+  }
+  if (!allowedExitCodes.includes(result.code)) {
+    return { error: commandFailure(result) };
+  }
+  try {
+    const value = JSON.parse(result.stdout);
+    if (expected === 'array' && !Array.isArray(value)) {
+      throw new Error('expected an array');
+    }
+    if (expected === 'object' && (value === null || Array.isArray(value) || typeof value !== 'object')) {
+      throw new Error('expected an object');
+    }
+    return { value };
+  } catch (error) {
+    if (result.code !== 0) {
+      return { error: commandFailure(result) };
+    }
+    return {
+      error: {
+        status: 'blocked',
+        reason: 'invalid_response',
+        detail: `${error.message}; stdout: ${result.stdout}; stderr: ${result.stderr}`,
+        command: result.invocation,
+        exitCode: result.code,
+      },
+    };
+  }
+}
+
+function normalizeChecks(checks) {
+  return checks.map((check) => ({
+    name: check.name ?? null,
+    state: check.state ?? null,
+    bucket: check.bucket ?? null,
+    description: check.description ?? null,
+    link: check.link ?? null,
+    workflow: check.workflow ?? null,
+    event: check.event ?? null,
+  })).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+}
+
+function classify(target, view, checks) {
+  if (typeof view.headRefOid !== 'string' || typeof view.state !== 'string') {
+    return { status: 'blocked', reason: 'missing_pull_request_data', view };
+  }
+  if (view.headRefOid !== target.head) {
+    return {
+      status: 'blocked',
+      reason: 'head_changed',
+      expectedHead: target.head,
+      observedHead: view.headRefOid,
+      url: view.url ?? null,
+    };
+  }
+  if (view.state === 'MERGED' || view.mergedAt) {
+    return { status: 'complete', reason: 'merged', url: view.url ?? null };
+  }
+  if (view.state === 'CLOSED' || view.closed) {
+    return { status: 'blocked', reason: 'closed', url: view.url ?? null };
+  }
+  if (view.state !== 'OPEN') {
+    return { status: 'blocked', reason: 'unknown_pull_request_state', state: view.state };
+  }
+  if (!Array.isArray(checks)) {
+    return { status: 'blocked', reason: 'missing_check_data' };
+  }
+  const normalizedChecks = normalizeChecks(checks);
+  if (normalizedChecks.length === 0) {
+    return { status: 'blocked', reason: 'no_required_checks', checks: [] };
+  }
+  const incomplete = normalizedChecks.find((check) => !check.name || !check.state || !check.bucket);
+  if (incomplete) {
+    return { status: 'blocked', reason: 'missing_check_data', checks: normalizedChecks };
+  }
+  const failed = normalizedChecks.filter((check) => ['fail', 'cancel'].includes(check.bucket));
+  if (failed.length > 0) {
+    return {
+      status: 'blocked',
+      reason: failed.some((check) => check.bucket === 'cancel')
+        ? 'check_cancelled'
+        : 'check_failed',
+      checks: normalizedChecks,
+    };
+  }
+  const unknown = normalizedChecks.filter(
+    (check) => !['pass', 'pending', 'skipping'].includes(check.bucket),
+  );
+  if (unknown.length > 0) {
+    return { status: 'blocked', reason: 'unknown_check_state', checks: normalizedChecks };
+  }
+  const pending = normalizedChecks.filter((check) => check.bucket === 'pending');
+  if (pending.length > 0) {
+    return { status: 'pending', reason: 'checks_pending', checks: normalizedChecks };
+  }
+  return { status: 'complete', reason: 'required_checks_passed', checks: normalizedChecks };
+}
+
+async function snapshot(target, gh = runGh) {
+  const viewResult = await gh([
+    'pr', 'view', String(target.number), '--repo', target.repo,
+    '--json', VIEW_FIELDS,
+  ]);
+  const parsedView = parseJson(viewResult, 'object');
+  if (parsedView.error) {
+    return parsedView.error;
+  }
+  const view = parsedView.value;
+  if (view.headRefOid !== target.head || view.state !== 'OPEN' || view.closed || view.mergedAt) {
+    return classify(target, view);
+  }
+  const checksResult = await gh([
+    'pr', 'checks', String(target.number), '--repo', target.repo, '--required',
+    '--json', CHECK_FIELDS,
+  ]);
+  // `gh pr checks` returns 1 for failed checks and 8 for pending checks while
+  // still writing valid JSON. Other gh commands keep their strict exit status.
+  const parsedChecks = parseJson(checksResult, 'array', [0, 1, 8]);
+  if (parsedChecks.error) {
+    return parsedChecks.error;
+  }
+  const state = classify(target, view, parsedChecks.value);
+  if (state.status !== 'complete') {
+    return state;
+  }
+
+  const finalViewResult = await gh([
+    'pr', 'view', String(target.number), '--repo', target.repo,
+    '--json', VIEW_FIELDS,
+  ]);
+  const parsedFinalView = parseJson(finalViewResult, 'object');
+  if (parsedFinalView.error) {
+    return parsedFinalView.error;
+  }
+  return classify(target, parsedFinalView.value, parsedChecks.value);
+}
+
+function stableState(state) {
+  return JSON.stringify(state);
+}
+
+function writeEvent(event) {
+  process.stdout.write(`${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`);
+}
+
+function sleep(milliseconds, signalState) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, milliseconds);
+    signalState.wake = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+  });
+}
+
+async function watch(options) {
+  const startedAt = Date.now();
+  const deadlineAt = startedAt + (options.deadlineSeconds * 1000);
+  const prior = new Map();
+  const results = new Map();
+  const active = new Map(options.targets.map((target) => [target.key, target]));
+  const signalState = { signal: null, wake: null };
+  const controller = new AbortController();
+  let finalized = false;
+  let attempt = 0;
+
+  const onSignal = (signal) => {
+    signalState.signal = signal;
+    controller.abort();
+    signalState.wake?.();
+  };
+  process.once('SIGINT', onSignal);
+  process.once('SIGTERM', onSignal);
+
+  const finish = (reason, exitCode) => {
+    if (finalized) return exitCode;
+    finalized = true;
+    for (const target of active.values()) {
+      results.set(target.key, prior.get(target.key) ?? {
+        status: 'blocked', reason,
+      });
+    }
+    writeEvent({
+      event: 'final',
+      reason,
+      results: options.targets.map((target) => ({ target: target.key, ...results.get(target.key) })),
+    });
+    return exitCode;
+  };
+
+  while (active.size > 0) {
+    if (signalState.signal) {
+      return finish('cancelled', signalState.signal === 'SIGINT' ? 130 : 143);
+    }
+    if (Date.now() >= deadlineAt) {
+      return finish('deadline_exceeded', 124);
+    }
+
+    let foundBlocker = false;
+    let deadlineHit = false;
+    for (const [key, target] of active) {
+      const state = await snapshot(target, async (args) => {
+        const remainingMs = deadlineAt - Date.now();
+        if (remainingMs <= 0) {
+          return { deadlineExceeded: true };
+        }
+        const result = await runGh(args, undefined, {
+          signal: controller.signal,
+          timeoutMs: Math.max(1, Math.min(30_000, remainingMs)),
+        });
+        if (result.timedOut && Date.now() >= deadlineAt) {
+          return { deadlineExceeded: true };
+        }
+        return result;
+      });
+      if (signalState.signal) break;
+      if (state.reason === 'deadline_exceeded') {
+        deadlineHit = true;
+        break;
+      }
+      const previous = prior.get(key);
+      if (!previous || stableState(previous) !== stableState(state)) {
+        writeEvent({ event: previous ? 'change' : 'initial', target: key, ...state });
+        prior.set(key, state);
+      }
+      if (state.status === 'complete') {
+        results.set(key, state);
+        active.delete(key);
+      } else if (state.status === 'blocked') {
+        results.set(key, state);
+        foundBlocker = true;
+      }
+    }
+
+    if (signalState.signal) {
+      return finish('cancelled', signalState.signal === 'SIGINT' ? 130 : 143);
+    }
+    if (deadlineHit) {
+      return finish('deadline_exceeded', 124);
+    }
+
+    if (foundBlocker) {
+      return finish('action_required', 2);
+    }
+    if (active.size === 0) {
+      return finish('checks_complete', 0);
+    }
+
+    const remaining = deadlineAt - Date.now();
+    const delay = Math.min(
+      backoffDelay(attempt, options.intervalMs, options.maxIntervalMs),
+      remaining,
+    );
+    attempt += 1;
+    await sleep(delay, signalState);
+  }
+  return finish('checks_complete', 0);
+}
+
+async function main(argv) {
+  let options;
+  try {
+    options = parseArgs(argv);
+  } catch (error) {
+    process.stderr.write(`${error.message}\n${usage()}\n`);
+    return 64;
+  }
+  if (options.help) {
+    process.stdout.write(`${usage()}\n`);
+    return 0;
+  }
+  return watch(options);
+}
+
+if (require.main === module) {
+  main(process.argv.slice(2)).then((code) => {
+    process.exitCode = code;
+  }).catch((error) => {
+    process.stderr.write(`${error.stack || error.message}\n`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { backoffDelay, classify, parseArgs, snapshot };

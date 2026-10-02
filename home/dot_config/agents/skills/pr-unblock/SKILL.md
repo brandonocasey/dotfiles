@@ -171,21 +171,29 @@ failure, the cause, and the fix the author needs.
 
 ## Watch while CI runs
 
-When checks are pending, load the `sub-agents` skill and start one `cheap`
-background watcher per repository. Give it the pull request numbers, head SHAs,
-and URLs. It must:
+When checks are pending, run one deterministic watcher for all selected pull
+requests. Pin each observed head SHA:
 
-- use read-only `gh pr view` and `gh pr checks` snapshots;
-- report only state changes, new failures, merges, closures, or permission
-  errors, and reject results for a head SHA it was not given;
-- stop when every tracked pull request is passing or merged or closed, or when
-  it finds a new blocker that needs the main session;
-- never push, rerun checks, post reviews or comments, change pull request
-  state, or merge.
+```sh
+agent-watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
+```
 
-Do not poll the same pull request in the main session while the watcher runs.
-When the watcher reports a new failure or a branch that fell behind, apply the
-rebase and fix sections under the standing authorization.
+Repeat `--target` for more pull requests. Monitor that one process through the
+harness completion or Monitor mechanism and capture its complete output. Do
+not poll the same pull requests separately. Use a `cheap` background agent only
+when the process must remain monitored across turns; the agent runs and reports
+the process output without issuing its own GitHub polls.
+
+The watcher uses read-only `gh` queries and rejects a changed head SHA. It
+reports the initial state, state changes, and one final result. It stops on
+check success, merge, close, head change, failure, missing data, permission
+error, cancellation, or deadline. It never pushes, retries, comments, changes
+pull request state, or merges. `required_checks_passed` describes check state
+only; apply the full passing criteria in this skill.
+
+When the watcher reports `action_required`, inspect the reported state in the
+main session and apply the rebase and fix sections under the standing
+authorization. Start a new watcher with the refreshed head SHA after a mutation.
 
 ## Clean up task resources
 

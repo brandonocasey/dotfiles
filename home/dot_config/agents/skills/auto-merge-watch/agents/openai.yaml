@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auto-merge watch"
+  short_description: "Watch and unblock auto-merge pull requests"
+  default_prompt: "Use $auto-merge-watch to watch my auto-merge pull requests until they merge or need action."

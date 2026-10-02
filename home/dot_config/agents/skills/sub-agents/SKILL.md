@@ -46,6 +46,7 @@ Do not retain an expensive role solely for its cache.
 ## Prompts
 
 - Include the task, exact files or targets, and acceptance criteria. Do not rely on unpassed conversation context.
+- Use fresh context for independent tasks. Pass only required evidence; inherit the full conversation only when the assignment needs it.
 - Give independent reviewers only the context permitted by the `review` skill.
 - Claude Code `cheap` skips rules files (`omitClaudeMd`). Include every rule it needs and name every output path.
 - Request raw results: data, findings, and paths, not prose for the user.
@@ -59,8 +60,10 @@ Continue an existing agent for related follow-up work when the harness supports 
 ## Monitoring
 
 For a command this session started, use the harness's completion notice or monitor tool when available.
-For other targets (CI, deployments, remote logs), spawn a `cheap` background watcher.
-It returns only the outcome and relevant details. The main session continues other work or ends its turn.
+For external targets, prefer a deterministic watcher such as `agent-watch`.
+Start it once and use the harness's completion notice or monitor tool.
+Use a `cheap` agent when the harness cannot monitor the process or interpretation is needed.
+It runs the watcher once and reports the outcome and relevant details.
 It never polls the same target itself.
 
 Never watch an MR/PR or pipeline for success unless the user asks; `pr-unblock` counts as that request.
