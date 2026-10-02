@@ -40,16 +40,10 @@ managed=$(
       "Bash(jira-api GET *)",
       "Bash(jira-api POST *)",
       "Bash(jira-api PUT *)",
-      "Bash(JIRA_EMAIL=* jira-api GET *)",
-      "Bash(JIRA_EMAIL=* jira-api POST *)",
-      "Bash(JIRA_EMAIL=* jira-api PUT *)",
       "mcp__claude_ai_Atlassian__createJiraIssue",
       "mcp__claude_ai_Atlassian__editJiraIssue",
       "mcp__claude_ai_Atlassian__transitionJiraIssue",
-      "Bash(git worktree remove /*.worktrees/*)",
-      "Bash(git -C * worktree remove /*.worktrees/*)",
-      "Bash(git worktree prune*)",
-      "Bash(git -C * worktree prune*)"
+      "Bash(git worktree prune*)"
     ],
     "ask": [],
     "deny": [
