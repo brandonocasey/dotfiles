@@ -2,8 +2,8 @@
 disable-model-invocation: true
 name: pr-unblock
 description: >
-  Get open GitHub pull requests green or merged: rebase, fix failing checks,
-  and watch CI. Use to babysit or unblock PRs. Not for creating PRs or review.
+  Get open GitHub PRs or GitLab MRs green or merged: rebase, fix failing
+  checks, and watch CI. Use to babysit or unblock them. Not for creation or review.
 ---
 
 # Unblock pull requests
@@ -12,7 +12,8 @@ Get every selected open pull request to a passing state, or report its exact
 blocker and next action. A pull request is passing when it is not a draft, is
 up to date with its base, passes every required check, and has no unresolved
 conflict. Process every pull request independently. One blocked pull request
-must not stop work on the others.
+must not stop work on the others. On GitLab, "pull request" means merge request
+(MR); use the [GitLab path](#gitlab-path) commands in place of `gh`.
 
 The user has authorized unattended operation for this skill. Do not pause for
 confirmation before an action inside the safe scope below. If the user narrows
@@ -27,12 +28,13 @@ default; filters combine with AND.
 | Argument | Selection |
 | --- | --- |
 | none | `--author @me` |
-| `auto-merge` | pull requests with `autoMergeRequest` set; author default still applies |
+| `auto-merge` | pull requests with `autoMergeRequest` set (GitLab: `merge_when_pipeline_succeeds`); author default still applies |
 | `all` | drop the author default |
-| `--author LOGIN`, `--assignee`, `--label`, `--base`, `--head`, `--search` | passed to `gh pr list`; `--author` replaces the default |
-| `12 #34 https://github.com/O/R/pull/56 feature/x` | exactly these pull requests by number, URL, or head branch |
+| `--author LOGIN`, `--assignee`, `--label`, `--base`, `--head`, `--search` | passed to `gh pr list` (GitLab: see [GitLab path](#gitlab-path)); `--author` replaces the default |
+| `12 #34 !56 https://github.com/O/R/pull/56 https://gitlab.com/G/P/-/merge_requests/7 feature/x` | exactly these pull requests by number, URL, or head branch |
 | `--repo OWNER/REPO` | another repository; URLs set their own repository |
 | `merge` | also merge pull requests that reach the passing state without auto-merge |
+| `approve` | also approve each listed passing pull request as the user; needs explicit numbers or URLs, refuse it with `all` or filters |
 | `report`, `status` | read-only |
 
 Run a fresh inventory at the start of every turn. Do not rely on a list from a
@@ -46,9 +48,10 @@ gh pr list --state open --limit 100 --author @me --json number,title,url,headRef
 ```
 
 Replace `--author @me` with the parsed filters. If the list reaches its limit,
-raise the limit until the inventory is complete. If the remote is not GitHub,
-stop and report that this skill supports GitHub pull requests only. If the
-selection is empty, report that and stop.
+raise the limit until the inventory is complete. On a GitLab remote, use the
+[GitLab path](#gitlab-path) commands. On any other remote, stop before any
+mutation and name the unsupported platform. If the selection is empty, report
+that and stop.
 
 For each pull request record the number, URL, author, head branch, head SHA,
 base branch, draft state, auto-merge method, merge state, review decision, and
@@ -69,7 +72,9 @@ head SHA makes earlier check results stale.
   from `gh api user` and the head repository is the current repository. Only
   these branches may be rewritten. Never force-push another author's branch,
   and never force-push without `--force-with-lease=BRANCH:OBSERVED_SHA`.
-- Do not approve, dismiss, or request reviews, mark a draft ready, close a
+- Approve only when the invocation includes `approve`. Report a policy error
+  from the approve call as-is; do not retry or bypass it.
+- Do not dismiss or request reviews, mark a draft ready, close a
   pull request, delete a remote branch, disable auto-merge, change branch
   protection, or bypass required checks. Do not push to a fork-owned branch.
   Report those blockers with the exact owner and next action.
@@ -176,17 +181,19 @@ requests. Pin each observed head SHA:
 
 ```sh
 agent-watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
+agent-watch --target 'GROUP/PROJECT!IID@HEAD_SHA' --deadline-seconds 3600
 ```
 
-Repeat `--target` for more pull requests. Monitor that one process through the
+Use the second form for GitLab; quote it because shells expand `!`. Repeat
+`--target` for more pull requests. Monitor that one process through the
 harness completion or Monitor mechanism and capture its complete output. Do
 not poll the same pull requests separately. Use a `cheap` background agent only
 when the process must remain monitored across turns; the agent runs and reports
-the process output without issuing its own GitHub polls.
+the process output without issuing its own GitHub or GitLab polls.
 
-The watcher uses read-only `gh` queries and rejects a changed head SHA. It
-reports the initial state, state changes, and one final result. It stops on
-check success, merge, close, head change, failure, missing data, permission
+The watcher uses read-only `gh` or `glab` queries and rejects a changed head
+SHA. It reports the initial state, state changes, and one final result. It stops
+on check success, merge, close, head change, failure, missing data, permission
 error, cancellation, or deadline. It never pushes, retries, comments, changes
 pull request state, or merges. `required_checks_passed` describes check state
 only; apply the full passing criteria in this skill.
@@ -194,6 +201,47 @@ only; apply the full passing criteria in this skill.
 When the watcher reports `action_required`, inspect the reported state in the
 main session and apply the rebase and fix sections under the standing
 authorization. Start a new watcher with the refreshed head SHA after a mutation.
+
+## GitLab path
+
+Run these commands in the MR's repository. Prefix `GITLAB_HOST=HOST` for a
+self-hosted GitLab. Verify flags with `glab <command> --help` before use.
+
+| Need | Command |
+| --- | --- |
+| User login | `glab api user \| jq -r .username` |
+| Inventory | `glab mr list --author=@me -F json -P 100 -p 1`; `all` drops `--author`. GitLab caps a page at 100: fetch `-p 2`, `-p 3`, and on until a page has fewer than 100 rows |
+| Filters | `--base` is `--target-branch`, `--head` is `--source-branch`, `--repo` is `-R`; `--assignee`, `--label`, `--search` pass unchanged |
+| MR state | `glab mr view N -F json` |
+| Unresolved threads | `glab mr view N --unresolved` |
+| Failed jobs | `glab ci get --pipeline-id PIPELINE_ID --with-job-details -F json` |
+| Job log | `glab ci trace JOB_ID` |
+| One retry | `glab ci retry JOB_ID` |
+
+Map the `glab mr view` JSON to the blockers above:
+
+- Head SHA is `sha`. Auto-merge is set when `merge_when_pipeline_succeeds` is
+  true. Fork state: `source_project_id` differs from `target_project_id`.
+  `squash_on_merge` true means the merge method is squash.
+- A branch is the user's own when `author.username` equals the login and the
+  MR is not from a fork.
+- `has_conflicts` is true, or `detailed_merge_status` is `need_rebase` or
+  `conflict`: rebase or update the branch.
+- `head_pipeline.status` is `created`, `pending`, or `running`: wait.
+- `head_pipeline.status` is `failed`: read each failed job's full log. Fix or
+  retry per [Fix failing checks](#fix-failing-checks), with `glab ci trace` and
+  `glab ci retry` in place of the `gh run` commands.
+- `detailed_merge_status` is `not_approved` or `requested_changes`: a review
+  blocker. `draft` true or `draft_status`: a draft blocker.
+  `discussions_not_resolved`: an unresolved-thread blocker.
+- `ci_must_pass` or `ci_still_running`: apply the pipeline rules above.
+- `checking`, `unchecked`, `preparing`, or `approvals_syncing`: wait and refresh
+  the MR state.
+- Any other status except `mergeable`: report the exact status and its owner.
+
+GitLab has no merge-update command for another author's branch, and
+`glab mr rebase` rewrites it. Report a stale or conflicting branch to its
+author.
 
 ## Clean up task resources
 
@@ -221,8 +269,17 @@ the configured merge method or the repository default, passed as its flag:
 `merge`, `squash`, or `rebase`. Outside a merge queue, `gh` refuses a
 non-interactive merge without a method flag. Never use `--admin` or
 `--delete-branch`. Do not merge a pull request that still has a review,
-required check, conflict, queue, policy, or permission blocker. Without
-`merge` or auto-merge, a passing pull request is complete; report it as ready.
+required check, conflict, queue, policy, or permission blocker.
+
+On GitLab, merge with the GitLab command in ship's
+[merge reference](../ship/references/merge.md#enable-auto-merge) and
+`--sha HEAD_SHA`. Never pass `--auto-merge=false`.
+
+With `approve`, approve a pull request only when approval is its last blocker.
+Use the commands and limits in the merge reference's
+[Approve](../ship/references/merge.md#approve) section. Then refresh it and
+run the preflight. Without `merge` or auto-merge, a passing pull request is
+complete; report it as ready.
 
 End with one line per pull request: number, URL, author, state, head SHA,
 blocker or completed action, and next step. State clearly when the skill is

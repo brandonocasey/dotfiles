@@ -1,9 +1,9 @@
 ---
 name: auto-merge-watch
 description: >
-  Watch and unblock existing GitHub auto-merge pull requests until merged or
-  blocked. Use for autonomous monitoring or repair requests, not new PR
-  creation or general review.
+  Watch and unblock existing GitHub auto-merge PRs or GitLab auto-merge MRs
+  until merged or blocked. Use for autonomous monitoring or repair requests,
+  not new PR creation or general review.
 ---
 
 # Auto-merge watch
@@ -13,16 +13,25 @@ next action. The user authorizes read-only inspection, the smallest root-cause
 fix, required local checks, one normal push, one eligible CI retry, a normal
 branch update, and a manual merge after a clean preflight. Do not approve,
 dismiss reviews, mark drafts ready, change branch policy, force-push, close pull
-requests, delete branches, or push to forks.
+requests, delete branches, or push to forks. On GitLab, "pull request" means
+merge request (MR). On any other platform, stop before any mutation and name
+the unsupported platform.
 
-Inventory open pull requests with `gh pr list`. Keep entries with a non-null
-`autoMergeRequest`. Record the repository, number, URL, head SHA, author, fork
-state, draft state, merge state, reviews, and required checks. Refresh this
+Inventory open pull requests by any author, unless the caller limits the
+scope. On GitHub, use `gh pr list` and keep entries with a non-null
+`autoMergeRequest`. On GitLab, use `glab mr list -F json -P 100 -p 1` and fetch
+the next pages until one has fewer than 100 rows. Keep entries with
+`merge_when_pipeline_succeeds` true, and read each with `glab mr view N -F json`. Prefix `GITLAB_HOST=HOST` for a self-hosted GitLab.
+Map its fields with the
+[pr-unblock GitLab path](../pr-unblock/SKILL.md#gitlab-path). Record the
+repository, number, URL, head SHA, author, fork state, draft state, merge
+state, reviews, and required checks. Refresh this
 record after each mutation. A new head SHA invalidates earlier check results.
 
 Diagnose the first blocker. Update a stale branch normally. For a failed check,
 read its complete log and distinguish a code failure from a proven service or
-runner failure. Retry a failed infrastructure run once. For a code failure on
+runner failure. Retry a failed infrastructure run once: `gh run rerun RUN_ID
+--failed` or `glab ci retry JOB_ID`. For a code failure on
 the user's non-fork branch, use the repository worktree, code, commit, and push
 rules to make and test the smallest root-cause fix. Report review, draft,
 policy, permission, conflict, fork, and ambiguous blockers to their owner.
@@ -34,13 +43,15 @@ head SHA:
 
 ```sh
 agent-watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
+agent-watch --target 'GROUP/PROJECT!IID@HEAD_SHA' --deadline-seconds 3600
 ```
 
-Repeat `--target` for more pull requests. Monitor that one process through the
+Use the second form for GitLab; quote it because shells expand `!`. Repeat
+`--target` for more pull requests. Monitor that one process through the
 harness completion or Monitor mechanism and capture its complete output. Do
 not poll the same pull requests separately. Use a `cheap` background agent only
 when the process must remain monitored across turns; the agent runs and reports
-the process output without issuing its own GitHub polls.
+the process output without issuing its own GitHub or GitLab polls.
 
 The watcher makes read-only queries. It stops on check success, merge, close,
 head change, failure, missing data, permission error, cancellation, or deadline.
@@ -55,7 +66,10 @@ change pull request state.
 Let enabled auto-merge finish. Before any manual merge, check that the pull
 request is open, not a draft, mergeable, approved, and passing every required
 check at the recorded head SHA. Use its configured method and
-`--match-head-commit HEAD_SHA`. Never use `--admin` or `--delete-branch`.
+`--match-head-commit HEAD_SHA`. Never use `--admin` or `--delete-branch`. On
+GitLab, use the GitLab command in ship's
+[merge reference](../ship/references/merge.md#enable-auto-merge) with
+`--sha HEAD_SHA`. Never pass `--auto-merge=false`.
 
 Report one line per pull request with its URL, author, head SHA, state, blocker
 or completed action, and next step. Include check-run URLs when available.
