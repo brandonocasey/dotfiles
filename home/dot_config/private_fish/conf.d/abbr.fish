@@ -19,6 +19,8 @@ abbr --add gl git log
 
 abbr --add l ls
 abbr --add g git
+abbr --add cc claude-two
+abbr --add cx codex
 
 # Vim misspellings
 abbr --add vim $EDITOR
