@@ -207,9 +207,9 @@ function page(config, token, revision) {
 @media (prefers-color-scheme:dark){:root{--bg:#121417;--card:#1c1f24;--ink:#eceff3;--muted:#a4abb6;--line:#343a44;--accent:#5aa2e0;--accent-ink:#0b1622;--soft:#1d2a38}}
 *{box-sizing:border-box}body{margin:0;font:16px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
 main{max-width:1180px;margin:auto;padding:16px 16px 96px}h1{margin:0 0 12px;font-size:1.35rem}
-.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;padding:0;list-style:none}
+nav{position:sticky;top:0;z-index:2;margin:0 -16px 8px;padding:8px 16px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.question{scroll-margin-top:72px;padding:20px 0 28px;border-bottom:1px solid var(--line)}.question.missing h2{color:#b3261e}
 .steps button{display:flex;gap:6px;align-items:center;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
-.steps button[aria-current=step]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.steps button[aria-current=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
 .steps .done::after{content:"\\2713";font-weight:800}
 h2{margin:0;font-size:1.25rem}.prompt{margin:4px 0 2px;color:var(--muted)}.hint{margin:0 0 14px;font-size:.9rem;color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -236,8 +236,10 @@ dialog{width:min(96vw,1400px);height:min(94vh,1100px);padding:0;border:0;border-
 @media (max-width:600px){.frame{height:240px}.bar{flex-wrap:wrap}.bar .status{flex-basis:100%;order:-1;text-align:center}}
 </style></head><body><main>
 <h1 id="title"></h1><button id="refresh" class="btn" hidden>New options are available. Load them (keeps your picks)</button>
-<ol class="steps" id="steps"></ol><section id="step" aria-live="polite"></section></main>
-<div class="bar"><button class="btn secondary" id="back">Back</button><span class="status" id="status" role="status"></span><button class="btn" id="next">Next</button></div>
+<nav aria-label="Questions"><ol class="steps" id="steps"></ol></nav><div id="sections"></div>
+<section class="question" id="finish"><h2>Submit</h2><label class="notes" for="general-notes">General notes (optional)</label><textarea id="general-notes" maxlength="4000"></textarea>
+<p><button class="btn secondary" id="more" type="button">Ask for more options instead</button></p></section></main>
+<div class="bar"><span class="status" id="status" role="status"></span><button class="btn" id="submit">Submit answers</button></div>
 <dialog id="viewer"><div class="viewer"><header><strong id="viewer-title"></strong><button class="btn secondary" id="viewer-close">Close (Esc)</button></header><div class="stage" id="viewer-stage"></div>
 <footer><button class="btn secondary" id="viewer-prev">Previous</button><span style="flex:1"></span><button class="btn" id="viewer-pick">Select this</button><button class="btn secondary" id="viewer-next">Next</button></footer></div></dialog>
 <script>
@@ -247,7 +249,7 @@ const key='agent-preview:'+location.pathname;
 let saved={};try{saved=JSON.parse(store?.getItem(key)||'{}')||{}}catch(error){saved={}}
 const picks=new Map(Object.entries(saved.picks||{}).map(([q,ids])=>[q,new Set(ids)]));
 const notes=new Map(Object.entries(saved.notes||{}));
-let general=saved.general||'';let current=Math.min(saved.current||0,data.questions.length);let viewing=null;
+let general=saved.general||'';let current=Math.min(saved.current||0,data.questions.length-1);let viewing=null;
 const $=selector=>document.querySelector(selector);
 const persist=()=>{try{store?.setItem(key,JSON.stringify({picks:Object.fromEntries([...picks].map(([q,ids])=>[q,[...ids]])),notes:Object.fromEntries(notes),general,current}))}catch(error){}};
 const assetUrl=option=>'/asset/'+encodeURIComponent(option.id)+'?token='+encodeURIComponent(data.token);
@@ -255,49 +257,41 @@ const pickedFor=question=>picks.get(question.id)||new Set();
 const say=text=>{$('#status').textContent=text};
 function media(option){const node=document.createElement(option.kind==='html'?'iframe':'img');node.className='media';node.src=assetUrl(option);if(option.kind==='html'){node.setAttribute('sandbox','');node.title=option.label;node.tabIndex=-1}else node.alt=option.label;return node}
 function toggle(question,id,on){const set=new Set(pickedFor(question));if(question.select==='one'){set.clear();if(on)set.add(id)}else if(on)set.add(id);else set.delete(id);picks.set(question.id,set);persist();renderSteps()}
-function renderSteps(){const list=$('#steps');list.replaceChildren();const total=data.questions.length;
- [...data.questions,{id:'__review',title:'Review and submit'}].forEach((question,index)=>{const item=document.createElement('li');const button=document.createElement('button');button.type='button';
-  button.textContent=(index<total?(index+1)+'. ':'')+question.title;if(index<total&&pickedFor(question).size)button.className='done';if(index===current)button.setAttribute('aria-current','step');
-  button.onclick=()=>go(index);item.append(button);list.append(item)});
- $('#back').disabled=current===0;$('#next').textContent=current<total-1?'Next question':current===total-1?'Review answers':'Submit answers'}
-function renderQuestion(question){const section=$('#step');section.replaceChildren();
- const heading=document.createElement('h2');heading.textContent=question.title;section.append(heading);
+function renderSteps(){const list=$('#steps');list.replaceChildren();let answered=0;
+ data.questions.forEach((question,index)=>{const item=document.createElement('li');const button=document.createElement('button');button.type='button';button.textContent=(index+1)+'. '+question.title;
+  if(pickedFor(question).size){button.className='done';answered+=1}if(index===current)button.setAttribute('aria-current','true');
+  button.onclick=()=>{current=index;persist();document.getElementById('q-'+question.id)?.scrollIntoView({behavior:'smooth'})};item.append(button);list.append(item)});
+ say(answered+' of '+data.questions.length+' answered')}
+function renderQuestion(question,index){const section=document.createElement('section');section.className='question';section.id='q-'+question.id;
+ const heading=document.createElement('h2');heading.textContent=(index+1)+'. '+question.title;section.append(heading);
  if(question.prompt){const prompt=document.createElement('p');prompt.className='prompt';prompt.textContent=question.prompt;section.append(prompt)}
- const hint=document.createElement('p');hint.className='hint';hint.textContent=(question.select==='one'?'Pick one.':'Pick any that fit.')+' Click a card to select it. Use View larger to inspect it without leaving this page.';section.append(hint);
+ const hint=document.createElement('p');hint.className='hint';hint.textContent=(question.select==='one'?'Pick one.':'Pick any that fit.')+' Click a card to select it. View larger opens it on this page.';section.append(hint);
  const grid=document.createElement('div');grid.className='grid';const chosen=pickedFor(question);
- question.options.forEach((option,index)=>{const card=document.createElement('label');card.className='card';
+ question.options.forEach((option,optionIndex)=>{const card=document.createElement('label');card.className='card';
   const frame=document.createElement('div');frame.className='frame';const shield=document.createElement('span');shield.className='shield';
-  const expand=document.createElement('button');expand.type='button';expand.className='expand';expand.textContent='View larger';expand.onclick=event=>{event.preventDefault();event.stopPropagation();openViewer(question,index)};
+  const expand=document.createElement('button');expand.type='button';expand.className='expand';expand.textContent='View larger';expand.onclick=event=>{event.preventDefault();event.stopPropagation();openViewer(question,optionIndex)};
   frame.append(media(option),shield,expand);
   const pick=document.createElement('span');pick.className='pick';const input=document.createElement('input');input.type=question.select==='one'?'radio':'checkbox';input.id='pick-'+option.id;card.htmlFor=input.id;input.name='q-'+question.id;input.value=option.id;input.checked=chosen.has(option.id);
-  input.onchange=()=>toggle(question,option.id,input.checked);pick.append(input,document.createTextNode(option.label));
+  input.onchange=()=>{toggle(question,option.id,input.checked);section.classList.remove('missing')};pick.append(input,document.createTextNode(option.label));
   card.append(frame,pick);if(option.description){const desc=document.createElement('p');desc.className='desc';desc.textContent=option.description;card.append(desc)}grid.append(card)});
  section.append(grid);
- const label=document.createElement('label');label.className='notes';label.htmlFor='question-notes';label.textContent='Notes for this question (optional)';
- const area=document.createElement('textarea');area.id='question-notes';area.maxLength=4000;area.value=notes.get(question.id)||'';area.oninput=()=>{notes.set(question.id,area.value);persist()};section.append(label,area)}
-function renderReview(){const section=$('#step');section.replaceChildren();const heading=document.createElement('h2');heading.textContent='Review and submit';section.append(heading);
- const list=document.createElement('ol');list.className='review';
- data.questions.forEach((question,index)=>{const item=document.createElement('li');const title=document.createElement('strong');title.textContent=(index+1)+'. '+question.title;
-  const chosen=question.options.filter(option=>pickedFor(question).has(option.id));const answer=document.createElement('div');
-  if(chosen.length)answer.textContent=chosen.map(option=>option.label).join(', ');else{answer.className='missing';answer.textContent='No answer yet'}
-  const edit=document.createElement('button');edit.type='button';edit.className='btn secondary';edit.textContent='Change';edit.onclick=()=>go(index);
-  item.append(title,answer);const note=notes.get(question.id);if(note){const noteNode=document.createElement('div');noteNode.className='desc';noteNode.textContent='Notes: '+note;item.append(noteNode)}item.append(edit);list.append(item)});
- section.append(list);const label=document.createElement('label');label.className='notes';label.htmlFor='general-notes';label.textContent='General notes (optional)';
- const area=document.createElement('textarea');area.id='general-notes';area.maxLength=4000;area.value=general;area.oninput=()=>{general=area.value;persist()};
- const more=document.createElement('button');more.type='button';more.className='btn secondary';more.textContent='Ask for more options instead';more.onclick=()=>submit('more');
- const actions=document.createElement('p');actions.append(more);section.append(label,area,actions)}
-function render(){document.title=data.title;$('#title').textContent=data.title;renderSteps();if(current<data.questions.length)renderQuestion(data.questions[current]);else renderReview()}
-function go(index){current=Math.max(0,Math.min(index,data.questions.length));persist();say('');render();window.scrollTo({top:0})}
+ const label=document.createElement('label');label.className='notes';label.htmlFor='notes-'+question.id;label.textContent='Notes for this question (optional)';
+ const area=document.createElement('textarea');area.id='notes-'+question.id;area.maxLength=4000;area.value=notes.get(question.id)||'';area.oninput=()=>{notes.set(question.id,area.value);persist()};section.append(label,area);return section}
+function render(){document.title=data.title;$('#title').textContent=data.title;$('#sections').replaceChildren(...data.questions.map(renderQuestion));$('#general-notes').value=general;renderSteps()}
+const watcher=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){const index=data.questions.findIndex(question=>'q-'+question.id===entry.target.id);if(index>=0&&index!==current){current=index;renderSteps()}}},{rootMargin:'-40% 0px -55% 0px'});
+const observe=()=>{watcher.disconnect();for(const node of document.querySelectorAll('#sections .question'))watcher.observe(node)};
 function openViewer(question,index){viewing={question,index};showViewer();$('#viewer').showModal()}
 function showViewer(){const {question,index}=viewing;const option=question.options[index];$('#viewer-title').textContent=question.title+': '+option.label+' ('+(index+1)+' of '+question.options.length+')';
  $('#viewer-stage').replaceChildren(media(option));const picked=pickedFor(question).has(option.id);$('#viewer-pick').textContent=picked?'Selected':'Select this';$('#viewer-pick').disabled=picked}
 function step(delta){const length=viewing.question.options.length;viewing.index=(viewing.index+delta+length)%length;showViewer()}
 $('#viewer-close').onclick=()=>$('#viewer').close();$('#viewer-prev').onclick=()=>step(-1);$('#viewer-next').onclick=()=>step(1);
-$('#viewer-pick').onclick=()=>{const option=viewing.question.options[viewing.index];toggle(viewing.question,option.id,true);showViewer();render()};
+$('#viewer-pick').onclick=()=>{const option=viewing.question.options[viewing.index];toggle(viewing.question,option.id,true);const input=document.getElementById('pick-'+option.id);if(input)input.checked=true;showViewer()};
 $('#viewer').addEventListener('click',event=>{if(event.target===$('#viewer'))$('#viewer').close()});
 $('#viewer').addEventListener('keydown',event=>{if(event.key==='ArrowLeft')step(-1);if(event.key==='ArrowRight')step(1)});
-$('#back').onclick=()=>go(current-1);
-$('#next').onclick=()=>{if(current<data.questions.length)go(current+1);else submit('select')};
+$('#general-notes').oninput=event=>{general=event.target.value;persist()};
+$('#more').onclick=()=>submit('more');
+$('#submit').onclick=()=>{const missing=data.questions.filter(question=>!pickedFor(question).size);for(const question of data.questions)document.getElementById('q-'+question.id)?.classList.toggle('missing',missing.includes(question));
+ if(missing.length){say('Answer '+missing.map(question=>question.title).join(', ')+' first, or use Ask for more options.');document.getElementById('q-'+missing[0].id)?.scrollIntoView({behavior:'smooth'});return}submit('select')};
 async function submit(action){const answers={};const ids=[];
  for(const question of data.questions){const chosen=[...pickedFor(question)].filter(id=>question.options.some(option=>option.id===id));const note=notes.get(question.id)||'';
   if(chosen.length||note){answers[question.id]={ids:chosen,notes:note};ids.push(...chosen)}}
@@ -308,8 +302,8 @@ async function submit(action){const answers={};const ids=[];
 const refresh=$('#refresh');const updates=new EventSource('/events?token='+encodeURIComponent(data.token));
 updates.onmessage=event=>{if(Number(event.data)>data.revision)refresh.hidden=false};
 refresh.onclick=async()=>{try{const response=await fetch('/config?token='+encodeURIComponent(data.token));if(!response.ok)throw new Error('config');data={...(await response.json()),token:data.token};
- current=Math.min(current,data.questions.length);refresh.hidden=true;render();say('Options updated.')}catch(error){say('Could not load new options. Try again.')}};
-render();
+ current=Math.min(current,data.questions.length-1);refresh.hidden=true;render();observe();say('Options updated.')}catch(error){say('Could not load new options. Try again.')}};
+render();observe();
 </script></body></html>`;
 }
 

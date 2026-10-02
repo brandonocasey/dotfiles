@@ -9,7 +9,7 @@ Use `agent-preview` when the user requests visual choices that benefit from a br
 
 ## Ask one decision per question
 
-Split the choices into separate questions, one decision each. The gallery shows one question at a time, with numbered steps, Back and Next buttons, and a review step before submit. Never mix two decisions in one question, and never ask the user to type option codes into notes.
+Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Never mix two decisions in one question, and never ask the user to type option codes into notes.
 
 - Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
 - Give each question a `prompt` that says what to decide.
@@ -71,7 +71,7 @@ If native file watchers are unavailable, the helper checks file metadata every
 
 ## Read the answers
 
-Each event carries `answers`, keyed by question ID, with the chosen option `ids` and that question's `notes`. The top-level `notes` holds the general notes from the review step. An event's `action` is `select` for submitted answers, or `more` when the user asks for more options.
+Each event carries `answers`, keyed by question ID, with the chosen option `ids` and that question's `notes`. The top-level `notes` holds the general notes from the Submit section. An event's `action` is `select` for submitted answers, or `more` when the user asks for more options.
 
 For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. The open gallery shows a button that loads the new options and keeps picks whose IDs remain. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
 
