@@ -43,8 +43,8 @@ Read the token from the command output. Share only `http://<lan-ip>:<port>/?toke
 Text written before a blocking tool call can stay hidden until the turn ends. So the user never sees a URL that is followed by a foreground wait. Show the URL first:
 
 1. Put the full gallery URL on its own line in a chat message. Repeat it in every later message about the gallery.
-2. If the harness can run a command in the background and notify you when it exits, start the wait there. Claude Code does this with `run_in_background`. Then end the turn with the URL as the last line. The exit notification starts your next turn.
-3. Without background commands, run the wait in the foreground only after the URL message has been sent.
+2. Always run the wait in the background; never run it in the foreground. In Claude Code, use `run_in_background`. Then end the turn with the URL as the last line. The exit notification starts your next turn.
+3. If the harness gives no exit notification, still start the wait in the background. Read its output at the start of each later turn.
 
 Start with cursor `0`, then pass the returned `cursor` as `--after`:
 
