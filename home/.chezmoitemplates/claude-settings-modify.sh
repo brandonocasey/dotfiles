@@ -135,7 +135,7 @@ managed=$(
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,
   "effortLevel": "medium",
-  "tui": "default",
+  "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
