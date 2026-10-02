@@ -15,6 +15,10 @@ description: >
 ## Tests & Lint
 
 - Run the lint, type checks, and tests needed for the change and all checks required by the repository. Fix failures without the user's intervention; do not dismiss them as "pre-existing". After a fix, rerun the affected checks. Once the required checks pass, repeat or broaden them only for a new change, failure, or unresolved concern.
+- For a bug fix, write or find a test that reproduces it. Run it before the fix and show that it fails. After the fix, show that it passes. If no test can reproduce the bug, show a manual reproduction before and after; for UI, follow `ui-verify`.
+- Make tests use a temporary HOME, XDG_* directories, database, and git repository. Tests never touch the user's real config, logs, or data. Put directories that you make by hand under the scratch path in [AGENTS.md](../../AGENTS.md). Test-config changes still need consent under [AGENTS.md](../../AGENTS.md).
+- Give each long test, build, or background run a time limit. When output stops for longer than one test file normally takes, stop the run and run the file that hangs alone.
+- When a change alters behavior, a command, a flag, a config key, or a default, update its tests and docs in the same change. Docs include README, `docs/`, man pages, shell completions, help text, and config schemas. If docs are generated, change the source and run the generator; never edit the generated output. In the recap, list the updated docs or write "Docs: none affected".
 
 ## Planning
 
@@ -24,7 +28,9 @@ description: >
 
 ## Code Quality
 
-- Choose the smallest solution that solves the problem, and prefer deletion. Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; then the minimum new code that works. Add a dependency only when it saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies.
+- Choose the smallest solution that solves the problem, and prefer deletion. Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; an established package or plugin for the job; then the minimum new code that works. Add a dependency only when it saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies.
+- In unreleased code, change every caller of a renamed or replaced API. Do not keep compat shims, legacy aliases, or deprecation paths unless the user asks.
+- Do not edit CHANGELOG files by hand unless the repository documents manual edits; release tooling writes them.
 - Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
 - Keep each piece of code small and single-purpose; break up components that grow too complex; reduce duplication
