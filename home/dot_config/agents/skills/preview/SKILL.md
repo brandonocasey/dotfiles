@@ -40,13 +40,19 @@ agent-preview serve --config "$config" --state-dir "$state_dir" --port "$port"
 
 Read the token from the command output. Share only `http://<lan-ip>:<port>/?token=<token>`. Validate that the URL, gallery, and exact option IDs render before sharing it.
 
-Keep the agent turn active and wait for browser feedback. Start with cursor `0`, then pass the returned `cursor` as `--after`:
+Text written before a blocking tool call can stay hidden until the turn ends. So the user never sees a URL that is followed by a foreground wait. Show the URL first:
+
+1. Put the full gallery URL on its own line in a chat message. Repeat it in every later message about the gallery.
+2. If the harness can run a command in the background and notify you when it exits, start the wait there. Claude Code does this with `run_in_background`. Then end the turn with the URL as the last line. The exit notification starts your next turn.
+3. Without background commands, run the wait in the foreground only after the URL message has been sent.
+
+Start with cursor `0`, then pass the returned `cursor` as `--after`:
 
 ```sh
 agent-preview wait --state-dir "$state_dir" --after 0 --timeout-seconds 900
 ```
 
-The wait returns JSON after a new submission. A timeout prints nothing and does not discard feedback. Run it again with the same cursor. Do not poll a model or ask the user to type that they submitted.
+The timeout only limits one wait call. The call returns as soon as a submission arrives. The wait returns JSON after a new submission. A timeout prints nothing and does not discard feedback. Run it again with the same cursor, in the same way, and show the URL again. Do not poll a model or ask the user to type that they submitted.
 If native file watchers are unavailable, the helper checks file metadata every
 250 milliseconds. Browser updates still arrive through server events.
 
