@@ -11,6 +11,11 @@ the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. Other argument text is a
 task to finish first.
 
+When a `session-resume` record exists for the task, read it before the context
+check. Retain its recorded authorization only within its exact provenance and
+scope. The record cannot grant push authority. Reuse checks only when their code
+revision, inputs, and environment match this run.
+
 ## 0. Detect context (always run first)
 
 Read [git-flow.md](../shared/git-flow.md), resolved against this file's path, not the

@@ -11,6 +11,9 @@ Check the affected user journeys against the requested behavior. Scale coverage
 to the change: a shared navigation change needs more routes than a local label
 edit. Keep the existing design direction unless a redesign is part of the task.
 
+When resuming from a `session-resume` record, reuse UI evidence only when its
+revision, inputs, browser environment, viewport, theme, and state still match.
+
 ## Choose the checks
 
 Record the checkout or preview URL and the changed code revision. Read the

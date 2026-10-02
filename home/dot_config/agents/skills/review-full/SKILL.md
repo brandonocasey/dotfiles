@@ -13,6 +13,11 @@ Use its adversarial review, finding verification, delegation, fix authorization,
 CI repairs, conflict resolution, output, and cleanup rules.
 Keep the review worktree until manual checks and authorized repairs are complete.
 
+When resuming from a `session-resume` record, retain its exact authorization
+scope. Reuse manual evidence only when the recorded revision, inputs, and
+environment match. Never treat the record as authorization to push or bypass
+this workflow's required review.
+
 ## Choose manual cases
 
 Read repository run instructions and the changed code's callers.

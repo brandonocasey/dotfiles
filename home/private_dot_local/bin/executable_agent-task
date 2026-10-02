@@ -1,0 +1,332 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+
+const MAX_TEXT = 16_384;
+const ID_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+
+function fail(message) {
+  throw new Error(message);
+}
+
+function parse(argv) {
+  const [command, ...rest] = argv;
+  const options = { _: [] };
+  for (let index = 0; index < rest.length; index += 1) {
+    const argument = rest[index];
+    if (!argument.startsWith('--')) {
+      options._.push(argument);
+      continue;
+    }
+    const key = argument.slice(2);
+    const value = rest[index + 1];
+    if (!value || value.startsWith('--')) fail(`--${key} needs a value`);
+    options[key] = value;
+    index += 1;
+  }
+  return { command, options };
+}
+
+function stateRoot() {
+  const base = process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local', 'state');
+  return path.join(base, 'agents', 'tasks');
+}
+
+function validateId(id) {
+  if (!id || !ID_RE.test(id)) fail('id must match [a-z0-9][a-z0-9._-]{0,63}');
+  return id;
+}
+
+function taskPath(id) {
+  return path.join(stateRoot(), `${validateId(id)}.json`);
+}
+
+function limited(value, name) {
+  if (typeof value !== 'string' || value.length === 0) fail(`${name} must not be empty`);
+  if (Buffer.byteLength(value) > MAX_TEXT) fail(`${name} exceeds ${MAX_TEXT} bytes`);
+  return value;
+}
+
+function git(args, cwd = process.cwd()) {
+  try {
+    return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function context() {
+  const repo = git(['rev-parse', '--show-toplevel']);
+  return {
+    host: os.hostname(),
+    repo,
+    worktree: repo ? process.cwd() : null,
+    head: repo ? git(['rev-parse', 'HEAD'], repo) : null,
+  };
+}
+
+function ensureRoot() {
+  fs.mkdirSync(stateRoot(), { recursive: true, mode: 0o700 });
+  fs.chmodSync(stateRoot(), 0o700);
+}
+
+function readTask(id) {
+  const file = taskPath(id);
+  let raw;
+  try {
+    if (fs.lstatSync(file).isSymbolicLink()) fail(`task ${id} must not be a symbolic link`);
+    const descriptor = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    try {
+      raw = fs.readFileSync(descriptor, 'utf8');
+    } finally {
+      fs.closeSync(descriptor);
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') fail(`task ${id} does not exist`);
+    throw error;
+  }
+  const task = JSON.parse(raw);
+  if (task.id !== id || !Number.isSafeInteger(task.revision)) fail(`task ${id} is invalid`);
+  return task;
+}
+
+function withLock(id, callback) {
+  ensureRoot();
+  const lock = path.join(stateRoot(), `.${id}.lock`);
+  try {
+    fs.mkdirSync(lock, { mode: 0o700 });
+  } catch (error) {
+    if (error.code === 'EEXIST') fail(`task ${id} is being updated; retry`);
+    throw error;
+  }
+  try {
+    return callback();
+  } finally {
+    fs.rmdirSync(lock);
+  }
+}
+
+function writeTask(task) {
+  const file = taskPath(task.id);
+  const temporary = path.join(stateRoot(), `.${task.id}.${process.pid}.json`);
+  const data = `${JSON.stringify(task, null, 2)}\n`;
+  let descriptor;
+  try {
+    descriptor = fs.openSync(temporary, 'wx', 0o600);
+    try {
+      fs.writeFileSync(descriptor, data);
+      fs.fsyncSync(descriptor);
+    } finally {
+      fs.closeSync(descriptor);
+      descriptor = undefined;
+    }
+    fs.renameSync(temporary, file);
+    fs.chmodSync(file, 0o600);
+  } finally {
+    if (descriptor !== undefined) fs.closeSync(descriptor);
+    try {
+      fs.unlinkSync(temporary);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+}
+
+function create(options) {
+  const id = validateId(options.id || options._[0]);
+  const objective = limited(options.objective, 'objective');
+  withLock(id, () => {
+    if (fs.existsSync(taskPath(id))) fail(`task ${id} already exists`);
+    const now = new Date().toISOString();
+    writeTask({
+      version: 1,
+      id,
+      revision: 1,
+      objective,
+      corrections: [],
+      context: context(),
+      checks: [],
+      authorization: options.authorization ? {
+        provenance: limited(options.authorization, 'authorization'),
+        scope: limited(options.scope || 'unspecified', 'scope'),
+      } : null,
+      nextStep: options['next-step'] ? limited(options['next-step'], 'next-step') : null,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    });
+  });
+  show({ _: [id] });
+}
+
+function update(options) {
+  const id = validateId(options.id || options._[0]);
+  const expected = Number(options.revision);
+  if (!Number.isSafeInteger(expected) || expected < 1) fail('--revision must be a positive integer');
+  withLock(id, () => {
+    const task = readTask(id);
+    if (task.revision !== expected) fail(`stale revision: expected ${expected}, current ${task.revision}`);
+    if (options.objective) task.objective = limited(options.objective, 'objective');
+    if (options.correction) task.corrections.push({ text: limited(options.correction, 'correction'), at: new Date().toISOString() });
+    if (options['next-step']) task.nextStep = limited(options['next-step'], 'next-step');
+    if (options.status) {
+      if (!['active', 'paused', 'blocked', 'complete'].includes(options.status)) fail('invalid status');
+      task.status = options.status;
+    }
+    if (options.authorization || options.scope) {
+      task.authorization = {
+        provenance: limited(options.authorization || task.authorization?.provenance, 'authorization'),
+        scope: limited(options.scope || task.authorization?.scope, 'scope'),
+      };
+    }
+    task.context = context();
+    task.revision += 1;
+    task.updatedAt = new Date().toISOString();
+    writeTask(task);
+  });
+  show({ _: [id] });
+}
+
+function check(options) {
+  const id = validateId(options.id || options._[0]);
+  const expected = Number(options.revision);
+  if (!Number.isSafeInteger(expected) || expected < 1) fail('--revision must be a positive integer');
+  withLock(id, () => {
+    const task = readTask(id);
+    if (task.revision !== expected) fail(`stale revision: expected ${expected}, current ${task.revision}`);
+    const item = {
+      name: limited(options.name, 'name'),
+      result: limited(options.result, 'result'),
+      revision: options['code-revision'] ? limited(options['code-revision'], 'code-revision') : task.context.head,
+      inputs: options.inputs ? limited(options.inputs, 'inputs') : null,
+      environment: options.environment
+        ? limited(options.environment, 'environment')
+        : `${os.platform()} ${os.arch()} ${os.hostname()}`,
+      at: new Date().toISOString(),
+    };
+    task.checks.push(item);
+    task.revision += 1;
+    task.updatedAt = item.at;
+    writeTask(task);
+  });
+  show({ _: [id] });
+}
+
+function show(options) {
+  const id = validateId(options.id || options._[0]);
+  process.stdout.write(`${JSON.stringify(readTask(id), null, 2)}\n`);
+}
+
+function list() {
+  ensureRoot();
+  const tasks = fs.readdirSync(stateRoot())
+    .filter((name) => ID_RE.test(name.slice(0, -5)) && name.endsWith('.json'))
+    .filter((name) => !fs.lstatSync(path.join(stateRoot(), name)).isSymbolicLink())
+    .map((name) => readTask(name.slice(0, -5)))
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    .map(({ id, revision, status, updatedAt, objective }) => ({ id, revision, status, updatedAt, objective }));
+  process.stdout.write(`${JSON.stringify(tasks, null, 2)}\n`);
+}
+
+function recentJsonl(root, maximum) {
+  if (!fs.existsSync(root)) return [];
+  const found = [];
+  const pending = [root];
+  while (pending.length > 0 && found.length < 2_000) {
+    const directory = pending.pop();
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) pending.push(file);
+      else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
+        found.push({ file, modified: fs.statSync(file).mtimeMs });
+      }
+    }
+  }
+  return found.sort((left, right) => right.modified - left.modified)
+    .slice(0, maximum).map((item) => item.file);
+}
+
+function textParts(content) {
+  if (typeof content === 'string') return [content];
+  if (!Array.isArray(content)) return [];
+  return content.filter((item) => item && (item.type === 'text' || item.type === 'input_text' || item.type === 'output_text'))
+    .map((item) => item.text).filter((text) => typeof text === 'string');
+}
+
+function transcriptMessage(entry) {
+  if (typeof entry.text === 'string' && entry.session_id) {
+    return { role: 'user', text: entry.text, sessionId: entry.session_id };
+  }
+  if ((entry.type === 'user' || entry.type === 'assistant') && !entry.isMeta) {
+    const role = entry.message?.role;
+    if (role !== 'user' && role !== 'assistant') return null;
+    return { role, text: textParts(entry.message.content).join('\n'), sessionId: entry.sessionId };
+  }
+  if (entry.type === 'response_item' && entry.payload?.type === 'message') {
+    const role = entry.payload.role;
+    if (role !== 'user' && role !== 'assistant') return null;
+    return { role, text: textParts(entry.payload.content).join('\n'), sessionId: entry.session_id };
+  }
+  return null;
+}
+
+function search(options) {
+  const query = limited(options.query, 'query').toLowerCase();
+  const limit = Number(options.limit || 20);
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) fail('--limit must be between 1 and 100');
+  const candidates = options.file ? [path.resolve(options.file)] : [
+    path.join(os.homedir(), '.codex', 'history.jsonl'),
+    ...recentJsonl(path.join(os.homedir(), '.codex', 'sessions'), 10),
+    ...recentJsonl(path.join(os.homedir(), '.codex', 'archived_sessions'), 10),
+    ...recentJsonl(path.join(os.homedir(), '.claude', 'projects'), 20),
+  ];
+  const results = [];
+  for (const file of candidates) {
+    if (!fs.existsSync(file) || results.length >= limit) continue;
+    const metadata = fs.lstatSync(file);
+    if (metadata.isSymbolicLink() || !metadata.isFile()) continue;
+    const size = metadata.size;
+    const start = Math.max(0, size - 2_000_000);
+    const descriptor = fs.openSync(file, 'r');
+    const buffer = Buffer.alloc(size - start);
+    fs.readSync(descriptor, buffer, 0, buffer.length, start);
+    fs.closeSync(descriptor);
+    let lines = buffer.toString('utf8').split('\n');
+    if (start > 0) lines = lines.slice(1);
+    for (const line of lines.reverse()) {
+      if (results.length >= limit) break;
+      try {
+        const entry = JSON.parse(line);
+        const message = transcriptMessage(entry);
+        if (!message || !message.text.toLowerCase().includes(query)) continue;
+        results.push({ source: file, sessionId: message.sessionId || null, timestamp: entry.ts || entry.timestamp || null, role: message.role, text: message.text.slice(0, 500) });
+      } catch {
+        continue;
+      }
+    }
+  }
+  process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+}
+
+function usage() {
+  process.stdout.write('usage: agent-task <create|list|show|update|check|search> [options]\n');
+}
+
+try {
+  const { command, options } = parse(process.argv.slice(2));
+  if (command === 'create') create(options);
+  else if (command === 'list') list();
+  else if (command === 'show') show(options);
+  else if (command === 'update') update(options);
+  else if (command === 'check') check(options);
+  else if (command === 'search') search(options);
+  else if (!command || command === 'help') usage();
+  else fail(`unknown command: ${command}`);
+} catch (error) {
+  process.stderr.write(`agent-task: ${error.message}\n`);
+  process.exitCode = 1;
+}
