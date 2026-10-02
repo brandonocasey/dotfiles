@@ -85,4 +85,3 @@ Wait for the answer. Only branches the user names may be removed, one at a time,
 tip recheck. A branch whose tip exactly equals a closed PR head is removed under the
 closed-without-merge exception; every other named branch is removed under the relevance safety
 rule. Report which rule backed each deletion.
-
