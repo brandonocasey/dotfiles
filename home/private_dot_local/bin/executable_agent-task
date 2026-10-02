@@ -4,9 +4,13 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
 const MAX_TEXT = 16_384;
+const READ_CHUNK = 64 * 1024;
+const MAX_LINE_BYTES = 1024 * 1024;
+const CONTEXT_TURNS = 2;
 const ID_RE = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 
 function fail(message) {
@@ -23,6 +27,7 @@ function parse(argv) {
       continue;
     }
     const key = argument.slice(2);
+    if (key === 'rebuild') { options.rebuild = true; continue; }
     const value = rest[index + 1];
     if (!value || value.startsWith('--')) fail(`--${key} needs a value`);
     options[key] = value;
@@ -34,6 +39,10 @@ function parse(argv) {
 function stateRoot() {
   const base = process.env.XDG_STATE_HOME || path.join(os.homedir(), '.local', 'state');
   return path.join(base, 'agents', 'tasks');
+}
+
+function indexRoot() {
+  return path.join(stateRoot(), 'session-index');
 }
 
 function validateId(id) {
@@ -147,6 +156,9 @@ function create(options) {
       id,
       revision: 1,
       objective,
+      parentPr: options['parent-pr'] ? limited(options['parent-pr'], 'parent-pr') : null,
+      targetBranch: options['target-branch'] ? limited(options['target-branch'], 'target-branch') : null,
+      taskBoundary: options['task-boundary'] ? limited(options['task-boundary'], 'task-boundary') : null,
       corrections: [],
       context: context(),
       checks: [],
@@ -171,6 +183,9 @@ function update(options) {
     const task = readTask(id);
     if (task.revision !== expected) fail(`stale revision: expected ${expected}, current ${task.revision}`);
     if (options.objective) task.objective = limited(options.objective, 'objective');
+    if (options['parent-pr']) task.parentPr = limited(options['parent-pr'], 'parent-pr');
+    if (options['target-branch']) task.targetBranch = limited(options['target-branch'], 'target-branch');
+    if (options['task-boundary']) task.taskBoundary = limited(options['task-boundary'], 'task-boundary');
     if (options.correction) task.corrections.push({ text: limited(options.correction, 'correction'), at: new Date().toISOString() });
     if (options['next-step']) task.nextStep = limited(options['next-step'], 'next-step');
     if (options.status) {
@@ -232,24 +247,6 @@ function list() {
   process.stdout.write(`${JSON.stringify(tasks, null, 2)}\n`);
 }
 
-function recentJsonl(root, maximum) {
-  if (!fs.existsSync(root)) return [];
-  const found = [];
-  const pending = [root];
-  while (pending.length > 0 && found.length < 2_000) {
-    const directory = pending.pop();
-    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-      const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) pending.push(file);
-      else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
-        found.push({ file, modified: fs.statSync(file).mtimeMs });
-      }
-    }
-  }
-  return found.sort((left, right) => right.modified - left.modified)
-    .slice(0, maximum).map((item) => item.file);
-}
-
 function textParts(content) {
   if (typeof content === 'string') return [content];
   if (!Array.isArray(content)) return [];
@@ -257,63 +254,432 @@ function textParts(content) {
     .map((item) => item.text).filter((text) => typeof text === 'string');
 }
 
-function transcriptMessage(entry) {
+function transcriptMessage(entry, sessionId) {
   if (typeof entry.text === 'string' && entry.session_id) {
     return { role: 'user', text: entry.text, sessionId: entry.session_id };
+  }
+  if (typeof entry.display === 'string' && entry.sessionId) {
+    return { role: 'user', text: entry.display, sessionId: entry.sessionId };
   }
   if ((entry.type === 'user' || entry.type === 'assistant') && !entry.isMeta) {
     const role = entry.message?.role;
     if (role !== 'user' && role !== 'assistant') return null;
-    return { role, text: textParts(entry.message.content).join('\n'), sessionId: entry.sessionId };
+    return { role, text: textParts(entry.message.content).join('\n'), sessionId: entry.sessionId || sessionId };
   }
   if (entry.type === 'response_item' && entry.payload?.type === 'message') {
     const role = entry.payload.role;
     if (role !== 'user' && role !== 'assistant') return null;
-    return { role, text: textParts(entry.payload.content).join('\n'), sessionId: entry.session_id };
+    return { role, text: textParts(entry.payload.content).join('\n'), sessionId: entry.session_id || sessionId };
   }
   return null;
+}
+
+function isInjected(message, entry) {
+  if (entry.isMeta || entry.isCompactSummary || entry.type === 'summary') return true;
+  if (message.role !== 'user') return false;
+  const text = message.text.trimStart();
+  return text.startsWith('# AGENTS.md instructions')
+    || text.startsWith('<environment_context>')
+    || text.startsWith('<skills_instructions>')
+    || text.startsWith('<system')
+    || text.startsWith('<developer');
+}
+
+function positiveLimit(value, name) {
+  if (value === undefined) return Infinity;
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 1) fail(`${name} must be a positive integer`);
+  return number;
+}
+
+function firstLineSession(file, sessionId) {
+  const descriptor = fs.openSync(file, 'r');
+  try {
+    let pending = Buffer.alloc(0);
+    while (pending.length <= MAX_LINE_BYTES) {
+      const chunk = Buffer.allocUnsafe(READ_CHUNK);
+      const bytes = fs.readSync(descriptor, chunk, 0, chunk.length, pending.length);
+      if (bytes === 0) break;
+      const newline = chunk.subarray(0, bytes).indexOf(10);
+      pending = Buffer.concat([pending, chunk.subarray(0, newline === -1 ? bytes : newline)]);
+      if (newline !== -1) break;
+    }
+    const text = pending.toString('utf8');
+    const encoded = JSON.stringify(sessionId);
+    if (text.includes(`\"id\":${encoded}`) || text.includes(`\"sessionId\":${encoded}`)
+      || text.includes(`\"session_id\":${encoded}`)) return true;
+    const entry = JSON.parse(text);
+    return entry.payload?.id === sessionId || entry.sessionId === sessionId || entry.session_id === sessionId;
+  } catch {
+    return false;
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function discoverJsonl(maximum, sessionId) {
+  const home = os.homedir();
+  const roots = [
+    path.join(home, '.codex', 'sessions'),
+    path.join(home, '.codex', 'archived_sessions'),
+  ];
+  let profiles = [];
+  try {
+    profiles = fs.readdirSync(home, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && (entry.name === '.claude' || entry.name.startsWith('.claude-')))
+      .map((entry) => path.join(home, entry.name));
+  } catch {
+    // The coverage report records unreadable roots below.
+  }
+  for (const profile of profiles) {
+    roots.push(path.join(profile, 'projects'), path.join(profile, 'archive'), path.join(profile, 'archives'));
+  }
+  const files = [];
+  const preferred = [];
+  for (const file of [path.join(home, '.codex', 'history.jsonl'), ...profiles.map((profile) => path.join(profile, 'history.jsonl'))]) {
+    if (fs.existsSync(file)) files.push(file);
+  }
+  const coverage = { roots, discovered: 0, indexed: 0, malformedLines: 0, oversizedLines: 0, unreadable: [], removedFiles: 0, skippedFiles: 0, scanLimit: Number.isFinite(maximum) ? maximum : null, scanLimitReached: false, unscannedDirectories: 0, byteLimit: null, byteLimitReached: false, scannedBytes: 0 };
+  const pending = [...roots];
+  while (pending.length > 0 && (sessionId || files.length + preferred.length < maximum)) {
+    const directory = pending.pop();
+    let entries;
+    try {
+      entries = fs.readdirSync(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code !== 'ENOENT') coverage.unreadable.push({ source: directory, error: error.code || error.message });
+      continue;
+    }
+    for (const entry of entries) {
+      const file = path.join(directory, entry.name);
+      if (entry.isDirectory()) pending.push(file);
+      else if (entry.isFile() && entry.name.endsWith('.jsonl')) {
+        if (sessionId && (entry.name.includes(sessionId) || firstLineSession(file, sessionId))) preferred.push(file);
+        else if (files.length + preferred.length < maximum) files.push(file);
+      }
+      if (!sessionId && files.length + preferred.length >= maximum) break;
+    }
+  }
+  coverage.discovered = files.length + preferred.length;
+  coverage.scanLimitReached = Number.isFinite(maximum) && files.length + preferred.length >= maximum;
+  coverage.unscannedDirectories = pending.length;
+  return { files: [...new Set([...preferred, ...files])], coverage };
+}
+
+function readIndex() {
+  const file = path.join(indexRoot(), 'index.json');
+  try {
+    if (fs.lstatSync(file).isSymbolicLink()) fail('session index must not be a symbolic link');
+    const index = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (index.version !== 4) return { version: 4, files: {}, coverage: {} };
+    return index;
+  } catch (error) {
+    if (error.code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error;
+    return { version: 4, files: {}, coverage: {} };
+  }
+}
+
+function ensureIndexRoot() {
+  ensureRoot();
+  const directory = indexRoot();
+  try {
+    if (fs.lstatSync(directory).isSymbolicLink()) fail('session index directory must not be a symbolic link');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    fs.mkdirSync(directory, { mode: 0o700 });
+  }
+  fs.chmodSync(directory, 0o700);
+}
+
+function writeIndex(index) {
+  ensureIndexRoot();
+  const file = path.join(indexRoot(), 'index.json');
+  const temporary = path.join(indexRoot(), `.index.${process.pid}.json`);
+  fs.writeFileSync(temporary, `${JSON.stringify(index)}\n`, { mode: 0o600, flag: 'wx' });
+  fs.renameSync(temporary, file);
+  fs.chmodSync(file, 0o600);
+}
+
+function withIndexLock(callback) {
+  ensureIndexRoot();
+  const lock = path.join(indexRoot(), '.lock');
+  const deadline = Date.now() + 5_000;
+  while (true) {
+    try {
+      fs.mkdirSync(lock, { mode: 0o700 });
+      break;
+    } catch (error) {
+      if (error.code !== 'EEXIST' || Date.now() >= deadline) fail('session index is being updated; retry');
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25);
+    }
+  }
+  try {
+    return callback();
+  } finally {
+    fs.rmdirSync(lock);
+  }
+}
+
+function sourceKind(file) {
+  if (file.includes(`${path.sep}.codex${path.sep}`)) return 'codex';
+  return 'claude';
+}
+
+function timestampKey(timestamp) {
+  if (typeof timestamp === 'number') return String(Math.floor(timestamp < 1e12 ? timestamp : timestamp / 1_000));
+  if (typeof timestamp === 'string') {
+    const parsed = Date.parse(timestamp);
+    if (!Number.isNaN(parsed)) return String(Math.floor(parsed / 1_000));
+  }
+  return String(timestamp || '');
+}
+
+function filePrefix(file, size) {
+  const descriptor = fs.openSync(file, 'r');
+  try {
+    const buffer = Buffer.alloc(Math.min(size, 4_096));
+    const bytes = fs.readSync(descriptor, buffer, 0, buffer.length, 0);
+    return crypto.createHash('sha256').update(buffer.subarray(0, bytes)).digest('hex');
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function tailHash(file, end) {
+  const descriptor = fs.openSync(file, 'r');
+  try {
+    const length = Math.min(end, READ_CHUNK);
+    const buffer = Buffer.alloc(length);
+    const bytes = fs.readSync(descriptor, buffer, 0, length, end - length);
+    return crypto.createHash('sha256').update(buffer.subarray(0, bytes)).digest('hex');
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function parseLine(line, state, file, offset) {
+  try {
+    const entry = JSON.parse(line.toString('utf8'));
+    if (entry.type === 'session_meta') {
+      if (typeof entry.payload?.id === 'string') state.sessionId = entry.payload.id;
+      state.forkedFrom = entry.payload?.forked_from_id || entry.payload?.parent_thread_id || null;
+      state.historyStart = Number.isSafeInteger(entry.payload?.subagent_history_start_ordinal)
+        ? entry.payload.subagent_history_start_ordinal
+        : null;
+    }
+    if (typeof entry.sessionId === 'string') state.sessionId = entry.sessionId;
+    if (typeof entry.session_id === 'string') state.sessionId = entry.session_id;
+    const message = transcriptMessage(entry, state.sessionId);
+    if (!message || !message.text || isInjected(message, entry)) return;
+    const inherited = Boolean(state.forkedFrom && state.historyStart !== null
+      && Number.isSafeInteger(entry.ordinal) && entry.ordinal < state.historyStart);
+    const maximum = message.role === 'user' ? MAX_TEXT : 500;
+    state.turns.push({ source: file, sourceType: sourceKind(file), host: os.hostname(), sessionId: message.sessionId || state.sessionId || null, timestamp: entry.ts || entry.timestamp || null, role: message.role, text: message.text.slice(0, maximum), offset, lineBytes: line.length + 1, eventId: entry.uuid || entry.id || null, inherited });
+  } catch {
+    state.malformed += 1;
+  }
+}
+
+function scanFile(file, stat, previous, budget) {
+  const prefix = filePrefix(file, stat.size);
+  const append = previous && previous.dev === stat.dev && previous.ino === stat.ino
+    && stat.size >= previous.size && previous.prefix === filePrefix(file, previous.size)
+    && previous.tailHash === tailHash(file, previous.offset)
+    && (stat.size > previous.size || (stat.mtimeMs === previous.modified && stat.ctimeMs === previous.changed));
+  const state = append
+    ? { turns: previous.turns || [], sessionId: previous.sessionId, forkedFrom: previous.forkedFrom || null, historyStart: previous.historyStart ?? null, malformed: previous.malformed || 0, oversized: previous.oversized || 0 }
+    : { turns: [], sessionId: null, forkedFrom: null, historyStart: null, malformed: 0, oversized: 0 };
+  let offset = append ? previous.offset : 0;
+  let pending = append && previous.partial ? Buffer.from(previous.partial, 'base64') : Buffer.alloc(0);
+  let skipping = append ? Boolean(previous.skipLine) : false;
+  let readBytes = 0;
+  const descriptor = fs.openSync(file, 'r');
+  try {
+    while (offset + readBytes < stat.size && readBytes < budget) {
+      const length = Math.min(READ_CHUNK, stat.size - offset - readBytes, budget - readBytes);
+      const chunk = Buffer.allocUnsafe(length);
+      const bytes = fs.readSync(descriptor, chunk, 0, length, offset + readBytes);
+      if (bytes === 0) break;
+      readBytes += bytes;
+      let start = 0;
+      for (let position = 0; position < bytes; position += 1) {
+        if (chunk[position] !== 10) continue;
+        const fragment = chunk.subarray(start, position);
+        const lineOffset = offset + readBytes - bytes + start - pending.length;
+        if (skipping) {
+          skipping = false;
+        } else {
+          const line = pending.length ? Buffer.concat([pending, fragment]) : fragment;
+          parseLine(line, state, file, lineOffset);
+        }
+        pending = Buffer.alloc(0);
+        start = position + 1;
+      }
+      if (start < bytes && !skipping) {
+        const fragment = chunk.subarray(start, bytes);
+        if (pending.length + fragment.length > MAX_LINE_BYTES) {
+          state.oversized += 1;
+          pending = Buffer.alloc(0);
+          skipping = true;
+        } else {
+          pending = pending.length ? Buffer.concat([pending, fragment]) : Buffer.from(fragment);
+        }
+      }
+    }
+  } finally {
+    fs.closeSync(descriptor);
+  }
+  return { dev: stat.dev, ino: stat.ino, size: stat.size, offset: offset + readBytes, sessionId: state.sessionId, forkedFrom: state.forkedFrom, historyStart: state.historyStart, malformed: state.malformed, oversized: state.oversized, skipLine: skipping, partial: pending.length ? pending.toString('base64') : null, prefix, tailHash: tailHash(file, offset + readBytes), modified: stat.mtimeMs, changed: stat.ctimeMs, turns: state.turns, bytes: readBytes };
+}
+
+function visibleTurns(file, state) {
+  const turns = state.turns || [];
+  if (!state.partial || state.skipLine || state.offset !== state.size) return turns;
+  const pending = Buffer.from(state.partial, 'base64');
+  try { JSON.parse(pending.toString('utf8')); } catch { return turns; }
+  const view = { ...state, turns: [] };
+  parseLine(pending, view, file, state.offset - pending.length);
+  for (const turn of view.turns) turn.lineBytes = pending.length;
+  return [...turns, ...view.turns];
+}
+
+function indexSessions(options = {}) {
+  return withIndexLock(() => {
+  const index = options.rebuild ? { version: 4, files: {}, coverage: {} } : readIndex();
+  const maxFiles = positiveLimit(options['max-files'] || process.env.AGENT_TASK_MAX_FILES, '--max-files');
+  const byteLimit = positiveLimit(options['byte-limit'] || process.env.AGENT_TASK_BYTE_LIMIT, '--byte-limit');
+  const discovered = discoverJsonl(maxFiles, options.session);
+  discovered.coverage.byteLimit = Number.isFinite(byteLimit) ? byteLimit : null;
+  const extraFiles = options.file ? [path.resolve(options.file)] : [];
+  const files = [...new Set([...extraFiles, ...discovered.files])];
+  const present = new Set(files);
+  for (const file of Object.keys(index.files)) {
+    if (!present.has(file) && !fs.existsSync(file)) {
+      delete index.files[file];
+      discovered.coverage.removedFiles += 1;
+    }
+  }
+  for (const file of files) {
+    let stat;
+    try {
+      stat = fs.lstatSync(file);
+      if (stat.isSymbolicLink() || !stat.isFile()) {
+        delete index.files[file];
+        discovered.coverage.unreadable.push({ source: file, error: 'not a regular non-symlink file' });
+        continue;
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') discovered.coverage.unreadable.push({ source: file, error: error.code || error.message });
+      continue;
+    }
+    if (discovered.coverage.scannedBytes >= byteLimit) {
+      discovered.coverage.skippedFiles += 1;
+      discovered.coverage.byteLimitReached = true;
+      continue;
+    }
+    const previous = index.files[file];
+    if (previous && stat.dev === previous.dev && stat.ino === previous.ino
+      && stat.size === previous.offset && stat.size === previous.size
+      && stat.mtimeMs === previous.modified && stat.ctimeMs === previous.changed) {
+      discovered.coverage.indexed += 1;
+      continue;
+    }
+    try {
+      const result = scanFile(file, stat, previous, byteLimit - discovered.coverage.scannedBytes);
+      discovered.coverage.scannedBytes += result.bytes;
+      if (result.offset < stat.size) discovered.coverage.byteLimitReached = true;
+      delete result.bytes;
+      index.files[file] = result;
+    } catch (error) {
+      discovered.coverage.unreadable.push({ source: file, error: error.code || error.message });
+      continue;
+    }
+    discovered.coverage.indexed += 1;
+  }
+  discovered.coverage.malformedLines = Object.values(index.files).reduce((sum, item) => sum + (item.malformed || 0), 0);
+  discovered.coverage.oversizedLines = Object.values(index.files).reduce((sum, item) => sum + (item.oversized || 0), 0);
+  const turns = Object.entries(index.files).flatMap(([file, item]) => visibleTurns(file, item));
+  const deduplicated = deduplicateTurns(turns);
+  index.coverage = { ...discovered.coverage, indexedTurns: deduplicated.length, humanTurns: deduplicated.filter((turn) => turn.role === 'user' && !turn.inherited).length, inheritedTurns: deduplicated.filter((turn) => turn.inherited).length };
+  index.updatedAt = new Date().toISOString();
+  writeIndex(index);
+  index.turns = deduplicated;
+  return index;
+  });
+}
+
+function deduplicateTurns(turns) {
+  const seenEvents = new Map();
+  const seenContent = new Map();
+  const uniqueTurns = [];
+  for (const original of turns) {
+    const turn = { ...original, sources: [original.source] };
+    const eventKey = turn.eventId ? `${turn.sessionId || ''}:${turn.eventId}` : null;
+    const contentKey = `${turn.sessionId || ''}:${turn.role}:${timestampKey(turn.timestamp)}:${turn.text}`;
+    const existing = (eventKey && seenEvents.get(eventKey)) || seenContent.get(contentKey);
+    if (existing) {
+      const sources = [...new Set([...existing.sources, turn.source])];
+      const inherited = Boolean(existing.inherited && turn.inherited);
+      if (path.basename(existing.source) === 'history.jsonl' && path.basename(turn.source) !== 'history.jsonl') {
+        Object.assign(existing, turn);
+      }
+      existing.sources = sources;
+      existing.inherited = inherited;
+      continue;
+    }
+    if (eventKey) seenEvents.set(eventKey, turn);
+    seenContent.set(contentKey, turn);
+    uniqueTurns.push(turn);
+  }
+  return uniqueTurns;
+}
+
+function indexCommand(options) {
+  const index = indexSessions(options);
+  process.stdout.write(`${JSON.stringify({ updatedAt: index.updatedAt, ...index.coverage }, null, 2)}\n`);
+}
+
+function matchingSessions(index, sessionId) {
+  return index.turns.filter((turn) => turn.sessionId === sessionId);
+}
+
+function resolveSession(options) {
+  const sessionId = limited(options.session || options.id || options._[0], 'session');
+  const index = indexSessions({ ...options, session: sessionId });
+  const turns = matchingSessions(index, sessionId);
+  if (turns.length === 0) {
+    process.stderr.write(`${JSON.stringify({ coverage: index.coverage })}\n`);
+    fail(`session ${sessionId} was not found`);
+  }
+  const sources = [...new Set(turns.flatMap((turn) => turn.sources || [turn.source]))];
+  process.stdout.write(`${JSON.stringify({ sessionId, host: turns[0].host, sources, sourceType: turns[0].sourceType, turns: turns.length, coverage: index.coverage }, null, 2)}\n`);
 }
 
 function search(options) {
   const query = limited(options.query, 'query').toLowerCase();
   const limit = Number(options.limit || 20);
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) fail('--limit must be between 1 and 100');
-  const candidates = options.file ? [path.resolve(options.file)] : [
-    path.join(os.homedir(), '.codex', 'history.jsonl'),
-    ...recentJsonl(path.join(os.homedir(), '.codex', 'sessions'), 10),
-    ...recentJsonl(path.join(os.homedir(), '.codex', 'archived_sessions'), 10),
-    ...recentJsonl(path.join(os.homedir(), '.claude', 'projects'), 20),
-  ];
+  const index = indexSessions(options);
+  const turns = options.session ? matchingSessions(index, options.session)
+    : index.turns.filter(turn => !turn.inherited);
   const results = [];
-  for (const file of candidates) {
-    if (!fs.existsSync(file) || results.length >= limit) continue;
-    const metadata = fs.lstatSync(file);
-    if (metadata.isSymbolicLink() || !metadata.isFile()) continue;
-    const size = metadata.size;
-    const start = Math.max(0, size - 2_000_000);
-    const descriptor = fs.openSync(file, 'r');
-    const buffer = Buffer.alloc(size - start);
-    fs.readSync(descriptor, buffer, 0, buffer.length, start);
-    fs.closeSync(descriptor);
-    let lines = buffer.toString('utf8').split('\n');
-    if (start > 0) lines = lines.slice(1);
-    for (const line of lines.reverse()) {
-      if (results.length >= limit) break;
-      try {
-        const entry = JSON.parse(line);
-        const message = transcriptMessage(entry);
-        if (!message || !message.text.toLowerCase().includes(query)) continue;
-        results.push({ source: file, sessionId: message.sessionId || null, timestamp: entry.ts || entry.timestamp || null, role: message.role, text: message.text.slice(0, 500) });
-      } catch {
-        continue;
-      }
-    }
+  for (let position = turns.length - 1; position >= 0 && results.length < limit; position -= 1) {
+    const turn = turns[position];
+    if (turn.role !== 'user' || !turn.text.toLowerCase().includes(query)) continue;
+    const sessionTurns = turns.filter((item) => item.sessionId === turn.sessionId && item.source === turn.source)
+      .sort((left, right) => left.offset - right.offset);
+    const sessionPosition = sessionTurns.indexOf(turn);
+    const context = sessionTurns.slice(Math.max(0, sessionPosition - CONTEXT_TURNS), sessionPosition + CONTEXT_TURNS + 1)
+      .map(({ role, text, timestamp, offset }) => ({ role, text: text.slice(0, 500), timestamp, offset }));
+    const matchStart = Math.max(0, turn.text.toLowerCase().indexOf(query) - 160);
+    results.push({ source: turn.source, sources: turn.sources || [turn.source], sourceType: turn.sourceType, host: turn.host, sessionId: turn.sessionId, timestamp: turn.timestamp, role: turn.role, text: turn.text.slice(matchStart, matchStart + 500), offset: turn.offset, inherited: Boolean(turn.inherited), context });
   }
   process.stdout.write(`${JSON.stringify(results, null, 2)}\n`);
+  process.stderr.write(`${JSON.stringify({ coverage: index.coverage })}\n`);
 }
 
 function usage() {
-  process.stdout.write('usage: agent-task <create|list|show|update|check|search> [options]\n');
+  process.stdout.write(`usage: agent-task <command> [options]\n\ncommands:\n  create   create a durable task record\n  list     list task records\n  show     show one task record\n  update   update one task record\n  check    add a completed check\n  index    update the private session index and show coverage\n  resolve  resolve an exact session ID to its source\n  search   search indexed human turns with bounded context\n`);
 }
 
 try {
@@ -323,8 +689,10 @@ try {
   else if (command === 'show') show(options);
   else if (command === 'update') update(options);
   else if (command === 'check') check(options);
+  else if (command === 'index') indexCommand(options);
+  else if (command === 'resolve') resolveSession(options);
   else if (command === 'search') search(options);
-  else if (!command || command === 'help') usage();
+  else if (!command || command === 'help' || command === '--help') usage();
   else fail(`unknown command: ${command}`);
 } catch (error) {
   process.stderr.write(`agent-task: ${error.message}\n`);
