@@ -9,7 +9,8 @@ Every spawn follows these rules. The spawning session owns verification and clea
 
 ## Overrides (check first)
 
-- A user-named model overrides the role's pin.
+- A user-named model overrides the role's pin. Keep the role that fits the work; override only its model and effort.
+- Read effort shorthand: `lo`/`low` low, `med`/`medium` medium, `hi`/`high` high, `xhigh`/`x high` xhigh, `max` max.
 - Use a user-named custom harness agent. Check the loaded roster; ask if the name is unknown.
 - Use a user-requested external tool or agent instead of a sub-agent. Verify its output before acting.
 
@@ -29,10 +30,11 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 | --- | --- | --- | --- |
 | `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, max |
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, max |
-| `worker` | Design, debugging, split implementation, review, research synthesis | claude-opus-5-5, medium | gpt-5.6-sol, low |
+| `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-5.6-sol, low |
 | `tester` | Run tests, lint, builds, and smoke checks; read-only | claude-sonnet-5, medium | gpt-5.6-luna, max |
 | `manual-tester` | Exercise manual workflows; read-only | claude-opus-5-5, medium | gpt-5.6-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
+| `reviewer` | Independent review of a change; read-only | claude-opus-5-5, medium | gpt-5.6-sol, low |
 | `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-5.6-sol, low |
 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
@@ -66,7 +68,16 @@ Use a `cheap` agent when the harness cannot monitor the process or interpretatio
 It runs the watcher once and reports the outcome and relevant details.
 The main session never polls the same target while the watcher runs.
 
+For a long run (workflow, build, or watcher), state an ETA in minutes at the start.
+Report each phase change without a prompt.
+Answer "status?" from the run's own log or journal.
+
 Never watch an MR/PR or pipeline for success unless the user asks; `pr-unblock` counts as that request.
+"When it merges, do X" also counts. Start one watcher with a long `--deadline-seconds`.
+Run the queued action only when the watcher reports reason `merged`.
+On any other result, such as `required_checks_passed`, a deadline, or a new head SHA, report it to the user.
+`agent-watch` takes GitHub `OWNER/REPO#PR@SHA` and GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA` targets. For other platforms, say the watch is unsupported.
+The queued action keeps its consent rules.
 Otherwise, report the pipeline URL and stop: no watcher or polling.
 
 ## Escalate with `consult`
