@@ -1,0 +1,363 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const http = require('node:http');
+const crypto = require('node:crypto');
+const path = require('node:path');
+
+function fail(message) {
+  process.stderr.write(`agent-preview: ${message}\n`);
+  process.exitCode = 1;
+}
+
+function usage() {
+  return `Usage:
+  agent-preview serve --config PATH --state-dir PATH --port N
+  agent-preview wait --state-dir PATH --after N --timeout-seconds N
+`;
+}
+
+function argumentsFor(command, argv) {
+  const values = {};
+  for (let index = 0; index < argv.length; index += 2) {
+    const key = argv[index];
+    const value = argv[index + 1];
+    if (!key?.startsWith('--') || value === undefined) {
+      throw new Error(`invalid ${command} arguments\n${usage()}`);
+    }
+    values[key.slice(2)] = value;
+  }
+  return values;
+}
+
+function privateDirectory(directory) {
+  const absolute = path.resolve(directory);
+  if (!fs.existsSync(absolute)) fs.mkdirSync(absolute, { recursive: true, mode: 0o700 });
+  const metadata = fs.lstatSync(absolute);
+  if (metadata.isSymbolicLink() || !metadata.isDirectory()) {
+    throw new Error('state-dir must be a real directory');
+  }
+  const resolved = fs.realpathSync(absolute);
+  fs.chmodSync(resolved, 0o700);
+  return resolved;
+}
+
+function readJson(filename) {
+  if (fs.lstatSync(filename).isSymbolicLink()) throw new Error(`refusing symbolic link: ${filename}`);
+  const descriptor = fs.openSync(filename, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+  try {
+    return JSON.parse(fs.readFileSync(descriptor, 'utf8'));
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function writePrivateJson(filename, value) {
+  if (fs.existsSync(filename) && fs.lstatSync(filename).isSymbolicLink()) {
+    throw new Error(`refusing symbolic link: ${filename}`);
+  }
+  const temporary = `${filename}.${process.pid}.new`;
+  try {
+    fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
+    fs.renameSync(temporary, filename);
+    fs.chmodSync(filename, 0o600);
+  } finally {
+    try { fs.unlinkSync(temporary); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  }
+}
+
+function validateConfig(filename) {
+  const config = readJson(filename);
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error('config must be a JSON object');
+  }
+  if (typeof config.title !== 'string' || config.title.length < 1 || config.title.length > 120) {
+    throw new Error('config.title must contain 1 to 120 characters');
+  }
+  if (!Array.isArray(config.options) || config.options.length < 1 || config.options.length > 100) {
+    throw new Error('config.options must contain 1 to 100 options');
+  }
+  const ids = new Set();
+  const options = config.options.map((option, index) => {
+    if (!option || typeof option !== 'object' || Array.isArray(option)) {
+      throw new Error(`config.options[${index}] must be an object`);
+    }
+    if (typeof option.id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(option.id)) {
+      throw new Error(`config.options[${index}].id is invalid`);
+    }
+    if (ids.has(option.id)) throw new Error(`duplicate option id: ${option.id}`);
+    ids.add(option.id);
+    if (typeof option.label !== 'string' || option.label.length < 1 || option.label.length > 120) {
+      throw new Error(`config.options[${index}].label must contain 1 to 120 characters`);
+    }
+    if (option.kind !== 'image' && option.kind !== 'html') {
+      throw new Error(`config.options[${index}].kind must be image or html`);
+    }
+    if (typeof option.path !== 'string' || option.path.length < 1) {
+      throw new Error(`config.options[${index}].path is required`);
+    }
+    const requested = path.resolve(path.dirname(filename), option.path);
+    const real = fs.realpathSync(requested);
+    const metadata = fs.statSync(real);
+    if (!metadata.isFile()) throw new Error(`option is not a regular file: ${option.id}`);
+    const description = option.description ?? '';
+    if (typeof description !== 'string' || description.length > 500) {
+      throw new Error(`config.options[${index}].description must be at most 500 characters`);
+    }
+    return { id: option.id, label: option.label, kind: option.kind, description, requested, real, dev: metadata.dev, ino: metadata.ino };
+  });
+  return { title: config.title, options, ids };
+}
+
+function contentType(option) {
+  if (option.kind === 'html') return 'text/html; charset=utf-8';
+  const extension = path.extname(option.requested).toLowerCase();
+  return new Map([
+    ['.avif', 'image/avif'], ['.gif', 'image/gif'], ['.jpg', 'image/jpeg'],
+    ['.jpeg', 'image/jpeg'], ['.png', 'image/png'], ['.svg', 'image/svg+xml'],
+    ['.webp', 'image/webp'],
+  ]).get(extension) || 'application/octet-stream';
+}
+
+function publicConfig(config, revision) {
+  return {
+    title: config.title,
+    options: config.options.map(({ id, label, kind, description }) => ({ id, label, kind, description })),
+    revision,
+  };
+}
+
+function page(config, token, revision) {
+  const publicOptions = config.options.map(({ id, label, kind, description }) => ({ id, label, kind, description }));
+  const data = JSON.stringify({ title: config.title, options: publicOptions, token, revision }).replace(/</g, '\\u003c');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Preview choices</title><style>
+body{font:16px system-ui,sans-serif;margin:0;background:#f4f3ef;color:#171714}main{max-width:1100px;margin:auto;padding:24px}h1{margin:0 0 20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}.card{background:#fff;border:2px solid transparent;border-radius:12px;padding:12px;box-shadow:0 2px 10px #0001}.card:has(input:checked){border-color:#1264a3}.media{width:100%;height:260px;object-fit:contain;border:0;background:#eee;border-radius:8px}.label{display:flex;gap:8px;margin-top:10px;font-weight:700}.desc{margin:6px 0;color:#555;white-space:pre-wrap}textarea{box-sizing:border-box;width:100%;min-height:80px;margin:20px 0 10px;padding:10px}button{padding:10px 16px;margin:0 8px 8px 0;border:0;border-radius:7px;background:#1264a3;color:white;font-weight:700}button.secondary{background:#555}#refresh{display:block;margin-bottom:18px;background:#7a4b00}#refresh[hidden]{display:none}#status{min-height:1.5em}
+</style></head><body><main><h1 id="title"></h1><button id="refresh" hidden>New options available — reload options</button><div id="grid" class="grid"></div><label for="notes">Notes</label><textarea id="notes" maxlength="4000"></textarea><div><button id="select">Submit selection</button><button id="reject" class="secondary">Reject selected</button><button id="more" class="secondary">Request more options</button></div><p id="status" role="status"></p></main><script>
+let data=${data};const grid=document.querySelector('#grid');function render(){const selected=new Set([...document.querySelectorAll('input:checked')].map(node=>node.value));document.title=data.title;document.querySelector('#title').textContent=data.title;grid.replaceChildren();for(const option of data.options){const card=document.createElement('article');card.className='card';const media=document.createElement(option.kind==='html'?'iframe':'img');media.className='media';media.src='/asset/'+encodeURIComponent(option.id)+'?token='+encodeURIComponent(data.token);if(option.kind==='html'){media.setAttribute('sandbox','');media.title=option.label}else media.alt='';const label=document.createElement('label');label.className='label';const box=document.createElement('input');box.type='checkbox';box.value=option.id;box.checked=selected.has(option.id);label.append(box,document.createTextNode(option.label+' ('+option.id+')'));const desc=document.createElement('p');desc.className='desc';desc.textContent=option.description;card.append(media,label,desc);grid.append(card)}}render();
+async function submit(action){const ids=[...document.querySelectorAll('input:checked')].map(node=>node.value);const status=document.querySelector('#status');if((action==='select'||action==='reject')&&!ids.length){status.textContent='Select at least one option.';return}try{const response=await fetch('/submit',{method:'POST',headers:{'content-type':'application/json','x-preview-token':data.token},body:JSON.stringify({action,ids,notes:document.querySelector('#notes').value})});const result=await response.json();status.textContent=response.ok?'Saved as response '+result.seq+'.':'Error: '+result.error}catch(error){status.textContent='Could not save the response. Try again.'}}
+const refresh=document.querySelector('#refresh');const updates=new EventSource('/events?token='+encodeURIComponent(data.token));updates.onmessage=event=>{if(Number(event.data)>data.revision)refresh.hidden=false};refresh.onclick=async()=>{try{const response=await fetch('/config?token='+encodeURIComponent(data.token));if(!response.ok)throw new Error();const updated=await response.json();data={...updated,token:data.token};render();refresh.hidden=true;document.querySelector('#status').textContent='Options updated.'}catch(error){document.querySelector('#status').textContent='Could not load new options. Try again.'}};
+document.querySelector('#select').onclick=()=>submit('select');document.querySelector('#reject').onclick=()=>submit('reject');document.querySelector('#more').onclick=()=>submit('more');
+</script></body></html>`;
+}
+
+function requestHasValidOrigin(request) {
+  if (request.headers.host === undefined) return false;
+  const origin = request.headers.origin;
+  if (origin && origin !== `http://${request.headers.host}`) return false;
+  return true;
+}
+
+function sendJson(response, status, value) {
+  response.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+  response.end(`${JSON.stringify(value)}\n`);
+}
+
+function processIsRunning(pid) {
+  if (!Number.isSafeInteger(pid) || pid < 1) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
+function reserveServerFile(filename, metadata) {
+  if (fs.existsSync(filename)) {
+    const current = readJson(filename);
+    if (processIsRunning(current.pid)) throw new Error(`state directory is in use by process ${current.pid}`);
+    fs.unlinkSync(filename);
+  }
+  fs.writeFileSync(filename, `${JSON.stringify(metadata, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
+}
+
+function serveAsset(option, response) {
+  const flags = fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0);
+  fs.open(option.requested, flags, (openError, descriptor) => {
+    if (openError) return sendJson(response, 404, { error: 'option asset is unavailable' });
+    fs.fstat(descriptor, (statError, metadata) => {
+      if (statError || !metadata.isFile() || metadata.dev !== option.dev || metadata.ino !== option.ino) {
+        fs.close(descriptor, () => {});
+        return sendJson(response, 404, { error: 'option asset changed after startup' });
+      }
+      response.writeHead(200, { 'content-type': contentType(option), 'cache-control': 'no-store', 'content-security-policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:" });
+      const stream = fs.createReadStream(option.requested, { fd: descriptor, autoClose: true });
+      stream.on('error', () => response.destroy());
+      stream.pipe(response);
+    });
+  });
+}
+
+function serve(values) {
+  if (!values.config || !values['state-dir'] || !values.port) throw new Error(`missing serve option\n${usage()}`);
+  const port = Number(values.port);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('port must be from 1 through 65535');
+  const configFile = fs.realpathSync(values.config);
+  let config = validateConfig(configFile);
+  let revision = 1;
+  const stateDir = privateDirectory(values['state-dir']);
+  const stateFile = path.join(stateDir, 'state.json');
+  const serverFile = path.join(stateDir, 'server.json');
+  const token = crypto.randomBytes(24).toString('base64url');
+  if (!fs.existsSync(stateFile)) writePrivateJson(stateFile, { seq: 0, selected: [], rejected: [], events: [] });
+  reserveServerFile(serverFile, { token, port, config: configFile, pid: process.pid });
+  const eventClients = new Set();
+  const server = http.createServer((request, response) => {
+    let url;
+    try {
+      url = new URL(request.url, `http://${request.headers.host || 'invalid'}`);
+    } catch {
+      return sendJson(response, 400, { error: 'invalid request URL' });
+    }
+    const suppliedToken = request.headers['x-preview-token'] || url.searchParams.get('token');
+    if (!requestHasValidOrigin(request) || suppliedToken !== token) return sendJson(response, 403, { error: 'forbidden' });
+    if (request.method === 'GET' && url.pathname === '/') {
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'content-security-policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; img-src 'self' data:" });
+      return response.end(page(config, token, revision));
+    }
+    if (request.method === 'GET' && url.pathname === '/config') {
+      return sendJson(response, 200, publicConfig(config, revision));
+    }
+    if (request.method === 'GET' && url.pathname === '/events') {
+      response.writeHead(200, {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-store',
+        connection: 'keep-alive',
+      });
+      response.write(`data: ${revision}\n\n`);
+      eventClients.add(response);
+      request.on('close', () => eventClients.delete(response));
+      return;
+    }
+    if (request.method === 'GET' && url.pathname.startsWith('/asset/')) {
+      let id;
+      try {
+        id = decodeURIComponent(url.pathname.slice('/asset/'.length));
+      } catch {
+        return sendJson(response, 400, { error: 'invalid option id encoding' });
+      }
+      const option = config.options.find(candidate => candidate.id === id);
+      if (!option) return sendJson(response, 404, { error: 'unknown option' });
+      return serveAsset(option, response);
+    }
+    if (request.method === 'POST' && url.pathname === '/submit') {
+      let body = '';
+      request.on('data', chunk => { body += chunk; if (body.length > 8192) request.destroy(); });
+      return request.on('end', () => {
+        try {
+          const input = JSON.parse(body);
+          if (!['select', 'reject', 'more'].includes(input.action)) throw new Error('invalid action');
+          if (!Array.isArray(input.ids) || input.ids.some(id => typeof id !== 'string' || !config.ids.has(id))) throw new Error('invalid option ids');
+          if ((input.action === 'select' || input.action === 'reject') && input.ids.length < 1) throw new Error('select at least one option');
+          if (typeof input.notes !== 'string' || input.notes.length > 4000) throw new Error('invalid notes');
+          const state = readJson(stateFile);
+          state.seq += 1;
+          const event = { seq: state.seq, action: input.action, ids: [...new Set(input.ids)], notes: input.notes, at: new Date().toISOString() };
+          state.events.push(event);
+          if (input.action === 'select') {
+            state.selected = [...new Set([...state.selected, ...event.ids])];
+            state.rejected = state.rejected.filter(id => !event.ids.includes(id));
+          }
+          if (input.action === 'reject') {
+            state.rejected = [...new Set([...state.rejected, ...event.ids])];
+            state.selected = state.selected.filter(id => !event.ids.includes(id));
+          }
+          writePrivateJson(stateFile, state);
+          return sendJson(response, 200, { seq: state.seq });
+        } catch (error) { return sendJson(response, 400, { error: error.message }); }
+      });
+    }
+    return sendJson(response, 404, { error: 'not found' });
+  });
+  let refreshTimer;
+  const configWatcher = fs.watch(path.dirname(configFile), (_event, filename) => {
+    if (filename !== null && filename.toString() !== path.basename(configFile)) return;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      try {
+        config = validateConfig(configFile);
+        revision += 1;
+        for (const client of eventClients) client.write(`data: ${revision}\n\n`);
+      } catch (error) {
+        process.stderr.write(`agent-preview: ignored invalid config update: ${error.message}\n`);
+      }
+    }, 50);
+  });
+  const release = () => {
+    try {
+      const current = readJson(serverFile);
+      if (current.pid === process.pid) fs.unlinkSync(serverFile);
+    } catch (error) {
+      if (error.code !== 'ENOENT') fail(`could not release server state: ${error.message}`);
+    }
+  };
+  server.on('error', error => {
+    configWatcher.close();
+    clearTimeout(refreshTimer);
+    release();
+    fail(`could not listen on 0.0.0.0:${port}: ${error.message}`);
+  });
+  server.on('close', () => {
+    configWatcher.close();
+    clearTimeout(refreshTimer);
+    release();
+  });
+  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => {
+    configWatcher.close();
+    clearTimeout(refreshTimer);
+    for (const client of eventClients) client.end();
+    server.close();
+  });
+  server.listen(port, '0.0.0.0', () => process.stdout.write(`${JSON.stringify({ port, token, pid: process.pid })}\n`));
+}
+
+function waitForState(values) {
+  if (!values['state-dir'] || values.after === undefined || values['timeout-seconds'] === undefined) throw new Error(`missing wait option\n${usage()}`);
+  const after = Number(values.after);
+  const timeout = Number(values['timeout-seconds']);
+  if (!Number.isSafeInteger(after) || after < 0) throw new Error('after must be a nonnegative integer');
+  if (!Number.isFinite(timeout) || timeout < 0 || timeout > 86400) throw new Error('timeout-seconds must be from 0 through 86400');
+  const stateDir = privateDirectory(values['state-dir']);
+  const stateFile = path.join(stateDir, 'state.json');
+  const emit = () => {
+    if (!fs.existsSync(stateFile)) return false;
+    let state;
+    try {
+      state = readJson(stateFile);
+    } catch (error) {
+      if (error.code === 'ENOENT') return false;
+      throw error;
+    }
+    const events = state.events.filter(event => event.seq > after);
+    if (!events.length) return false;
+    process.stdout.write(`${JSON.stringify({ cursor: state.seq, events, selected: state.selected, rejected: state.rejected })}\n`);
+    return true;
+  };
+  if (timeout === 0) {
+    emit();
+    return;
+  }
+  let timer;
+  const watcher = fs.watch(stateDir, (_event, filename) => {
+    if ((filename === null || filename === 'state.json') && emit()) {
+      watcher.close();
+      clearTimeout(timer);
+    }
+  });
+  timer = setTimeout(() => watcher.close(), timeout * 1000);
+  if (emit()) {
+    watcher.close();
+    clearTimeout(timer);
+  }
+}
+
+try {
+  const [command, ...argv] = process.argv.slice(2);
+  if (command === '--help' || command === '-h') process.stdout.write(usage());
+  else if (command === 'serve') serve(argumentsFor(command, argv));
+  else if (command === 'wait') waitForState(argumentsFor(command, argv));
+  else throw new Error(usage());
+} catch (error) {
+  fail(error.message);
+}
