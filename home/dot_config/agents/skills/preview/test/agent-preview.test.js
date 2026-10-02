@@ -100,6 +100,7 @@ test('gallery requires its token and labels the iframe', async () => {
   assert.equal(gallery.status, 200);
   assert.match(gallery.body, /media\.title=option\.label/);
   assert.match(gallery.body, /New options available/);
+  assert.match(gallery.body, /Open full size/);
   assert.match(gallery.body, /new EventSource/);
 });
 
