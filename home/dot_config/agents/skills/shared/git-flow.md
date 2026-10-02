@@ -49,6 +49,16 @@ ask what to do.
 After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees what is about to
 move.
 
+**Manual check.** Run it after the gate, also when the tree was already clean.
+Check the commits in `<COMMIT_BASE>..HEAD`, plus commits this run created, by
+hand per the manual-check rule in AGENTS.md. Use the repo's documented harness
+when one exists. For a test change, run the changed tests and read the result.
+Classify config by its effect, not by its file type. Reuse a result while the
+code and inputs for that check are unchanged. Record one line for the report:
+`Checked: <steps, page or command> -> <result>`. Only changes to docs or
+comments record `Checked: n/a (<reason>)`. Without a check, do not push or
+land, and say why.
+
 ## Shared rules
 
 - Never rebase, merge, push, or remove a worktree while the tree is dirty.
