@@ -7,7 +7,8 @@ const test = require('node:test');
 const skillDir = path.resolve(__dirname, '..');
 const watcher = path.resolve(skillDir, '../../../../private_dot_local/bin/executable_agent-watch');
 const fakeGh = path.join(__dirname, 'fixtures/fake-gh.cjs');
-const { backoffDelay } = require(watcher);
+const fakeGlab = path.join(__dirname, 'fixtures/fake-glab.cjs');
+const { backoffDelay, parseArgs } = require(watcher);
 const scratchRoot = process.env.AGENT_WATCH_TEST_ROOT;
 
 if (!scratchRoot) {
@@ -15,7 +16,7 @@ if (!scratchRoot) {
 }
 
 let sequence = 0;
-function runScenario(responses, extraArgs = []) {
+function runScenario(responses, extraArgs = [], options = {}) {
   sequence += 1;
   const directory = path.join(scratchRoot, `case-${process.pid}-${sequence}`);
   fs.mkdirSync(directory, { recursive: true });
@@ -24,7 +25,7 @@ function runScenario(responses, extraArgs = []) {
   fs.writeFileSync(scenario, JSON.stringify(responses));
   const result = spawnSync(process.execPath, [
     watcher,
-    '--target', 'owner/repo#42@abc123',
+    '--target', options.target ?? 'owner/repo#42@abc123',
     '--interval-ms', '1',
     '--max-interval-ms', '2',
     '--deadline-seconds', '2',
@@ -33,9 +34,12 @@ function runScenario(responses, extraArgs = []) {
     encoding: 'utf8',
     env: {
       ...process.env,
+      GITLAB_HOST: '',
       AGENT_WATCH_GH_BIN: fakeGh,
+      AGENT_WATCH_GLAB_BIN: fakeGlab,
       AGENT_WATCH_FAKE_SCENARIO: scenario,
       AGENT_WATCH_FAKE_STATE: state,
+      ...options.env,
     },
   });
   const events = result.stdout.trim().split('\n').filter(Boolean).map(JSON.parse);
@@ -267,4 +271,170 @@ test('emits one final event when terminated', async () => {
   const events = stdout.trim().split('\n').map(JSON.parse);
   assert.equal(events.filter((event) => event.event === 'final').length, 1);
   assert.equal(events.at(-1).reason, 'cancelled');
+});
+
+const gitlabTarget = 'group/sub/project!7@abc123';
+const gitlabProject = 'projects/group%2Fsub%2Fproject';
+const gitlabMr = `${gitlabProject}/merge_requests/7`;
+const gitlabJobs = `${gitlabProject}/pipelines/99/jobs?per_page=100`;
+const gitlabEnv = { GITLAB_HOST: 'gitlab.example.test' };
+function mergeRequest(fields = {}) {
+  return JSON.stringify({
+    iid: 7,
+    web_url: 'https://gitlab.example.test/group/sub/project/-/merge_requests/7',
+    state: 'opened',
+    sha: 'abc123',
+    detailed_merge_status: 'ci_still_running',
+    head_pipeline: { id: 99, status: 'running', web_url: 'https://gitlab.example.test/p/99' },
+    ...fields,
+  });
+}
+function jobs(status) {
+  return JSON.stringify([{
+    name: 'test', status, stage: 'test', web_url: 'https://gitlab.example.test/j/1',
+    allow_failure: false,
+  }]);
+}
+function runGitlab(responses, extraArgs = [], env = gitlabEnv) {
+  return runScenario(responses, extraArgs, { target: gitlabTarget, env });
+}
+
+test('parses GitHub and nested GitLab targets', () => {
+  const { targets } = parseArgs([
+    '--target', 'owner/repo#42@abc123', '--target', gitlabTarget,
+  ]);
+  assert.deepEqual(targets.map((target) => [target.platform, target.key]), [
+    ['github', 'owner/repo#42'],
+    ['gitlab', 'group/sub/project!7'],
+  ]);
+  assert.throws(() => parseArgs(['--target', 'project!7@abc123']), /invalid target/);
+  assert.throws(() => parseArgs(['--target', 'group/project!0@abc123']), /invalid target/);
+});
+
+test('watches a GitLab pipeline with the default glab host', () => {
+  const host = '--hostname gitlab.com --method GET';
+  const passed = mergeRequest({
+    detailed_merge_status: 'mergeable',
+    head_pipeline: { id: 99, status: 'success', web_url: 'https://gitlab.example.test/p/99' },
+  });
+  const result = runGitlab([
+    { includes: 'config get host', stdout: 'gitlab.com\n' },
+    { includes: `api ${host} ${gitlabMr}`, stdout: mergeRequest() },
+    { includes: `api ${host} --paginate ${gitlabJobs}`, stdout: jobs('running') },
+    { includes: `api ${host} ${gitlabMr}`, stdout: passed },
+    { includes: `api ${host} --paginate ${gitlabJobs}`, stdout: jobs('success') },
+    { includes: `api ${host} ${gitlabMr}`, stdout: passed },
+  ], [], {});
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.events.map((event) => event.event), ['initial', 'change', 'final']);
+  assert.equal(result.events[0].target, 'group/sub/project!7');
+  assert.equal(result.events[0].reason, 'checks_pending');
+  assert.equal(result.events[1].reason, 'required_checks_passed');
+  assert.equal(result.events[1].mergeStatus, 'mergeable');
+  assert.equal(result.events[1].checks[0].link, 'https://gitlab.example.test/j/1');
+  assert.equal(result.events[2].reason, 'checks_complete');
+});
+
+test('uses GITLAB_HOST without asking glab for its host', () => {
+  const result = runGitlab([
+    { includes: `api --hostname gitlab.example.test --method GET ${gitlabMr}`, stdout: mergeRequest({ sha: 'def456' }) },
+  ]);
+  assert.equal(result.status, 2, result.stderr);
+  assert.equal(result.events[0].reason, 'head_changed');
+  assert.equal(result.events[0].observedHead, 'def456');
+  assert.equal(result.events.at(-1).reason, 'action_required');
+});
+
+test('reports GitLab merge request states without querying jobs', async (context) => {
+  for (const [name, fields, status, reason] of [
+    ['merged', { state: 'merged' }, 0, 'merged'],
+    ['closed', { state: 'closed' }, 2, 'closed'],
+    ['unknown state', { state: 'other' }, 2, 'unknown_pull_request_state'],
+    ['no pipeline', { head_pipeline: null }, 2, 'no_required_checks'],
+    ['missing data', { sha: undefined }, 2, 'missing_pull_request_data'],
+  ]) {
+    await context.test(name, () => {
+      const result = runGitlab([{ includes: gitlabMr, stdout: mergeRequest(fields) }]);
+      assert.equal(result.status, status, result.stderr);
+      assert.equal(result.events[0].reason, reason);
+    });
+  }
+});
+
+test('reports a locked GitLab merge request as pending', () => {
+  const result = runGitlab([
+    { includes: gitlabMr, stdout: mergeRequest({ state: 'locked' }) },
+    { includes: gitlabMr, stdout: mergeRequest({ state: 'merged' }) },
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.events.map((event) => event.reason), ['merge_in_progress', 'merged', 'checks_complete']);
+});
+
+test('reports GitLab pipeline blockers', async (context) => {
+  for (const [pipelineStatus, reason] of [
+    ['failed', 'check_failed'],
+    ['canceled', 'check_cancelled'],
+    ['manual', 'manual_action_required'],
+    ['skipped', 'unknown_check_state'],
+  ]) {
+    await context.test(pipelineStatus, () => {
+      const result = runGitlab([
+        {
+          includes: gitlabMr,
+          stdout: mergeRequest({ head_pipeline: { id: 99, status: pipelineStatus } }),
+        },
+        { includes: gitlabJobs, stdout: jobs(pipelineStatus) },
+      ]);
+      assert.equal(result.status, 2, result.stderr);
+      assert.equal(result.events[0].reason, reason);
+      assert.equal(result.events[0].pipeline.status, pipelineStatus);
+    });
+  }
+  await context.test('missing job data', () => {
+    const result = runGitlab([
+      { includes: gitlabMr, stdout: mergeRequest() },
+      { includes: gitlabJobs, stdout: JSON.stringify([{ name: 'test' }]) },
+    ]);
+    assert.equal(result.status, 2, result.stderr);
+    assert.equal(result.events[0].reason, 'missing_check_data');
+  });
+});
+
+test('reads fork MR jobs from the pipeline project', () => {
+  const forkPipeline = { id: 99, status: 'success', project_id: 555 };
+  const passed = mergeRequest({ head_pipeline: forkPipeline });
+  const result = runGitlab([
+    { includes: gitlabMr, stdout: passed },
+    { includes: 'projects/555/pipelines/99/jobs?per_page=100', stdout: jobs('success') },
+    { includes: gitlabMr, stdout: passed },
+  ]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.events[0].reason, 'required_checks_passed');
+});
+
+test('rechecks the GitLab head pipeline before reporting success', () => {
+  const passed = mergeRequest({ head_pipeline: { id: 99, status: 'success' } });
+  const result = runGitlab([
+    { includes: gitlabMr, stdout: passed },
+    { includes: gitlabJobs, stdout: jobs('success') },
+    { includes: gitlabMr, stdout: mergeRequest({ head_pipeline: { id: 100, status: 'running' } }) },
+    { includes: gitlabMr, stdout: mergeRequest({ sha: 'def456' }) },
+  ]);
+  assert.equal(result.status, 2, result.stderr);
+  assert.deepEqual(result.events.map((event) => event.reason), ['pipeline_changed', 'head_changed', 'action_required']);
+  assert.equal(result.events[0].observedPipeline, 100);
+});
+
+test('preserves GitLab permission and authentication errors', async (context) => {
+  for (const [name, detail, reason] of [
+    ['permission', 'glab: 403 Forbidden', 'permission_error'],
+    ['authentication', 'glab: 401 Unauthorized', 'authentication_error'],
+  ]) {
+    await context.test(name, () => {
+      const result = runGitlab([{ includes: gitlabMr, stderr: detail, code: 1 }]);
+      assert.equal(result.status, 2, result.stderr);
+      assert.equal(result.events[0].reason, reason);
+      assert.equal(result.events[0].detail, detail);
+    });
+  }
 });

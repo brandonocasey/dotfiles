@@ -7,14 +7,24 @@ const CHECK_FIELDS = 'name,state,bucket,description,link,workflow,event';
 const DEFAULT_INTERVAL_MS = 15_000;
 const DEFAULT_MAX_INTERVAL_MS = 120_000;
 const DEFAULT_DEADLINE_SECONDS = 3_600;
+const GITLAB_PENDING_STATUSES = new Set([
+  'created', 'waiting_for_resource', 'preparing', 'pending', 'running',
+  'scheduled', 'waiting_for_callback',
+]);
 
 function usage() {
   return [
-    'Usage: agent-watch --target OWNER/REPO#PR@HEAD_SHA [--target ...]',
+    'Usage: agent-watch --target TARGET [--target ...]',
     '                   [--deadline-seconds N] [--interval-ms N]',
     '                   [--max-interval-ms N]',
     '',
-    'Watch required GitHub checks with read-only gh queries.',
+    'TARGET is OWNER/REPO#PR@HEAD_SHA for a GitHub pull request, or',
+    'GROUP[/SUBGROUP...]/PROJECT!IID@HEAD_SHA for a GitLab merge request.',
+    '',
+    'Watch required GitHub checks with read-only gh queries, or the GitLab',
+    'head pipeline with read-only glab api queries. The GitLab host comes',
+    "from GITLAB_HOST, else from `glab config get host`. Other platforms",
+    'are not supported.',
   ].join('\n');
 }
 
@@ -30,16 +40,27 @@ function parsePositiveInteger(value, option, allowZero = false) {
 }
 
 function parseTarget(value) {
-  const match = /^([^\s/#]+\/[^\s/#]+)#([1-9]\d*)@([0-9A-Za-z._-]+)$/.exec(value);
-  if (!match) {
-    throw new Error(`invalid target: ${value}`);
+  const github = /^([^\s/#]+\/[^\s/#]+)#([1-9]\d*)@([0-9A-Za-z._-]+)$/.exec(value);
+  if (github) {
+    return {
+      platform: 'github',
+      repo: github[1],
+      number: Number(github[2]),
+      head: github[3],
+      key: `${github[1]}#${github[2]}`,
+    };
   }
-  return {
-    repo: match[1],
-    number: Number(match[2]),
-    head: match[3],
-    key: `${match[1]}#${match[2]}`,
-  };
+  const gitlab = /^([^\s/#!@]+(?:\/[^\s/#!@]+)+)!([1-9]\d*)@([0-9A-Za-z._-]+)$/.exec(value);
+  if (gitlab) {
+    return {
+      platform: 'gitlab',
+      repo: gitlab[1],
+      number: Number(gitlab[2]),
+      head: gitlab[3],
+      key: `${gitlab[1]}!${gitlab[2]}`,
+    };
+  }
+  throw new Error(`invalid target: ${value}`);
 }
 
 function parseArgs(argv) {
@@ -92,13 +113,16 @@ function backoffDelay(attempt, intervalMs, maxIntervalMs) {
   return Math.min(intervalMs * (2 ** attempt), maxIntervalMs);
 }
 
-function runGh(
-  args,
-  ghBin = process.env.AGENT_WATCH_GH_BIN || 'gh',
-  options = {},
-) {
+function commandBin(platform) {
+  if (platform === 'gitlab') {
+    return process.env.AGENT_WATCH_GLAB_BIN || 'glab';
+  }
+  return process.env.AGENT_WATCH_GH_BIN || 'gh';
+}
+
+function runCommand(args, bin = commandBin('github'), options = {}) {
   return new Promise((resolve) => {
-    execFile(ghBin, args, {
+    execFile(bin, args, {
       maxBuffer: 64 * 1024 * 1024,
       signal: options.signal,
       timeout: options.timeoutMs,
@@ -109,7 +133,7 @@ function runGh(
           signal: error?.signal ?? null,
           stdout,
           stderr,
-          invocation: [ghBin, ...args],
+          invocation: [bin, ...args],
           timedOut: Boolean(error?.killed && error?.signal === 'SIGTERM'),
         });
       });
@@ -128,7 +152,7 @@ function commandFailure(result) {
   return {
     status: 'blocked',
     reason,
-    detail: detail || `gh exited with status ${result.code}`,
+    detail: detail || `${result.invocation[0]} exited with status ${result.code}`,
     command: result.invocation,
     exitCode: result.code,
     signal: result.signal,
@@ -237,7 +261,7 @@ function classify(target, view, checks) {
   return { status: 'complete', reason: 'required_checks_passed', checks: normalizedChecks };
 }
 
-async function snapshot(target, gh = runGh) {
+async function snapshot(target, gh = runCommand) {
   const viewResult = await gh([
     'pr', 'view', String(target.number), '--repo', target.repo,
     '--json', VIEW_FIELDS,
@@ -276,6 +300,148 @@ async function snapshot(target, gh = runGh) {
   return classify(target, parsedFinalView.value, parsedChecks.value);
 }
 
+function normalizeJobs(jobs) {
+  return jobs.map((job) => ({
+    name: job?.name ?? null,
+    state: job?.status ?? null,
+    stage: job?.stage ?? null,
+    link: job?.web_url ?? null,
+    allowFailure: job?.allow_failure ?? null,
+  })).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+}
+
+function gitlabPipelineReason(status) {
+  if (status === 'success') return ['complete', 'required_checks_passed'];
+  if (status === 'failed') return ['blocked', 'check_failed'];
+  if (status === 'canceled' || status === 'canceling') return ['blocked', 'check_cancelled'];
+  if (status === 'manual') return ['blocked', 'manual_action_required'];
+  if (GITLAB_PENDING_STATUSES.has(status)) return ['pending', 'checks_pending'];
+  return ['blocked', 'unknown_check_state'];
+}
+
+function classifyGitlab(target, mr, jobs) {
+  if (typeof mr.sha !== 'string' || typeof mr.state !== 'string') {
+    return { status: 'blocked', reason: 'missing_pull_request_data', view: mr };
+  }
+  const url = mr.web_url ?? null;
+  if (mr.sha !== target.head) {
+    return {
+      status: 'blocked',
+      reason: 'head_changed',
+      expectedHead: target.head,
+      observedHead: mr.sha,
+      url,
+    };
+  }
+  if (mr.state === 'merged') {
+    return { status: 'complete', reason: 'merged', url };
+  }
+  if (mr.state === 'closed') {
+    return { status: 'blocked', reason: 'closed', url };
+  }
+  const mergeStatus = mr.detailed_merge_status ?? null;
+  // GitLab reports `locked` while it merges; the next poll shows `merged`.
+  if (mr.state === 'locked') {
+    return { status: 'pending', reason: 'merge_in_progress', url, mergeStatus };
+  }
+  if (mr.state !== 'opened') {
+    return { status: 'blocked', reason: 'unknown_pull_request_state', state: mr.state };
+  }
+  const headPipeline = mr.head_pipeline;
+  if (headPipeline === null || headPipeline === undefined) {
+    return { status: 'blocked', reason: 'no_required_checks', checks: [], mergeStatus };
+  }
+  const pipeline = {
+    id: headPipeline.id ?? null,
+    status: headPipeline.status ?? null,
+    link: headPipeline.web_url ?? null,
+  };
+  if (!pipeline.id || !pipeline.status || !Array.isArray(jobs)) {
+    return { status: 'blocked', reason: 'missing_check_data', pipeline, mergeStatus };
+  }
+  const checks = normalizeJobs(jobs);
+  if (checks.some((check) => !check.name || !check.state)) {
+    return { status: 'blocked', reason: 'missing_check_data', pipeline, mergeStatus, checks };
+  }
+  const [status, reason] = gitlabPipelineReason(pipeline.status);
+  return { status, reason, pipeline, mergeStatus, checks };
+}
+
+async function resolveGitlabHost(glab) {
+  if (process.env.GITLAB_HOST) {
+    return { host: process.env.GITLAB_HOST };
+  }
+  const result = await glab(['config', 'get', 'host']);
+  if (result.deadlineExceeded) {
+    return { error: { status: 'blocked', reason: 'deadline_exceeded' } };
+  }
+  if (result.code !== 0) {
+    return { error: commandFailure(result) };
+  }
+  const host = result.stdout.trim();
+  if (!host) {
+    return { error: { status: 'blocked', reason: 'missing_gitlab_host', command: result.invocation } };
+  }
+  return { host };
+}
+
+async function snapshotGitlab(target, glab, hostCache = {}) {
+  if (!hostCache.host) {
+    const resolved = await resolveGitlabHost(glab);
+    if (resolved.error) {
+      return resolved.error;
+    }
+    hostCache.host = resolved.host;
+  }
+  const project = `projects/${encodeURIComponent(target.repo)}`;
+  const api = (endpoint, extra = []) => glab([
+    'api', '--hostname', hostCache.host, '--method', 'GET', ...extra, endpoint,
+  ]);
+  const mrEndpoint = `${project}/merge_requests/${target.number}`;
+  const parsedMr = parseJson(await api(mrEndpoint), 'object');
+  if (parsedMr.error) {
+    return parsedMr.error;
+  }
+  const mr = parsedMr.value;
+  const pipelineId = mr.head_pipeline?.id;
+  if (mr.sha !== target.head || mr.state !== 'opened' || !pipelineId) {
+    return classifyGitlab(target, mr);
+  }
+  // A fork MR pipeline runs in the source project, so its jobs are not under the target project.
+  const pipelineProjectId = mr.head_pipeline.project_id;
+  const pipelineProject = Number.isInteger(pipelineProjectId)
+    ? `projects/${pipelineProjectId}`
+    : project;
+  const parsedJobs = parseJson(
+    await api(`${pipelineProject}/pipelines/${pipelineId}/jobs?per_page=100`, ['--paginate']),
+    'array',
+  );
+  if (parsedJobs.error) {
+    return parsedJobs.error;
+  }
+  const state = classifyGitlab(target, mr, parsedJobs.value);
+  if (state.status !== 'complete') {
+    return state;
+  }
+
+  const parsedFinalMr = parseJson(await api(mrEndpoint), 'object');
+  if (parsedFinalMr.error) {
+    return parsedFinalMr.error;
+  }
+  const finalMr = parsedFinalMr.value;
+  if (finalMr.state === 'opened' && finalMr.sha === target.head
+    && finalMr.head_pipeline?.id !== pipelineId) {
+    return {
+      status: 'pending',
+      reason: 'pipeline_changed',
+      expectedPipeline: pipelineId,
+      observedPipeline: finalMr.head_pipeline?.id ?? null,
+      mergeStatus: finalMr.detailed_merge_status ?? null,
+    };
+  }
+  return classifyGitlab(target, finalMr, parsedJobs.value);
+}
+
 function stableState(state) {
   return JSON.stringify(state);
 }
@@ -302,6 +468,7 @@ async function watch(options) {
   const active = new Map(options.targets.map((target) => [target.key, target]));
   const signalState = { signal: null, wake: null };
   const controller = new AbortController();
+  const gitlabHost = {};
   let finalized = false;
   let attempt = 0;
 
@@ -340,12 +507,12 @@ async function watch(options) {
     let foundBlocker = false;
     let deadlineHit = false;
     for (const [key, target] of active) {
-      const state = await snapshot(target, async (args) => {
+      const run = async (args) => {
         const remainingMs = deadlineAt - Date.now();
         if (remainingMs <= 0) {
           return { deadlineExceeded: true };
         }
-        const result = await runGh(args, undefined, {
+        const result = await runCommand(args, commandBin(target.platform), {
           signal: controller.signal,
           timeoutMs: Math.max(1, Math.min(30_000, remainingMs)),
         });
@@ -353,7 +520,10 @@ async function watch(options) {
           return { deadlineExceeded: true };
         }
         return result;
-      });
+      };
+      const state = target.platform === 'gitlab'
+        ? await snapshotGitlab(target, run, gitlabHost)
+        : await snapshot(target, run);
       if (signalState.signal) break;
       if (state.reason === 'deadline_exceeded') {
         deadlineHit = true;
@@ -422,4 +592,6 @@ if (require.main === module) {
   });
 }
 
-module.exports = { backoffDelay, classify, parseArgs, snapshot };
+module.exports = {
+  backoffDelay, classify, classifyGitlab, parseArgs, snapshot, snapshotGitlab,
+};
