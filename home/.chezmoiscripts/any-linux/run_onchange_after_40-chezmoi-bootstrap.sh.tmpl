@@ -13,8 +13,10 @@ cmd_exists() {
 if cmd_exists chezmoi; then
   if [ ! -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
     echo "writing chezmoi config"
-    FILE="$(chezmoi execute-template < "$(chezmoi source-path)/.chezmoi.toml.tmpl")"
-    echo "$FILE" > "$HOME/.config/chezmoi/chezmoi.toml"
+    mkdir -p "$HOME/.config/chezmoi"
+    cat > "$HOME/.config/chezmoi/chezmoi.toml" <<'CHEZMOI_CONFIG'
+{{ includeTemplate ".chezmoi.toml.tmpl" . -}}
+CHEZMOI_CONFIG
   fi
 
   _cmgit() {
