@@ -67,6 +67,32 @@ function writePrivateJson(filename, value) {
   }
 }
 
+function watchChanges(filename, listener) {
+  let nativeWatcher;
+  let polling = false;
+  let closed = false;
+  const fallback = error => {
+    nativeWatcher?.close();
+    if (closed || polling) return;
+    polling = true;
+    process.stderr.write(`agent-preview: native watcher unavailable (${error.code || error.message}); using file-stat checks\n`);
+    fs.watchFile(filename, { interval: 250 }, listener);
+  };
+  try {
+    nativeWatcher = fs.watch(path.dirname(filename), (_event, changed) => {
+      if (changed === null || changed.toString() === path.basename(filename)) listener();
+    });
+    nativeWatcher.on('error', fallback);
+  } catch (error) {
+    fallback(error);
+  }
+  return { close() {
+    closed = true;
+    nativeWatcher?.close();
+    if (polling) fs.unwatchFile(filename, listener);
+  } };
+}
+
 function validateConfig(filename) {
   const config = readJson(filename);
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -271,8 +297,7 @@ function serve(values) {
     return sendJson(response, 404, { error: 'not found' });
   });
   let refreshTimer;
-  const configWatcher = fs.watch(path.dirname(configFile), (_event, filename) => {
-    if (filename !== null && filename.toString() !== path.basename(configFile)) return;
+  const configWatcher = watchChanges(configFile, () => {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
       try {
@@ -339,8 +364,8 @@ function waitForState(values) {
     return;
   }
   let timer;
-  const watcher = fs.watch(stateDir, (_event, filename) => {
-    if ((filename === null || filename === 'state.json') && emit()) {
+  const watcher = watchChanges(stateFile, () => {
+    if (emit()) {
       watcher.close();
       clearTimeout(timer);
     }

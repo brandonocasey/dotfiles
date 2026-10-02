@@ -47,6 +47,8 @@ agent-preview wait --state-dir "$state_dir" --after 0 --timeout-seconds 900
 ```
 
 The wait returns JSON after a new submission. A timeout prints nothing and does not discard feedback. Run it again with the same cursor. Do not poll a model or ask the user to type that they submitted.
+If native file watchers are unavailable, the helper checks file metadata every
+250 milliseconds. Browser updates still arrive through server events.
 
 For a `more` response, update the same config file with valid options and stable IDs. The running server validates the edit and keeps the same URL and token. The open gallery shows a **New options available** button. The button reloads the options while preserving notes and selections whose IDs remain present. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
 

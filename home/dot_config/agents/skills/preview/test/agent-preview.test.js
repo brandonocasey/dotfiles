@@ -18,6 +18,7 @@ const config = path.join(root, 'config.json');
 let child;
 let port;
 let token;
+let serverErrors = '';
 
 function run(args) {
   return spawnSync(process.execPath, [helper, ...args], { encoding: 'utf8' });
@@ -40,7 +41,7 @@ function startServer() {
   });
   return new Promise((resolve, reject) => {
     let output = '';
-    child.stderr.on('data', chunk => { output += chunk; });
+    child.stderr.on('data', chunk => { output += chunk; serverErrors += chunk; });
     child.once('exit', code => reject(new Error(`server exited ${code}: ${output}`)));
     child.stdout.once('data', chunk => {
       const started = JSON.parse(chunk.toString());
@@ -154,7 +155,7 @@ test('valid config edits refresh at the same token while invalid edits retain th
   assert.equal(submission.status, 200);
 
   fs.writeFileSync(config, '{ invalid json');
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await waitFor(() => serverErrors.includes('ignored invalid config update'));
   const retained = await request(`/config?token=${token}`);
   assert.equal(retained.status, 200);
   assert.deepEqual(JSON.parse(retained.body), refreshed);
@@ -182,4 +183,30 @@ test('symbolic-link state directories and files are rejected', () => {
   const fileResult = run(['wait', '--state-dir', fileState, '--after', '0', '--timeout-seconds', '0']);
   assert.equal(fileResult.status, 1);
   assert.match(fileResult.stderr, /refusing symbolic link/);
+});
+
+test('wait receives later feedback when native watcher resources are exhausted', async t => {
+  const preload = path.join(root, 'no-native-watch.cjs');
+  const fallbackState = path.join(root, 'fallback-state');
+  fs.mkdirSync(fallbackState, { mode: 0o700 });
+  fs.writeFileSync(preload, "const fs=require('node:fs'); fs.watch = () => { throw Object.assign(new Error('watch quota exhausted'), {code:'EMFILE'}); }; const watchFile=fs.watchFile; fs.watchFile=(...args)=>{ const watcher=watchFile(...args); setImmediate(()=>process.send?.('watch armed')); return watcher; };\n");
+  const waiting = spawn(process.execPath, ['--require', preload, helper, 'wait',
+    '--state-dir', fallbackState, '--after', '0', '--timeout-seconds', '3'],
+  { stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+  t.after(() => { if (waiting.exitCode === null) waiting.kill('SIGTERM'); });
+  let output = '';
+  let errors = '';
+  waiting.stdout.on('data', chunk => { output += chunk; });
+  waiting.stderr.on('data', chunk => { errors += chunk; });
+  const finished = new Promise(resolve => waiting.once('exit', resolve));
+  await new Promise((resolve, reject) => {
+    waiting.once('message', resolve);
+    waiting.once('error', reject);
+    waiting.once('exit', code => reject(new Error(`wait exited before watching: ${code}`)));
+  });
+  fs.writeFileSync(path.join(fallbackState, 'state.json'), JSON.stringify({ seq: 1,
+    selected: ['choice-b'], rejected: [], events: [{ seq: 1, action: 'select', ids: ['choice-b'], notes: 'fallback response' }] }));
+  assert.equal(await finished, 0);
+  assert.deepEqual(JSON.parse(output).selected, ['choice-b']);
+  assert.match(errors, /using file-stat checks/);
 });

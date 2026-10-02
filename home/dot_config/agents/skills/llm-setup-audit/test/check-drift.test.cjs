@@ -69,7 +69,7 @@ test('snapshot renders source, resolves links, and detects missing references', 
   const result = snapshot({ home, chezmoi: fake, paths: ['.config/agents'] });
   assert.equal(result.files['.config/agents/example.md'].matchesSource, false);
   assert.equal(result.files['.config/agents/alias.md'].matchesSource, true);
-  assert.equal(result.files['.config/agents/alias.md'].resolved, target);
+  assert.equal(result.files['.config/agents/alias.md'].resolved, fs.realpathSync(target));
   assert.deepEqual(result.files['.config/agents/example.md'].missingReferences, ['absent.md']);
   assert.deepEqual(brokenReferences(target, '[Self](#section)'), []);
   fs.rmSync(target);
