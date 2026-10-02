@@ -36,6 +36,11 @@ Find each target's source before editing: chezmoi or another repository. Update 
 Before any sync, check hooks and automatic Git settings.
 A sync must not commit, push, or overwrite other files without approval.
 
+When the scope names several hosts, read [host-drift.md](references/host-drift.md).
+Compare each shared source with its resolved installation on every named host.
+Distinguish intentional host differences from stale copies. After an authorized
+sync, check hashes and linked references again; report every remaining mismatch.
+
 ### Chezmoi
 
 It manages `~/.config/agents/` and `~/.codex/agents/` as plain files with automatic commits and pushes enabled.
@@ -98,8 +103,14 @@ Prioritize recurring cost over raw file size:
    Plugin skills ignore `skillOverrides`; manage them through `/plugin`.
 3. Skill bodies load on invocation and remain in context.
    Weight cost by `/<name>` or `$<name>` counts in `~/.claude*/history.jsonl` and `~/.codex/history.jsonl`.
-   History records typed invocations only. For model-invocable skills, also count Claude `"name":"Skill"` calls in `~/.claude*/projects/*/*.jsonl`.
+   History records typed invocations only.
+   For model-invocable skills, count Claude `"name":"Skill"` calls recursively under `~/.claude*/projects/`, including sub-agent logs.
 4. Linked reads add tokens. Make each conditional: “Read X when Y.”
+
+For workflow improvements or a session-history audit, read
+[session-evidence.md](references/session-evidence.md). Inspect corrections and
+repeated follow-ups alongside invocation counts. Check the surrounding turns,
+current implementation, and coverage before ranking avoidable user effort.
 
 Claude Code compaction retains at most the first 5,000 tokens per invoked skill, about 15 KB by this estimate.
 Flag longer skills and put essential rules first. Its shared retention budget can also drop older skills.
@@ -134,6 +145,9 @@ Never add tool-specific commands there.
 
 1. Complete setup, apply fixes, and record veto items.
 2. Check edited frontmatter with `head`, compare token counts, and re-derive algorithms or calculations changed or retained.
+   After workflow edits, replay relevant failures with
+   [workflow-replays.md](references/workflow-replays.md). Record expected and
+   observed behavior without external writes. Do not infer savings from counts.
 3. Report **Bugs fixed / Deduped / Improved / Veto items / Left alone**.
    For each finding, state the defect, its workflow effect, and the fix.
 
