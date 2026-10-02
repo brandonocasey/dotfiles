@@ -14,7 +14,10 @@ Remote fetch — GitHub:
 gh pr view <n> --repo <owner>/<repo>              # title, description, state, branches
 gh pr diff <n> --repo <owner>/<repo>
 gh pr view <n> --repo <owner>/<repo> --comments   # existing discussion — skip already-raised points
+gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments
 ```
+
+The API command includes inline review comments. Skip findings already raised there.
 
 ## Source checkout
 

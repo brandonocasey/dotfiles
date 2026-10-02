@@ -1,6 +1,6 @@
 ---
 name: manual-tester
-description: "Exercise manual workflows and tune tests; report observed behavior and evidence."
+description: "Exercise manual workflows; report observed behavior and evidence."
 model: claude-opus-5-5
 effort: medium
 tools: >

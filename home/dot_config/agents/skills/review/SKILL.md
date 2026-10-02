@@ -66,6 +66,8 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 
 - **Remote target**: read [remote-target.md](references/remote-target.md) for
   metadata, discussion, diffs, and the source checkout before review.
+  Read [ci-and-conflicts.md](references/ci-and-conflicts.md) for CI status,
+  mergeability, repair authorization, retries, and conflict handling.
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
 - When `.gitmodules` exists and the review runs tests, initialize submodules per the

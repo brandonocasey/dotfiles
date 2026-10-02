@@ -24,7 +24,7 @@ rules for commits and pushes.
 
 Before you start, list what this session can use for this issue:
 
-- MCP servers: connected tools, and deferred tools found with `ToolSearch`
+- MCP servers: connected tools and deferred tools found through the harness's tool search
   (issue trackers, error trackers, logs, chat, docs, browsers, databases).
 - CLIs: check with `command -v <name>`, for example `gh`, `glab`, `curl`,
   `docker`, `kubectl`, and the language's debugger and profiler.
@@ -111,8 +111,8 @@ only, this overrides the `browser` skill's rule against sound. Rules:
 
 - Before audible playback starts, tell the user in one line, for example
   "Starting headed Firefox with sound to check the audio track."
-- Use a headed MCP entry that does not start with `--mute-audio`. A page cannot
-  undo a process-level mute. Check with `claude mcp get <name>`.
+- Check the active harness's MCP configuration for a headed entry without `--mute-audio`.
+  Use that entry; a page cannot undo a process-level mute.
 - Unmute in the page and in the app, for example the media element's `muted`
   and `volume` and the app's own mute control.
 - Browsers block unmuted autoplay without a user gesture. Use the MCP's click

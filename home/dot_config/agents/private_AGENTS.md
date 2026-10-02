@@ -18,7 +18,7 @@
 - At task end, close MCP resources, stop servers and background processes you started, and free their ports. Remove scratch files, helpers, test data, extra branches, debug output, and logs. Keep requested files and copy files awaiting use. If a helper could serve a teammate or a later task, propose a project path and let me decide; never leave it in the repository without consent.
 - Make copyable commands, comments, commit messages, and snippets safe for terminals wrapping at about 80 characters:
   - Show every proposal's exact final wording in chat, even with a copy file. Put longer commands in the Copy directory's `run-<task>.sh` and text in `<task>.md`.
-  - Give one usage line: `bash ~/.cache/agents/copy/run-<task>.sh` (Git Bash on Windows) or `copy ~/.cache/agents/copy/<task>.md`. `copy` uses OSC 52 and works over SSH and from `!` commands; never suggest pbcopy or clip. Delete copy files only after observing successful use or my report of use.
+  - Give one usage line with the resolved Copy directory: `bash <Copy>/run-<task>.sh` (Git Bash on Windows) or `copy <Copy>/<task>.md`. `copy` uses OSC 52 over SSH and from `!` commands. Never suggest `pbcopy` or `clip`. Delete copy files only after observing successful use or my report of use.
   - Put short items in separate fenced blocks, each containing one line, with no extra content or backslash continuations.
 
 ## Directories
@@ -56,7 +56,7 @@ Apply ASD-STE100 writing rules to chat, docs, comments, commits, and MR/PR text:
 - Number 3+ sequential steps; bullet 3+ parallel items. Cap answer lists at five, then split into “do now” and “later”. Never truncate complete findings, steps, or conditions.
 - For multi-step work, show the current state each turn or maintain a checklist. Finish the current issue before raising another. When input is needed, end with one action I can finish within two minutes. Repeat all needed links, commands, and addresses in recaps.
 - “Explain” requires a full explanation with headers. Ask one short question for genuinely ambiguous requests. For options, give 2–4 ranked choices, recommendation first, with one trade-off each.
-- Format links as `MR 42 https://…`: label, spaces, raw URL, original scheme, no wrapper. Local files may use clickable `path:line`; commits use sha only. End recaps containing external links with a **Links** section containing only those links.
+- Format links as `MR 42 https://…`: label, spaces, raw URL, original scheme, no wrapper. Use bare `path:line` for local files; commits use sha only. End recaps containing external links with a **Links** section containing only those links.
 
 ## Git
 
