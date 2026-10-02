@@ -1,0 +1,51 @@
+#!/bin/bash
+# Jenkins REST API caller, the Jenkins counterpart of jira-api.
+# Usage: jenkins-api <METHOD> <path> [form-body]
+#   jenkins-api GET /me/api/json
+#   jenkins-api GET /job/<name>/lastBuild/consoleText
+#   jenkins-api POST /job/<name>/buildWithParameters 'BRANCH=master'
+
+if [ $# -lt 2 ]; then
+    echo "Usage: jenkins-api <METHOD> <path> [form-body]" >&2
+    exit 2
+fi
+
+JENKINS_USER=${JENKINS_USER:-$USER}
+
+if [ -z "$JENKINS_URL" ]; then
+    if command -v pass &>/dev/null; then
+        JENKINS_URL=$(pass show api/jenkins-url 2>/dev/null | head -1)
+    fi
+
+    if [ -z "$JENKINS_URL" ]; then
+        echo "Error: JENKINS_URL not set and could not retrieve from pass." >&2
+        echo "Either set JENKINS_URL or run: pass insert api/jenkins-url" >&2
+        exit 1
+    fi
+fi
+
+if [ -z "$JENKINS_TOKEN" ]; then
+    if command -v pass &>/dev/null; then
+        JENKINS_TOKEN=$(pass show api/jenkins 2>/dev/null | head -1)
+    fi
+
+    if [ -z "$JENKINS_TOKEN" ]; then
+        echo "Error: JENKINS_TOKEN not set and could not retrieve from pass." >&2
+        echo "Either set JENKINS_TOKEN or run: pass insert api/jenkins" >&2
+        exit 1
+    fi
+fi
+
+method=$1
+path=${2#/}
+body=$3
+
+# Pass credentials via a curl config on stdin so the token stays out of argv.
+# API token auth does not need a CSRF crumb, so POST works without one.
+args=(-sS -g -X "$method" -w '\nHTTP %{http_code}\n')
+if [ -n "$body" ]; then
+    args+=(--data "$body")
+fi
+
+printf 'user = "%s:%s"\n' "$JENKINS_USER" "$JENKINS_TOKEN" |
+    curl -K - "${args[@]}" "${JENKINS_URL%/}/$path"
