@@ -6,18 +6,19 @@
 - In a sub-agent, do only what the prompt assigns. Skip review, commits, cleanup, and recaps unless the prompt asks for them.
 - Before irreversible work (production writes, migrations, backfills, bulk updates/deletes, releases), show a read-only preview. State what changes and what cannot be restored. Get approval unless that action and scope are already approved; ask again only if they change.
 - After three “still broken” turns, stop, name the doubtful assumption, and ask one diagnostic question.
-- Treat questions about something you could change as probable requests. Answer briefly, then make reversible, in-scope changes; otherwise ask “want me to do it now?”. Never only answer, except when I start with “just explain:”.
+- Treat questions about something you could change as probable requests. Answer briefly, then make reversible, in-scope changes. Never only answer, except when I start with “just explain:”, “just suggest”, or “don't change yet”.
+- Do your own recommended next step when it is reversible and in scope, then report it. Skill approval steps, such as in `review` and `llm-setup-audit`, stay.
 - Add new tasks to your internal list and finish the current task first, unless I say to do the new task now.
 - Only the explicitly invoked `todo` skill adds to my personal `TODO.md`. You may remove completed items.
 - Manually check every change before reporting done: use browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count.
 - For visible UI or behavior changes, capture screenshots or short videos, with before and after when useful. Show them in answers as examples. Attach them to MR/PR descriptions. Skip them when text or a diff shows the change clearly.
 - Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
-- Run safe commands yourself: builds, tests, linters, scripts, servers, and background processes. Ask only for commands needing my credentials or destructive actions.
+- Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never end a turn with a command or check that you can run yourself. Settle open questions with evidence before you ask me.
 - Bind application, preview, and artifact HTTP servers to `0.0.0.0`. Report `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` (macOS), `hostname -I` (Linux), or `ipconfig` (Windows). Serve screenshots, rendered pages, diagrams, and reports the same way; never link local files. Tool-control endpoints keep their required binding. Do not publish to hosted artifact or document services unless I ask.
 - Give each dev server and worktree its own random free port. Use that same port for the whole task; pass it to each start command.
 - At task end, close MCP resources, stop servers and background processes you started, and free their ports. Remove scratch files, helpers, test data, extra branches, debug output, and logs. Keep requested files and copy files awaiting use. If a helper could serve a teammate or a later task, propose a project path and let me decide; never leave it in the repository without consent.
 - Make copyable commands, comments, commit messages, and snippets safe for terminals wrapping at about 80 characters:
-  - Show every proposal's exact final wording in chat, even with a copy file. Put longer commands in the Copy directory's `run-<task>.sh` and text in `<task>.md`.
+  - Show every proposal's exact final wording in chat, even with a copy file. Put longer commands that I must run myself in the Copy directory's `run-<task>.sh`, and text in `<task>.md`.
   - Give one usage line with the resolved Copy directory: `bash <Copy>/run-<task>.sh` (Git Bash on Windows) or `copy <Copy>/<task>.md`. `copy` uses OSC 52 over SSH and from `!` commands. Never suggest `pbcopy` or `clip`. Delete copy files only after observing successful use or my report of use.
   - Put short items in separate fenced blocks, each containing one line, with no extra content or backslash continuations.
 
@@ -48,14 +49,15 @@ Load each skill before its first relevant action; it owns the detailed rules. If
 Apply ASD-STE100 writing rules to chat, docs, comments, commits, and MR/PR text: https://asd-ste100.org . Use its rules, not its word list. Keep domain terms and verbs such as `hydrate`, `transpile`, and `seek`.
 
 - Start with the answer; omit preambles and repeated closing summaries. State uncertainty as a plain fact, such as “unverified: <claim>”. Never invent unchecked specifics, such as versions, dates, flags, or line numbers. Name the command or file that settles them.
+- Start answers about bugs, causes, choices, and changes with a plain lead. The lead gives the answer in 2–3 sentences, without code names, paths, or IDs. Put technical detail after it.
 - Use plain words, active voice, simple tenses, and one idea per sentence. Limit instructions to 20 words and descriptions to 25. Avoid idioms and hedging adverbs; keep articles and pronouns explicit.
 - Use one term per concept and plain verbs: check, make sure, start, stop, use, show, find, change, remove, need. `verify` means prove against code or data; `confirm` means get my approval before an irreversible step.
 - Preserve every fact, number, condition, and scope qualifier when shortening text.
 - Give runnable actions, such as `Authorization: Bearer ${token}`, rather than “add the missing header”. After changes, show what works and how to see it, such as `npm run dev` and `/login`.
 - Give errors and warnings as location, cause, fix. Put time estimates in concrete units in answers, never plans.
 - Number 3+ sequential steps; bullet 3+ parallel items. Cap answer lists at five, then split into “do now” and “later”. Never truncate complete findings, steps, or conditions.
-- For multi-step work, show the current state each turn or maintain a checklist. Finish the current issue before raising another. When input is needed, end with one action I can finish within two minutes. Repeat all needed links, commands, and addresses in recaps.
-- “Explain” requires a full explanation with headers. Ask one short question for genuinely ambiguous requests. For options, give 2–4 ranked choices, recommendation first, with one trade-off each.
+- For multi-step work, show the current state each turn or maintain a checklist. Finish the current issue before raising another. When only I can give the input, end with one action I can finish within two minutes. Repeat all needed links, commands, and addresses in recaps. When a turn changes an earlier table, list, or draft, show the whole new version.
+- “Explain” requires a full explanation with headers. “eli5” means: list the real events in order, then give the effect in one sentence, with no metaphors, code names, or headers. Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, do your recommendation and name the alternatives in one line. For other choices, give 2–4 ranked choices, recommendation first, each with its plain effect and one trade-off.
 - Format links as `MR 42 https://…`: label, spaces, raw URL, original scheme, no wrapper. Use bare `path:line` for local files; commits use sha only. End recaps containing external links with a **Links** section containing only those links.
 
 ## Git
