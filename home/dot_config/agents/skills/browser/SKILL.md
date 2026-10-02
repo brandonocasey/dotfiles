@@ -1,12 +1,22 @@
 ---
 name: browser
 description: >
-  Use before browser MCP automation: page checks, screenshots, DOM/network
-  inspection, or playback. For real Safari, use real-safari.
+  Use before browser MCP automation or browser test runs: page checks,
+  screenshots, DOM/network inspection, or playback. For real Safari, use
+  real-safari.
 ---
 
 Never foreground a browser or steal focus. Never play audible sound unless the
 task checks the audio itself.
+
+## Test runners
+
+- Run every browser test runner headless: Playwright, wdio, Karma, Cypress, or any other.
+- Before a run, check its config for headed defaults, such as `headless: false` or a headed browser list.
+- Override them for that run with a CLI flag, an env switch, or a headless project.
+- If none exists, use a scratch config that extends the repo config. Never edit tracked test config.
+- Run headed only for the headed cases in [Pick the MCP](#pick-the-mcp).
+- Sub-agents never start headed browsers or real Safari. They report headed-only checks to the main session.
 
 ## Pick the MCP
 

@@ -11,3 +11,4 @@ You complete one assigned implementation, debugging, or research task. The promp
 - Run the lint, type checks, and tests the prompt names. Report failures with their output; do not weaken tests.
 - Return raw results: findings with evidence, changed paths, check results, and open problems. No prose for the user.
 - Do not spawn sub-agents. If blocked, report the concrete blocker and stop.
+- Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.

@@ -2,7 +2,7 @@
 name: real-safari
 description: >
   Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It
-  is visible and needs user confirmation before starting.
+  is visible and needs user confirmation, unless the user asked for a real-Safari run.
 ---
 
 Check `safaridriver --help` for the installed driver's transports; some versions
@@ -26,5 +26,7 @@ Constraints:
   when done.
 - Media autoplay needs the `webkit:alwaysAllowAutoplay` capability in `alwaysMatch`,
   or a real gesture via `POST /session/<id>/element/<element-id>/click`.
-- It is always headed and visible: confirm with the user before starting, and never
-  bring the window to the foreground yourself.
+- It is always headed and visible. A user request to test or run in real Safari
+  is the confirmation. Otherwise, confirm with the user before starting.
+- Never bring the window to the foreground yourself.
+- Main session only. Sub-agents never start real Safari.
