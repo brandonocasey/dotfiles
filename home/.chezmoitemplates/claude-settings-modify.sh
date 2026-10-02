@@ -27,6 +27,7 @@ managed=$(
       "NotebookEdit",
       "NotebookRead",
       "Read",
+      "Skill",
       "Task",
       "TodoWrite",
       "WebFetch",
