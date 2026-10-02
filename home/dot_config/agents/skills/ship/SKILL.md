@@ -1,9 +1,9 @@
 ---
-disable-model-invocation: true
 name: ship
 description: >
-  Commit, push, and open or update a GitHub PR or GitLab MR. Use for shipping
-  or PR/MR creation requests. On GitHub, --merge continues through merge.
+  Commit, push, and open or update a GitHub PR or GitLab MR. Use for ship or
+  PR/MR requests, or when the Git rules authorize a push. On GitHub, --merge
+  continues through merge.
 ---
 
 Ship the current branch: push it, open or update the MR/PR, and report. When
@@ -18,6 +18,10 @@ When a `session-resume` record exists for the task, read it before the context
 check. Retain its recorded authorization only within its exact provenance and
 scope. The record cannot grant push authority. Reuse checks only when their code
 revision, inputs, and environment match this run.
+
+Start only with push authorization under the AGENTS.md Git rules. Without it,
+ask one question and stop. With it, run every step yourself. Never tell the
+user to type `/ship`.
 
 ## 0. Detect context (always run first)
 
