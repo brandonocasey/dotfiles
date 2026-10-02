@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -u
+
+if [[ ${1:-} == "--remote" ]]; then
+  host=${2:-}
+  if [[ -z $host || $host == -* || $host =~ [^A-Za-z0-9._@-] ]]; then
+    echo "usage: agent-preflight --remote user@host" >&2
+    exit 2
+  fi
+  exec ssh -T -o BatchMode=yes -o ConnectTimeout=10 \
+    -o RemoteCommand=none "$host" bash -s -- --local < "$0"
+fi
+
+if [[ ${1:-} != "" && ${1:-} != "--local" ]]; then
+  echo "usage: agent-preflight [--remote user@host]" >&2
+  exit 2
+fi
+
+json_string() {
+  printf '%s' "${1-}" | "$json_node" -e \
+    'let s="";process.stdin.setEncoding("utf8");process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>process.stdout.write(JSON.stringify(s)))'
+}
+
+tool_path() {
+  command -v "$1" 2>/dev/null || true
+}
+
+json_node=$(tool_path node)
+if [[ -z $json_node ]]; then
+  echo "agent-preflight: node is required to encode bounded JSON" >&2
+  exit 1
+fi
+
+git_root=""
+git_branch=""
+if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  git_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+  git_branch=$(git branch --show-current 2>/dev/null || true)
+fi
+
+printf '{\n'
+printf '  "os": {"kernel": %s, "architecture": %s},\n' \
+  "$(json_string "$(uname -s 2>/dev/null || true)")" \
+  "$(json_string "$(uname -m 2>/dev/null || true)")"
+printf '  "cwd": %s,\n' "$(json_string "$PWD")"
+printf '  "git": {"root": %s, "branch": %s},\n' \
+  "$(json_string "$git_root")" "$(json_string "$git_branch")"
+printf '  "tools": {\n'
+tools=(node python3 rg codex claude gemini godot npx git)
+for index in "${!tools[@]}"; do
+  tool=${tools[$index]}
+  comma=,
+  [[ $index -eq $((${#tools[@]} - 1)) ]] && comma=""
+  path=$(tool_path "$tool")
+  printf '    "%s": {"available": %s, "path": %s}%s\n' \
+    "$tool" "$([[ -n $path ]] && echo true || echo false)" \
+    "$(json_string "$path")" "$comma"
+done
+printf '  },\n'
+printf '  "capabilities": {"git_worktree": %s, "node_scripts": %s, "python_scripts": %s, "text_search": %s}\n' \
+  "$([[ -n $(tool_path git) ]] && echo true || echo false)" \
+  "$([[ -n $(tool_path node) ]] && echo true || echo false)" \
+  "$([[ -n $(tool_path python3) ]] && echo true || echo false)" \
+  "$([[ -n $(tool_path rg) ]] && echo true || echo false)"
+printf '}\n'

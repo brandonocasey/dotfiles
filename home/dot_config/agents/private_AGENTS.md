@@ -34,6 +34,8 @@ Never write to OS temporary directories (`/tmp`, `$TMPDIR`, `%TEMP%`) or harness
 
 Load each skill before its first relevant action; it owns the detailed rules. If the harness does not list it, read `~/.config/agents/skills/<name>/SKILL.md`. Skill code blocks use POSIX `sh`. Use Git Bash on Windows; translate to PowerShell only when Git Bash is unavailable. Keep every git flag unchanged.
 
+- For cross-session work, use `session-resume`; keep accepted corrections, authorized scope, and completed checks current.
+- Before using unfamiliar host tools, use `host-preflight`. On `koof`, read `~/.config/agents/environments/koof.md` before server work.
 - Sub-agents: `split-task` owns splitting; apply its thresholds automatically. `sub-agents` owns roles, pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Load it before a spawn, before watching CI, logs, or builds, and after one failed fix or a user-reported failure. Keep judgement, integration, and the final check in the main session.
 - Review: run `review` once per task. Fable and Astra first read `~/.config/agents/skills/review/references/when-to-run.md` for triggers and skip rules. Every other model must run it before reporting done. Include `Review: ran` or `Review: skipped (<reason>)` in the recap.
 - Code: load `code-standards` before writing or changing code, tests, config, or dependencies, writing plans, or reviewing code.
