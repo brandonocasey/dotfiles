@@ -98,9 +98,10 @@ test('gallery requires its token and labels the iframe', async () => {
   assert.equal((await request('/')).status, 403);
   const gallery = await request(`/?token=${token}`);
   assert.equal(gallery.status, 200);
-  assert.match(gallery.body, /media\.title=option\.label/);
-  assert.match(gallery.body, /New options available/);
-  assert.match(gallery.body, /Open full size/);
+  assert.match(gallery.body, /node\.title=option\.label/);
+  assert.match(gallery.body, /New options are available/);
+  assert.match(gallery.body, /View larger/);
+  assert.match(gallery.body, /<dialog id="viewer">/);
   assert.match(gallery.body, /new EventSource/);
 });
 
@@ -144,7 +145,7 @@ test('valid config edits refresh at the same token while invalid edits retain th
     const result = await request(`/config?token=${token}`);
     if (result.status !== 200) return null;
     const parsed = JSON.parse(result.body);
-    return parsed.options.some(option => option.id === 'choice-b') ? parsed : null;
+    return parsed.questions[0].options.some(option => option.id === 'choice-b') ? parsed : null;
   });
   assert.equal(refreshed.title, 'More choices');
   assert.equal((await request(`/asset/choice-b?token=${token}`)).status, 200);
@@ -210,4 +211,53 @@ test('wait receives later feedback when native watcher resources are exhausted',
   assert.equal(await finished, 0);
   assert.deepEqual(JSON.parse(output).selected, ['choice-b']);
   assert.match(errors, /using file-stat checks/);
+});
+
+test('questions validate answers per question and record them', async () => {
+  const questionsConfig = path.join(root, 'questions.json');
+  const questionsState = path.join(root, 'questions-state');
+  fs.writeFileSync(asset, '<!doctype html><p>restored</p>');
+  fs.writeFileSync(questionsConfig, JSON.stringify({
+    title: 'Two questions',
+    questions: [
+      { id: 'size', title: 'Size', select: 'one', options: [
+        { id: 'small', label: 'Small', kind: 'html', path: secondAsset },
+        { id: 'large', label: 'Large', kind: 'html', path: replacement },
+      ] },
+      { id: 'layout', title: 'Layout', select: 'many', options: [{ id: 'rows', label: 'Rows', kind: 'html', path: secondAsset }] },
+    ],
+  }));
+  const questionPort = await availablePort();
+  const server = spawn(process.execPath, [helper, 'serve', '--config', questionsConfig, '--state-dir', questionsState, '--port', String(questionPort)], { stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    const started = await new Promise(resolve => server.stdout.once('data', chunk => resolve(JSON.parse(chunk.toString()))));
+    assert.match(started.url, new RegExp(`:${questionPort}/\\?token=${started.token}$`));
+    const post = body => fetch(`http://127.0.0.1:${questionPort}/submit`, {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-preview-token': started.token }, body: JSON.stringify(body),
+    });
+    const config = await (await fetch(`http://127.0.0.1:${questionPort}/config?token=${started.token}`)).json();
+    assert.deepEqual(config.questions.map(question => [question.id, question.select]), [['size', 'one'], ['layout', 'many']]);
+    assert.equal((await post({ action: 'select', ids: ['small', 'large'], notes: '', answers: { size: { ids: ['small', 'large'], notes: '' } } })).status, 400);
+    assert.equal((await post({ action: 'select', ids: ['rows'], notes: '', answers: { size: { ids: ['rows'], notes: '' } } })).status, 400);
+    assert.equal((await post({ action: 'select', ids: ['small', 'rows'], notes: 'all', answers: { size: { ids: ['small'], notes: 'tight' }, layout: { ids: ['rows'], notes: '' } } })).status, 200);
+    const state = JSON.parse(fs.readFileSync(path.join(questionsState, 'state.json')));
+    assert.deepEqual(state.events.at(-1).answers.size, { ids: ['small'], notes: 'tight' });
+  } finally {
+    server.kill('SIGTERM');
+    await new Promise(resolve => server.once('exit', resolve));
+  }
+});
+
+test('a detached server keeps its token across restarts and stops on request', async () => {
+  const detachedState = path.join(root, 'detached-state');
+  const detachedPort = await availablePort();
+  const start = () => run(['serve', '--config', config, '--state-dir', detachedState, '--port', String(detachedPort), '--detach', 'true']);
+  fs.writeFileSync(config, JSON.stringify({ title: 'Detached', options: [{ id: 'choice-b', label: 'Choice B', kind: 'html', path: secondAsset }] }));
+  const first = JSON.parse(start().stdout);
+  assert.equal((await fetch(`http://127.0.0.1:${detachedPort}/?token=${first.token}`)).status, 200);
+  assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
+  await waitFor(() => !fs.existsSync(path.join(detachedState, 'server.json')));
+  const second = JSON.parse(start().stdout);
+  assert.equal(second.token, first.token);
+  assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
 });
