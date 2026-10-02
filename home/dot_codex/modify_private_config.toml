@@ -10,7 +10,14 @@
 set -euo pipefail
 
 KEEP_KEYS=(model model_reasoning_effort)
-KEEP_SECTIONS=(projects hooks.state mcp_servers.godot-mcp)
+KEEP_SECTIONS=(projects hooks.state mcp_servers.godot-mcp tui)
+
+notify_line=""
+notify_command="/Users/bcasey/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+if [[ -x "$notify_command" ]]; then
+  notify_line="notify = [\"$notify_command\", \"turn-ended\"]"
+fi
+export NOTIFY_LINE="$notify_line"
 
 body=$(
   cat <<'TOML'
@@ -20,7 +27,7 @@ model_reasoning_effort = "xhigh"
 approvals_reviewer = "user"
 plan_mode_reasoning_effort = "high"
 service_tier = "default"
-notify = ["/Users/bcasey/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+@NOTIFY@
 approval_policy = "never"
 sandbox_mode    = "danger-full-access"
 allow_login_shell = true
@@ -38,16 +45,6 @@ fast_default_opt_out = true
 "gpt-5.1-codex" = "gpt-5.2-codex"
 "gpt-5.3-codex" = "gpt-5.5"
 "gpt-5.4" = "gpt-5.5"
-
-[tui]
-status_line = ["project-name", "five-hour-limit", "weekly-limit", "model-with-reasoning", "git-branch", "pull-request-number", "thread-title"]
-theme = "one-half-dark"
-status_line_use_colors = true
-
-[tui.model_availability_nux]
-"gpt-5.5" = 4
-"gpt-5.6-sol" = 4
-gpt-6-astra = 4
 
 [features]
 memories = false
@@ -102,22 +99,30 @@ args = ["chrome-devtools-mcp@latest", "--headless", "--isolated"]
 [mcp_servers.chrome-headed]
 command = "npx"
 args = ["chrome-devtools-mcp@latest", "--chromeArg=--mute-audio"]
+enabled = false
 
 [mcp_servers.firefox-devtools]
-command = "bash"
-args = ["-c", "PATH=/Users/bcasey/.local/share/mise/installs/node/22.21.1/bin:$PATH npm_config_prefer_offline=false exec npx -y @mozilla/firefox-devtools-mcp@0.9.5 --headless"]
+command = "npx"
+args = ["-y", "@mozilla/firefox-devtools-mcp@0.9.5", "--headless"]
+enabled = false
 
 [mcp_servers.firefox-headed]
-command = "bash"
-args = ["-c", "PATH=/Users/bcasey/.local/share/mise/installs/node/22.21.1/bin:$PATH npm_config_prefer_offline=false exec npx -y @mozilla/firefox-devtools-mcp@0.9.5"]
+command = "npx"
+args = ["-y", "@mozilla/firefox-devtools-mcp@0.9.5"]
+enabled = false
 
 [mcp_servers.safari]
 command = "npx"
 args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--headless"]
+enabled = false
 
 [mcp_servers.safari-headed]
 command = "npx"
 args = ["-y", "@playwright/mcp@latest", "--browser", "webkit"]
+enabled = false
+
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"
 
 [desktop]
 followUpQueueMode = "queue"
@@ -192,6 +197,23 @@ KEEP_SECTIONS_TOML=$(printf '%s\n' "$live" | awk '
     for (i = 1; i <= last; i++) print lines[i]
   }
 ')
+
+# Godot MCP MUST stay opt-in because it scans the current directory at startup.
+# A session can enable it after it selects a directory that has project.godot.
+KEEP_SECTIONS_TOML=$(printf '%s\n' "$KEEP_SECTIONS_TOML" | awk '
+  /^[[:space:]]*\[mcp_servers[.]godot-mcp\][[:space:]]*(#.*)?$/ { godot = 1; printed = 0 }
+  /^[[:space:]]*\[/ && $0 !~ /^[[:space:]]*\[mcp_servers[.]godot-mcp\][[:space:]]*(#.*)?$/ {
+    if (godot && !printed) print "enabled = false"
+    godot = 0
+  }
+  godot && /^[[:space:]]*enabled[[:space:]]*=/ {
+    if (!printed) print "enabled = false"
+    printed = 1
+    next
+  }
+  { print }
+  END { if (godot && !printed) print "enabled = false" }
+')
 export KEEP_SECTIONS_TOML
 
 # Live values for the app-owned top-level keys. They all sit above the first
@@ -216,6 +238,10 @@ printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
       print ""
       print ENVIRON["KEEP_SECTIONS_TOML"]
     }
+    next
+  }
+  /^@NOTIFY@$/ {
+    if (ENVIRON["NOTIFY_LINE"] != "") print ENVIRON["NOTIFY_LINE"]
     next
   }
   {

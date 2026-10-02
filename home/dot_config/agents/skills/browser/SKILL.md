@@ -10,11 +10,17 @@ task checks the audio itself.
 
 ## Pick the MCP
 
-| Engine | Headless default | Headed |
+| Engine | Server | Default |
 | --- | --- | --- |
-| Chrome | `chrome-devtools` | `chrome-headed` |
-| Firefox | `firefox-devtools` | `firefox-headed` |
-| WebKit | `safari` | `safari-headed` |
+| Chrome | `chrome-devtools` | enabled, headless |
+| Chrome | `chrome-headed` | disabled |
+| Firefox | `firefox-devtools`, `firefox-headed` | disabled |
+| WebKit | `safari`, `safari-headed` | disabled |
+
+Enable one disabled server for a Codex session with
+`codex -c mcp_servers.<name>.enabled=true`. A repository can instead put the
+same setting in `.codex/config.toml`. Do not enable extra engines globally;
+each enabled server adds startup work to every session.
 
 Use headed mode only for DRM, fullscreen, picture-in-picture, a real user gesture,
 or when the user asks to watch.
