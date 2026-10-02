@@ -101,7 +101,7 @@ test('gallery requires its token and labels the iframe', async () => {
   assert.match(gallery.body, /node\.title=option\.label/);
   assert.match(gallery.body, /New options are available/);
   assert.match(gallery.body, /View larger/);
-  assert.match(gallery.body, /<dialog id="viewer">/);
+  assert.match(gallery.body, /<dialog id="viewer" aria-labelledby="viewer-title">/);
   assert.match(gallery.body, /new EventSource/);
 });
 
@@ -260,4 +260,113 @@ test('a detached server keeps its token across restarts and stops on request', a
   const second = JSON.parse(start().stdout);
   assert.equal(second.token, first.token);
   assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
+});
+
+test('artifact feedback preserves comments, pins, requirements, and combinations without selecting a winner', async () => {
+  const image = path.join(root, 'fallback.svg');
+  fs.writeFileSync(image, '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"/>');
+  fs.writeFileSync(config, JSON.stringify({ title: 'Artifact review', questions: [
+    { id: 'page', title: 'Page', select: 'one', options: [
+      { id: 'first', label: 'First', kind: 'html', path: secondAsset, scripts: true },
+      { id: 'second', label: 'Second', kind: 'html', path: replacement },
+    ] },
+    { id: 'art', title: 'Art', select: 'many', options: [{ id: 'image', label: 'Image', kind: 'image', path: image }] },
+  ] }));
+  const current = await waitFor(async () => {
+    const value = JSON.parse((await request(`/config?token=${token}`)).body);
+    return value.title === 'Artifact review' ? value : null;
+  });
+  const post = body => request('/submit', { method: 'POST', headers: {
+    'content-type': 'application/json', 'x-preview-token': token,
+  }, body: JSON.stringify(body) });
+  const review = status => ({ status, comment: '', annotations: [] });
+  const feedback = { action: 'review', revision: current.revision, ids: [], notes: 'Keep these ideas',
+    requirements: 'Must work at 320 px', submissionId: 'mobile-review-1',
+    answers: { page: { ids: [], notes: 'Both need changes' }, art: { ids: [], notes: '' } },
+    reviews: {
+      first: { status: 'rejected', comment: 'Too dense', annotations: [{ anchor: {
+        kind: 'element', selector: 'h1', matchIndex: 1, text: 'Hello',
+      }, comment: 'Shorter heading' }] },
+      second: review('rejected'),
+      image: { status: 'unreviewed', comment: '', annotations: [{ anchor: {
+        kind: 'point', x: 0.3, y: 0.7,
+      }, comment: 'Use this color' }] },
+    }, combinations: [{ ids: ['first', 'second'], notes: 'First spacing, second colors' }],
+  };
+  const sent = await post(feedback);
+  assert.equal(sent.status, 200, sent.body);
+  const seq = JSON.parse(sent.body).seq;
+  const state = JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
+  const event = state.events.at(-1);
+  assert.deepEqual(event.reviews, feedback.reviews);
+  assert.deepEqual(event.combinations, feedback.combinations);
+  assert.equal(event.requirements, feedback.requirements);
+  assert.deepEqual(state.rejected.filter(id => ['first', 'second'].includes(id)), ['first', 'second']);
+  assert.equal((await post(feedback)).body, sent.body);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json'))).seq, seq);
+  const waited = JSON.parse(run(['wait', '--state-dir', stateDir, '--after', String(seq - 1), '--timeout-seconds', '0']).stdout);
+  assert.equal(waited.events[0].submissionId, 'mobile-review-1');
+
+  const invalid = structuredClone(feedback);
+  delete invalid.submissionId;
+  invalid.reviews.image.annotations[0].anchor.x = 1.1;
+  assert.equal((await post(invalid)).status, 400);
+  invalid.reviews.image.annotations[0].anchor.x = 0.3;
+  invalid.reviews.first.annotations[0].anchor.matchIndex = -1;
+  assert.equal((await post(invalid)).status, 400);
+  invalid.reviews = { first: review('approved'), second: review('approved') };
+  invalid.ids = ['first', 'second'];
+  assert.equal((await post(invalid)).status, 400);
+  invalid.reviews = { first: review('approved') };
+  invalid.ids = [];
+  assert.equal((await post(invalid)).status, 400);
+  invalid.reviews = feedback.reviews;
+  invalid.combinations = [{ ids: ['first', 'missing'], notes: '' }];
+  assert.equal((await post(invalid)).status, 400);
+  invalid.combinations = [];
+  invalid.revision = current.revision - 1;
+  assert.equal((await post(invalid)).status, 409);
+
+  const replacementFeedback = { ...feedback, submissionId: 'mobile-review-2', ids: ['second'],
+    reviews: { first: review('unreviewed'), second: review('approved'), image: review('unreviewed') },
+    answers: { page: { ids: ['second'], notes: '' }, art: { ids: [], notes: '' } },
+  };
+  assert.equal((await post(replacementFeedback)).status, 200);
+  const replacementState = JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json')));
+  assert.ok(replacementState.selected.includes('second'));
+  assert.ok(!replacementState.rejected.includes('first'));
+  assert.ok(!replacementState.rejected.includes('second'));
+});
+
+test('raw HTML retains its doctype and isolates scripts while allowing the annotation bridge', async () => {
+  const staticPage = await fetch(`http://127.0.0.1:${port}/asset/second?token=${token}`);
+  assert.match(staticPage.headers.get('content-security-policy'), /sandbox allow-scripts/);
+  assert.match(staticPage.headers.get('content-security-policy'), /script-src 'nonce-[^']+'/);
+  assert.match(staticPage.headers.get('content-security-policy'), /default-src 'none'/);
+  assert.equal(staticPage.headers.get('referrer-policy'), 'no-referrer');
+  const html = await staticPage.text();
+  assert.match(html, /^<!doctype html>/i);
+  assert.match(html, /preview:annotation/);
+  const interactive = await fetch(`http://127.0.0.1:${port}/asset/first?token=${token}`);
+  assert.match(interactive.headers.get('content-security-policy'), /script-src 'unsafe-inline'/);
+  const denied = await request('/submit', { method: 'POST', headers: {
+    'content-type': 'application/json', 'x-preview-token': token, origin: 'null',
+  }, body: JSON.stringify({ action: 'more', ids: [], notes: '' }) });
+  assert.equal(denied.status, 403);
+});
+
+test('an active wait wakes as soon as feedback is saved', async t => {
+  const cursor = JSON.parse(fs.readFileSync(path.join(stateDir, 'state.json'))).seq;
+  const waiting = spawn(process.execPath, [helper, 'wait', '--state-dir', stateDir,
+    '--after', String(cursor), '--timeout-seconds', '3'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  t.after(() => { if (waiting.exitCode === null) waiting.kill('SIGTERM'); });
+  let output = '';
+  waiting.stdout.on('data', chunk => { output += chunk; });
+  const finished = new Promise(resolve => waiting.once('exit', resolve));
+  const response = await request('/submit', { method: 'POST', headers: {
+    'content-type': 'application/json', 'x-preview-token': token,
+  }, body: JSON.stringify({ action: 'more', ids: [], notes: 'Please add an option' }) });
+  assert.equal(response.status, 200);
+  assert.equal(await finished, 0);
+  assert.equal(JSON.parse(output).events[0].notes, 'Please add an option');
 });

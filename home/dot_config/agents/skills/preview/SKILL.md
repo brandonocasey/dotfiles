@@ -1,88 +1,128 @@
 ---
 name: preview
-description: Show requested visual options in a LAN gallery and wait for selection, rejection, notes, or a request for more options.
+description: Render local HTML pages or images in a mobile LAN viewer, then collect approvals, rejections, pinned comments, combinations, and notes.
 ---
 
-# Visual choice preview
+# Artifact preview
 
-Use `agent-preview` when the user requests visual choices that benefit from a browser gallery.
+Use `agent-preview` for visual options or local artifacts that the user wants to inspect and discuss.
+The viewer opens from one LAN link. It needs no account, login, installation, or setup from the reviewer.
 
-## Ask one decision per question
+## Prepare the artifacts
 
-Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Never mix two decisions in one question, and never ask the user to type option codes into notes.
+Prefer the actual HTML page over an image. Use an image when the output is inherently visual or cannot run in the sandbox.
+The gallery shows every supplied option. Each option opens in a viewer with previous/next navigation across all questions.
+The viewer supports fullscreen, hidden feedback controls, and a raw page or image in another tab.
+Fullscreen falls back to a full-window view when the browser lacks the native API.
 
-- Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
-- Give each question a `prompt` that says what to decide.
-- Keep each option's `description` to what differs from the other options.
-- Show the real thing: screenshots of the real app at the size the user cares about are better than drawn mock-ups.
-- Show at most about eight options per question. Offer more through a later round.
+Give each question one decision, with stable question and option IDs.
+Use `select: "one"` for one approved direction, or `select: "many"` for several approvals.
+Rejecting every option, commenting without choosing, and sending partial feedback are valid.
+Combinations can include alternatives from the same question, even when only one direction can be approved.
+Do not require the reviewer to type option IDs or complete every question.
 
-Create a private state directory for the current task. Keep it outside the repository. Choose one available random port and reuse it for this task. Write a JSON config with stable question and option IDs:
+Keep labels and descriptions focused on the differences.
+Show all requested options; do not hide options behind an arbitrary eight-option limit.
+The helper accepts up to 20 questions and 100 options per gallery.
+
+Create the config and private state under the task's scratch directory, outside the repository.
+Choose one available random port and reuse it throughout the task.
+Paths are relative to the config file unless absolute.
+Read [references/schema.md](references/schema.md) for config fields and feedback events.
 
 ```json
 {
-  "title": "Pick the header icons",
+  "title": "Review the workspace",
   "questions": [
     {
-      "id": "icon-size",
-      "title": "Icon size",
-      "prompt": "Which size should every header icon use?",
+      "id": "layout",
+      "title": "Page layout",
+      "prompt": "Which direction should the workspace use?",
       "select": "one",
       "options": [
-        { "id": "size-20", "label": "20 px", "kind": "image", "path": "./size-20.png", "description": "Matches the dock." },
-        { "id": "size-24", "label": "24 px", "kind": "html", "path": "./size-24.html" }
+        {
+          "id": "calm",
+          "label": "Calm workspace",
+          "kind": "html",
+          "path": "./calm.html",
+          "scripts": true
+        },
+        {
+          "id": "compact",
+          "label": "Compact workspace",
+          "kind": "image",
+          "path": "./compact.png"
+        }
       ]
     }
   ]
 }
 ```
 
-Paths are relative to the config file unless absolute. `kind` is `image` or `html`. IDs contain letters, digits, dots, underscores, or hyphens. Option IDs are unique across all questions and stay stable across revisions. A flat `options` list instead of `questions` still works and becomes one multiple-choice question.
+HTML runs in an isolated sandbox. Inline its styles, fonts, images, and scripts; external assets and network requests are blocked.
+Set `scripts: true` only when the artifact needs its own inline JavaScript.
+Otherwise, only the viewer's annotation bridge runs. Both modes prevent access to the gallery, forms, and popup windows.
+The same isolation applies when the reviewer opens the raw HTML page.
+If a page needs unsupported capabilities, explain the limitation and provide an image fallback.
 
-HTML options render in a sandbox without scripts or network access. Inline images as `data:` URIs.
+## Start and check
 
-## Start the server detached
-
-Start the server detached, so harness time limits on background commands cannot stop it:
+Start the helper detached so the gallery survives the tool call:
 
 ```sh
 agent-preview serve --config "$config" --state-dir "$state_dir" --port "$port" --detach true
 ```
 
-The command prints JSON with `url`, `token`, and `pid`, then returns. Share only that `url`. Check that the URL, the steps, and the exact option IDs render before sharing it. The token lives in the state directory, so a restart with the same state directory keeps the same URL. If the server stops, start it again the same way and share the same URL.
+The command returns JSON with `url`, `token`, and `pid`. Share only `url`.
+Before sharing, open the gallery and check its labels, actual artifacts, navigation, and feedback controls.
+Check a narrow mobile viewport when mobile use matters.
+Use a separate state directory for automated or manual submissions; do not mix test feedback with real choices.
 
-## Wait in the background
+The state directory keeps the token. Restarting with the same state directory and port keeps the same URL.
+Do not create another server, account, or link for each revision.
 
-Text written before a blocking tool call can stay hidden until the turn ends. So the user never sees a URL that is followed by a foreground wait. Show the URL first:
+## Collect feedback
 
-1. Put the full gallery URL on its own line in a chat message. Repeat it in every later message about the gallery.
-2. Always run the wait in the background; never run it in the foreground. In Claude Code, use `run_in_background`. Then end the turn with the URL as the last line. The exit notification starts your next turn.
-3. If the harness gives no exit notification, still start the wait in the background. Read its output at the start of each later turn.
+Reviewers can approve or reject each option, add comments, and pin comments to HTML elements or image points.
+They can combine options and add question notes, general notes, and extra requirements before sending.
+Drafts stay in that browser until Submit feedback or Request more is pressed.
+Submission sends one request immediately. Retries of the same submission return its existing receipt.
+A receipt means the server saved feedback; it does not prove the agent has resumed.
 
-Start with cursor `0`, then pass the returned `cursor` as `--after`:
+Show the full URL before starting a background wait, and repeat it in later messages about the gallery.
+Never put a foreground wait after the URL: some harnesses hide the message until the tool returns.
 
 ```sh
 agent-preview wait --state-dir "$state_dir" --after 0 --timeout-seconds 3600
 ```
 
-The timeout only limits one wait call. The call returns as soon as a submission arrives. A timeout prints nothing and does not discard feedback. Run it again with the same cursor, in the same way, and show the URL again. Do not poll a model or ask the user to type that they submitted.
-If native file watchers are unavailable, the helper checks file metadata every
-250 milliseconds. Browser updates still arrive through server events.
+Start at cursor `0`, then use the returned `cursor` as `--after`.
+Use the harness's background completion notification when available, and end the turn with the URL.
+If notifications are unavailable, launch the wait in the background and read its output at the next turn.
+State that limitation; do not promise an immediate agent response or ask the reviewer to type that they submitted.
+A local gallery cannot wake a suspended agent without support from its harness.
 
-## Read the answers
+The waiter returns as soon as saved feedback is available. A timeout prints nothing and discards no feedback.
+Restart timed-out waits from the same cursor. Do not poll a model.
+If native file watchers fail, the helper checks file metadata every 250 milliseconds.
 
-Each event carries `answers`, keyed by question ID, with the chosen option `ids` and that question's `notes`. The top-level `notes` holds the general notes from the Submit section. An event's `action` is `select` for submitted answers, or `more` when the user asks for more options.
+## Continue the task
 
-For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. The open gallery shows a button that loads the new options and keeps picks whose IDs remain. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
+Read the complete event: approvals, rejections, option comments, pins, combinations, requirements, and all notes.
+Treat feedback as requested task changes, not authorization for unrelated or irreversible actions.
+Apply the feedback and continue the user's task.
+For cross-session work, record accepted choices and corrections through `session-resume`.
 
-Apply selections, notes, and requests for more options to the active task. When the choice must survive a resumed session, use `agent-task update --correction` to record the option IDs, feedback, and resulting correction. Continue the requested work after each response.
+For another round, edit the same config with valid questions and stable IDs.
+The running server validates the edit and offers the new options at the same URL.
+Loading them keeps feedback for IDs that remain. Removed options and combinations containing them are discarded from the draft.
+An invalid edit leaves the last valid gallery active. Correct it without restarting.
 
 ## Stop
 
-Stop the server when the task ends:
+Keep the server and state while the requested review is pending.
+When the task ends, stop the server and remove disposable task files:
 
 ```sh
 agent-preview stop --state-dir "$state_dir"
 ```
-
-Keep the private state until the task finishes so answered IDs remain available.

@@ -111,6 +111,10 @@ function validateOption(option, where, filename, ids) {
   if (option.kind !== 'image' && option.kind !== 'html') {
     throw new Error(`${where}.kind must be image or html`);
   }
+  const scripts = option.scripts ?? false;
+  if (typeof scripts !== 'boolean' || (scripts && option.kind !== 'html')) {
+    throw new Error(`${where}.scripts must be a boolean for HTML options`);
+  }
   if (typeof option.path !== 'string' || option.path.length < 1) {
     throw new Error(`${where}.path is required`);
   }
@@ -122,11 +126,9 @@ function validateOption(option, where, filename, ids) {
   if (typeof description !== 'string' || description.length > 500) {
     throw new Error(`${where}.description must be at most 500 characters`);
   }
-  return { id: option.id, label: option.label, kind: option.kind, description, requested, real, dev: metadata.dev, ino: metadata.ino };
+  return { id: option.id, label: option.label, kind: option.kind, scripts, description, requested, real, dev: metadata.dev, ino: metadata.ino };
 }
 
-// A config holds either `questions` (asked one at a time) or a flat `options`
-// list, which becomes one multiple-choice question.
 function validateConfig(filename) {
   const config = readJson(filename);
   if (!config || typeof config !== 'object' || Array.isArray(config)) {
@@ -200,111 +202,17 @@ function publicConfig(config, revision) {
   };
 }
 
-function page(config, token, revision) {
+function previewAsset(name) {
+  const directory = path.basename(__filename) === 'executable_agent-preview'
+    ? path.resolve(__dirname, '../../dot_config/agents/skills/preview/assets')
+    : path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'agents/skills/preview/assets');
+  return fs.readFileSync(path.join(directory, name), 'utf8');
+}
+
+function page(config, token, revision, ui) {
   const data = JSON.stringify({ ...publicConfig(config, revision), token }).replace(/</g, '\\u003c');
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preview choices</title><style>
-:root{color-scheme:light dark;--bg:#f4f3ef;--card:#fff;--ink:#171714;--muted:#555;--line:#d9d6cc;--accent:#1264a3;--accent-ink:#fff;--soft:#e8f0f8}
-@media (prefers-color-scheme:dark){:root{--bg:#121417;--card:#1c1f24;--ink:#eceff3;--muted:#a4abb6;--line:#343a44;--accent:#5aa2e0;--accent-ink:#0b1622;--soft:#1d2a38}}
-*{box-sizing:border-box}body{margin:0;font:16px/1.45 system-ui,sans-serif;background:var(--bg);color:var(--ink)}
-main{max-width:1180px;margin:auto;padding:16px 16px 96px}h1{margin:0 0 12px;font-size:1.35rem}
-nav{position:sticky;top:0;z-index:2;margin:0 -16px 8px;padding:8px 16px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}.question{scroll-margin-top:72px;padding:20px 0 28px;border-bottom:1px solid var(--line)}.question.missing h2{color:#b3261e}
-.steps button{display:flex;gap:6px;align-items:center;padding:7px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
-.steps button[aria-current=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
-.steps .done::after{content:"\\2713";font-weight:800}
-h2{margin:0;font-size:1.25rem}.prompt{margin:4px 0 2px;color:var(--muted)}.hint{margin:0 0 14px;font-size:.9rem;color:var(--muted)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.card{position:relative;display:flex;flex-direction:column;gap:8px;padding:10px;border:2px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer}
-.card:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
-.card:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
-.frame{position:relative;height:300px;border-radius:8px;overflow:hidden;background:#8883}
-.media{width:100%;height:100%;border:0;object-fit:contain;display:block;background:transparent}
-.shield{position:absolute;inset:0}
-.expand{position:absolute;right:8px;bottom:8px;padding:6px 10px;border:0;border-radius:7px;background:#000b;color:#fff;font:inherit;font-size:.85rem;cursor:pointer}
-.pick{display:flex;gap:10px;align-items:flex-start;font-weight:700}.pick input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:var(--accent)}
-.desc{margin:0;color:var(--muted);font-size:.92rem;white-space:pre-wrap}
-label.notes{display:block;margin:18px 0 6px;font-weight:700}textarea{width:100%;min-height:80px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit}
-.bar{position:fixed;inset:auto 0 0 0;display:flex;gap:8px;justify-content:center;align-items:center;padding:10px 16px;background:color-mix(in srgb,var(--bg) 92%,transparent);border-top:1px solid var(--line);backdrop-filter:blur(6px)}
-.bar .status{flex:1;max-width:520px;font-size:.9rem;color:var(--muted)}
-button.btn{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:700;cursor:pointer}
-button.btn.secondary{background:transparent;color:var(--ink);border:1px solid var(--line)}button.btn:disabled{opacity:.45;cursor:default}
-#refresh{display:block;width:100%;margin:0 0 14px;background:#7a4b00;color:#fff}#refresh[hidden]{display:none}
-.review{display:grid;gap:10px;margin:0 0 8px;padding:0;list-style:none}.review li{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
-.review .missing{color:#b3261e;font-weight:700}
-dialog{width:min(96vw,1400px);height:min(94vh,1100px);padding:0;border:0;border-radius:12px;background:var(--card);color:var(--ink)}dialog::backdrop{background:#000a}
-.viewer{display:grid;grid-template-rows:auto 1fr auto;height:100%}.viewer header,.viewer footer{display:flex;gap:8px;align-items:center;padding:10px 14px}
-.viewer header strong{flex:1}.viewer .stage{min-height:0;background:#8883}.viewer .stage .media{object-fit:contain}
-@media (max-width:600px){.frame{height:240px}.bar{flex-wrap:wrap}.bar .status{flex-basis:100%;order:-1;text-align:center}}
-</style></head><body><main>
-<h1 id="title"></h1><button id="refresh" class="btn" hidden>New options are available. Load them (keeps your picks)</button>
-<nav aria-label="Questions"><ol class="steps" id="steps"></ol></nav><div id="sections"></div>
-<section class="question" id="finish"><h2>Submit</h2><label class="notes" for="general-notes">General notes (optional)</label><textarea id="general-notes" maxlength="4000"></textarea>
-<p><button class="btn secondary" id="more" type="button">Ask for more options instead</button></p></section></main>
-<div class="bar"><span class="status" id="status" role="status"></span><button class="btn" id="submit">Submit answers</button></div>
-<dialog id="viewer"><div class="viewer"><header><strong id="viewer-title"></strong><button class="btn secondary" id="viewer-close">Close (Esc)</button></header><div class="stage" id="viewer-stage"></div>
-<footer><button class="btn secondary" id="viewer-prev">Previous</button><span style="flex:1"></span><button class="btn" id="viewer-pick">Select this</button><button class="btn secondary" id="viewer-next">Next</button></footer></div></dialog>
-<script>
-let data=${data};
-const store=(()=>{try{return window.sessionStorage}catch(error){return null}})();
-const key='agent-preview:'+location.pathname;
-let saved={};try{saved=JSON.parse(store?.getItem(key)||'{}')||{}}catch(error){saved={}}
-const picks=new Map(Object.entries(saved.picks||{}).map(([q,ids])=>[q,new Set(ids)]));
-const notes=new Map(Object.entries(saved.notes||{}));
-let general=saved.general||'';let current=Math.min(saved.current||0,data.questions.length-1);let viewing=null;
-const $=selector=>document.querySelector(selector);
-const persist=()=>{try{store?.setItem(key,JSON.stringify({picks:Object.fromEntries([...picks].map(([q,ids])=>[q,[...ids]])),notes:Object.fromEntries(notes),general,current}))}catch(error){}};
-const assetUrl=option=>'/asset/'+encodeURIComponent(option.id)+'?token='+encodeURIComponent(data.token);
-const pickedFor=question=>picks.get(question.id)||new Set();
-const say=text=>{$('#status').textContent=text};
-function media(option){const node=document.createElement(option.kind==='html'?'iframe':'img');node.className='media';node.src=assetUrl(option);if(option.kind==='html'){node.setAttribute('sandbox','');node.title=option.label;node.tabIndex=-1}else node.alt=option.label;return node}
-function toggle(question,id,on){const set=new Set(pickedFor(question));if(question.select==='one'){set.clear();if(on)set.add(id)}else if(on)set.add(id);else set.delete(id);picks.set(question.id,set);persist();renderSteps()}
-function renderSteps(){const list=$('#steps');list.replaceChildren();let answered=0;
- data.questions.forEach((question,index)=>{const item=document.createElement('li');const button=document.createElement('button');button.type='button';button.textContent=(index+1)+'. '+question.title;
-  if(pickedFor(question).size){button.className='done';answered+=1}if(index===current)button.setAttribute('aria-current','true');
-  button.onclick=()=>{current=index;persist();document.getElementById('q-'+question.id)?.scrollIntoView({behavior:'smooth'})};item.append(button);list.append(item)});
- say(answered+' of '+data.questions.length+' answered')}
-function renderQuestion(question,index){const section=document.createElement('section');section.className='question';section.id='q-'+question.id;
- const heading=document.createElement('h2');heading.textContent=(index+1)+'. '+question.title;section.append(heading);
- if(question.prompt){const prompt=document.createElement('p');prompt.className='prompt';prompt.textContent=question.prompt;section.append(prompt)}
- const hint=document.createElement('p');hint.className='hint';hint.textContent=(question.select==='one'?'Pick one.':'Pick any that fit.')+' Click a card to select it. View larger opens it on this page.';section.append(hint);
- const grid=document.createElement('div');grid.className='grid';const chosen=pickedFor(question);
- question.options.forEach((option,optionIndex)=>{const card=document.createElement('label');card.className='card';
-  const frame=document.createElement('div');frame.className='frame';const shield=document.createElement('span');shield.className='shield';
-  const expand=document.createElement('button');expand.type='button';expand.className='expand';expand.textContent='View larger';expand.onclick=event=>{event.preventDefault();event.stopPropagation();openViewer(question,optionIndex)};
-  frame.append(media(option),shield,expand);
-  const pick=document.createElement('span');pick.className='pick';const input=document.createElement('input');input.type=question.select==='one'?'radio':'checkbox';input.id='pick-'+option.id;card.htmlFor=input.id;input.name='q-'+question.id;input.value=option.id;input.checked=chosen.has(option.id);
-  input.onchange=()=>{toggle(question,option.id,input.checked);section.classList.remove('missing')};pick.append(input,document.createTextNode(option.label));
-  card.append(frame,pick);if(option.description){const desc=document.createElement('p');desc.className='desc';desc.textContent=option.description;card.append(desc)}grid.append(card)});
- section.append(grid);
- const label=document.createElement('label');label.className='notes';label.htmlFor='notes-'+question.id;label.textContent='Notes for this question (optional)';
- const area=document.createElement('textarea');area.id='notes-'+question.id;area.maxLength=4000;area.value=notes.get(question.id)||'';area.oninput=()=>{notes.set(question.id,area.value);persist()};section.append(label,area);return section}
-function render(){document.title=data.title;$('#title').textContent=data.title;$('#sections').replaceChildren(...data.questions.map(renderQuestion));$('#general-notes').value=general;renderSteps()}
-const watcher=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){const index=data.questions.findIndex(question=>'q-'+question.id===entry.target.id);if(index>=0&&index!==current){current=index;renderSteps()}}},{rootMargin:'-40% 0px -55% 0px'});
-const observe=()=>{watcher.disconnect();for(const node of document.querySelectorAll('#sections .question'))watcher.observe(node)};
-function openViewer(question,index){viewing={question,index};showViewer();$('#viewer').showModal()}
-function showViewer(){const {question,index}=viewing;const option=question.options[index];$('#viewer-title').textContent=question.title+': '+option.label+' ('+(index+1)+' of '+question.options.length+')';
- $('#viewer-stage').replaceChildren(media(option));const picked=pickedFor(question).has(option.id);$('#viewer-pick').textContent=picked?'Selected':'Select this';$('#viewer-pick').disabled=picked}
-function step(delta){const length=viewing.question.options.length;viewing.index=(viewing.index+delta+length)%length;showViewer()}
-$('#viewer-close').onclick=()=>$('#viewer').close();$('#viewer-prev').onclick=()=>step(-1);$('#viewer-next').onclick=()=>step(1);
-$('#viewer-pick').onclick=()=>{const option=viewing.question.options[viewing.index];toggle(viewing.question,option.id,true);const input=document.getElementById('pick-'+option.id);if(input)input.checked=true;showViewer()};
-$('#viewer').addEventListener('click',event=>{if(event.target===$('#viewer'))$('#viewer').close()});
-$('#viewer').addEventListener('keydown',event=>{if(event.key==='ArrowLeft')step(-1);if(event.key==='ArrowRight')step(1)});
-$('#general-notes').oninput=event=>{general=event.target.value;persist()};
-$('#more').onclick=()=>submit('more');
-$('#submit').onclick=()=>{const missing=data.questions.filter(question=>!pickedFor(question).size);for(const question of data.questions)document.getElementById('q-'+question.id)?.classList.toggle('missing',missing.includes(question));
- if(missing.length){say('Answer '+missing.map(question=>question.title).join(', ')+' first, or use Ask for more options.');document.getElementById('q-'+missing[0].id)?.scrollIntoView({behavior:'smooth'});return}submit('select')};
-async function submit(action){const answers={};const ids=[];
- for(const question of data.questions){const chosen=[...pickedFor(question)].filter(id=>question.options.some(option=>option.id===id));const note=notes.get(question.id)||'';
-  if(chosen.length||note){answers[question.id]={ids:chosen,notes:note};ids.push(...chosen)}}
- if(action==='select'&&!ids.length){say('Pick at least one option first.');return}
- try{const response=await fetch('/submit',{method:'POST',headers:{'content-type':'application/json','x-preview-token':data.token},body:JSON.stringify({action,ids,notes:general,answers})});
-  const result=await response.json();say(response.ok?(action==='more'?'Sent. The agent will add options; this page will offer them.':'Sent. The agent has your answers.'):'Error: '+result.error)}
- catch(error){say('Could not send. Check the connection and try again.')}}
-const refresh=$('#refresh');const updates=new EventSource('/events?token='+encodeURIComponent(data.token));
-updates.onmessage=event=>{if(Number(event.data)>data.revision)refresh.hidden=false};
-refresh.onclick=async()=>{try{const response=await fetch('/config?token='+encodeURIComponent(data.token));if(!response.ok)throw new Error('config');data={...(await response.json()),token:data.token};
- current=Math.min(current,data.questions.length-1);refresh.hidden=true;render();observe();say('Options updated.')}catch(error){say('Could not load new options. Try again.')}};
-render();observe();
-</script></body></html>`;
+  return ui.html.replace('{{PREVIEW_DATA}}', () => data)
+    .replace('{{PREVIEW_SCRIPT}}', () => ui.script);
 }
 
 function requestHasValidOrigin(request) {
@@ -338,7 +246,7 @@ function reserveServerFile(filename, metadata) {
   fs.writeFileSync(filename, `${JSON.stringify(metadata, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
 }
 
-function serveAsset(option, response) {
+function serveAsset(option, response, annotationScript) {
   const flags = fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0);
   fs.open(option.requested, flags, (openError, descriptor) => {
     if (openError) return sendJson(response, 404, { error: 'option asset is unavailable' });
@@ -347,7 +255,25 @@ function serveAsset(option, response) {
         fs.close(descriptor, () => {});
         return sendJson(response, 404, { error: 'option asset changed after startup' });
       }
-      response.writeHead(200, { 'content-type': contentType(option), 'cache-control': 'no-store', 'content-security-policy': "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:" });
+      const nonce = crypto.randomBytes(18).toString('base64');
+      const scripts = option.scripts ? "'unsafe-inline'" : `'nonce-${nonce}'`;
+      const headers = {
+        'content-type': contentType(option), 'cache-control': 'no-store',
+        'referrer-policy': 'no-referrer', 'x-content-type-options': 'nosniff',
+        'content-security-policy': `sandbox allow-scripts; default-src 'none'; script-src ${scripts}; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'`,
+      };
+      if (option.kind === 'html') {
+        return fs.readFile(descriptor, 'utf8', (error, html) => {
+          fs.close(descriptor, () => {});
+          if (error) return sendJson(response, 404, { error: 'option asset is unavailable' });
+          response.writeHead(200, headers);
+          const bridge = `<script nonce="${nonce}">${annotationScript}</script>`;
+          const doctype = /^(\s*(?:<!--[\s\S]*?-->\s*)*<!doctype[^>]*>)/i;
+          const instrumented = doctype.test(html) ? html.replace(doctype, match => match + bridge) : bridge + html;
+          response.end(instrumented);
+        });
+      }
+      response.writeHead(200, headers);
       const stream = fs.createReadStream(option.requested, { fd: descriptor, autoClose: true });
       stream.on('error', () => response.destroy());
       stream.pipe(response);
@@ -374,13 +300,69 @@ function lanAddress() {
   return '127.0.0.1';
 }
 
+function validText(value, label, limit = 4000) {
+  if (typeof value !== 'string' || value.length > limit) throw new Error(`invalid ${label}`);
+  return value;
+}
+
+function validateReviews(input, config) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('invalid reviews');
+  const reviews = Object.fromEntries(Object.entries(input).map(([id, review]) => {
+    if (!config.ids.has(id)) throw new Error(`unknown reviewed option: ${id}`);
+    if (!review || !['approved', 'rejected', 'unreviewed'].includes(review.status)) throw new Error(`invalid review status: ${id}`);
+    const comment = validText(review.comment, 'option comment');
+    if (!Array.isArray(review.annotations) || review.annotations.length > 30) throw new Error(`invalid annotations: ${id}`);
+    const option = config.options.find(candidate => candidate.id === id);
+    const annotations = review.annotations.map(annotation => {
+      if (!annotation || !annotation.anchor) throw new Error('invalid annotation');
+      const anchor = annotation.anchor;
+      let normalized;
+      if (anchor.kind === 'element' && option.kind === 'html') {
+        const selector = validText(anchor.selector, 'element selector', 1000);
+        if (!selector.length) throw new Error('empty element selector');
+        normalized = { kind: 'element', selector, text: validText(anchor.text, 'element text', 500) };
+        if (anchor.matchIndex !== undefined) {
+          if (!Number.isSafeInteger(anchor.matchIndex) || anchor.matchIndex < 0) throw new Error('invalid element match index');
+          normalized.matchIndex = anchor.matchIndex;
+        }
+      } else if (anchor.kind === 'point' && option.kind === 'image') {
+        if (![anchor.x, anchor.y].every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1)) {
+          throw new Error('invalid image point');
+        }
+        normalized = { kind: 'point', x: anchor.x, y: anchor.y };
+      } else throw new Error('annotation does not match the option kind');
+      return { anchor: normalized, comment: validText(annotation.comment, 'annotation comment') };
+    });
+    return [id, { status: review.status, comment, annotations }];
+  }));
+  for (const question of config.questions) {
+    if (question.select === 'one' && question.options.filter(option => reviews[option.id]?.status === 'approved').length > 1) {
+      throw new Error(`question takes one approval: ${question.id}`);
+    }
+  }
+  return reviews;
+}
+
+function validateCombinations(input, config) {
+  if (!Array.isArray(input) || input.length > 50) throw new Error('invalid combinations');
+  return input.map(combination => {
+    if (!combination || !Array.isArray(combination.ids) || combination.ids.length < 2 || combination.ids.length > 100 ||
+        new Set(combination.ids).size !== combination.ids.length || combination.ids.some(id => !config.ids.has(id))) {
+      throw new Error('a combination needs at least two different current options');
+    }
+    return { ids: combination.ids, notes: validText(combination.notes, 'combination notes') };
+  });
+}
+
 function serve(values) {
   if (!values.config || !values['state-dir'] || !values.port) throw new Error(`missing serve option\n${usage()}`);
   const port = Number(values.port);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('port must be from 1 through 65535');
   const configFile = fs.realpathSync(values.config);
   let config = validateConfig(configFile);
-  let revision = 1;
+  const ui = { html: previewAsset('gallery.html'), script: previewAsset('gallery.js') };
+  const annotationScript = previewAsset('annotation.js');
+  let revision = Date.now();
   const stateDir = privateDirectory(values['state-dir']);
   const stateFile = path.join(stateDir, 'state.json');
   const serverFile = path.join(stateDir, 'server.json');
@@ -398,8 +380,8 @@ function serve(values) {
     const suppliedToken = request.headers['x-preview-token'] || url.searchParams.get('token');
     if (!requestHasValidOrigin(request) || suppliedToken !== token) return sendJson(response, 403, { error: 'forbidden' });
     if (request.method === 'GET' && url.pathname === '/') {
-      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'content-security-policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; img-src 'self' data:" });
-      return response.end(page(config, token, revision));
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer', 'content-security-policy': "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" });
+      return response.end(page(config, token, revision, ui));
     }
     if (request.method === 'GET' && url.pathname === '/config') {
       return sendJson(response, 200, publicConfig(config, revision));
@@ -424,15 +406,27 @@ function serve(values) {
       }
       const option = config.options.find(candidate => candidate.id === id);
       if (!option) return sendJson(response, 404, { error: 'unknown option' });
-      return serveAsset(option, response);
+      return serveAsset(option, response, annotationScript);
     }
     if (request.method === 'POST' && url.pathname === '/submit') {
       let body = '';
-      request.on('data', chunk => { body += chunk; if (body.length > 65536) request.destroy(); });
+      let bytes = 0;
+      request.setEncoding('utf8');
+      request.on('data', chunk => {
+        bytes += Buffer.byteLength(chunk);
+        if (bytes <= 1048576) body += chunk;
+      });
       return request.on('end', () => {
+        if (bytes > 1048576) return sendJson(response, 413, { error: 'feedback exceeds 1 MiB; shorten comments or remove pins' });
         try {
           const input = JSON.parse(body);
-          if (!['select', 'reject', 'more'].includes(input.action)) throw new Error('invalid action');
+          if (!input || typeof input !== 'object') throw new Error('invalid submission');
+          if (!['select', 'reject', 'more', 'review'].includes(input.action)) throw new Error('invalid action');
+          if (input.submissionId !== undefined && (typeof input.submissionId !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(input.submissionId))) throw new Error('invalid submission ID');
+          const state = readJson(stateFile);
+          const prior = input.submissionId && state.events.find(event => event.submissionId === input.submissionId);
+          if (prior) return sendJson(response, 200, { seq: prior.seq });
+          if (input.revision !== undefined && input.revision !== revision) return sendJson(response, 409, { error: 'options changed; load the new options before submitting' });
           if (!Array.isArray(input.ids) || input.ids.some(id => typeof id !== 'string' || !config.ids.has(id))) throw new Error('invalid option ids');
           if ((input.action === 'select' || input.action === 'reject') && input.ids.length < 1) throw new Error('select at least one option');
           if (typeof input.notes !== 'string' || input.notes.length > 4000) throw new Error('invalid notes');
@@ -445,9 +439,24 @@ function serve(values) {
             if (answer.ids.some(id => !question.options.some(option => option.id === id))) throw new Error(`answer has an option from another question: ${questionId}`);
             if (question.select === 'one' && answer.ids.length > 1) throw new Error(`question takes one answer: ${questionId}`);
           }
-          const state = readJson(stateFile);
+          const hasReviews = input.reviews !== undefined;
+          if (input.action === 'review' && !hasReviews) throw new Error('review requires option reviews');
+          const reviews = hasReviews ? validateReviews(input.reviews, config) : undefined;
+          const requirements = validText(input.requirements ?? '', 'requirements');
+          const combinations = validateCombinations(input.combinations ?? [], config);
+          if (hasReviews) {
+            const approved = Object.keys(reviews).filter(id => reviews[id].status === 'approved');
+            if (approved.length !== new Set(input.ids).size || approved.some(id => !input.ids.includes(id))) throw new Error('approved options do not match submission IDs');
+            for (const question of config.questions) {
+              const answerIds = answers[question.id]?.ids || [];
+              const expected = question.options.filter(option => reviews[option.id]?.status === 'approved').map(option => option.id);
+              if (expected.length !== answerIds.length || expected.some(id => !answerIds.includes(id))) throw new Error(`approvals do not match the answer: ${question.id}`);
+            }
+          }
           state.seq += 1;
           const event = { seq: state.seq, action: input.action, ids: [...new Set(input.ids)], notes: input.notes, answers, at: new Date().toISOString() };
+          if (input.submissionId) event.submissionId = input.submissionId;
+          if (hasReviews) Object.assign(event, { reviews, requirements, combinations, revision });
           state.events.push(event);
           if (input.action === 'select') {
             state.selected = [...new Set([...state.selected, ...event.ids])];
@@ -456,6 +465,15 @@ function serve(values) {
           if (input.action === 'reject') {
             state.rejected = [...new Set([...state.rejected, ...event.ids])];
             state.selected = state.selected.filter(id => !event.ids.includes(id));
+          }
+          if (hasReviews) {
+            const reviewed = new Set(Object.keys(reviews));
+            state.selected = state.selected.filter(id => !reviewed.has(id));
+            state.rejected = state.rejected.filter(id => !reviewed.has(id));
+            for (const [id, review] of Object.entries(reviews)) {
+              if (review.status === 'approved') state.selected.push(id);
+              if (review.status === 'rejected') state.rejected.push(id);
+            }
           }
           writePrivateJson(stateFile, state);
           return sendJson(response, 200, { seq: state.seq });
