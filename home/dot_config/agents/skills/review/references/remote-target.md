@@ -19,6 +19,17 @@ gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments
 
 The API command includes inline review comments. Skip findings already raised there.
 
+Remote fetch — Forgejo:
+
+```sh
+fj -H <host> pr view <id>
+fj -H <host> pr view <id> diff
+fj -H <host> pr view <id> comments
+```
+
+This supports a read-only review. For `--fix`, `--threads`, or merge, report
+that the platform is unsupported and stop before any mutation.
+
 ## Source checkout
 
 - **Remote target**: check out the source branch in a worktree per the `worktree` skill —
@@ -33,3 +44,9 @@ The API command includes inline review comments. Skip findings already raised th
   # GitHub fork: fetch origin pull/<n>/head, then add --detach from FETCH_HEAD
   # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
   ```
+
+## Linked MRs/PRs
+
+When the request or the MR/PR description names a companion or linked MR/PR, review it in
+the same run. Do not ask first. Report each one separately. Apply `--fix`, `--threads`,
+and merge only to MRs/PRs that the user names or authored; review the others read-only.

@@ -56,8 +56,10 @@ Follow repository rules for server binding, artifact storage, and cleanup.
 ## Fix and report
 
 Without `--fix`, report verified manual failures alongside code-review findings.
-This session's own work retains review's automatic fix authorization.
-With `--fix`, apply verified repairs and fix CI or conflicts through the shared workflow.
+Review's **Fix authorization** still applies to own work.
+With `--fix`, apply verified repairs and fix CI or conflicts per review's
+[ci-and-conflicts.md](../review/references/ci-and-conflicts.md).
+The rerun manual cases give review step 4's `Checked:` line.
 Rerun affected automated and manual checks after repairs, before committing and pushing.
 Repeat affected manual cases if a later CI fix or conflict resolution changes their behavior.
 Reuse evidence only when the code and inputs for that case are unchanged.

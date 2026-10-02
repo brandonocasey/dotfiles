@@ -18,8 +18,20 @@ For GitHub, use `gh pr view`, `gh pr checks`, and `gh run view --log-failed`.
 For GitLab, inspect the MR's head pipeline, jobs, and job traces through `glab`
 or its API. Verify available commands with local help before using them.
 
-Without `--fix` or existing authorization for this session's own work, inspect
-and report only. Do not edit, update branches, push, or retry CI.
+Without `--fix` or own work under review's **Fix authorization**, inspect and
+report only. Do not edit, update branches, push, or retry CI.
+
+## Compare with the target branch
+
+For each failed job, find the same job in the latest finished target-branch pipeline:
+
+- GitHub: `gh run list --branch <target> --workflow <workflow> --limit 5`, then `gh run view <run-id>`.
+- GitLab: `glab ci list --ref <target> --scope finished`, then
+  `glab api "projects/<enc-path>/pipelines/<pipeline-id>/jobs"`.
+
+Label each failure `also fails on <target>` or `new in this change`. Give both job URLs.
+If the target branch has no run of that job, label the failure `new in this change`.
+Retry or fix only `new in this change` failures. Report the others as target-branch failures.
 
 ## Repair CI
 

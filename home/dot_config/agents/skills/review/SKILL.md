@@ -2,8 +2,8 @@
 name: review
 description: >
   Review a PR/MR, branch, commit range, or working diff for verified defects.
-  Use for review requests; --fix applies agreed fixes and pushes remote
-  reviews.
+  Use for review requests and MR/PR thread checks; --fix fixes and pushes,
+  --loop re-reviews, --agents runs parallel reviewers.
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The
@@ -11,112 +11,70 @@ deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
 explained in plain language.
 
+Arguments: the target (step 0), `--fix` (step 4), `--loop [N]` (step 5),
+`--threads` (step 6), and `--agents <model>[:<effort>][,…]` (**Delegation**).
+A request to approve or merge is part of step 4.
+
 ## Delegation
 
-Delegate the review to a sub-agent only when this session or its sub-agents wrote the
-change, so that the reviewer is independent. Review anyone else's change inline (an
-MR/PR from a colleague, an arbitrary commit). When the user asks for a hard review, delegate
-every target to the `hard-review` role.
+Delegate the review to sub-agents, so that the reviewer is independent, when:
 
-When delegating: spawn one sub-agent per the `sub-agents` skill. Pass it the review
-target verbatim plus the text of steps 0–2 only — never the implementation rationale
-or the conversation, or the reviewer is not independent. Resolve reference paths in
-the excerpt against this skill's directory. The sub-agent runs steps 0–2
-and returns candidate findings as raw data (file, line, severity, failure scenario,
-evidence, and which tests it ran). It keeps any review worktree it created and returns
-its path with the findings. An external tool's findings still go through the
-re-verification below.
+- this session or its sub-agents wrote the change;
+- `--loop` or `--agents` is set;
+- the user asks for a hard review or a sub-agent review, or names reviewer models.
 
-When the sub-agent returns, the main session re-verifies each finding in that
-worktree before showing or fixing anything: read the cited code, verify the failure
-scenario is reachable, and kill anything that isn't concrete. Do not re-run tests the
-sub-agent already reported running — re-run only when a finding hinges on a test
-result the sub-agent did not show. The main session then runs steps 3–4 itself
-(including worktree removal). If the sub-agent could not access the target (missing
-auth, no checkout), fall back to running the review inline and note that the reviewer
-is not independent.
+Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
 
-Reviews of this session's own work skip the `--fix` gate, whether auto-triggered or
-user-requested: apply verified fixes immediately, re-run tests/lint after applying them,
-and do not review again. Reviews of someone else's change print the comments and wait
-for `--fix`.
+Use the read-only `reviewer` role. Use `hard-review` only for a hard review.
+`--agents` starts one reviewer per entry, in parallel. A request that names models
+means `--agents` with one entry per model. The `sub-agents` skill owns model and
+effort selection. With several targets, start one reviewer set per target.
+
+Before the spawn, create the review worktree once (step 0), prepare it, and build once.
+Give every reviewer the same prompt: the review target verbatim, the worktree path, and
+the absolute path of [reviewer-steps.md](references/reviewer-steps.md). Never pass the
+implementation rationale, earlier findings, or the conversation. Tell reviewers not to
+rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
+runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,
+and the tests it ran. An external tool's findings go through the same re-verification.
+
+Merge the findings and remove duplicates by file, line, and failure scenario. Name the
+reviewers that found each finding. Then re-verify each finding in the worktree before
+showing or fixing anything: read the cited code, verify the failure scenario is reachable,
+and kill anything that isn't concrete. Do not re-run tests a reviewer already reported
+running — re-run only when a finding hinges on a test result the reviewer did not show.
+The main session then runs steps 3–4 itself (including worktree removal). If a reviewer
+could not access the target (missing auth, no checkout), fall back to running the review
+inline and note that the reviewer is not independent.
+
+## Fix authorization
+
+Own work skips the `--fix` gate, whether auto-triggered or user-requested:
+
+- this session's own work;
+- the working diff;
+- a local branch or commit whose commits all have the author email from
+  `git config user.email`;
+- an MR/PR whose author is the authenticated user (`gh api user --jq .login` or
+  `GITLAB_HOST=<host> glab api user`'s `username`, compared with the MR/PR author).
+
+For own work, apply verified fixes at once per step 4. Re-run tests/lint, and do not
+review again unless `--loop` is set. An own MR/PR gets the full MR/PR flow of step 4,
+including the push (AGENTS.md Git rules).
+For any other target, print the comments and wait for `--fix`. End with:
+`Reply fix to apply N findings.`
+After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means
+`--fix` for the same target. Treat every other reply as a normal request.
 
 Before the final review of this session's own work, on a model other than Fable or Astra:
 when the Git rules authorize pushing the task branch, push it first. Then inspect CI
-failures that already finished, once, and fix them; do not wait for a running CI.
-Without push authorization, review the local branch.
+failures that already finished, once, per [ci-and-conflicts.md](references/ci-and-conflicts.md),
+and fix them; do not wait for a running CI. Without push authorization, review the local branch.
 
-## 0. Identify the target and get the diff
+## 0–2. Target, review, verify
 
-Classify the argument:
-
-- **GitLab or GitHub URL** → remote review. Parse host, project path, and MR/PR number.
-  GitLab (any host) → `glab`, prefixed with `GITLAB_HOST=<host>` when self-hosted;
-  GitHub → `gh`.
-- **Branch name** → local branch review against **Newest default base** in
-  [default-branch.md](../shared/default-branch.md), unless the user supplied a base.
-  Use `git log <base-commit>..<branch>` for commits and
-  `git diff <base-commit>...<branch>` for changes since their merge-base.
-- **Commit sha or range** (`<sha>`, `<a>..<b>`) → `git show <sha>` / `git diff <a>..<b>`.
-- **No argument** → the working diff (`git diff`, `git diff --staged`, plus untracked
-  files) if the tree is dirty; otherwise the current branch against the default branch as
-  above. If that is empty too, say there is nothing to review and stop.
-
-Get the full code, not just the diff — the diff alone is rarely enough context:
-
-- **Remote target**: read [remote-target.md](references/remote-target.md) for
-  metadata, discussion, diffs, and the source checkout before review.
-  Read [ci-and-conflicts.md](references/ci-and-conflicts.md) for CI status,
-  mergeability, repair authorization, retries, and conflict handling.
-- **Local branch**: use its existing worktree if it has one (`git worktree list`);
-  otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
-- When `.gitmodules` exists and the review runs tests, initialize submodules per the
-  `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
-  same skill's **Submodules** section owns the `--force` decision.
-- **Commit or working diff**: read directly in the current checkout; no worktree needed.
-
-Read the surrounding code of every changed hunk you intend to comment on.
-
-## 1. Review — adversarial
-
-Start from the assumption that the change is broken and your job is to prove it. Do not
-read the diff looking for things that seem off — attack it:
-
-- **Construct breaking inputs.** For each changed function, actively hunt for a concrete
-  input or state that makes it misbehave: null/undefined, empty, zero, negative, huge,
-  unicode, concurrent calls, re-entrancy, out-of-order events, first/last iteration.
-- **Attack the boundaries.** Check every caller of any changed function — a fix applied at
-  one call site with broken siblings is the most common real finding. Then flip it: what
-  does the changed code assume about its inputs, and which caller can violate that?
-- **Distrust the description.** List what the author claims the change does, then look for
-  behavior the diff actually changes that the claims don't cover — that gap is where bugs
-  hide. Treat "refactor, no behavior change" as a claim to falsify.
-- **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
-  or subtly wrong? A test that can't fail is a finding. Missing or weakened tests for the
-  changed behavior are findings too.
-- **Exploit it.** Where the change touches a trust boundary (user input, URLs, HTML, file
-  paths, permissions), spend a pass thinking like an attacker, not a reviewer.
-- **Check the title and description are current** (MR/PR only). Compare them against the
-  full diff: if they omit or misstate what the change now does, or the title does not use
-  the conventional commit type of the most user-facing change in the diff (`feat` over
-  `refactor` over `chore`), report it as a finding with the corrected title/description text.
-
-Only after the attack passes are exhausted, note style/simplification issues.
-
-## 2. Verify — mandatory, before anything is shown
-
-Now switch sides: for every candidate finding, try to refute it. Read the full
-function/file in the checkout (not the diff hunk alone), trace the failure path, and hunt
-for the guard, caller contract, or earlier check that makes the scenario unreachable. A
-finding survives only if refutation fails and you can state the concrete input/state that
-triggers it. Kill everything else. A plausible-sounding comment that turns out false is
-worse than no comment. If tests exist for the area, run the relevant ones when a finding
-claims broken behavior — a passing test that covers the exact scenario refutes the finding.
-
-For a finding about rendered UI, use the `ui-verify` skill when browser evidence is
-needed. For a ROM Weaver performance claim, use `benchmark-change` when measurements
-are needed. Reuse results for the same revision and inputs; these checks return
-evidence to this review, not another review cycle.
+Read [reviewer-steps.md](references/reviewer-steps.md) and run steps 0–2, inline or
+through **Delegation**.
 
 ## 3. Output
 
@@ -142,8 +100,13 @@ Brief beats complete-sounding: no padding, no restating the diff.
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. Do not post anything to the MR/PR unless the user asks; print for the user
-to post. Remove any worktree this review created — never a pre-existing one — with
+is a valid result. Do not post anything to the MR/PR unless the user asks; step 6 lists what
+`--threads` may post. Print for the user to post. For an MR/PR, put all comments in one copy
+file, `review-<number>.md`, numbered by finding, and add follow-ups to it. Report CI and
+conflict status separately, with the observed source SHA and job or pipeline links.
+Pending checks are unverified, not passing.
+
+Remove any worktree this review created — never a pre-existing one — with
 `git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
 **Remove** section (clean tree, shell moved out first). When continuing to `--fix`, keep it
 until the end of step 4 and remove it there. A review that leaves `.worktrees/review-…`
@@ -154,17 +117,70 @@ For MR/PR comment links and suggestion syntax, read
 
 ## 4. Optional: --fix
 
-Only when the user asks (`--fix`, "fix them"):
+Run this step when **Fix authorization** skips the gate, the user asks (`--fix`, a
+`fix` reply, or a later fix request for the same MR/PR), or `--threads` has `valid`
+threads that the request covers (fix only those threads):
 
-- **MR/PR**: in the review worktree, apply the agreed fixes, run the repo's tests/lint,
-  commit through the `commit` skill in the branch's existing style (carry any issue-tracker reference from the MR/PR
-  title), and push to the source branch — the review worktree is detached, so use
-  `git push origin HEAD:<source-branch>`. For a fork MR/PR, `origin` is the base repo: push
-  to the fork's URL instead (`git push <fork-url> HEAD:<source-branch>`). That needs push
-  access to the fork and leaves `.git/config` unchanged. Print branch, HEAD sha, and the
-  MR/PR link afterwards. Clean up the worktree when done either way.
-- **Local branch or commit**: apply the agreed fixes in the target's checkout/worktree, run
-  the repo's tests/lint, and commit per the `commit` skill. Do not push. Then remove the
-  worktree if step 0 created it — the commits stay on the branch.
-- **Working diff**: apply the agreed fixes in place and leave them uncommitted unless the
-  user asks to commit.
+- **Scope**: fix every surviving `bug` and `nit`, unless the user names a subset.
+- **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
+  what the change or its spec intends. Report it as a `question` with options and a
+  recommended default.
+- **Questions**: if the answer does not change user-visible behavior, choose the
+  recommended answer, apply it, and state the choice in one line.
+- With `--fix`, never end with comments for the user to post; apply them.
+- End with at most one question, for the excluded items only.
+
+Fix authorization also covers CI failures and clear conflicts for the review target.
+Read [ci-and-conflicts.md](references/ci-and-conflicts.md) before these repairs.
+
+- **MR/PR**: in the review worktree:
+  1. Fetch the source branch. If its head moved, check each finding again and drop stale ones.
+  2. Apply the fixes. Remove narrating comments that this MR/PR adds, per `code-standards`.
+     Do not touch existing comments.
+  3. Resolve clear conflicts with the target branch and fix `new in this change` CI
+     failures, per ci-and-conflicts.md.
+  4. Run the repo's tests/lint. Check the fixed HEAD by hand (AGENTS.md manual-check rule;
+     methods in `review-full` **Exercise the actual behavior**). Record one line:
+     `Checked: <steps, page or command, config> -> <result>`, or `Checked: n/a (<reason>)`
+     for docs-, test-, or config-only fixes.
+  5. Commit through the `commit` skill in the branch's existing style; carry any
+     issue-tracker reference from the MR/PR title. Push to the source branch — the review
+     worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
+     `origin` is the base repo: push to the fork's URL instead
+     (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and
+     leaves `.git/config` unchanged.
+  6. Sync the title and description to the final diff, per `ship` step 3, and read them
+     back. Then refresh the source SHA, CI, and mergeability once, per ci-and-conflicts.md.
+  7. When the request asks to approve or merge, run the `ship` skill's
+     [merge.md](../ship/references/merge.md) after the push, only when no `bug` or
+     `question` finding remains. Otherwise skip it and name the blocking findings.
+- **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
+  tests/lint, record the `Checked:` line, and commit per the `commit` skill. For a commit
+  or the default branch, first create a fix branch per the `worktree` skill; never commit
+  in the main checkout. Do not push. Then remove the worktree if this review created it —
+  the commits stay on the branch.
+- **Working diff**: apply the fixes in place, record the `Checked:` line, and leave them
+  uncommitted unless the user asks to commit.
+
+Report the commits, the `Checked:` line, and the MR/PR link. Remove the worktree per step 3.
+End the report with one line: `Ship: pushed <sha> to <branch>` or `Ship: not run (<reason>)`.
+
+## 5. Optional: --loop [N]
+
+`--loop` implies `--fix`. N is the maximum number of rounds. The default is 3.
+
+1. In each round, rebuild in the review worktree after the earlier round's fixes. Then
+   start a new reviewer per **Delegation** with the current target only.
+2. Re-verify, report, and fix as in steps 2–4. Hold behavior-change `question` items for the user.
+3. Kill a finding that an earlier round killed, unless its code changed since that round.
+4. Stop after a round with no new `bug` or `question` finding, or after N rounds.
+5. Report one numbered list of the held `question` items and any `bug` left after round N.
+
+For an MR/PR, push after each round as step 4 says. Keep the review worktree until the
+last round. If no sub-agent is available, stop after round 1 and say that the next reviewer
+is not independent. `review-full` does not take `--loop`; it runs one cycle.
+
+## 6. Optional: --threads
+
+Only when the user asks (`--threads`, "are all comments resolved?", "fix and resolve the
+comments"). Follow [threads.md](references/threads.md) for the named MR/PR.
