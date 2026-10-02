@@ -41,6 +41,20 @@ if (!("openaiDeveloperDocs" in servers)) {
 }
 
 config.mcpServers = servers;
+
+// The trust dialog never saves trust for the home directory, so it asks on
+// every start there. Claude Code still honors this flag when it is set here.
+const projects = config.projects && !Array.isArray(config.projects) &&
+  typeof config.projects === "object" ? config.projects : {};
+// Claude Code keys Windows projects with forward slashes.
+const home = process.platform === "win32" ?
+  require("os").homedir().replaceAll("\\", "/") : require("os").homedir();
+const homeProject = projects[home] && typeof projects[home] === "object" &&
+  !Array.isArray(projects[home]) ? projects[home] : {};
+homeProject.hasTrustDialogAccepted = true;
+projects[home] = homeProject;
+config.projects = projects;
+
 process.stdout.write(`${JSON.stringify(config, null, 2)}\n`);
 });
 '
