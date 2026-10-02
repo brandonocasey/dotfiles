@@ -24,10 +24,14 @@ Run tasks in parallel and review every result. Follow `sub-agents` for delegatio
 ## 1. Collect tasks
 
 Take explicitly listed tasks or outcomes verbatim.
-If asked to select from a source (TODO.md, Jira filter, file, earlier message), read it first.
+If asked to select from a source (TODO.md, plan file, issue tracker, Jira filter, earlier message), read it first.
+For an issue tracker, read open issues with the remote's CLI: `gh`, `glab` (`GITLAB_HOST` for self-hosted), or `fj`.
+Read comments only when the issue body points to them.
 Choose independent tasks with separate files, checkable outcomes, and no user decisions needed mid-task.
 Skip destructive, outward-facing, or vague tasks; report each skipped task and reason.
-Never add to the source list. Removing completed items is allowed; report completions either way.
+Never add to the source list. Report completions either way.
+You may remove an item after its task passes step 3. Only the main session edits the source, never a task worktree.
+If the source is tracked, commit the removal on that task's branch; otherwise edit the file in place.
 
 Write one line of acceptance criteria per selected task.
 Before spawning, ask only about unknown agent names or tasks without checkable outcomes.
@@ -64,6 +68,8 @@ Never report completion without passing review or refutation against the accepta
 - Follow the selected end-mode skill for branches whose assigned tasks all passed step 3.
   Keep blocked or partial branches local. Land eligible branches one at a time.
   Without an end mode, keep branches local.
+- If the user asked for as many or all source items, select the next batch from items that no earlier batch of this run selected.
+  Repeat steps 1-4. Stop when no eligible item is left or when a batch has no task that passes step 3.
 - On completion, failure, cancellation, or blocked exit, stop servers, free ports, and close browser pages opened by the batch.
   Keep worktrees with commits or partial changes needed for recovery; remove empty worktrees.
 - Report each task as done / blocked / partial / skipped, with one plain sentence and verification evidence.
@@ -71,4 +77,8 @@ Never report completion without passing review or refutation against the accepta
   End with external links under **Links** (tickets, MRs/PRs, CI) and one concrete next action.
   Without an end mode, suggest `ship <branch>`; after shipping, give MR/PR links; after landing, give the default-branch state.
 
-Merge or change tickets/MRs only when the user asks.
+For issue sources, list each issue that a landed or shipped task fully completes.
+If the user asks whether any can be closed, list them and ask: "Close these N issues now?"
+Close issues only on an explicit close request.
+Use the same CLI as the source; on any other platform, stop before the close and report it.
+Merge or change other tickets or MRs only when the user asks.
