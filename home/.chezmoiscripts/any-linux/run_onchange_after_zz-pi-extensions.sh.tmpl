@@ -4,6 +4,18 @@ set -euo pipefail
 MCP_ADAPTER_VERSION='2.32.1'
 SUBAGENTS_VERSION='0.63.0'
 
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash)"
+fi
+
+if command -v npm >/dev/null 2>&1; then
+  NPM_GLOBAL_BIN="$(npm prefix --global)/bin"
+  case ":${PATH}:" in
+    *":${NPM_GLOBAL_BIN}:"*) ;;
+    *) export PATH="${NPM_GLOBAL_BIN}:${PATH}" ;;
+  esac
+fi
+
 if ! command -v pi >/dev/null 2>&1; then
   echo "Pi is required to install its extensions" >&2
   exit 1
