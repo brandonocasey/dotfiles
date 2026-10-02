@@ -19,3 +19,5 @@ Existing scoped approval persists; a saved task record does not expand it.
 Use `agent-preflight --remote root@koof.win` before depending on remote tools.
 SSH commands use `-T -o RemoteCommand=none`. Do not assume an interactive PATH
 or that Python, ripgrep, or chezmoi is available in noninteractive shells.
+The agent CLIs are in `/root/.local/bin`; use their absolute paths when needed.
+Run GitHub watchers from a host where `gh` and its authentication are available.

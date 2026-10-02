@@ -11,7 +11,8 @@ variables or tokens.
 For an SSH host, run `agent-preflight --remote user@host`. The remote check uses
 batch mode, a ten-second connection timeout, and no remote command from SSH
 configuration. It does not install or change anything. Treat an empty tool path
-as unavailable. Report the missing command and inspected host.
+as unavailable. Report the missing command and inspected host. The check also
+looks in `~/.local/bin`. When `on_path` is false, use the returned absolute path.
 
 Godot MCP is globally disabled because it scans its project path during every
 startup. In a directory that contains `project.godot`, enable it for one Codex

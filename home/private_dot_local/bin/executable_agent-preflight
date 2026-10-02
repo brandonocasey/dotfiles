@@ -22,7 +22,11 @@ json_string() {
 }
 
 tool_path() {
-  command -v "$1" 2>/dev/null || true
+  command -v "$1" 2>/dev/null || {
+    if [[ -x "$HOME/.local/bin/$1" ]]; then
+      printf '%s\n' "$HOME/.local/bin/$1"
+    fi
+  }
 }
 
 json_node=$(tool_path node)
@@ -46,14 +50,15 @@ printf '  "cwd": %s,\n' "$(json_string "$PWD")"
 printf '  "git": {"root": %s, "branch": %s},\n' \
   "$(json_string "$git_root")" "$(json_string "$git_branch")"
 printf '  "tools": {\n'
-tools=(node python3 rg codex claude gemini godot npx git)
+tools=(node python3 rg codex claude gemini godot npx git gh chezmoi)
 for index in "${!tools[@]}"; do
   tool=${tools[$index]}
   comma=,
   [[ $index -eq $((${#tools[@]} - 1)) ]] && comma=""
   path=$(tool_path "$tool")
-  printf '    "%s": {"available": %s, "path": %s}%s\n' \
+  printf '    "%s": {"available": %s, "on_path": %s, "path": %s}%s\n' \
     "$tool" "$([[ -n $path ]] && echo true || echo false)" \
+    "$(command -v "$tool" >/dev/null 2>&1 && echo true || echo false)" \
     "$(json_string "$path")" "$comma"
 done
 printf '  },\n'
