@@ -32,12 +32,30 @@ managed=$(
       "TodoWrite",
       "WebFetch",
       "WebSearch",
-      "Write"
+      "Write",
+      "Bash(glab mr approve*)",
+      "Bash(glab mr merge*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh pr review*--approve*)",
+      "Bash(jira-api GET *)",
+      "Bash(jira-api POST *)",
+      "Bash(jira-api PUT *)",
+      "Bash(JIRA_EMAIL=* jira-api GET *)",
+      "Bash(JIRA_EMAIL=* jira-api POST *)",
+      "Bash(JIRA_EMAIL=* jira-api PUT *)",
+      "mcp__claude_ai_Atlassian__createJiraIssue",
+      "mcp__claude_ai_Atlassian__editJiraIssue",
+      "mcp__claude_ai_Atlassian__transitionJiraIssue",
+      "Bash(git worktree remove /*.worktrees/*)",
+      "Bash(git -C * worktree remove /*.worktrees/*)",
+      "Bash(git worktree prune*)",
+      "Bash(git -C * worktree prune*)"
     ],
     "ask": [],
     "deny": [
       "Skill(frontend-design:frontend-design)",
-      "Skill(frontend-design:frontend-design *)"
+      "Skill(frontend-design:frontend-design *)",
+      "Bash(gh pr merge*--admin*)"
     ],
     "defaultMode": "auto"
   },
