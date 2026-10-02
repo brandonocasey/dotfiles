@@ -38,7 +38,7 @@ Load each skill before its first relevant action; it owns the detailed rules. If
 - For cross-session work, use `session-resume`; keep accepted corrections, authorized scope, and completed checks current.
 - Before using unfamiliar host tools, use `host-preflight`. On `koof`, read `~/.config/agents/environments/koof.md` before server work.
 - Sub-agents: `split-task` owns splitting; apply its thresholds automatically. `sub-agents` owns roles, pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Load it before a spawn, before watching CI, logs, or builds, and after one failed fix or a user-reported failure. Keep judgement, integration, and the final check in the main session.
-- Review: run `review` once per task. Fable and Astra first read `~/.config/agents/skills/review/references/when-to-run.md` for triggers and skip rules. Every other model must run it before reporting done. Include `Review: ran` or `Review: skipped (<reason>)` in the recap.
+- Review: run `review` once per task. Fable and Astra first read `~/.config/agents/skills/review/references/when-to-run.md` for triggers and skip rules. Every other model must run it before reporting done. Include `Review: ran` or `Review: skipped (<reason>)` in the recap. After task commits, also include `Ship: pushed <sha>` or `Ship: not run (<reason>)`.
 - Code: load `code-standards` before writing or changing code, tests, config, or dependencies, writing plans, or reviewing code.
 - Browser and docs: load `browser` before any browser MCP use, `ui-verify` for UI changes and visual defects, and `write-docs` for documentation pages.
 - Branches: load `worktree` before any new or existing branch work, including sequential tasks. It owns base selection and branch preservation. Never switch branches in the main checkout.
@@ -64,7 +64,9 @@ Apply ASD-STE100 writing rules to chat, docs, comments, commits, and MR/PR text:
 
 - Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Branch tracking and submodule side effects need none: `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, `git submodule update --init`.
 - Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. `review --fix` uses the review skill's push step with the same authorization. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
+- Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket.
 - Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits. Stage specific paths, never `git add -A`.
 - Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
+- Fetch before you make a claim about remote state, such as branches, MR/PR status, or CI.
 - Do not suggest git operations for files you did not change.
 - Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated. Use the most user-facing conventional type for the title: `feat` over `refactor` over `chore`.
