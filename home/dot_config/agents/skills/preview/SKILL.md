@@ -38,6 +38,8 @@ Start the server on all interfaces:
 agent-preview serve --config "$config" --state-dir "$state_dir" --port "$port"
 ```
 
+Run the server in the background with the longest timeout the harness allows. In Claude Code, that is `timeout: 7200000`; the 30-minute default stops it while the user is still choosing. If the server stops anyway, start it again with the same state directory and port, then share the new URL, because the token changes.
+
 Read the token from the command output. Share only `http://<lan-ip>:<port>/?token=<token>`. Validate that the URL, gallery, and exact option IDs render before sharing it.
 
 Text written before a blocking tool call can stay hidden until the turn ends. So the user never sees a URL that is followed by a foreground wait. Show the URL first:
