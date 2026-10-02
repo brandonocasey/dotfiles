@@ -79,7 +79,7 @@ managed=$(
         "hooks": [
           {
             "type": "command",
-            "command": "fish -c 'claude-tmux-session'",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
             "timeout": 3
           }
@@ -91,7 +91,7 @@ managed=$(
         "hooks": [
           {
             "type": "command",
-            "command": "fish -c 'claude-tmux-session'",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
             "timeout": 3
           }
