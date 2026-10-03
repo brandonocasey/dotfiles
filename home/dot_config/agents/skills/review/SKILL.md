@@ -150,8 +150,9 @@ Read [ci-and-conflicts.md](references/ci-and-conflicts.md) before these repairs.
      methods in `review-full` **Exercise the actual behavior**). Record one line:
      `Checked: <steps, page or command, config> -> <result>`, or `Checked: n/a (<reason>)`
      for docs-, test-, or config-only fixes.
-  5. Commit through the `commit` skill in the branch's existing style; carry any
-     issue-tracker reference from the MR/PR title. Push to the source branch — the review
+  5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take
+     the type from its **Choosing the type** procedure; carry any issue-tracker reference
+     from the MR/PR title. Push to the source branch — the review
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead
      (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and

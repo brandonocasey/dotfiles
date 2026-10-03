@@ -99,7 +99,8 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 - Refresh `EXISTING` before creation. Update it instead of creating a duplicate.
   If its base changed during this run, reread it before deciding the target.
 - **Title**: the repo's commit/MR convention — read the repo's AGENTS.md / CLAUDE.md /
-  CONTRIBUTING for it. Include `TICKET` when set. If the repo requires a ticket and there is
+  CONTRIBUTING for it. For conventional titles, choose the type with the `commit` skill's
+  **Choosing the type** procedure; a squash merge makes the title the commit. Include `TICKET` when set. If the repo requires a ticket and there is
   none, never invent a key:
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.

@@ -69,4 +69,4 @@ Apply ASD-STE100 writing rules to chat, docs, comments, commits, and MR/PR text:
 - Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
 - Fetch before you make a claim about remote state, such as branches, MR/PR status, or CI.
 - Do not suggest git operations for files you did not change.
-- Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated. Use the most user-facing conventional type for the title: `feat` over `refactor` over `chore`.
+- Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated. Pick the title type with the `commit` skill's **Choosing the type** procedure. A squash merge makes the title the commit, so the type must match the main purpose of the diff, not its most user-facing part. A docs-only PR is `docs`, never `feat`.

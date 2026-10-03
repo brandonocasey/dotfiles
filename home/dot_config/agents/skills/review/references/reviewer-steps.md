@@ -59,8 +59,8 @@ read the diff looking for things that seem off — attack it:
   paths, permissions), spend a pass thinking like an attacker, not a reviewer.
 - **Check the title and description are current** (MR/PR only). Compare them against the
   full diff: if they omit or misstate what the change now does, or the title does not use
-  the conventional commit type of the most user-facing change in the diff (`feat` over
-  `refactor` over `chore`), report it as a finding with the corrected title/description text.
+  the type that the `commit` skill's **Choosing the type** procedure gives for the diff's
+  main purpose (for example, `feat` on a docs-only or refactor-only diff), report it as a finding with the corrected title/description text.
   Also report a description that breaks the `ship` skill's **Description** rules. Give the trimmed text.
 - **Check added comments.** Report each comment the diff adds that restates the code or
   narrates the change (`code-standards`, **Code comments**). Give the replacement or "remove".

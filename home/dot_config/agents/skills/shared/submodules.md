@@ -48,8 +48,10 @@ The gate covers each changed submodule first, then the superproject:
 2. The superproject gitlink must equal the submodule HEAD: `git submodule
    status` shows no `+` for `SUB_PATH`. A `+` means the submodule moved after
    the last superproject commit; stage `SUB_PATH` and commit the bump through
-   the `commit` skill: header `build(<SUB_NAME>): bump to <short>`, with the
-   submodule commit subject in the body.
+   the `commit` skill: header `<type>(<SUB_NAME>): bump to <short>`, with the
+   submodule commit subject in the body. Take `<type>` from the `commit`
+   skill's **Choosing the type** procedure for the submodule change: `deps`
+   for a third-party bump, else the type of the change the bump brings in.
 3. Then the superproject gate from [git-flow.md](git-flow.md).
 
 ## Ship

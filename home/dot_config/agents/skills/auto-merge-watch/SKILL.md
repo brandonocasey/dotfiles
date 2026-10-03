@@ -32,8 +32,8 @@ Diagnose the first blocker. Update a stale branch normally. For a failed check,
 read its complete log and distinguish a code failure from a proven service or
 runner failure. Retry a failed infrastructure run once: `gh run rerun RUN_ID
 --failed` or `glab ci retry JOB_ID`. For a code failure on
-the user's non-fork branch, use the repository worktree, code, commit, and push
-rules to make and test the smallest root-cause fix. Report review, draft,
+the user's non-fork branch, use the `worktree`, `code-standards`, and `commit`
+skills and the push rules to make and test the smallest root-cause fix. Report review, draft,
 policy, permission, conflict, fork, and ambiguous blockers to their owner.
 
 ## Watch pending checks
