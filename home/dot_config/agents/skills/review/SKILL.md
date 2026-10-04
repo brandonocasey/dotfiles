@@ -25,7 +25,7 @@ Delegate the review to sub-agents, so that the reviewer is independent, when:
 
 Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
 
-Use the read-only `reviewer` role. Use `hard-review` only for a hard review.
+Use `worker` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt. Use `hard-review` when the user requests a hard review.
 `--agents` starts one reviewer per entry, in parallel. A request that names models
 means `--agents` with one entry per model. The `sub-agents` skill owns model and
 effort selection. With several targets, start one reviewer set per target.

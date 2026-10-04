@@ -14,7 +14,7 @@ description: >
 
 ## Tests & Lint
 
-- Run the lint, type checks, and tests needed for the change and all checks required by the repository. Fix failures without the user's intervention; do not dismiss them as "pre-existing". After a fix, rerun the affected checks. Once the required checks pass, repeat or broaden them only for a new change, failure, or unresolved concern.
+- Run checks relevant to the change and all checks required by the repository. Fix failures caused by the change. Investigate other failures enough to establish their cause and effect on validation. Report unrelated failures with evidence; fix them only when they block the requested work and the repair is within scope. Otherwise ask before expanding scope. After a fix, rerun affected checks. Repeat or broaden checks only for a new change, failure, or unresolved concern.
 - For a bug fix, write or find a test that reproduces it. Run it before the fix and show that it fails. After the fix, show that it passes. If no test can reproduce the bug, show a manual reproduction before and after; for UI, follow `ui-verify`.
 - Make tests use a temporary HOME, XDG_* directories, database, and git repository. Tests never touch the user's real config, logs, or data. Put directories that you make by hand under the scratch path in [AGENTS.md](../../AGENTS.md). Test-config changes still need consent under [AGENTS.md](../../AGENTS.md).
 - Give each long test, build, or background run a time limit. When output stops for longer than one test file normally takes, stop the run and run the file that hangs alone.
