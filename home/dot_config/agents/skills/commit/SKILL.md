@@ -16,10 +16,8 @@ Optional argument: a target file or chunk. Commit only that target.
    and keep secrets out of it. When you amend, keep the existing message unless the purpose
    of the commit changed.
 4. **Commit.** Stage each chunk explicitly, including new and untracked files. Stage only
-   the target when the user gave one. When one file spans two chunks, stage the first
-   chunk's hunks non-interactively: `git diff -U0 -- <file> > <patch>`, delete the hunks
-   that belong to the other chunk, then `git apply --cached --unidiff-zero <patch>`. Then
-   run one of:
+   the target when the user gave one. When one file spans multiple logical changes, follow
+   [partial-staging.md](references/partial-staging.md). Then run one of:
    - New commit: `git commit -m '<message>'`.
    - Amend, message unchanged: `git commit --amend -C HEAD`.
    - Amend, message changed (the commit's purpose changed): `git commit --amend -m '<message>'`.
@@ -74,4 +72,4 @@ when a tie remains; routine commits do not need either reference.
 - Do not create an empty commit
 - Write temporary files in the scratch directory (AGENTS.md, **Directories**),
   never `/tmp`: a multi-line message, used with `git commit -F <file>`, and the
-  hunk `<patch>` from workflow step 4 (**Commit**). Remove them after the commit succeeds.
+  hunk patch from [partial-staging.md](references/partial-staging.md). Remove them after the commit succeeds.

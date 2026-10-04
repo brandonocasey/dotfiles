@@ -21,6 +21,17 @@ Chezmoi also manages `ui-verify`, `rom-weaver-release-verify`, and
 Codex and Claude can select only `ui-verify` automatically. Invoke
 `rom-weaver-release-verify` and `benchmark-change` explicitly.
 
+Codex keeps the synced `docs` and `google-workspace` bodies disabled and exposes
+explicit-only wrappers with those names. The wrappers read the installed synced
+skill only for an explicitly requested hosted destination. Codex uses its native
+`skill-creator`; Claude keeps its synced version. File-format skills remain
+available. The Codex config modifier discovers synced paths on each host; rerun
+`chezmoi apply ~/.codex/config.toml` after a synced account path changes, then
+restart Codex to refresh skill discovery.
+
+The session-start cleanup hook expires scratch files after 30 days. It preserves
+copy files awaiting use regardless of age.
+
 Check for upstream updates:
 
 ```bash

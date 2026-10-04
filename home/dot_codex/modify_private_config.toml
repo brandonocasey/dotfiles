@@ -19,6 +19,19 @@ if [[ -x "$notify_command" ]]; then
 fi
 export NOTIFY_LINE="$notify_line"
 
+# Keep app-owned synced bodies intact; Codex-only wrappers provide explicit use.
+SKILLS_CONFIG_TOML=""
+for skill in docs google-workspace skill-creator; do
+  for skill_file in "$HOME"/.config/agents/skills/synced/*/"$skill"/SKILL.md; do
+    [[ -f "$skill_file" ]] || continue
+    escaped_path=${skill_file//\\/\\\\}
+    escaped_path=${escaped_path//\"/\\\"}
+    SKILLS_CONFIG_TOML+=$(printf '\n[[skills.config]]\npath = "%s"\nenabled = false' "$escaped_path")
+    SKILLS_CONFIG_TOML+=$'\n'
+  done
+done
+export SKILLS_CONFIG_TOML
+
 body=$(
   cat <<'TOML'
 model = "gpt-6-luna"
@@ -52,6 +65,8 @@ terminal_resize_reflow = true
 goals = true
 hooks = true
 js_repl = false
+
+@SKILLS_CONFIG@
 
 [agents]
 default_subagent_model = "gpt-6-luna"
@@ -238,6 +253,10 @@ printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
       print ""
       print ENVIRON["KEEP_SECTIONS_TOML"]
     }
+    next
+  }
+  /^@SKILLS_CONFIG@$/ {
+    if (ENVIRON["SKILLS_CONFIG_TOML"] != "") print ENVIRON["SKILLS_CONFIG_TOML"]
     next
   }
   /^@NOTIFY@$/ {

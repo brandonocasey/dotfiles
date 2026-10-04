@@ -1,15 +1,16 @@
 #!/bin/bash
-# SessionStart hook. Removes agent scratch and copy files, and harness scratchpad
+# SessionStart hook. Removes agent scratch files and harness scratchpad
 # sessions, that nothing touched for DAYS days. Backups under
 # $XDG_STATE_HOME/agents/backups are never touched. Absolute find path: the
 # user's shell aliases `find` to bfs, which rejects BSD find flags.
-# Run by hand with DAYS=0 to clear everything, after closing other agent sessions.
+# Copy files awaiting use are never pruned.
+# Run by hand with DAYS=0 to clear scratch, after closing other agent sessions.
 set -u
 DAYS="${DAYS:-30}"
 FIND=/usr/bin/find
 CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/agents"
 
-for dir in "$CACHE/scratch" "$CACHE/copy"; do
+for dir in "$CACHE/scratch"; do
   [ -d "$dir" ] || continue
   "$FIND" "$dir" -mindepth 1 -type f ! -name .keep -mtime +"$DAYS" -delete
   "$FIND" "$dir" -mindepth 1 -type d -empty -delete
