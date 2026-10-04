@@ -30,7 +30,7 @@ if (!hasBrowser && !("chrome-devtools" in servers)) {
   servers["chrome-devtools"] = {
     type: "stdio",
     command: "npx",
-    args: ["chrome-devtools-mcp@latest", "--headless", "--isolated"],
+    args: ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"],
   };
 }
 if (!("openaiDeveloperDocs" in servers)) {

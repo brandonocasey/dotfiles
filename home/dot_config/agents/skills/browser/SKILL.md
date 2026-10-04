@@ -29,8 +29,11 @@ task checks the audio itself.
 
 Enable one disabled server for a Codex session with
 `codex -c mcp_servers.<name>.enabled=true`. A repository can instead put the
-same setting in `.codex/config.toml`. Do not enable extra engines globally;
-each enabled server adds startup work to every session.
+same setting in `.codex/config.toml`. For a Claude Code session, start it with
+`claude --mcp-config ~/.config/agents/mcp/<name>.json`; ask the user to restart
+the session that way, because a running session cannot add a server. Do not
+enable extra engines globally; each enabled server adds startup work to every
+session.
 
 Use headed mode only for DRM, fullscreen, picture-in-picture, a real user gesture,
 or when the user asks to watch.
