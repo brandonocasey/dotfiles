@@ -34,9 +34,10 @@ effort selection. With several targets, start one reviewer set per target.
 Before the spawn, establish the review checkout once (step 0). Install dependencies
 and build only when required by the affected checks, commit hooks, or review
 evidence; share any required build output across reviewers.
-Give every reviewer the same prompt: the review target verbatim, the worktree path, and
-the absolute path of [reviewer-steps.md](references/reviewer-steps.md). Never pass the
-implementation rationale, earlier findings, or the conversation. Tell reviewers not to
+Give every reviewer the same prompt: the review target verbatim, worktree path,
+the absolute path of [reviewer-steps.md](references/reviewer-steps.md), applicable
+repository constraints, and required check commands. Do not pass implementation
+rationale, earlier findings, or conversation history. Tell reviewers not to
 rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
 runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,
 and the tests it ran. An external tool's findings go through the same re-verification.

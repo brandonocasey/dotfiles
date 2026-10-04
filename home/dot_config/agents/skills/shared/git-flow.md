@@ -49,15 +49,15 @@ ask what to do.
 After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees what is about to
 move.
 
-**Manual check.** Run it after the gate, also when the tree was already clean.
-Check the commits in `<COMMIT_BASE>..HEAD`, plus commits this run created, by
-hand per the manual-check rule in AGENTS.md. Use the repo's documented harness
-when one exists. For a test change, run the changed tests and read the result.
-Classify config by its effect, not by its file type. Reuse a result while the
-code and inputs for that check are unchanged. Record one line for the report:
-`Checked: <steps, page or command> -> <result>`. Only changes to docs or
-comments record `Checked: n/a (<reason>)`. Without a check, do not push or
-land, and say why.
+**Manual check.** Before pushing or landing, verify the commits in
+`<COMMIT_BASE>..HEAD`, including commits this run created. For behavior changes,
+follow AGENTS.md's manual-check rule and use the repository's documented harness.
+Internal refactors require passing relevant tests and a diff check; docs and
+comments require a diff check. For test changes, run the changed tests and inspect
+their results. Classify configuration by its effect. Reuse evidence while its
+code, inputs, and environment remain unchanged. Record
+`Checked: <checks> -> <result>`. Do not push or land when required verification
+is missing.
 
 ## Shared rules
 

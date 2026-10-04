@@ -50,7 +50,7 @@ Do not retain an expensive role solely for its cache.
 - Include the task, exact files or targets, and acceptance criteria. Do not rely on unpassed conversation context.
 - Use fresh context for independent tasks. Pass only required evidence; inherit the full conversation only when the assignment needs it.
 - Give independent reviewers only the context permitted by the `review` skill.
-- Claude Code `cheap` skips rules files (`omitClaudeMd`). Include every rule it needs and name every output path.
+- For any role configured with `omitClaudeMd: true`, include the applicable repository constraints, required checks, and allowed output paths in its prompt. Pass only what the assignment needs.
 - Request raw results: data, findings, and paths, not prose for the user.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
 
