@@ -25,12 +25,14 @@ Delegate the review to sub-agents, so that the reviewer is independent, when:
 
 Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
 
-Use `worker` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt. Use `hard-review` when the user requests a hard review.
+Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt. Use `hard-review` when the user requests a hard review.
 `--agents` starts one reviewer per entry, in parallel. A request that names models
 means `--agents` with one entry per model. The `sub-agents` skill owns model and
 effort selection. With several targets, start one reviewer set per target.
 
-Before the spawn, create the review worktree once (step 0), prepare it, and build once.
+Before the spawn, establish the review checkout once (step 0). Install dependencies
+and build only when required by the affected checks, commit hooks, or review
+evidence; share any required build output across reviewers.
 Give every reviewer the same prompt: the review target verbatim, the worktree path, and
 the absolute path of [reviewer-steps.md](references/reviewer-steps.md). Never pass the
 implementation rationale, earlier findings, or the conversation. Tell reviewers not to

@@ -1,6 +1,6 @@
 ---
 name: consult
-description: "Read-only escalation by the main session after one failed attempt or reasoning across files or systems. Returns evidence."
+description: "Read-only escalation when a failed attempt leaves a specific question that needs independent reasoning. Returns evidence."
 model: claude-fable-5-1
 effort: high
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch

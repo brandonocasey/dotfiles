@@ -16,7 +16,7 @@
 - Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never end a turn with a command or check that you can run yourself. Settle open questions with evidence before you ask me.
 - Run waits longer than 1 minute in the background (`run_in_background` or Monitor), never as a foreground `sleep` or `until` loop.
 - `jira-api` reads `JIRA_EMAIL` from settings and its token from `pass`; never search `env`, `~/.netrc`, or config files for credentials.
-- Bind application and preview HTTP servers to `0.0.0.0`. Report `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, or `ipconfig` on Windows. Tool-control endpoints keep their required binding. Use native attachments for screenshots, diagrams, and reports when available. Otherwise serve them through HTTP. Do not publish to hosted artifact or document services unless I ask.
+- Bind application and preview HTTP servers to `0.0.0.0`. Report `http://<lan-ip>:<port>`, never `localhost`. Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux, or `ipconfig` on Windows. Tool-control endpoints keep their required binding. Use native attachments for screenshots, diagrams, and reports when available. Otherwise serve them through HTTP. Use hosted artifact or document services only when I request that destination. Otherwise preserve the requested local or chat format; when no destination is specified, use chat or a local file as the task requires. Decide the destination before invoking a document skill; a skill's default does not authorize a hosted write.
 - Give each dev server and worktree its own random free port. Use that same port for the whole task; pass it to each start command.
 - At task end, close MCP resources, stop servers and background processes you started, and free their ports. Remove scratch files, helpers, test data, extra branches, debug output, and logs. Delete with literal paths, such as `rm -rf ~/.cache/agents/scratch/<task>`; never `rm -rf "$VAR"`. Keep requested files and copy files awaiting use. If a helper could serve a teammate or a later task, propose a project path and let me decide; never leave it in the repository without consent. Keep a server running when a requested deliverable depends on its URL. Report its address and purpose. Stop it after I finish using it or request shutdown.
 - Make copyable commands, comments, commit messages, and snippets safe for terminals wrapping at about 80 characters:
@@ -39,7 +39,7 @@ Load each skill before its first relevant action; it owns the detailed rules. If
 
 - For cross-session work, use `session-resume`; keep accepted corrections, authorized scope, and completed checks current.
 - Before using unfamiliar host tools, use `host-preflight`. On `koof`, read `~/.config/agents/environments/koof.md` before server work.
-- Sub-agents: `split-task` owns splitting; apply its thresholds automatically. `sub-agents` owns roles, pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Load it before a spawn, before watching CI, logs, or builds, and after one failed fix or a user-reported failure. Keep judgement, integration, and the final check in the main session.
+- Sub-agents: `split-task` owns splitting; apply its thresholds automatically. `sub-agents` owns roles, pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Load it before a spawn, before watching CI, logs, or builds, or when a failed attempt leaves a specific unresolved question that needs independent reasoning. Keep judgement, integration, and the final check in the main session.
 - Run `review` when I request it or when a change affects security, persistence, concurrency, external writes, or a public interface used by other modules or services. Also run it when changed behavior lacks a passing test. For other changes, inspect the diff and run relevant checks. Read-only tasks need no code review. Include `Review: ran` or `Review: skipped (<reason>)` in change recaps. After task commits, include `Ship: pushed <sha>` or `Ship: not run (<reason>)`.
 - Code: load `code-standards` before writing or changing code, tests, config, or dependencies, writing plans, or reviewing code.
 - Browser and docs: load `browser` before any browser MCP use, `ui-verify` for UI changes and visual defects, and `write-docs` for documentation pages.
@@ -48,19 +48,13 @@ Load each skill before its first relevant action; it owns the detailed rules. If
 
 ## Writing
 
-Apply ASD-STE100 writing rules to chat, docs, comments, commits, and MR/PR text: https://asd-ste100.org . Use its rules, not its word list. Keep domain terms and verbs such as `hydrate`, `transpile`, and `seek`.
-
-- Start with the answer; omit preambles and repeated closing summaries. State uncertainty as a plain fact, such as “unverified: <claim>”. Never invent unchecked specifics, such as versions, dates, flags, or line numbers. Name the command or file that settles them.
-- Start answers about bugs, causes, choices, and changes with a plain lead. The lead gives the answer in 2–3 sentences, without code names, paths, or IDs. Put technical detail after it.
-- Use plain words, active voice, and short sentences. Keep necessary conditions and technical detail together when splitting them would reduce clarity.
-- Use one term per concept and plain verbs: check, make sure, start, stop, use, show, find, change, remove, need. `verify` means prove against code or data; `confirm` means get my approval before an irreversible step.
-- Preserve every fact, number, condition, and scope qualifier when shortening text.
-- Give runnable actions, such as `Authorization: Bearer ${token}`, rather than “add the missing header”. After changes, show what works and how to see it, such as `npm run dev` and `/login`.
-- Give errors and warnings as location, cause, fix. Put time estimates in concrete units in answers, never plans.
-- Number sequential steps. Use bullets for parallel items when they improve scanning. Group long lists by topic without omitting findings or conditions.
-- For multi-step work, show the current state each turn or maintain a checklist. Finish the current issue before raising another. When only I can give the input, end with one action I can finish within two minutes. Make each final answer self-contained. Repeat earlier content only when needed to understand the result or act on it.
-- “Explain” requires a full explanation with headers. “eli5” means: list the real events in order, then give the effect in one sentence, with no metaphors, code names, or headers. Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, do your recommendation and name the alternatives in one line. For other choices, give 2–4 ranked choices, recommendation first, each with its plain effect and one trade-off.
-- Format links as `MR 42 https://…`: label, spaces, raw URL, original scheme, no wrapper. Use bare `path:line` for local files; commits use sha only. End recaps containing external links with a **Links** section containing only those links.
+- Lead with the answer. Use plain, concise language and active voice. Preserve necessary conditions and technical detail. State uncertainty and cite evidence; never invent unchecked specifics.
+- Give runnable actions when useful. After changes, state what works, how it was checked, and any limits. Give errors as location, cause, and fix.
+- Use structure that fits the request. Number sequential steps and use bullets for parallel items. Keep each final answer self-contained; avoid repeated summaries and links.
+- For multi-step work, show the current state or maintain a checklist. When only the user can provide required input, end with one clear action. Give time estimates in concrete units.
+- For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
+- Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, use the recommendation and name relevant alternatives briefly. For other choices, give 2–4 ranked options with their effects and trade-offs.
+- Format external links as a label followed by the raw URL. Use bare `path:line` for local files and sha only for commits.
 
 ## Git
 

@@ -28,10 +28,10 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, max |
-| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, max |
+| `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
+| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-6.1-sol, low |
-| `tester` | Run tests, lint, builds, and smoke checks; read-only | claude-sonnet-5-5, medium | gpt-6-luna, max |
+| `tester` | Run tests, lint, builds, and smoke checks; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
 | `reviewer` | Independent review of a change; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
@@ -86,14 +86,14 @@ Only the main session may escalate. Sub-agents report blockers without escalatin
 Use the current model stated in the system prompt; do not invent one.
 If the current model is already `consult`'s (fable, gpt-6-astra), continue inline or report the concrete blocker; no stronger model exists.
 
-- **One hard sub-problem:** escalate after one failed attempt, a user-reported failure, or unresolved reasoning across files or systems.
+- **One hard sub-problem:** escalate when a failed attempt leaves a specific unresolved question that needs independent reasoning. Correct routine command, syntax, and setup errors inline.
   Spawn one `consult` with the problem, evidence, files, and points to settle.
   The task stays here, so no approval is needed. Re-validate the answer before acting.
   Escalate each sub-problem at most once.
 - **Whole task on another model:** use a stronger model after failure or for subtle reasoning across systems.
   Use a cheaper role when the task permits it. Warn the user with the reason and get approval.
   Then give the full context to one `worker`, or `consult` when the current model is `worker`.
-- On a `cheap`, `explorer`, or `worker` model, check that `consult` ran once before reporting blocked or attempting a second user-reported failure fix.
+- Before reporting blocked, use `consult` when the unresolved question meets the escalation condition above and a stronger model is available. Missing credentials, permissions, or user decisions do not require a consultant.
 
 ## After they return
 

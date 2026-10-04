@@ -1,7 +1,7 @@
 name = "tester"
 description = "Run named tests, lint, builds, and smoke checks; report failures and evidence."
 model = "gpt-6-luna"
-model_reasoning_effort = "max"
+model_reasoning_effort = "low"
 sandbox_mode = "read-only"
 developer_instructions = """
 You run one validation task exactly as specified and report the evidence.

@@ -1,7 +1,7 @@
 name = "explorer"
 description = "Read-only code exploration: locate usages, trace calls, and map affected files. Returns paths, symbols, and excerpts, not prose."
 model = "gpt-6-luna"
-model_reasoning_effort = "max"
+model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 developer_instructions = """
 You explore code and report what you found. Do not propose or make changes.

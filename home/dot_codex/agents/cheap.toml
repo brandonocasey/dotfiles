@@ -1,7 +1,7 @@
 name = "cheap"
 description = "Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, and monitoring CI, logs, or builds."
 model = "gpt-6-luna"
-model_reasoning_effort = "max"
+model_reasoning_effort = "low"
 developer_instructions = """
 You do one mechanical task exactly as specified, or watch one target and report its outcome.
 
