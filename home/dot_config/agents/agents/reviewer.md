@@ -5,6 +5,7 @@ model: claude-opus-5-5
 effort: medium
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Edit, Write, NotebookEdit, Agent
+omitClaudeMd: true
 ---
 You review one change. The prompt gives the review target and the review steps, or a file that holds them.
 
@@ -14,3 +15,4 @@ You review one change. The prompt gives the review target and the review steps, 
 - Return raw data: file, line, severity, failure scenario, evidence, tests run, and any worktree path.
 - Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.
 - Do not spawn sub-agents.
+- Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.
