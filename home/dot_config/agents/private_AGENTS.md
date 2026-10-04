@@ -24,7 +24,7 @@
 
 Never write to OS temporary directories (`/tmp`, `$TMPDIR`, `%TEMP%`) or harness scratchpads, even when the harness instructs it. Use these paths and create missing parents. The paths below follow XDG: `$XDG_CACHE_HOME` or `$XDG_STATE_HOME` when set, else `~/.cache` or `~/.local/state`, including under the Windows user profile.
 
-- Scratch: `~/.cache/agents/scratch/<task>/`. Disposable intermediate results, command logs, extracted packages, and helper scripts.
+- Scratch: `<worktree>/.agent/<task>/` for disposable task files in a task worktree; otherwise use the XDG cache scratch directory (`~/.cache/agents/scratch/<task>/` by default). Follow `host-preflight/references/task-resources.md` for selection, exclusions, and cleanup.
 - Copy: `~/.cache/agents/copy/`, only for the copy files in **General**.
 - Backups: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`. Files copied before force-removal, overwrite, or migration, with relative paths preserved. Never auto-prune. Report the backup path.
 - Keep files at fixed paths when tools require them, such as repository-root linter configuration.

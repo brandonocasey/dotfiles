@@ -10,8 +10,9 @@ Arguments: a baseline and a candidate: URLs, builds, branches, or MR/PRs.
 
 Measure each variant yourself. Do not ask the user to export HARs, switch
 variants, or click, unless the page needs a real user gesture that automation
-cannot give. Keep scripts, traces, HARs, and raw data under
-`~/.cache/agents/scratch/<task>/`. Never commit them.
+cannot give. Keep scripts, traces, HARs, and raw data in the task scratch
+directory selected by [task-resources.md](../host-preflight/references/task-resources.md).
+Never commit them.
 
 ## Set up
 

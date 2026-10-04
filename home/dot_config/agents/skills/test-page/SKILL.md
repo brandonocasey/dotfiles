@@ -24,7 +24,8 @@ Without builds, use the default branch and the current branch's MR/PR.
 
 ## Build the page
 
-Write one HTML file under `~/.cache/agents/scratch/<task>/`. Commit it only
+Write one HTML file in the task scratch directory selected by
+[task-resources.md](../host-preflight/references/task-resources.md). Commit it only
 when the user asks. Use only syntax and APIs that the repo's browser floor supports.
 
 - A build selector, also settable as `?build=<name>`. Load one build per page load.

@@ -45,8 +45,10 @@ legacy/back-compat, consistency), paths to include/exclude, and an agent model o
   either exists. Reuse it only for this invocation's continuing audit;
   otherwise choose a unique task name. Record which worktree and branch this
   invocation created.
-- Findings live as JSON in the scratch directory (AGENTS.md, **Directories**):
-  `~/.cache/agents/scratch/repo-audit/batches/batch_N.json`. Never the harness scratchpad.
+- Intermediate findings live as JSON at `batches/batch_N.json` under the task
+  scratch directory selected by [task-resources.md](../host-preflight/references/task-resources.md).
+  Keep requested reports and cross-session recovery records outside disposable
+  storage. Never use the harness scratchpad.
 - Use the harness's workflow orchestrator when available; this skill is the user's opt-in.
   Otherwise use its sub-agent tool. Keep each workflow under about 15 agents.
   Split the pipeline by phase (find, verify, fix) and read results between phases.

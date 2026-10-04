@@ -128,8 +128,9 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 
 ## 5. Clean up
 
-Stop task-owned servers, browser pages, and background processes; remove disposable
-scratch files. Keep a worktree and its branch while the MR/PR is open, unless the
+Follow [task-resources.md](../host-preflight/references/task-resources.md): stop
+task-owned servers, browser pages, and background processes; remove known
+disposable task files, including `.agent/<task>/`. Keep a worktree and its branch while the MR/PR is open, unless the
 user requests cleanup. After merge or closure, use the `worktree` skill's
 **Remove** section and its preservation checks. If `IN_WORKTREE` is false, leave
 the main checkout and its branch in place. Report retained paths and reasons.

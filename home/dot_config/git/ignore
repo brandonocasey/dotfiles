@@ -35,3 +35,6 @@ node_modules/
 
 # Git worktrees
 .worktrees/
+
+# Disposable agent task resources at the checkout root
+/.agent/

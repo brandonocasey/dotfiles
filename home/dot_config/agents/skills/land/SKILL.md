@@ -131,6 +131,18 @@ If that commit cannot be identified as this run's stash, stop and report.
 
 ## 5. Clean up
 
+Run cleanup automatically after a successful land, before reporting completion.
+The land request includes this cleanup; do not ask for separate confirmation
+or offer it as a follow-up. Preserve the `worktree` skill's safety checks and
+ask only for blockers that it explicitly requires the user to resolve.
+
+Follow [task-resources.md](../host-preflight/references/task-resources.md): stop
+task-owned servers and background processes, close task-owned browser resources,
+and remove known disposable task files, including `.agent/<task>/`. Keep
+requested deliverables and any server or files still needed for a live preview the user is using; report that
+exception and its URL, and defer removal of any worktree it needs until the
+preview ends. Never stop another task's processes or remove its files.
+
 A branch may track a remote upstream, and `git branch -d` checks against that upstream,
 not HEAD — so it can refuse a branch that was only landed locally. The delete below unsets the
 upstream first, so `-d` checks against `TARGET` instead.

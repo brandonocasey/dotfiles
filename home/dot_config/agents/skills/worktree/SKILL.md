@@ -100,6 +100,12 @@ branch checks. If a deleted remote branch prevents that proof, retain the local
 branch; a clean worktree can still be removed when that retained branch preserves
 its HEAD. Never force-delete a branch to finish cleanup.
 
+Follow [task-resources.md](../host-preflight/references/task-resources.md) for
+task scratch locations and cleanup, including `.agent/<task>/`. Clean disposable
+resources even when retaining an open-PR worktree. Stop task-owned processes
+before removing their files; retain a worktree while a requested live preview
+needs it.
+
 Run cleanup separately from approve, merge, ticket, or other outward steps, so a
 blocked outward step cannot prevent cleanup of task-owned processes and scratch.
 
