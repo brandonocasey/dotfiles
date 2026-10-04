@@ -25,4 +25,3 @@ runs; dependent checks or commits wait for it.
   `commit` owns `--no-verify`. If Prepare fails, report the command and error
   as a blocker. Continue work that does not need the missing dependencies.
   Leave changes uncommitted when their hooks or checks need them.
-

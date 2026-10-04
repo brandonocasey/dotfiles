@@ -29,4 +29,3 @@ git -C <main-checkout> worktree add .worktrees/<branch> -b <branch> <base-commit
   a pushable ref and prevents the next update from orphaning it.
 
 Work inside `<main-checkout>/.worktrees/<branch>` for the whole task.
-

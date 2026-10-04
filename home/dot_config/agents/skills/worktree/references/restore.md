@@ -8,4 +8,3 @@ Read [create.md](../references/create.md) for an existing branch. Only when the 
 git -C <main-checkout> fetch origin <branch>:refs/remotes/origin/<branch>
 git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
 ```
-
