@@ -105,9 +105,9 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
   - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
-- **Description**: 2 sentences max — what changed and the approach. Add the config/data used
-  for testing when the repo convention asks for it. No product framing, no filler, no
-  checklists.
+- **Description**: explain the problem, resulting behavior, and relevant validation.
+  Include limitations or risks when they affect review. Keep detail proportional
+  to the change and follow the repository template.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 
 ## 4. Finish the requested scope
@@ -122,20 +122,18 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   the real error under the boilerplate, fix it, commit via the `commit` skill, run the
   **Manual check** of `shared/git-flow.md` for the fix, push, and run
   step 5 after the requested work ends. If an earlier run removed the worktree,
-  recreate it with the commands in `worktree`'s **Remove after push**. Retry a job once
+  recreate it with the commands in `worktree`'s **Restore a removed worktree**. Retry a job once
   (`glab ci retry <job>` / `gh run rerun <run-id> --failed`) when the project's docs name that suite
   as flaky or the log shows an infrastructure failure; a second failure is real.
 
 ## 5. Clean up
 
-When `IN_WORKTREE` is true, run the `worktree` skill's **Remove after push** for `BRANCH`:
-it proves the remote tip equals the local tip, then removes the worktree and deletes the
-local branch with `branch -d`, and stops on any difference. Move your shell to the main
-checkout first (the first `worktree` entry of `git worktree list --porcelain`; `MAIN_WT`
-can be unset here because `TARGET` is a remote branch). Worktrees with initialized
-submodules need its **Submodules** checks before the one
-`--force`. When `IN_WORKTREE` is false, `BRANCH` sits in the main checkout: leave it and say
-so. Skip a `locked` worktree and report it.
+Stop task-owned servers, browser pages, and background processes; remove disposable
+scratch files. Keep a worktree and its branch while the MR/PR is open, unless the
+user requests cleanup. After merge or closure, use the `worktree` skill's
+**Remove** section and its preservation checks. If `IN_WORKTREE` is false, leave
+the main checkout and its branch in place. Report retained paths and reasons.
+Keep any server whose URL is still a requested deliverable, per the global rules.
 
 ## 6. Report
 

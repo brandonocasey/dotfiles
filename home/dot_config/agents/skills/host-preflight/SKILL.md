@@ -23,3 +23,10 @@ session with:
 
 If Codex starts outside the project directory, also override the final `-p`
 argument with the absolute directory that contains `project.godot`.
+
+## Conditional procedures
+
+- Before starting servers, creating temporary task resources, or cleaning them
+  up, read [task-resources.md](references/task-resources.md).
+- For commands or text the user must copy, read
+  [copyable-output.md](references/copyable-output.md).

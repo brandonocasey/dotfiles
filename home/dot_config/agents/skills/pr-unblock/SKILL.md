@@ -123,8 +123,7 @@ request first.
 For the user's own branch:
 
 1. Load the `worktree` skill and reuse or create the head branch's worktree.
-   Without a local branch, use the two commands at the end of its **Remove
-   after push**; they fetch the branch first.
+   Without a local branch, use the two commands at the end of its **Restore a removed worktree**; they fetch the branch first.
 2. Fetch the head branch and verify that its fetched SHA and the worktree
    HEAD equal the observed SHA. If either differs, preserve local work,
    refresh the inventory, and reconcile it before proceeding. Fetch the base
@@ -250,9 +249,9 @@ worktree. Before this invocation returns with completed, closed, or blocked
 outcomes, stop task-created watchers and servers, free their ports, and close
 task-created browser pages. Keep a repository watcher running while other
 selected pull requests in that repository still need it.
-For each task-created worktree, move to a surviving checkout first. If its
-work is fully committed and pushed, use the `worktree` skill's **Remove after
-push** checks and cleanup even when a review or policy blocker remains.
+Keep task-created worktrees while their PRs remain open, including review or
+policy blockers. After merge or closure, or on explicit cleanup, move to a
+surviving checkout and follow the `worktree` skill's **Remove** preservation checks.
 A merge alone does not prove a changed local tip is preserved. Retain dirty,
 unpushed, active, locked, or recovery worktrees and report their paths and exact
 blockers. Do not delete a branch or recovery state merely to finish cleanup.

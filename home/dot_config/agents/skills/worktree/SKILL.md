@@ -78,18 +78,30 @@ If this task already changed files in the main checkout, read
 
 ## Remove
 
-A skill that creates a worktree for its own use, such as `review`, removes it
-when its task ends unless its file says to keep it. Remove a task branch's
-worktree once the branch is merged or pushed. Report the removed path or exact
-blocker. Never remove the main checkout, a `locked` worktree, or a worktree
-another task uses.
+Keep worktrees and branches for open MRs/PRs unless the user requests cleanup.
+Stop task-owned servers and background processes when finished; worktree retention
+is separate from process cleanup. Remove a task worktree after merge or closure,
+or on explicit cleanup, only after the preservation checks below. A temporary
+local-review worktree may be removed when the review ends and its commits remain
+on a named branch. Never remove the main checkout, a locked worktree, or one
+another task uses. Report retained paths and reasons or the removed path.
 
-When the remote holds a task's work, clean up automatically at task end, without asking.
-The remote holds the work when **Remove after push** proves that the remote tip equals the
-local tip; a detached review worktree compares `HEAD` with its source branch. Remove the
-worktree, the task's scratch directory, and the servers, browser pages, and ports the task
-started. Run cleanup as its own command. Never chain it with approve, merge, ticket, or
-other outward steps, so a blocked outward step cannot leave assets behind.
+Before removal, check tracked, untracked, ignored, and submodule state. Preserve
+unknown files and requested deliverables; use **Blocked removal** for classification
+and backups even when ignored files would not stop Git. Dirty work is a blocker.
+Prove the worktree's HEAD is preserved on a named local branch that will remain,
+a current remote source branch, or a fetched merge target containing that commit.
+For a detached worktree without that proof, keep it and report the commit ID.
+A squash merge does not prove the original commits are preserved.
+
+For a remote MR/PR, fetch and refresh its state before using merged/closed status.
+Remove a local branch only through **Remove after push** below or `land`'s merged
+branch checks. If a deleted remote branch prevents that proof, retain the local
+branch; a clean worktree can still be removed when that retained branch preserves
+its HEAD. Never force-delete a branch to finish cleanup.
+
+Run cleanup separately from approve, merge, ticket, or other outward steps, so a
+blocked outward step cannot prevent cleanup of task-owned processes and scratch.
 
 Take `<worktree-path>` from `git worktree list --porcelain`, because older
 worktrees can live elsewhere:
@@ -103,8 +115,9 @@ later commands fail with "Unable to read current working directory".
 
 ### Remove after push
 
-Use when the branch's work lives on the remote and the task has nothing more
-to commit. Prove the remote holds the local tip before touching anything:
+Use only after **Remove** permits cleanup: the MR/PR is merged or closed, or
+the user explicitly requested it. A push alone is not a cleanup trigger.
+When the remote source branch still exists, prove it holds the local tip:
 
 ```sh
 git ls-remote origin refs/heads/<branch>   # remote tip
@@ -130,7 +143,11 @@ refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
 `-d` once. Report the removed path and the branch's last commit ID; the remote
 branch keeps the history.
 
-To work on the branch again later (CI fix, review feedback):
+### Restore a removed worktree
+
+Reuse a retained worktree for CI fixes or review feedback. If it was removed,
+check `git worktree list --porcelain` and whether the local branch still exists.
+Use **Create** for an existing branch. Only when the branch was also deleted:
 
 ```sh
 git -C <main-checkout> fetch origin <branch>:refs/remotes/origin/<branch>

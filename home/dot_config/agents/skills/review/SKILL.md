@@ -9,7 +9,8 @@ description: >
 Review a code change adversarially: assume it is broken and try to prove it. The
 deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
-explained in plain language.
+explained in plain language. Report verified defects and explicit repository
+requirement violations. Include optional style suggestions only when requested.
 
 Arguments: the target (step 0), `--fix` (step 4), `--loop [N]` (step 5),
 `--threads` (step 6), and `--agents <model>[:<effort>][,…]` (**Delegation**).
@@ -88,7 +89,8 @@ Brief beats complete-sounding: no padding, no restating the diff.
    project codenames without a gloss.
 3. **One block per surviving finding**, most-severe first, each led by a severity label:
    `bug` (wrong behavior reachable in production), `question` (design choice worth confirming
-   with the author), `nit` (cosmetic/noise). Per block:
+   with the author), `requirement` (an explicit repository rule violation), or
+   `nit` (optional style feedback, only when requested). Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link (formats in `remote-comments.md`, linked at the end of this step) so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
@@ -108,18 +110,14 @@ file, `review-<number>.md`, numbered by finding, and add follow-ups to it. Repor
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.
 
-Clean up automatically when the review ends. Never ask first, and never hand cleanup to the
-user. Remove the worktree this review created — never a pre-existing one — with
-`git -C <main-checkout> worktree remove <the .worktrees/review-… path from step 0>`, per the `worktree` skill's
-**Remove** section (clean tree, shell moved out first). Also remove this review's scratch
-directory, and stop the servers, browser pages, and ports it started. Run cleanup as its own
-command. Run it before approve, merge, or other outward steps, so a blocked outward step
-cannot block it. When continuing to `--fix`, keep the worktree until the remote source
-branch holds the review worktree's HEAD (`git ls-remote origin refs/heads/<source-branch>`
-equals `git rev-parse HEAD`) and no repair is pending. The remote is then the backup: clean
-up at once. If a later CI failure needs a repair, recreate the worktree from the remote
-branch. A review that leaves `.worktrees/review-…` behind is incomplete: the report's last
-line names the removed path or the blocker.
+Stop this review's servers, browser pages, and background processes when it ends.
+Keep a worktree for an open MR/PR so follow-up repairs can reuse it. For a local
+review or a merged/closed MR/PR, remove only a worktree this review created,
+following the `worktree` skill's **Remove** section. Never remove a pre-existing
+worktree. Keep a worktree while repairs or re-verification remain pending.
+Run resource cleanup separately from outward steps so a blocked approval or
+merge cannot prevent it. Report retained paths and reasons, or the removed path
+and any blocker. Explicit cleanup requests still require preservation checks.
 
 For MR/PR comment links and suggestion syntax, read
 [remote-comments.md](references/remote-comments.md). Local reviews do not need it.
@@ -130,7 +128,8 @@ Run this step when **Fix authorization** skips the gate, the user asks (`--fix`,
 `fix` reply, or a later fix request for the same MR/PR), or `--threads` has `valid`
 threads that the request covers (fix only those threads):
 
-- **Scope**: fix every surviving `bug` and `nit`, unless the user names a subset.
+- **Scope**: fix every surviving `bug` and `requirement`, unless the user names
+  a subset. Fix `nit` items only when style changes are requested.
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.
@@ -144,8 +143,8 @@ Read [ci-and-conflicts.md](references/ci-and-conflicts.md) before these repairs.
 
 - **MR/PR**: in the review worktree:
   1. Fetch the source branch. If its head moved, check each finding again and drop stale ones.
-  2. Apply the fixes. Remove narrating comments that this MR/PR adds, per `code-standards`.
-     Do not touch existing comments.
+  2. Apply the verified fixes. Do not expand the repair into optional comment
+     or style cleanup unless requested.
   3. Resolve clear conflicts with the target branch and fix `new in this change` CI
      failures, per ci-and-conflicts.md.
   4. Run the repo's tests/lint. Check the fixed HEAD by hand (AGENTS.md manual-check rule;

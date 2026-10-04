@@ -1,6 +1,6 @@
 # Type tie-breakers and examples
 
-Use with **Choosing the type** in [SKILL.md](../SKILL.md), step 4.
+Use when step 4 of [choosing-type.md](choosing-type.md) leaves a tie.
 
 ## Tie-breakers
 

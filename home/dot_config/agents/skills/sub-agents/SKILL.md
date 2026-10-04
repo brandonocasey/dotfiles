@@ -35,7 +35,7 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 | `manual-tester` | Exercise manual workflows; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
 | `reviewer` | Independent review of a change; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
-| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6.1-sol, low |
+| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6.1-sol, high |
 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
@@ -84,7 +84,9 @@ Otherwise, report the pipeline URL and stop: no watcher or polling.
 
 Only the main session may escalate. Sub-agents report blockers without escalating.
 Use the current model stated in the system prompt; do not invent one.
-If the current model is already `consult`'s (fable, gpt-6-astra), continue inline or report the concrete blocker; no stronger model exists.
+Request a fresh independent assessment when it can resolve a specific blocker,
+even if the consultant uses the same model. Same-model consultation is exceptional: a
+failed attempt must leave a concrete question that fresh reasoning can settle.
 
 - **One hard sub-problem:** escalate when a failed attempt leaves a specific unresolved question that needs independent reasoning. Correct routine command, syntax, and setup errors inline.
   Spawn one `consult` with the problem, evidence, files, and points to settle.
@@ -93,10 +95,13 @@ If the current model is already `consult`'s (fable, gpt-6-astra), continue inlin
 - **Whole task on another model:** use a stronger model after failure or for subtle reasoning across systems.
   Use a cheaper role when the task permits it. Warn the user with the reason and get approval.
   Then give the full context to one `worker`, or `consult` when the current model is `worker`.
-- Before reporting blocked, use `consult` when the unresolved question meets the escalation condition above and a stronger model is available. Missing credentials, permissions, or user decisions do not require a consultant.
+- Before reporting blocked, use `consult` when the unresolved question meets the
+  escalation condition above and the role is available, including the same-model case. Missing credentials, permissions, or user decisions do not require a consultant.
 
 ## After they return
 
 - Re-validate every result before declaring done.
 - Fix or redo failed results inline. Do not respawn for the same part more than once.
-- Remove resources agents left: worktrees, servers, and ports. Keep artifacts only when the spawning skill requires them, such as review worktrees awaiting re-verification.
+- Stop task-owned servers and processes agents left. Remove disposable artifacts.
+  Follow `worktree` for retained open-PR worktrees and preservation checks; keep
+  requested deliverables and evidence awaiting re-verification.

@@ -53,19 +53,16 @@ read the diff looking for things that seem off — attack it:
   behavior the diff actually changes that the claims don't cover — that gap is where bugs
   hide. Treat "refactor, no behavior change" as a claim to falsify.
 - **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
-  or subtly wrong? A test that can't fail is a finding. Missing or weakened tests for the
-  changed behavior are findings too.
+  or subtly wrong? Report missing or ineffective coverage only when you can name
+  the important uncovered behavior. Preserve the ban on weakening existing tests.
 - **Exploit it.** Where the change touches a trust boundary (user input, URLs, HTML, file
   paths, permissions), spend a pass thinking like an attacker, not a reviewer.
-- **Check the title and description are current** (MR/PR only). Compare them against the
-  full diff: if they omit or misstate what the change now does, or the title does not use
-  the type that the `commit` skill's **Choosing the type** procedure gives for the diff's
-  main purpose (for example, `feat` on a docs-only or refactor-only diff), report it as a finding with the corrected title/description text.
-  Also report a description that breaks the `ship` skill's **Description** rules. Give the trimmed text.
-- **Check added comments.** Report each comment the diff adds that restates the code or
-  narrates the change (`code-standards`, **Code comments**). Give the replacement or "remove".
-
-Only after the attack passes are exhausted, note style/simplification issues.
+- **Check the title and description are accurate** (MR/PR only). Report claims
+  contradicted by the diff or violations of explicit repository requirements.
+  A useful description may exceed two sentences; do not shorten it just for length.
+- Report verified defects and violations of explicit repository requirements.
+  Include optional style suggestions only when requested. A comment is a defect
+  when it misstates a contract or behavior, not merely because it could be shorter.
 
 ## 2. Verify — mandatory, before anything is shown
 
