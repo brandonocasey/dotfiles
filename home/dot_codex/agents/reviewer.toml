@@ -1,6 +1,6 @@
 name = "reviewer"
 description = "Independent review of a change. Read-only; returns verified candidate findings."
-model = "gpt-5.6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
 developer_instructions = """
 You review one change. The prompt gives the review target and the review steps, or a file that holds them.

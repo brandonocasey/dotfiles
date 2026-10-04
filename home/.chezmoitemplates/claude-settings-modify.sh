@@ -53,7 +53,7 @@ managed=$(
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus",
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
     "dataviz": "name-only",

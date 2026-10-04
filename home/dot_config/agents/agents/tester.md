@@ -1,7 +1,7 @@
 ---
 name: tester
 description: "Run named tests, lint, builds, and smoke checks; report failures and evidence."
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 effort: medium
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write, NotebookEdit, Agent

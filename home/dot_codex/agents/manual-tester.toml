@@ -1,6 +1,6 @@
 name = "manual-tester"
 description = "Exercise manual workflows; report observed behavior and evidence."
-model = "gpt-5.6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
 sandbox_mode = "read-only"
 developer_instructions = """
