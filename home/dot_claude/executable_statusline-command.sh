@@ -13,9 +13,6 @@ account_name="${account%%@*}"
 port_display=""
 [ -n "$PORT" ] && port_display=":$PORT"
 
-# --- Time ---
-time_str=$(date '+%H:%M')
-
 # --- Git branch ---
 cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty' 2>/dev/null)
 [ -z "$cwd" ] && cwd="$PWD"
@@ -149,25 +146,24 @@ color_for_pct() {
   fi
 }
 
-# --- Format a reset timestamp as a "d/h/m" countdown from now ---
-# Each unit gets a distinct hue (days violet, hours teal, minutes blue) so
-# "1d15h24m" splits visually without spaces. All three stay bright enough to
-# read on their own, since a sub-hour countdown prints minutes only.
-# Drops leading zero units: "6d12h41m", "12h30m", "45m", "0m"
+# --- Format a reset timestamp as a short countdown from now ---
+# Shows only the largest unit, rounded down to one decimal so it never
+# overstates the time left: "6.5d", "4.2h", "45m", "0m". The unit sets the
+# hue (days violet, hours teal, minutes blue).
 countdown_str() {
   awk -v r="$1" -v n="$(date +%s)" '
-  function part(v, u, c) { return c v u "\033[0m" }
+  function part(v, u, c) {
+    v = sprintf("%.1f", int(v * 10) / 10)
+    sub(/\.0$/, "", v)
+    return c v u "\033[0m"
+  }
   BEGIN{
     DAYS = "\033[38;5;141m"; HOURS = "\033[38;5;43m"; MINS = "\033[38;5;111m"
     d = r - n
     if (d < 0) d = 0
-    days  = int(d / 86400)
-    hours = int((d % 86400) / 3600)
-    mins  = int((d % 3600) / 60)
-    out = ""
-    if (days  > 0) out = out part(days, "d", DAYS)
-    if (hours > 0 || days > 0) out = out part(hours, "h", HOURS)
-    out = out part(mins, "m", MINS)
+    if (d >= 86400)     out = part(d / 86400, "d", DAYS)
+    else if (d >= 3600) out = part(d / 3600, "h", HOURS)
+    else                out = MINS int(d / 60) "m\033[0m"
     printf "%s", out
   }'
 }
@@ -253,6 +249,13 @@ if [ -n "$ctx_used_pct" ]; then
   parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct")
 fi
 
+# Project name (green): the git repository root, falling back to the cwd
+dir_base="$git_root_name"
+[ -z "$dir_base" ] && dir_base=$(basename "$cwd" 2>/dev/null)
+if [ -n "$dir_base" ]; then
+  parts=$(printf '%s%s\033[32m%s\033[0m' "$parts" "$sep" "$dir_base")
+fi
+
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr")
 [ -n "$fh_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$fh_seg")
@@ -284,15 +287,5 @@ fi
 if [ -n "$git_info" ]; then
   parts=$(printf '%s%s\033[97m%s\033[0m' "$parts" "$sep" "$git_info")
 fi
-
-# Project name (green): the git repository root, falling back to the cwd
-dir_base="$git_root_name"
-[ -z "$dir_base" ] && dir_base=$(basename "$cwd" 2>/dev/null)
-if [ -n "$dir_base" ]; then
-  parts=$(printf '%s%s\033[32m%s\033[0m' "$parts" "$sep" "$dir_base")
-fi
-
-# Time (cyan)
-parts=$(printf '%s%s\033[96m%s\033[0m' "$parts" "$sep" "$time_str")
 
 printf '%b' "$parts"
