@@ -34,6 +34,7 @@ description: >
 - Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
 - Keep each piece of code small and single-purpose; break up components that grow too complex; reduce duplication
-- Handle undefined/null cases; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
-- Add logs at appropriate levels; be generous with trace logs — they are how LLM agents debug
+- Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
+- Add logs at appropriate levels. Add trace logs only where a failure would otherwise be hard to diagnose
+- Export only what a current caller uses. Keep the public API minimal
 - New project, or no repo convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)

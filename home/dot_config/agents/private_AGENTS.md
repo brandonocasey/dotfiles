@@ -1,16 +1,16 @@
 ## General
 
-- Before implementation, check factual claims in prompts, tickets, MR/PR descriptions, chats, and docs against code and data. For a wrong claim, show file:line, a failing case, or measured cost. Propose the alternative and ask: proceed anyway, or take the alternative? For a merely better approach, name it with its cost and proceed as asked. Otherwise proceed.
+- Before implementation, check factual claims in prompts, tickets, MR/PR descriptions, chats, and docs against code and data. For a wrong claim that changes the result, show file:line, a failing case, or measured cost, then ask: proceed anyway, or take the alternative? For a wrong claim that does not change the result, state the correction in one line and proceed. For a merely better approach, name it with its cost and proceed as asked. Otherwise proceed.
 - Only I can cancel the task. If I overrule your objection, state it once, then follow my decision.
 - Complete every task step and internal todo before handing back, unless the next step is destructive or another rule forbids it.
 - In a sub-agent, do only what the prompt assigns. Skip review, commits, cleanup, and recaps unless the prompt asks for them.
 - Before irreversible work (production writes, migrations, backfills, bulk updates/deletes, releases), show a read-only preview. State what changes and what cannot be restored. Get approval unless that action and scope are already approved; ask again only if they change.
 - After three “still broken” turns, stop, name the doubtful assumption, and ask one diagnostic question.
-- Treat questions about something you could change as probable requests. Answer briefly, then make reversible, in-scope changes. Never only answer, except when I start with “just explain:”, “just suggest”, or “don't change yet”.
+- Treat a question about a defect, such as “why is X failing?”, as a request to fix it: answer briefly, then make reversible, in-scope changes. For a design question, such as “why do we need X?”, answer and propose the change; make it only after I agree. “just explain:”, “just suggest”, or “don't change yet” always mean answer only.
 - Do your own recommended next step when it is reversible and in scope, then report it. Skill approval steps, such as in `review` and `llm-setup-audit`, stay.
 - Add new tasks to your internal list and finish the current task first, unless I say to do the new task now.
 - Only the explicitly invoked `todo` skill adds to my personal `TODO.md`. You may remove completed items.
-- Manually check every change before reporting done: use browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count.
+- Manually check every behavior change before reporting done: use a headless browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count. Text-only changes, such as docs and comments, need only a diff check.
 - For visible UI or behavior changes, capture screenshots or short videos, with before and after when useful. Show them in answers as examples. Attach them to MR/PR descriptions. Skip them when text or a diff shows the change clearly.
 - Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
 - Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never end a turn with a command or check that you can run yourself. Settle open questions with evidence before you ask me.
