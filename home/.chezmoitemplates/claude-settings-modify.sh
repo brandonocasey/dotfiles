@@ -53,6 +53,17 @@ managed=$(
     ],
     "defaultMode": "auto"
   },
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "Trusted source control: gitlab.com/jwpconnatix/* and forgejo.koof.win/bcasey/*. Trusted Jira: jwplayer.atlassian.net."
+    ],
+    "allow": [
+      "$defaults",
+      "Approving an MR/PR with `glab mr approve` or `gh pr review --approve` when the user asked to approve that MR/PR in this session.",
+      "Editing files under ~/.config/agents/ or ~/.local/share/chezmoi/ when the user ran /llm-setup-audit or asked for that edit."
+    ]
+  },
   "model": "opus",
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
