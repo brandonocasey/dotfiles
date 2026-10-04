@@ -1,5 +1,6 @@
 ---
 name: checkpoint
+disable-model-invocation: true
 description: Use session-resume for durable task checkpoints and cross-session recovery.
 ---
 

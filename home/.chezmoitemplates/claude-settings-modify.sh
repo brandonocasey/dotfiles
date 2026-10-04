@@ -75,7 +75,6 @@ managed=$(
     "code-review": "user-invocable-only"
   },
   "hooks": {
-    "PreToolUse": [],
     "SessionStart": [
       {
         "hooks": [
