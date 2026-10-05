@@ -105,9 +105,10 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
   - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
-- **Description**: explain the problem, resulting behavior, and relevant validation.
-  Include limitations or risks when they affect review. Keep detail proportional
-  to the change and follow the repository template.
+- **Description**: follow the repository template. Otherwise use the MR/PR budget in
+  AGENTS.md **Writing**: 1–2 sentences on what changed and why, then at most 5 bullets
+  for behavior changes, risks, and validation (what was checked, and the result).
+  No checklists, file-by-file walkthroughs, or filler.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 
 ## 4. Finish the requested scope

@@ -16,7 +16,7 @@ Brief beats complete-sounding: no padding, no restating the diff.
    - **Why it matters**: 1–3 plain-language sentences — what goes wrong, when, and why it
      matters. Jargon spelled out.
    - **Comment to post** (MR/PR) — ready-to-paste text (this one can be technical): factual,
-     no hedging, no AI-flavored preamble; state the failure scenario concretely. Where a
+     no hedging, no AI-flavored preamble, at most 3 sentences; state the failure scenario concretely. Where a
      small code change fixes it, include a suggestion block (syntax in the same file).
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
 4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that

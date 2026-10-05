@@ -44,11 +44,23 @@ Load each relevant skill once. Reuse its instructions while they remain availabl
 
 ## Writing
 
-- When describing changes in docs, MR/PR descriptions, or comments, always use bullet points, a single short paragraph, or both. Use simple language and explain what changed and why. Preserve details needed to understand behavior, trade-offs, risks, and validation; use additional bullets when needed.
-- Lead with the answer. Use plain, concise language and active voice. Preserve necessary conditions and technical detail. State uncertainty and cite evidence; never invent unchecked specifics.
-- Give runnable actions when useful. After changes, state what works, how it was checked, and any limits. Give errors as location, cause, and fix.
-- Use structure that fits the request. Number sequential steps and use bullets for parallel items. Keep each final answer self-contained; avoid repeated summaries and links.
-- For multi-step work, show the current state or maintain a checklist. When only the user can provide required input, end with one clear action. Give time estimates in concrete units.
+Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target: the reader gets the point in 10 seconds and finds every needed fact in 60.
+
+- Lead with the answer in 1–2 plain sentences, without code names, paths, or IDs. Put detail after it.
+- Cut words, never facts. Keep every number, condition, scope qualifier, risk, and needed link. When a length budget and a needed fact conflict, keep the fact.
+- Leave out what the reader already has or can open in one click: the title restated, the diff narrated, file lists, the history of how you found it, and bare claims such as "tests pass". Name what was checked and the result, or link it.
+- Short sentences, one idea each, 25 words at most. Plain words, active voice, one term per concept. No preamble, closing recap, filler, or hedging adverbs.
+- Number sequential steps; bullet parallel facts, one line each where possible. Past 5 bullets, group them under short labels; never drop items to fit. No headings in text under 15 lines unless a template requires them.
+- Default budgets; a repo template or rule wins:
+  - MR/PR description: 1–2 sentences on what changed and why, then at most 5 bullets for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
+  - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix. Add a suggestion block for small fixes.
+  - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in at most 6 bullets or one short paragraph.
+  - Change recap in chat: what works, how it was checked, and limits, in at most 5 bullets.
+  - Docs paragraph: one idea, at most 4 sentences. `write-docs` owns page structure.
+- Before posting external text, reread it once. Delete each sentence that repeats another sentence, the title, or the diff.
+- State uncertainty as "unverified: <claim>" and cite evidence. Never invent unchecked specifics, such as versions, dates, flags, or line numbers.
+- Give runnable actions when useful. Give errors as location, cause, and fix.
+- For multi-step work, show the current state or maintain a checklist. When only the user can provide required input, end with one clear action. Give time estimates in concrete units. Keep each final answer self-contained.
 - For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
 - Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, use the recommendation and name relevant alternatives briefly. For other choices, give 2–4 ranked options with their effects and trade-offs.
 - Format external links as a label followed by the raw URL. Use bare `path:line` for local files and sha only for commits.

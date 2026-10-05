@@ -54,7 +54,8 @@ question. Never invent a key, project, status, or version.
    - Check the issue types first (Jira: `getJiraProjectIssueTypesMetadata`).
    - Pick the type from the commit type: `fix` is a bug; `feat` is a feature;
      other types are tasks. Use the names the tracker shows.
-   - Summary and description: follow the repo's ticket rules. Add the MR/PR URL.
+   - Summary and description: follow the repo's ticket rules, else the ticket
+     budget in AGENTS.md **Writing**. Add the MR/PR URL.
    - Assign the MR/PR author. For Jira, use the `atlassian` account type.
      Find the accountId with `lookupJiraAccountId`: the author's commit email
      first, then the display name. On zero or several matches, leave the
