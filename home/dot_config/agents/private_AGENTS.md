@@ -44,6 +44,7 @@ Load each relevant skill once. Reuse its instructions while they remain availabl
 
 ## Writing
 
+- When describing changes in docs, MR/PR descriptions, or comments, always use bullet points, a single short paragraph, or both. Use simple language and explain what changed and why. Preserve details needed to understand behavior, trade-offs, risks, and validation; use additional bullets when needed.
 - Lead with the answer. Use plain, concise language and active voice. Preserve necessary conditions and technical detail. State uncertainty and cite evidence; never invent unchecked specifics.
 - Give runnable actions when useful. After changes, state what works, how it was checked, and any limits. Give errors as location, cause, and fix.
 - Use structure that fits the request. Number sequential steps and use bullets for parallel items. Keep each final answer self-contained; avoid repeated summaries and links.
