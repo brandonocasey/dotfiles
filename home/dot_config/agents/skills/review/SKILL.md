@@ -2,8 +2,8 @@
 name: review
 description: >
   Review a PR/MR, branch, commit range, or working diff for verified defects.
-  Use for review requests and MR/PR thread checks; --fix fixes and pushes,
-  --loop re-reviews, --agents runs parallel reviewers.
+  Use for automatic end-of-change reviews, review requests, and MR/PR thread checks;
+  --fix fixes and pushes, --loop re-reviews, --agents runs parallel reviewers.
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The
@@ -15,6 +15,24 @@ requirement violations. Include optional style suggestions only when requested.
 Arguments: the target (step 0), `--fix` (step 4), `--loop [N]` (step 5),
 `--threads` (step 6), and `--agents <model>[:<effort>][,…]` (**Delegation**).
 A request to approve or merge is part of step 4.
+
+## Automatic completion review
+
+AGENTS.md routes automatic reviews to [when-to-run.md](references/when-to-run.md),
+which owns triggers, skip exceptions, follow-ups, and reviewer count. For triggered
+reviews of this session's work:
+
+- Review the combined task diff after implementation and relevant checks. Include
+  committed and uncommitted task changes; a clean working tree does not mean the
+  task has nothing to review. Use the task's recorded starting revision and scope.
+- Wait for the independent result, verify findings, apply confirmed in-scope fixes,
+  and rerun affected checks before reporting completion. Preserve the existing
+  authorization rules for pushes and changes outside the intended behavior.
+- Do not repeat a full review merely to obtain a clean result after fixing findings.
+  Apply the follow-up rules in [when-to-run.md](references/when-to-run.md) to the
+  unreviewed delta with surrounding context. Explicit `--loop` requests retain their workflow.
+- Report the verified outcome, including defects fixed, rather than relabeling a
+  review as clean after repairs. Disclose any inline fallback under **Delegation**.
 
 ## Delegation
 
@@ -70,19 +88,20 @@ Own work skips the `--fix` gate, whether auto-triggered or user-requested:
 - an MR/PR whose author is the authenticated user (`gh api user --jq .login` or
   `GITLAB_HOST=<host> glab api user`'s `username`, compared with the MR/PR author).
 
-For own work, apply verified fixes at once per step 4. Re-run tests/lint. Without
-`--loop`, review only the fix delta once more when the fixes changed logic beyond one-line
-local edits; review fixes often introduced new defects. An own MR/PR gets the full MR/PR
-flow of step 4, including the push (AGENTS.md Git rules).
+For own work, apply verified fixes at once per step 4. Re-run tests/lint; follow
+[when-to-run.md](references/when-to-run.md) for follow-up reviews, or step 5 when
+`--loop` is set. An own MR/PR gets the full MR/PR flow of step 4, including the push
+(AGENTS.md Git rules).
 For any other target, print the comments and wait for `--fix`. End with:
 `Reply fix to apply N findings.`
 After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means
 `--fix` for the same target. Treat every other reply as a normal request.
 
-Before the final review of this session's own work, on a model other than Fable or Astra:
-when the Git rules authorize pushing the task branch, push it first. Then inspect CI
-failures that already finished, once, per [ci-and-conflicts.md](references/ci-and-conflicts.md),
-and fix them; do not wait for a running CI. Without push authorization, review the local branch.
+Before the final review of this session's own work, inspect CI failures that already
+finished for any existing task-branch push, once, per
+[ci-and-conflicts.md](references/ci-and-conflicts.md), and fix them. Do not wait for
+running CI or push solely to obtain CI before review. Complete the required review
+before the next authorized push; without push authorization, review locally.
 
 ## 0–2. Target, review, verify
 

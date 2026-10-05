@@ -1,40 +1,60 @@
 # When to run a review automatically
 
-Applies to every model. Run `review` on this session's own change, before reporting done or
-pushing, when the task changed behavior and any of these hold:
+Applies to every model. Run an independent `review` on this session's own change
+before reporting completion or pushing. Review when requested or when material
+uncertainty remains. Otherwise apply the triggers and narrow exceptions below.
 
-- a plan, feature, or multi-file implementation was just committed or is about to be
-- a refactor, consolidation, type cleanup, or "no behavior change" edit touched logic;
-  these hid dropped fallbacks, side effects, and broken callers more often than any other change
-- a shared function, module, export, CLI flag, or API contract with 2+ callers changed
-- a trust boundary or irreversible path changed: auth, permissions, money, input parsing,
-  persistence, migration, deletion, external writes, concurrency, crypto
-- browser worker, WASM, OPFS, service worker, or async lifecycle code changed
-- a shell script or wrapper, CI workflow, build or packaging config, or agent skill/rule file
-  changed behavior
-- a rebase or merge needed manual conflict resolution
-- a new or changed branch, condition, or error path has no test that ran green in this task
+## Triggers
 
-Skip it only when the user did not ask for a review and one of these holds: every change is
-mechanical (pure rename, move, format, import order, dependency bump, config value), only
-tests and docs changed, or the code is a prototype or throwaway demo.
+- New features, behavior or logic changes, bug fixes, and broad refactors trigger
+  review regardless of line count or caller count. This includes consolidation,
+  type cleanup, and "no behavior change" edits that touch logic.
+- Review changes affecting security, trust boundaries, persistence, migrations,
+  deletion, external writes, concurrency, crypto, or shared contracts.
+- Include routing, paths, parsing, validation, resource limits, error handling,
+  browser workers, WASM, OPFS, service workers, and async lifecycle changes.
+- Classify shell scripts, wrappers, CI workflows, build or packaging config, tests,
+  documentation, and agent instructions by their effect. Changes to checks that
+  decide whether tests or CI passed require review.
+- Review manual rebase or merge conflict resolutions and changed branches,
+  conditions, or error paths without a test that ran green in this task.
+- Review the combined implementation, including committed task changes, rather than
+  assessing each small edit in isolation.
+
+## Skip exceptions
+
+- Skip only when the user did not request review, no material uncertainty remains,
+  and every change is a prose-only correction, cosmetic styling that preserves
+  interaction, or a narrow mechanical edit with verified equivalence.
+- No decisions, state transitions, accepted inputs, error behavior, or integration
+  assumptions may change. Passing tests alone does not justify skipping.
+- A dependency bump, config value, test-only change, or prototype is not automatically
+  exempt. Broad refactors still require review. Inspect the diff and run relevant
+  checks; visible behavior changes still need the manual check in AGENTS.md.
 
 ## Follow-ups
 
-Fixes made after a review, and follow-up commits pushed to an already reviewed MR/PR,
-introduced new defects about as often as first drafts. Review the follow-up delta
-(`<last-reviewed-sha>..HEAD`) when it changes logic beyond a one-line local edit. A
-CSS-only or copy-only follow-up skips the review but still needs the rendered check.
+- Review fixes and follow-up commits as a delta (`<last-reviewed-sha>..<new-head-sha>`)
+  with surrounding context when they change logic beyond a one-line local edit.
+  A one-line edit still requires review if it introduces new behavior or risk.
+- Without `--loop`, run one follow-up review for the repair delta; verify and test
+  its fixes without an automatic convergence loop. Separate later behavior or risk
+  changes start a new delta review. Report unresolved findings explicitly.
+- Cosmetic CSS or prose-only follow-ups use the skip exceptions above; visible
+  changes still need the rendered check. Do not rerun a full review merely to obtain
+  a clean report after repairs. Explicit `--loop` requests retain their workflow.
 
 ## Second reviewer
 
-One clean pass is not convergence. Run `--agents` with two reviewers on different models
-when the change touches a trust boundary, concurrency, or persistence, or exceeds about
-400 changed lines of hand-written logic.
+- Run `--agents` with two reviewers on different models when the change touches a
+  trust boundary, concurrency, or persistence, or exceeds about 400 changed lines
+  of hand-written logic. The `sub-agents` skill owns model and effort selection.
+- If a second compatible model is unavailable, use the available independent
+  reviewer and disclose the coverage limit; never invent a model or bypass tool
+  restrictions to satisfy the count.
 
 ## What review cannot replace
 
-About half of the defects that reached the user were not visible in the diff: layout on a
-real viewport or device, iOS/Safari behavior, worker/WASM runtime limits, real-data parsing,
-external services, and CI-only budgets. A clean review never substitutes for the manual
-check in AGENTS.md or for the repository's full test, lint, typecheck, and E2E suites.
+- A clean review never substitutes for manual verification or required repository
+  checks. Layout, device behavior, runtime limits, real-data parsing, external
+  services, and CI-only budgets may require evidence beyond reading the diff.
