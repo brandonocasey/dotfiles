@@ -7,7 +7,11 @@
         "-y",
         "@playwright/mcp@0.0.83",
         "--browser",
-        "webkit"
+        "webkit",
+        "--output-dir",
+        {{ joinPath .chezmoi.homeDir ".cache/agents/playwright-mcp" | toJson }},
+        "--output-max-size",
+        "52428800"
       ],
       "env": {}
     }

@@ -128,12 +128,12 @@ enabled = false
 
 [mcp_servers.safari]
 command = "npx"
-args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--headless"]
+args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800", "--headless"]
 enabled = false
 
 [mcp_servers.safari-headed]
 command = "npx"
-args = ["-y", "@playwright/mcp@latest", "--browser", "webkit"]
+args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800"]
 enabled = false
 
 [mcp_servers.openaiDeveloperDocs]
@@ -240,6 +240,9 @@ for key in "${KEEP_KEYS[@]}"; do
   ')
   export "KEEP_KEY_${key}=${value}"
 done
+
+# TOML does not expand ~, so the absolute path is filled in per host.
+body=${body//@PLAYWRIGHT_OUTPUT_DIR@/$HOME/.cache/agents/playwright-mcp}
 
 printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
   BEGIN {

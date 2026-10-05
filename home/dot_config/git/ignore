@@ -38,3 +38,6 @@ node_modules/
 
 # Disposable agent task resources at the checkout root
 /.agent/
+
+# Playwright MCP default output when no --output-dir is set
+.playwright-mcp/
