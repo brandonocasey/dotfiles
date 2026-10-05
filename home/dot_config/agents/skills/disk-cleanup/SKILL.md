@@ -62,6 +62,34 @@ resources, also read `worktree`, `session-resume`, and
   show their contents/purpose and restoration limits for specific approval. Do not
   delete shared history or edit application databases/indexes by hand.
 
+## Pair worktrees with their build outputs and shared scratch
+
+- For every discovered worktree, inventory build targets and task scratch separately
+  from the checkout. An unmerged or dirty checkout need not be deleted to reclaim its
+  regenerable build outputs. A process using any descendant protects the whole
+  worktree from build cleanup; recheck immediately before removal. Unfinished durable
+  tasks protect outputs they still need, even when no process is running.
+- Establish build-output provenance from the project's build configuration and actual
+  contents (for example Cargo target fingerprints), and verify no tracked files or
+  manual artifacts would be removed. Do not apply a recursive directory-name match to
+  arbitrary projects. Keep installed tools and requested executables/artifacts.
+- Link external scratch to a worktree/task using durable records, session metadata,
+  inspected producer scripts/logs, or an explicit resource manifest. A similar directory
+  name is only a discovery hint, never ownership proof. For future task resources,
+  record canonical worktree, task/session ID, producer, purpose, and resource paths in
+  the existing durable task record or a private resource manifest. Do not move older
+  scratch directories or introduce a new registry when existing records suffice.
+- Preview linked scratch entries alongside each worktree/build candidate. Classify
+  each entry independently: regenerable test data, compiler caches, logs and helpers
+  may qualify; screenshots/reports, databases, source, credentials, recovery data and
+  unknown files remain protected unless their disposal is separately established.
+  A mixed scratch directory can have eligible children without deleting the parent.
+- Include eligible external scratch in the same approval batch, even if the checkout
+  remains. Removing a worktree does not authorize deleting external scratch. Never
+  remove shared entries until every consumer is accounted for. After approved worktree
+  removal, recheck and clean its approved scratch paths; on failure or new activity,
+  retain dependent scratch and report why. Verify both paths and retained artifacts.
+
 ## Preview, approve, remove, verify
 
 - Show category, canonical path or tool resource ID, allocated size, activity where
