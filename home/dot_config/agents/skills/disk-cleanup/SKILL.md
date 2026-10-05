@@ -12,11 +12,18 @@ Measure the host, preview exact candidates ranked by reclaimable bytes, then rem
 approved items. Work locally unless the user explicitly requests a remote host.
 Creating or editing this skill does not invoke cleanup. A dry run ends at the preview.
 Honor narrower scope and existing approval; expanded deletion sets need approval.
+Prefer automatic execution within authorized scope, with an audit preview and
+pre-deletion rechecks; do not repeatedly request unchanged authorization.
 
 Read `host-preflight` and its `references/task-resources.md`, then run
 `agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
 resources, also read `worktree`, `session-resume`, and
 [agent-resources.md](references/agent-resources.md) before inventory or removal.
+For merged-worktree cleanup, explicitly run the `clean-merged-worktrees` workflow
+as the repository component; use its merge checks and `worktree` preservation
+rules. This invocation authorizes that component, not its optional branch/review
+deletion paths. Keep local branch refs. Read
+[tools.md](references/tools.md) when selecting inventory or cleanup commands.
 
 ## Measure and discover
 
@@ -61,6 +68,27 @@ resources, also read `worktree`, `session-resume`, and
   Do not remove downloads, trash contents, or system logs merely because they are old;
   show their contents/purpose and restoration limits for specific approval. Do not
   delete shared history or edit application databases/indexes by hand.
+
+## Automatic execution and worktree priority
+
+- First qualify whole merged/landed worktrees with `clean-merged-worktrees`. For retained
+  checkouts, independently qualify inactive build outputs and linked scratch. Do not
+  keep a merged worktree solely because it contains proven regenerable files; classify
+  those files under `worktree` preservation/removal checks. Unknown files and requested
+  deliverables still protect the checkout.
+- When the current request or recorded approval explicitly authorizes removal of
+  specified categories within specified roots, write/show the read-only deletion
+  preview and execute qualifying entries without another confirmation. Record that
+  authorization and its scope with the preview. Tool flags that suppress prompts
+  implement existing approval; they never supply it.
+- Automatically clean this task’s known disposable resources as authorized by
+  `host-preflight/references/task-resources.md`. Other tasks’ shared scratch requires
+  its own ownership/disposal evidence and authorization. Keep a batch moving when
+  individual entries are protected, changed, or fail.
+- If authorization is missing, ask once for the concrete combined batch rather than
+  once per worktree/cache. A preference for automation alone is not permission to
+  delete unknown content or broaden scope. Do not add cron jobs or timers unless
+  recurring cleanup is explicitly requested.
 
 ## Pair worktrees with their build outputs and shared scratch
 
