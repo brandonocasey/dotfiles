@@ -47,16 +47,16 @@ Load each relevant skill once. Reuse its instructions while they remain availabl
 
 Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target: the reader gets the point in 10 seconds and finds every needed fact in 60.
 
-- Lead with the answer in 1–2 plain sentences, without code names, paths, or IDs. Put detail after it.
+- Lead with the answer in 1–4 plain sentences, without code names, paths, or IDs. Put detail after it.
 - Cut words, never facts. Keep every number, condition, scope qualifier, risk, and needed link. When a length budget and a needed fact conflict, keep the fact.
 - Leave out what the reader already has or can open in one click: the title restated, the diff narrated, file lists, the history of how you found it, and bare claims such as "tests pass". Name what was checked and the result, or link it.
 - Short sentences, one idea each, 25 words at most. Plain words, active voice, one term per concept. No preamble, closing recap, filler, or hedging adverbs.
-- Number sequential steps; bullet parallel facts, one line each where possible. Past 5 bullets, group them under short labels; never drop items to fit. No headings in text under 15 lines unless a template requires them.
+- Prefer bullets over prose. Use 1–10 bullets, as few as the facts allow, one line each where possible. Number sequential steps. If more than 10 are needed, group them under short labels; never drop items to fit. No headings in text under 15 lines unless a template requires them.
 - Default budgets; a repo template or rule wins:
-  - MR/PR description: 1–2 sentences on what changed and why, then at most 5 bullets for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
+  - MR/PR description: 1–4 sentences on what changed and why, then 1–10 bullets, as few as possible, for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
   - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix. Add a suggestion block for small fixes.
-  - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in at most 6 bullets or one short paragraph.
-  - Change recap in chat: what works, how it was checked, and limits, in at most 5 bullets.
+  - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in 1–10 bullets, as few as possible.
+  - Change recap in chat: what works, how it was checked, and limits, in 1–10 bullets, as few as possible.
   - Docs paragraph: one idea, at most 4 sentences. `write-docs` owns page structure.
 - Before posting external text, reread it once. Delete each sentence that repeats another sentence, the title, or the diff.
 - State uncertainty as "unverified: <claim>" and cite evidence. Never invent unchecked specifics, such as versions, dates, flags, or line numbers.
