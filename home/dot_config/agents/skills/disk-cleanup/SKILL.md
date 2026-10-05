@@ -1,0 +1,85 @@
+---
+name: disk-cleanup
+description: >
+  Find and reclaim local disk space from regenerable caches, build outputs,
+  unused container resources, trash, and merged agent worktrees or old sessions.
+  Use for disk space, disk cleanup, or agent housekeeping requests.
+---
+
+# Reclaim local disk space
+
+Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
+approved items. Work locally unless the user explicitly requests a remote host.
+Creating or editing this skill does not invoke cleanup. A dry run ends at the preview.
+Honor narrower scope and existing approval; expanded deletion sets need approval.
+
+Read `host-preflight` and its `references/task-resources.md`, then run
+`agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
+resources, also read `worktree`, `session-resume`, and
+[agent-resources.md](references/agent-resources.md) before inventory or removal.
+
+## Measure and discover
+
+- Start with filesystem capacity and free space, then allocated sizes of the largest
+  directories. Inspect home, platform/XDG cache and data locations, discovered project
+  roots, downloads, trash, and accessible system cache/log locations. Stay within each
+  filesystem, resolve aliases, avoid symlink loops, and deduplicate overlapping entries
+  and hard-linked files. Report inaccessible roots and incomplete scans.
+- Drill into large entries before prioritizing small logs. Common candidates include
+  compiler caches (sccache, ccache, Go), package download caches (npm, pip, uv, pnpm,
+  Cargo, Homebrew), project build/test outputs and dependencies, browser automation
+  downloads/profiles, container images/build caches, and trash. Discover their actual
+  paths from installed tools and safe configuration path fields, not names alone.
+- Use installed tools' read-only usage/status/dry-run operations where available.
+  Inspect cleanup command semantics before proposing them; an “unused” resource may
+  still support stopped containers, an offline workflow, or an unfinished task.
+- Inventory agent resources using the linked reference, including external and legacy
+  worktrees. Session retention defaults to 30 elapsed days and applies only to sessions.
+
+## Qualify and preserve
+
+- Classify each entry by producer, purpose, regeneration source, and active consumers.
+  Cache locations, ignore rules, age, and large size alone do not prove disposability.
+  Check process working directories, open files, tool locks, and unfinished task records.
+  Keep uncertain entries; never kill another task to make cleanup possible.
+- Dependencies and generated project outputs can qualify independently of their
+  checkout, including an unmerged worktree, when sources/lockfiles remain and no active
+  process or task needs them. Inspect contents for manual additions, credentials,
+  requested artifacts, and unknown files. Retain those entries. Explain the rebuild or
+  download cost and any offline availability lost.
+- Prefer supported cache cleanup operations. Verify their complete scope: a command
+  covering more than the approved entries needs a new preview and approval. A shared
+  cache requires a verified producer and supported concurrency guarantees, or proven
+  absence of active consumers. Never delete lockfiles to bypass ownership checks.
+- Browser profiles may contain login state; installed browsers, runtimes, skills, and
+  plugins are not ordinary caches. Keep these unless the user approves their specific
+  removal and their consumers are known. Container volumes and writable layers can
+  contain durable data; do not include them in generic prune operations. Inspect exact
+  image/build-cache identities and references before proposing removal.
+- Preserve source, Git refs, settings, authentication, databases, memory, task/recovery
+  records, backups, requested deliverables, unused copy files, and unknown content.
+  Do not remove downloads, trash contents, or system logs merely because they are old;
+  show their contents/purpose and restoration limits for specific approval. Do not
+  delete shared history or edit application databases/indexes by hand.
+
+## Preview, approve, remove, verify
+
+- Show category, canonical path or tool resource ID, allocated size, activity where
+  relevant, disposal/merge evidence, and remove/keep reason. Rank by reclaimable bytes,
+  count overlaps once, and distinguish apparent size from estimated disk recovery.
+  State what cannot be restored and what must be downloaded or rebuilt.
+- Obtain approval for the exact deletion set unless that action and scope are already
+  explicitly approved. Approval for one category does not authorize the rest.
+- Recheck identity, contents, activity and ownership before each operation. Skip changed
+  entries. Never follow replacement symlinks or delete an ancestor of protected data.
+  Use literal resolved paths or structured tool IDs, never broad deletion globs.
+- Remove worktrees sequentially with Git from a surviving checkout; use `worktree` for
+  blockers and submodules. Preserve branch refs. Prune administrative records only
+  after a dry run proves they are stale, not inaccessible or unmounted.
+- Use verified supported session deletion and refresh derived indexes per
+  `session-resume`. Isolate failures. Stop only cleanup-owned processes, and remove
+  only this run's disposable scratch.
+- Re-enumerate affected resources and verify protected paths remain. Measure free space
+  again and report removed counts/bytes by category, observed filesystem change,
+  retained reasons and coverage gaps. Concurrent writes and hard links can make measured
+  free-space recovery differ from estimates. Do not schedule recurring cleanup unless asked.

@@ -1,22 +1,4 @@
----
-name: agent-cleanup
-description: >
-  Clean merged or locally landed worktrees across Claude and Codex project
-  directories, sessions inactive for 30 or more days, and disposable agent
-  caches. Use for agent housekeeping or cross-project cleanup requests.
----
-
-# Clean agent resources
-
-Run a host-wide inventory, preview the exact deletion set, then remove approved
-items. Creating or editing this skill does not invoke cleanup. A dry-run request
-ends after the preview. Work locally; do not start remote cleanup through SSH.
-
-The default session retention is 30 days. This age limit applies to sessions,
-not merged worktrees or known disposable caches. Honor narrower requested scope.
-Read `worktree`, `session-resume`, `host-preflight`, and its
-`references/task-resources.md` before inventory or removal. Use `agent-preflight`
-to check tools. Do not install tools merely to expand cleanup coverage.
+# Agent resources
 
 ## Discover the full scope
 
@@ -111,31 +93,3 @@ deliverables, unused copy files, and unknown content. Do not classify session
 transcripts as cache to bypass retention. Do not wipe entire profile or shared
 cache roots. Age alone does not prove a cache file is disposable.
 
-## Preview, approve, and remove
-
-Show a compact inventory with category, canonical path/session ID, size, last
-activity where relevant, merge or disposal evidence, and remove/keep reason.
-Count bytes once when candidates overlap. Explain that retained Git refs allow
-worktree recreation, but deleted transcripts and unbacked cache contents cannot
-be restored by this workflow. Obtain approval for the exact deletion set unless
-that action and scope are already explicitly approved. Expanded scope needs
-approval; creating this skill grants no deletion authorization.
-
-Before each deletion, recheck identity, HEAD or session ID, activity, contents,
-and process/task ownership. Skip anything changed since the preview. Never
-follow a replacement symlink or remove an ancestor of a protected resource.
-Stop only cleanup-owned processes; do not kill another task to free its files.
-
-Remove worktrees sequentially with Git from a surviving checkout outside the
-target. Follow `worktree` for blocked removal and submodule handling. Remove
-approved session/cache entries using literal resolved paths or structured path
-arguments, never a broad glob. Keep failures isolated and report them. Prune
-Git administrative records only after a dry run proves they are stale, not an
-unmounted or inaccessible worktree. Refresh supported derived session indexes
-after deletions, following `session-resume`; do not rewrite shared history or
-application databases by hand.
-
-Re-enumerate worktrees and verify approved paths are gone and protected paths
-remain. Report removed counts and measured reclaimed bytes by category, retained
-paths with reasons, remaining coverage gaps, and any partial failures. Remove
-only this run's disposable scratch. Do not schedule recurring cleanup unless asked.
