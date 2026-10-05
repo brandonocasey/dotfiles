@@ -70,6 +70,7 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 - Use literal words, not idioms such as "circle back" or "on the same page".
 - For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
 - Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, use the recommendation and name relevant alternatives briefly. For other choices, give 2–4 ranked options with their effects and trade-offs.
+- Link every MR/PR, ticket, pipeline, job, build, doc page, and other web resource you mention. Never give a bare ID such as `!123` or `PUBS-1234` without its URL; in tables, put the URL in the row.
 - Format external links as a label followed by the raw URL. Use bare `path:line` for local files and sha only for commits.
 
 ## Git
