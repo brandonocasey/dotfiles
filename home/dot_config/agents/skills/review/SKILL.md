@@ -25,6 +25,9 @@ Delegate the review to sub-agents, so that the reviewer is independent, when:
 - the user asks for a hard review or a sub-agent review, or names reviewer models.
 
 Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
+For automatic reviews, [when-to-run.md](references/when-to-run.md) owns the triggers,
+follow-up reviews, and the second-reviewer rule. Inline self-reviews missed about 40% of
+the defects found later, against about 18% for independent reviewers.
 
 Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt. Use `hard-review` when the user requests a hard review.
 `--agents` starts one reviewer per entry, in parallel. A request that names models
@@ -34,6 +37,9 @@ effort selection. With several targets, start one reviewer set per target.
 Before the spawn, establish the review checkout once (step 0). Install dependencies
 and build only when required by the affected checks, commit hooks, or review
 evidence; share any required build output across reviewers.
+Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
+file). Do not commit, amend, or rebase the target while a reviewer runs; one reviewer
+reviewed an empty diff because the commit landed first.
 Give every reviewer the same prompt: the review target verbatim, worktree path,
 the absolute path of [reviewer-steps.md](references/reviewer-steps.md), applicable
 repository constraints, and required check commands. Do not pass implementation
@@ -48,8 +54,10 @@ showing or fixing anything: read the cited code, verify the failure scenario is 
 and kill anything that isn't concrete. Do not re-run tests a reviewer already reported
 running — re-run only when a finding hinges on a test result the reviewer did not show.
 The main session then runs steps 3–4 itself (including worktree removal). If a reviewer
-could not access the target (missing auth, no checkout), fall back to running the review
-inline and note that the reviewer is not independent.
+stalls or returns nothing, start one fresh reviewer, on another model when available, before
+any fallback. If a reviewer could not access the target (missing auth, no checkout) or the
+retry also fails, fall back to running the review inline and note that the reviewer is not
+independent.
 
 ## Fix authorization
 
@@ -62,9 +70,10 @@ Own work skips the `--fix` gate, whether auto-triggered or user-requested:
 - an MR/PR whose author is the authenticated user (`gh api user --jq .login` or
   `GITLAB_HOST=<host> glab api user`'s `username`, compared with the MR/PR author).
 
-For own work, apply verified fixes at once per step 4. Re-run tests/lint, and do not
-review again unless `--loop` is set. An own MR/PR gets the full MR/PR flow of step 4,
-including the push (AGENTS.md Git rules).
+For own work, apply verified fixes at once per step 4. Re-run tests/lint. Without
+`--loop`, review only the fix delta once more when the fixes changed logic beyond one-line
+local edits; review fixes often introduced new defects. An own MR/PR gets the full MR/PR
+flow of step 4, including the push (AGENTS.md Git rules).
 For any other target, print the comments and wait for `--fix`. End with:
 `Reply fix to apply N findings.`
 After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means

@@ -52,6 +52,15 @@ read the diff looking for things that seem off — attack it:
 - **Distrust the description.** List what the author claims the change does, then look for
   behavior the diff actually changes that the claims don't cover — that gap is where bugs
   hide. Treat "refactor, no behavior change" as a claim to falsify.
+- **Find stale consumers outside the diff.** For every removed or renamed string, label,
+  selector, export, flag, route, or file path, grep the whole repository, including unit,
+  E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
+  in suites the author did not run were the most common CI-only failure after a review.
+- **Run what CI runs.** Run the repository's full test, lint, and typecheck commands when
+  they finish in a few minutes, not only the focused tests. When the repo enforces size,
+  accessibility, or performance budgets, check whether the change moves them. Where the
+  change is runtime-only (workers, WASM, a server route, a CLI), exercise it once with a
+  realistic input; reviewers that ran the code found the most severe defects.
 - **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
   or subtly wrong? Report missing or ineffective coverage only when you can name
   the important uncovered behavior. Preserve the ban on weakening existing tests.
@@ -71,7 +80,9 @@ function/file in the checkout (not the diff hunk alone), trace the failure path,
 for the guard, caller contract, or earlier check that makes the scenario unreachable. A
 finding survives only if refutation fails and you can state the concrete input/state that
 triggers it. Kill everything else. A plausible-sounding comment that turns out false is
-worse than no comment. If tests exist for the area, run the relevant ones when a finding
+worse than no comment. Kill a finding that asks to restore behavior the user or the
+repository rules deliberately removed or forbade, such as a fallback under a no-fallback
+rule. If tests exist for the area, run the relevant ones when a finding
 claims broken behavior — a passing test that covers the exact scenario refutes the finding.
 
 For a finding about rendered UI, use the `ui-verify` skill when browser evidence is
