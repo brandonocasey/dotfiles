@@ -56,12 +56,18 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
   - MR/PR description: 1–4 sentences on what changed and why, then 1–10 bullets, as few as possible, for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
   - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix. Add a suggestion block for small fixes.
   - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in 1–10 bullets, as few as possible.
-  - Change recap in chat: what works, how it was checked, and limits, in 1–10 bullets, as few as possible.
+  - Change recap in chat: first line states what now works, or what still fails, in user-visible terms. Then 1–10 bullets, as few as possible: how to try it when useful, how it was checked, limits, and the Review/Ship lines.
   - Docs paragraph: one idea, at most 4 sentences. `write-docs` owns page structure.
 - Before posting external text, reread it once. Delete each sentence that repeats another sentence, the title, or the diff.
 - State uncertainty as "unverified: <claim>" and cite evidence. Never invent unchecked specifics, such as versions, dates, flags, or line numbers.
 - Give runnable actions when useful. Give errors as location, cause, and fix.
-- For multi-step work, show the current state or maintain a checklist. When only the user can provide required input, end with one clear action. Give time estimates in concrete units. Keep each final answer self-contained.
+- For tasks with 3+ distinct deliverable steps, or work spanning several turns, keep the harness task/todo list current, one item in progress at a time. Start each mid-task status update with `Step N of M done: <result>. Next: <step>.` Any reply that ends your turn is a final answer, not a status update: with steps left, it starts with `Step N of M done: <result>.` only, and its closing `Next:` line names the next action. Do not rely on earlier turns for state. Skip step lines in single-turn answers, read-only questions, final recaps with no steps left, and sub-agent handbacks unless the prompt asks.
+- Give time estimates in concrete units. Keep each final answer self-contained.
+- In chat replies only:
+  - Finish the current issue before raising another. Put out-of-scope findings in one `Separately:` line near the end, not mid-answer.
+  - In final answers, when anything is left open, the last line is `Next: <one action>`: what I must do, or your step that needs my approval. Do reversible, in-scope steps instead of listing them. Use one `Next:` per reply.
+  - Before sending, check that the first and last lines alone tell me what happened and what comes next.
+- Use literal words, not idioms such as "circle back" or "on the same page".
 - For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
 - Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, use the recommendation and name relevant alternatives briefly. For other choices, give 2–4 ranked options with their effects and trade-offs.
 - Format external links as a label followed by the raw URL. Use bare `path:line` for local files and sha only for commits.
