@@ -54,22 +54,64 @@ session_digest() {
     done
 }
 
-digest=$(session_digest)
-if [ -z "$digest" ]; then
-    log "no claude sessions today; standup skipped"
+# Today's merge request actions from the GitLab event feed, with live state.
+gitlab_digest() {
+    local since events
+    command -v glab >/dev/null || return
+    since=$(date -u -r "$(midnight)" +%Y-%m-%dT%H:%M:%S)
+    events=$(for page in 1 2 3; do
+        glab api "events?after=$(date -v-1d +%F)&per_page=100&page=$page" 2>>"$LOG"
+    done | jq -s --arg since "$since" '
+        add // [] | map(select(.created_at >= $since))
+        | map(if .target_type == "MergeRequest" then {project_id, iid: .target_iid, action: .action_name}
+              elif .note.noteable_type == "MergeRequest" then {project_id, iid: .note.noteable_iid, action: "commented on"}
+              else empty end)
+        | group_by([.project_id, .iid])
+        | map({project_id: .[0].project_id, iid: .[0].iid, actions: (map(.action) | unique)})')
+    if [ -n "$events" ] && [ "$(echo "$events" | jq length)" != 0 ]; then
+        echo "=== GitLab merge requests the user acted on today (state is live)"
+        echo "$events" | jq -r '.[] | "\(.project_id) \(.iid) \(.actions | join(","))"' |
+            while read -r project iid actions; do
+                glab api "projects/$project/merge_requests/$iid" 2>>"$LOG" |
+                    jq -r --arg a "$actions" 'select(.web_url) | "\(.web_url) [\(.state)] user: \($a) | \(.title)"'
+            done
+    fi
+    # Claude Tag opens MRs as a GitLab service account and adds the requester as reviewer.
+    local me tagged
+    me=$(glab api user 2>>"$LOG" | jq -r '.username // empty')
+    [ -z "$me" ] && return
+    tagged=$(glab api "merge_requests?scope=all&reviewer_username=$me&updated_after=${since}Z&per_page=100" 2>>"$LOG" |
+        jq -r 'if type == "array" then .[] else empty end
+            | select(.author.username | startswith("service_account_"))
+            | "\(.web_url) [\(.state)] | \(.title)"')
+    [ -n "$tagged" ] && printf '=== Claude Tag merge requests with the user as reviewer, updated today (state is live)\n%s\n' "$tagged"
+}
+
+sources="The digest's GitLab sections list the merge requests the user acted on today and the Claude Tag merge requests where the user is reviewer, with live state; trust that state over session text. Claude Tag work counts as the user's work; label it 'via Claude' when useful. Also gather two more sources with your tools, then merge all sources into one standup without duplicates:
+- Slack: slack_search_public_and_private with filters 'from:<@$SLACK_USER> on:$TODAY'. Ignore the user's DM with themself, including standups and morning briefs. Use only messages that show work: answers, decisions, help given, reviews, announcements. When a message asks Claude to do something (Claude Tag), read that thread with slack_read_thread and use Claude's outcome.
+- Jira: getAccessibleAtlassianResources for the cloudId, then searchJiraIssuesUsingJql with jql 'status CHANGED BY currentUser() AFTER startOfDay() OR fixVersion CHANGED BY currentUser() AFTER startOfDay() OR (reporter = currentUser() AND created >= startOfDay()) OR (assignee = currentUser() AND (status CHANGED AFTER startOfDay() OR assignee CHANGED AFTER startOfDay() OR created >= startOfDay()))'. Ticket creation, status moves, new assignments, and release assignments count as work; assigned tickets still open belong in Next.
+If a tool fails, continue with the other sources."
+read_tools="mcp__claude_ai_Slack__slack_search_public_and_private mcp__claude_ai_Slack__slack_read_thread mcp__claude_ai_Atlassian__getAccessibleAtlassianResources mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql"
+
+digest="$(session_digest)
+$(gitlab_digest)"
+if [ -z "${digest//[[:space:]]/}" ]; then
+    log "no claude sessions or gitlab activity today; standup skipped"
     exit 0
 fi
 
 format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-8 bullets total, each bullet under 10 words. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
-intro="The input is a digest of today's Claude Code sessions: the user's prompts and each session's final reply. Write a standup"
+intro="The input is a digest of today's work: the user's prompts and final replies from Claude Code sessions, plus GitLab activity. Write a standup"
 
 if [ "$1" = --print ]; then
-    echo "$digest" | ask_claude "" "$intro. Print only the standup; send it nowhere.
+    echo "$digest" | ask_claude "$read_tools" "$intro. Print only the standup; send it nowhere.
+$sources
 $format"
     exit
 fi
 
-echo "$digest" | ask_claude "mcp__claude_ai_Slack__slack_send_message" \
+echo "$digest" | ask_claude "$read_tools mcp__claude_ai_Slack__slack_send_message" \
     "$intro and send it to Slack user $SLACK_USER as a DM (slack_send_message with channel_id $SLACK_USER).
+$sources
 $format" >/dev/null
 log "standup sent"
