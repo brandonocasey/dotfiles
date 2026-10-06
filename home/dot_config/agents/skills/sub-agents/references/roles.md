@@ -18,6 +18,7 @@ If the role is unavailable or incompatible, work inline and report the limitatio
 Unless an override applies, keep the role's model and effort pins.
 Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
 Omitting the role bypasses its pin: Claude Code uses `CLAUDE_CODE_SUBAGENT_MODEL` (Sonnet), or inherits the parent model when that is unset; Codex uses `default_subagent_model`.
+Workflow `agent()` calls skip that variable and inherit the session model. Pass the role as `agentType` and its Claude Code model below as `model`, such as `claude-sonnet-5-5`. Check `cheap` and `explorer` first; without a fitting role, pass `model: 'sonnet'`. Never use `consult` in a workflow.
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |

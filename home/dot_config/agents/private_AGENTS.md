@@ -26,6 +26,7 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`; before copyable output: its `copyable-output.md`.
 - Before monitoring or unresolved reasoning after failure: `sub-agents`. Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
+- In Workflow scripts, give every `agent()` call a role `agentType` (never `consult`) and that role's table model as `model`, or `model: 'sonnet'` when no role fits. Omitted calls inherit the session model (Opus).
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
 
