@@ -1,6 +1,8 @@
 # Review output and cleanup
 
 Brief beats complete-sounding: no padding, no restating the diff.
+Review and MR/PR comments cover one issue in at most three sentences:
+what breaks, when, and the fix. Apply repository templates when present.
 
 1. **TLDR line** — one sentence: how many findings survived, and whether any are real bugs
    vs. minor notes.

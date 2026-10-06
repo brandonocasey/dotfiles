@@ -2,10 +2,7 @@
 model: claude-sonnet-5-5
 effort: medium
 name: disk-cleanup
-description: >
-  Find and reclaim local disk space from regenerable caches, build outputs,
-  unused container resources, trash, and merged agent worktrees or old sessions.
-  Use for disk space, disk cleanup, or agent housekeeping requests.
+description: Reclaim local disk space from regenerable caches, builds, unused containers, trash, merged worktrees, and old sessions. Use for disk cleanup or agent housekeeping.
 ---
 
 # Reclaim local disk space

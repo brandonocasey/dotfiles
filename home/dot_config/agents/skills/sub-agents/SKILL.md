@@ -28,10 +28,10 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `cheap` | Well-specified mechanical work: aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
+| `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-6.1-sol, low |
-| `tester` | Run tests, lint, builds, and smoke checks; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
+| `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
 | `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
@@ -41,6 +41,13 @@ Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
 Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
 Without a sub-agent tool, work inline and identify any review that is not independent.
+
+For delegated named commands with explicit pass/fail criteria, use `cheap` and
+request the exit status and bounded output. This includes executing a named test,
+lint, or build command. Use `tester` when choosing checks or interpreting failures
+requires judgment; use `worker` for diagnosis and fixes. Independent review keeps
+its reviewer role. An explicit user role/model still wins. Do trivial commands
+inline when spawning costs more; this routing does not require extra agents.
 
 Compare total expected context, cache, output, and retry costs.
 Do not retain an expensive role solely for its cache.

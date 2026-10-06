@@ -1,8 +1,6 @@
 ---
 name: code-standards
-description: >
-  Rules for code, comments, tests, dependencies, and plans. Use before you write
-  or change code, tests, config, or dependencies, write a plan, or review code.
+description: Apply code, comment, test, dependency, and planning rules before writing or changing code, tests, configuration, dependencies, plans, or reviewing code.
 ---
 
 ## Code comments

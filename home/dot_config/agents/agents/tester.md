@@ -1,6 +1,6 @@
 ---
 name: tester
-description: "Run named tests, lint, builds, and smoke checks; report failures and evidence."
+description: "Select relevant checks, inspect test/build failures, and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
 model: claude-sonnet-5-5
 effort: medium
 tools: Read, Grep, Glob, Bash

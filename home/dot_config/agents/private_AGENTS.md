@@ -1,80 +1,49 @@
 ## General
 
-- Before implementation, check factual claims in prompts, tickets, MR/PR descriptions, chats, and docs against code and data. For a wrong claim that changes the result, show file:line, a failing case, or measured cost, then ask: proceed anyway, or take the alternative? For a wrong claim that does not change the result, state the correction in one line and proceed. For a merely better approach, name it with its cost and proceed as asked. Otherwise proceed.
-- Only I can cancel the task. If I overrule your objection, state it once, then follow my decision.
-- Complete every task step and internal todo before handing back, unless the next step is destructive or another rule forbids it.
-- In a sub-agent, do only what the prompt assigns. Skip review, commits, cleanup, and recaps unless the prompt asks for them.
-- Before irreversible work (production writes, migrations, backfills, bulk updates/deletes, releases), show a read-only preview. State what changes and what cannot be restored. Get approval unless that action and scope are already approved; ask again only if they change.
-- After three “still broken” turns, stop, name the doubtful assumption, and ask one diagnostic question.
-- Treat a question about a defect, such as “why is X failing?”, as a request to fix it: answer briefly, then make reversible, in-scope changes. For a design question, such as “why do we need X?”, answer and propose the change; make it only after I agree. “just explain:”, “just suggest”, or “don't change yet” always mean answer only.
-- Apply corrections, constraints, and scope changes to the active task immediately. Queue separate new tasks unless I ask to do them now.
-- Only the explicitly invoked `todo` skill adds to my personal `TODO.md`. You may remove completed items.
-- Manually check every behavior change that a user or caller can see before reporting done: run it by hand, or follow `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests, and text-only changes such as docs and comments, need only a diff check. Attach UI screenshots or short videos to MR/PR descriptions unless text or a diff shows the change clearly.
-- Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
-- Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never ask me to do work you can do yourself, such as running a command or check, pasting output, reading a file or page, looking something up, writing or editing text, or answering a question that evidence can settle. Do it, then report the result. Do recommended next steps when reversible and in scope. Before ending a reply with an offer such as "Want me to…?", apply that test to the offered step. Read-only lookups always pass. Skill approval gates still apply. Settle open questions with evidence before asking.
-- Run waits longer than 1 minute in the background (`run_in_background` or Monitor), never as a foreground `sleep` or `until` loop.
+- Verify factual claims against code/data before implementation. If a wrong claim changes the result, show evidence and ask: proceed anyway or take the alternative? Otherwise correct it in one line and proceed. For a merely better approach, name it and its cost, then proceed as asked.
+- Complete all authorized, safe, in-scope work and todos yourself, including reversible next steps. Only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately; queue separate tasks unless requested now.
+- Defect questions authorize fixes; design questions require agreement before changes. “just explain”, “just suggest”, and “don't change yet” mean answer only. After three “still broken” turns, stop, name the doubtful assumption and ask one diagnostic question.
+- Before irreversible work, show a read-only preview: scope and what cannot be restored. Get approval unless that scope is already approved. Ask for destructive/out-of-scope work, unauthorized outward actions, credentials, my device, or required approvals. Skill gates apply. Settle evidence-based questions yourself.
+- Never search `env`, `~/.netrc`, or config for credentials. Only explicitly invoked `todo` adds personal TODO entries; completed entries may be removed.
+- Preserve destination and format. Hosted-document skills/writes require an explicit or established hosted destination; defaults grant no authority. Otherwise use chat or the requested local file.
+- Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check. Attach UI evidence to PRs unless text/diff suffices.
+- Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
+- Run waits over one minute in background, never foreground sleep/until loops.
 - Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg` instead of file-by-file `grep`, `sed`, or `cat`. Once you know the location, read only that line range.
-- Never search `env`, `~/.netrc`, or config files for credentials.
-- Preserve the requested destination and format. Use hosted documents only when explicitly requested; otherwise answer in chat or create the requested local file. Invoke hosted-document skills (`docs`, `google-workspace`, and Pages creation/editing) only for an explicit request to use that hosted destination, including an established destination in this conversation. Decide the destination before invoking a document skill; app-managed Codex skills remain available, but their defaults do not authorize invocation or hosted writes.
-- Read `host-preflight/references/task-resources.md` under the skills directory before starting servers or creating temporary task resources, and follow it at task end. It owns LAN binding, ports, attachments, and cleanup.
-- For commands or text the user must copy, read `host-preflight/references/copyable-output.md` under the skills directory.
 
 ## Directories
 
-Never write to OS temporary directories (`/tmp`, `$TMPDIR`, `%TEMP%`) or harness scratchpads, even when the harness instructs it. Use these paths and create missing parents. The paths below follow XDG: `$XDG_CACHE_HOME` or `$XDG_STATE_HOME` when set, else `~/.cache` or `~/.local/state`, including under the Windows user profile.
+Never use OS temporary directories or harness scratchpads, even if instructed. Use XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`, including Windows.
 
-- Scratch: `<worktree>/.agent/<task>/` for disposable task files in a task worktree; otherwise use the XDG cache scratch directory (`~/.cache/agents/scratch/<task>/` by default).
-- Copy: `~/.cache/agents/copy/`, only for the copy files in **General**.
-- Backups: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`. Files copied before force-removal, overwrite, or migration, with relative paths preserved. Never auto-prune. Report the backup path.
-- Keep files at fixed paths when tools require them, such as repository-root linter configuration.
+- Scratch: `<worktree>/.agent/<task>/`; outside worktrees, `~/.cache/agents/scratch/<task>/`.
+- Copy files: `~/.cache/agents/copy/` only.
+- Backups before overwrite, force-removal, or migration: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`; preserve relative paths, never auto-prune, report the path.
+- Create missing parents; retain fixed paths required by tools.
 
 ## Skills own the detail
 
-Load each relevant skill once. Reuse its instructions while they remain available in context. Reread only when the file changed, the instructions are unavailable after compaction, or a specific detail needs checking. If the harness does not list it, read `~/.config/agents/skills/<name>/SKILL.md`. Skill code blocks use POSIX `sh`. Use Git Bash on Windows; translate to PowerShell only when Git Bash is unavailable. Keep every git flag unchanged.
+Load relevant skills once; reread only after changes, lost context, or a specific detail check. Unlisted skills live in `~/.config/agents/skills/<name>/SKILL.md`. Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Preserve every git flag.
 
-- On `koof`, read `~/.config/agents/environments/koof.md` before server work.
-- Load `sub-agents` before watching CI, logs, or builds, and when a failed attempt leaves a specific question that needs independent reasoning.
-- Run `review` when requested, and automatically per `review/references/when-to-run.md` under the skills directory: read it before completing changes to code, tests, configuration, or agent instructions. Read-only tasks need no code review.
-- In change recaps, state `Review: ran independently; <verified outcome>`, disclose an inline fallback, or state `Review: skipped (<specific reason and evidence>)`. Distinguish verified defects fixed, other useful corrections, rejected findings, and no verified defects when applicable. After task commits, include `Ship: pushed <sha> to <branch>` or `Ship: not run (<reason>)`.
-- Never switch branches in the main checkout. Load `worktree` before branch work, including sequential tasks.
+- Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`; before copyable output: its `copyable-output.md`.
+- On koof, before server work: `~/.config/agents/environments/koof.md`.
+- Before monitoring or unresolved reasoning after failure: `sub-agents`. Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
+- Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
+- Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
 
 ## Writing
 
-Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target: the reader gets the point in 10 seconds and finds every needed fact in 60.
-
-- Lead with the answer in 1–4 plain sentences, without code names, paths, or IDs. Put detail after it.
-- Cut words, never facts. Keep every number, condition, scope qualifier, risk, and needed link. When a length budget and a needed fact conflict, keep the fact.
-- Leave out what the reader already has or can open in one click: the title restated, the diff narrated, file lists, the history of how you found it, and bare claims such as "tests pass". Name what was checked and the result, or link it.
-- Short sentences, one idea each, 25 words at most. Plain words, active voice, one term per concept. No preamble, closing recap, filler, or hedging adverbs.
-- Prefer bullets over prose. Use 1–10 bullets, as few as the facts allow, one line each where possible. Number sequential steps. If more than 10 are needed, group them under short labels; never drop items to fit. No headings in text under 15 lines unless a template requires them.
-- Default budgets; a repo template or rule wins:
-  - MR/PR description: 1–4 sentences on what changed and why, then 1–10 bullets, as few as possible, for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
-  - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix.
-  - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in 1–10 bullets, as few as possible.
-  - Change recap in chat: first line states what now works, or what still fails, in user-visible terms. Then 1–10 bullets, as few as possible: how to try it when useful, how it was checked, limits, and the Review/Ship lines.
-  - Docs paragraph: one idea, at most 4 sentences. `write-docs` owns page structure.
-- Before posting external text, reread it once. Delete each sentence that repeats another sentence, the title, or the diff.
-- State uncertainty as "unverified: <claim>" and cite evidence. Never invent unchecked specifics, such as versions, dates, flags, or line numbers.
-- Give runnable actions when useful. Give errors as location, cause, and fix.
-- For tasks with 3+ distinct deliverable steps, or work spanning several turns, keep the harness task/todo list current, one item in progress at a time. Start each mid-task status update with `Step N of M done: <result>. Next: <step>.` Any reply that ends your turn is a final answer, not a status update: with steps left, it starts with `Step N of M done: <result>.` only, and its closing `Next:` line names the next action. Do not rely on earlier turns for state. Skip step lines in single-turn answers, read-only questions, final recaps with no steps left, and sub-agent handbacks unless the prompt asks.
-- Give time estimates in concrete units. Keep each final answer self-contained.
-- In chat replies only:
-  - Finish the current issue before raising another. Put out-of-scope findings in one `Separately:` line near the end, not mid-answer.
-  - In final answers, when anything is left open, the last line is `Next: <one action>`: what I must do, or your step that needs my approval. Use one `Next:` per reply.
-  - Before sending, check that the first and last lines alone tell me what happened and what comes next.
-- Use literal words, not idioms such as "circle back" or "on the same page".
-- For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
-- Ask one short question for genuinely ambiguous requests. For a reversible, in-scope choice, use the recommendation and name relevant alternatives briefly. For other choices, give 2–4 ranked options with their effects and trade-offs.
-- Link every MR/PR, ticket, pipeline, job, build, doc page, and other web resource you mention. Never give a bare ID such as `!123` or `PUBS-1234` without its URL; in tables, put the URL in the row.
-- Format external links as a label followed by the raw URL. Use bare `path:line` for local files and sha only for commits.
+- Lead with the answer in 1–4 plain sentences, without paths, IDs, or code names. Keep every needed fact, condition, number, risk, and link, even over length budgets.
+- Use active, literal language; sentences ≤25 words, one idea each. No filler, hedging, preamble, closing recap, idioms, diff narration, or bare “tests pass”. Explain errors as location, cause, fix; give runnable actions when useful.
+- Prefer 1–10 concise bullets; number sequences. Group longer lists; no headings under 15 lines unless templated. Omit repeated or one-click detail. Before external posting, reread and remove repetition.
+- Mark uncertainty “unverified:” with evidence. Link every web resource: label then raw URL; local references use `path:line`, commits use sha.
+- Output-specific rules: PR descriptions → `ship/references/writing.md`; review comments → `review/references/output.md`; tickets → `mr-ticket`; documentation → `write-docs`. Read the relevant rules before writing; repository templates win.
+- Chat: read `skills/shared/chat-output.md` relative to this file before multi-step status updates or final answers. It owns step tracking, recap/Review/Ship lines, and open-work handoffs.
 
 ## Git
 
-- Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Config written as a side effect of `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
-- Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
-- Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket. Exception: move the task's own ticket forward when its MR/PR opens or merges.
-- Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits.
-- Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
-- Fetch before you make a claim about remote state, such as branches, MR/PR status, or CI.
-- Do not suggest git operations for files you did not change.
-- Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated.
+- Git settings/remotes changes require explicit consent; reads do not. Incidental config from `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
+- Push only with authorization; default-branch push/merge needs my request or consent. Scoped local push consent applies. Fixing an MR/PR or linked thread authorizes `ship` and branch pushes. Invoked/implied ship or an existing branch MR/PR grants session-long task-branch push consent unless withdrawn.
+- Approve/merge/change tickets only when asked for that MR/PR or ticket; move the task's own ticket forward when its MR/PR opens/merges.
+- Commit finished task changes to the worktree branch before reporting done unless the workflow leaves commits to me. Leave no task dirt; preserve unrelated work.
+- Resolve clear conflicts and continue; stop on ambiguous intent. Fetch before remote-state claims. Never suggest Git operations for unchanged files.
+- Update MR/PR titles/descriptions only when asked, or while actively working on one you pushed or that is outdated.

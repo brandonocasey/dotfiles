@@ -1,9 +1,6 @@
 ---
 name: jenkins
-description: >
-  Read Jenkins jobs, builds, and console logs, or start builds, on the player
-  Jenkins server. Use when asked about a Jenkins job, build status, or build
-  log, or to trigger a Jenkins build.
+description: Inspect jobs, builds, and console logs or trigger builds on the player Jenkins server. Use for Jenkins status, logs, or build requests.
 ---
 
 Use `jenkins-api` (`~/.local/bin/jenkins-api`). It calls the Jenkins REST API

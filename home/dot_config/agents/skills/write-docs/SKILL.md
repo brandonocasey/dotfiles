@@ -18,3 +18,6 @@ description: >
   structure emerges from small fixes
 - Docs must be useful at every state: no "coming soon" stubs, and don't hold back a
   page because it isn't finished
+
+- Each paragraph covers one idea in at most four sentences. Apply the global
+  Writing rules and repository templates.

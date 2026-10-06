@@ -2,11 +2,7 @@
 model: claude-sonnet-5-5
 effort: medium
 name: jira-versions
-description: >
-  Create, rename, release, archive, or list Jira fix versions (releases), and
-  move tickets or MRs/PRs between them. Use when asked to create or release a
-  version or move work to another version. The Atlassian MCP cannot create
-  versions.
+description: Manage Jira fix versions and move tickets or MR/PR work between releases. Use for version creation, renaming, release, archival, listing, or reassignment.
 ---
 
 The Atlassian MCP and `acli` cannot manage versions. Use `jira-api`

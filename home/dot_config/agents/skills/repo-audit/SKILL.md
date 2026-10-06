@@ -1,14 +1,7 @@
 ---
 disable-model-invocation: true
 name: repo-audit
-description: >
-  Multi-agent repo audit pipeline: fan out dimension-scoped finder agents (bugs, performance,
-  duplication, legacy/back-compat, consistency), verify every finding against the real code,
-  present confirmed findings split into safe fixes vs decisions, then apply approved fixes with
-  parallel worktree agents under strict file-ownership boundaries. Also re-verifies or works
-  through an existing AUDIT.md. Use when the user says "audit this repo", "full audit", "get
-  this code base in tip-top shape", "re-verify the audit findings", "work through AUDIT.md", or
-  invokes /repo-audit.
+description: Audit repository bugs, performance, duplication, compatibility, and consistency with independent agents. Verify findings before approved fixes; also re-verify or work through existing AUDIT.md findings.
 ---
 
 Run a repo-wide audit as a staged multi-agent pipeline. Findings are never shown unverified,

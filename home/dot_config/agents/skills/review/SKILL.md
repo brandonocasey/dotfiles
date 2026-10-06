@@ -1,9 +1,6 @@
 ---
 name: review
-description: >
-  Review a PR/MR, branch, commit range, or working diff for verified defects.
-  Use for automatic end-of-change reviews, review requests, and MR/PR thread checks;
-  --fix fixes and pushes, --loop re-reviews, --agents runs parallel reviewers.
+description: Review PRs/MRs, branches, commits, diffs, or review threads for verified defects, including automatic completion reviews. Supports fixes, review loops, and parallel reviewers.
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The

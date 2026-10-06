@@ -1,10 +1,7 @@
 ---
 disable-model-invocation: true
 name: investigate
-description: >
-  Investigate and fix a bug from an issue link, error, log, URL, or
-  description. Use every available tool to reproduce it, find the root cause,
-  and fix it, or narrow it down until someone can. User-invoked only.
+description: Reproduce and fix a bug from an issue, error, log, URL, or description using available tools. Narrow unresolved causes to actionable blockers. User-invoked only.
 ---
 
 # Investigate and fix an issue

@@ -1,8 +1,6 @@
 ---
 name: mr-ticket
-description: >
-  Find or create the tracker ticket for an MR/PR, then link, assign, set status
-  and version, label, and put the key in the title. Use for ticket requests.
+description: Find or create and link tracker tickets for MR/PRs; assign, transition, version, label, and update titles. Use for ticket requests.
 ---
 
 Arguments: `[<MR/PR url|number|branch>...] [to <version>] [none]`.
@@ -54,8 +52,8 @@ question. Never invent a key, project, status, or version.
    - Check the issue types first (Jira: `getJiraProjectIssueTypesMetadata`).
    - Pick the type from the commit type: `fix` is a bug; `feat` is a feature;
      other types are tasks. Use the names the tracker shows.
-   - Summary and description: follow the repo's ticket rules, else the ticket
-     budget in AGENTS.md **Writing**. Add the MR/PR URL.
+   - Summary and description: follow the repo's ticket rules, otherwise use
+     **Ticket writing** below. Add the MR/PR URL.
    - Assign the MR/PR author. For Jira, use the `atlassian` account type.
      Find the accountId with `lookupJiraAccountId`: the author's commit email
      first, then the display name. On zero or several matches, leave the
@@ -76,3 +74,10 @@ question. Never invent a key, project, status, or version.
 
 One line per MR/PR: MR/PR, key (new or reused), links, status, version,
 label, title. End with a **Links** section with each MR/PR and ticket URL.
+
+## Ticket writing
+
+Use a summary under 10 words naming the outcome. Describe the problem,
+expected result, acceptance check, and links in 1–10 bullets, as few as possible.
+Apply the global Writing rules and repository templates. Reread before posting
+and remove sentences repeating another sentence, the title, or the diff.

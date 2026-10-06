@@ -1,19 +1,13 @@
 ---
 name: ship
-description: >
-  Commit, push, and open or update a GitHub PR or GitLab MR. Use for ship or
-  PR/MR requests, or when the Git rules authorize a push. --merge continues
-  through merge.
+description: Commit, push, and open or update GitHub PRs or GitLab MRs when requested or authorized by Git rules. Supports requested merging.
 ---
 
 Ship the current branch: push it, open or update the MR/PR, and report. When
 the argument names a local branch, run every step from that branch's worktree.
-Create one with the `worktree` skill if none exists. With several branch names
-or `all`, ship each branch in turn, a parent before its dependent children.
-For `all`, list the branches that have a `.worktrees/` worktree with a clean
-tree and commits ahead of `TARGET`. Exclude worktrees another task uses. Show
-each branch with its ahead count and ask once before the first push. Other
-argument text is a task to finish first. Parse `--merge` as an option, not a branch or task name.
+Create one with the `worktree` skill if none exists. For several branches or `all`, read [multiple-branches.md](references/multiple-branches.md)
+before selecting or pushing anything. Other argument text is a task to finish first.
+Parse `--merge` as an option, not a branch or task name.
 Ordinary shipping ends after the push and MR/PR update.
 With `--merge`, read [merge.md](references/merge.md) before mutations to check
 platform support and scope. Continue that workflow after shipping.
@@ -53,16 +47,8 @@ user's repo. Establish its **Facts** using these remote target details:
   `git rev-parse FETCH_HEAD` as `COMMIT_BASE`. Do not require a local target branch
   or assume that the fetch updated `origin/<TARGET>` under a restricted refspec.
 
-**If `BRANCH` equals `REMOTE_DEFAULT` or `TARGET`**:
-
-- Fetch `refs/heads/<BRANCH>` from `origin` and record its commit ID before
-  comparing it with local `HEAD`. If local commits are ahead or histories
-  diverge, ask which commits should ship on a new branch. Never guess, reset,
-  or force the checked-out branch. Stop on a missing remote branch or failed fetch.
-- With a dirty tree and no local-only commits, move the work onto a branch named by the repo
-  convention, using the `worktree` skill's **Recover changes made in the main checkout**
-  steps. Continue from inside the new worktree and refresh `BRANCH`.
-- With a clean tree and no local-only commits, report that there is nothing to ship and stop.
+If `BRANCH` equals `REMOTE_DEFAULT` or `TARGET`, read
+[default-branch-recovery.md](references/default-branch-recovery.md) before proceeding.
 
 When `.gitmodules` exists, also read [submodules.md](../shared/submodules.md) and
 establish its **Facts** (`SUB_CHANGED`, `SUB_OWNED`, `SUB_BRANCH`, `SUB_TARGET`). A changed
@@ -105,8 +91,8 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
   - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
-- **Description**: follow the repository template. Otherwise use the MR/PR budget in
-  AGENTS.md **Writing**.
+- **Description**: read [writing.md](references/writing.md) and follow the repository template
+  or its default description format.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 - When `TICKET` is set, move it to the open-MR/PR status per [mr-ticket](../mr-ticket/SKILL.md) step 6.
 
@@ -118,13 +104,7 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   worktree until that work ends. Without one, report the pipeline URL without waiting.
 - Handle CI when the user requests it, or once for jobs that already
   failed when the `review` skill's own-work rule requires it.
-  Then: pull the failing job's log (`glab ci trace <job>` / `gh run view <run-id> --log-failed`), find
-  the real error under the boilerplate, fix it, commit via the `commit` skill, run the
-  **Manual check** of `shared/git-flow.md` for the fix, push, and run
-  step 5 after the requested work ends. If an earlier run removed the worktree,
-  recreate it with the commands in `worktree`'s **Restore a removed worktree**. Retry a job once
-  (`glab ci retry <job>` / `gh run rerun <run-id> --failed`) when the project's docs name that suite
-  as flaky or the log shows an infrastructure failure; a second failure is real.
+  Before repairs or retries, read [ci-repair.md](references/ci-repair.md).
 
 ## 5. Clean up
 
@@ -148,16 +128,9 @@ reason both stayed. With several branches, give one line per branch. End with on
 section in the global link format (AGENTS.md, **Writing**), with no OSC 8 escapes: the MR/PR
 URL, submodule MR/PR URLs, pipeline URL, preview URL (when set), and ticket URL (when set).
 
-Preview URL: list one only when the platform reports it. Use the step 2
-`HEAD_SHA`, not `HEAD` after cleanup. Never build one from CI files. Do not wait
-for a deploy job.
-
-- GitHub: `gh api "repos/{owner}/{repo}/deployments?sha=<HEAD_SHA>"`, then the
-  `environment_url` from the deployment's `statuses_url`.
-- GitLab: in `glab api "projects/:id/deployments?order_by=updated_at&sort=desc"`, find
-  the newest deployment whose `sha` is `HEAD_SHA`. Use its `environment.external_url`.
-  Without one, a deployment whose `ref` is `BRANCH` or `refs/merge-requests/<iid>/merge`
-  can be listed only with the label `from <short sha>`, using its `sha`.
+When checking for a deployed preview URL, read
+[preview-url.md](references/preview-url.md). Only report platform-confirmed URLs;
+never infer one from CI files or wait for deployment.
 
 ## Hard rules
 

@@ -13,7 +13,7 @@ blocker and next action. A pull request is passing when it is not a draft, is
 up to date with its base, passes every required check, and has no unresolved
 conflict. Process every pull request independently. One blocked pull request
 must not stop work on the others. On GitLab, "pull request" means merge request
-(MR); use the [GitLab path](#gitlab-path) commands in place of `gh`.
+(MR); use the [GitLab path](references/gitlab.md) commands in place of `gh`.
 
 The user has authorized unattended operation for this skill. Do not pause for
 confirmation before an action inside the safe scope below. If the user narrows
@@ -30,7 +30,7 @@ default; filters combine with AND.
 | none | `--author @me` |
 | `auto-merge` | pull requests with `autoMergeRequest` set (GitLab: `merge_when_pipeline_succeeds`); author default still applies |
 | `all` | drop the author default |
-| `--author LOGIN`, `--assignee`, `--label`, `--base`, `--head`, `--search` | passed to `gh pr list` (GitLab: see [GitLab path](#gitlab-path)); `--author` replaces the default |
+| `--author LOGIN`, `--assignee`, `--label`, `--base`, `--head`, `--search` | passed to `gh pr list` (GitLab: see [GitLab path](references/gitlab.md)); `--author` replaces the default |
 | `12 #34 !56 https://github.com/O/R/pull/56 https://gitlab.com/G/P/-/merge_requests/7 feature/x` | exactly these pull requests by number, URL, or head branch |
 | `--repo OWNER/REPO` | another repository; URLs set their own repository |
 | `merge` | also merge pull requests that reach the passing state without auto-merge |
@@ -49,7 +49,7 @@ gh pr list --state open --limit 100 --author @me --json number,title,url,headRef
 
 Replace `--author @me` with the parsed filters. If the list reaches its limit,
 raise the limit until the inventory is complete. On a GitLab remote, use the
-[GitLab path](#gitlab-path) commands. On any other remote, stop before any
+[GitLab path](references/gitlab.md) commands. On any other remote, stop before any
 mutation and name the unsupported platform. If the selection is empty, report
 that and stop.
 
@@ -116,131 +116,19 @@ Required checks, mergeability, draft state, and queue state control that.
 
 ## Rebase or update the branch
 
-For a stacked pull request whose base is another open pull request's branch,
-rebase onto that branch, not the default branch, and finish the base pull
-request first.
-
-For the user's own branch:
-
-1. Load the `worktree` skill and reuse or create the head branch's worktree.
-   Without a local branch, use the two commands at the end of its **Restore a removed worktree**; they fetch the branch first.
-2. Fetch the head branch and verify that its fetched SHA and the worktree
-   HEAD equal the observed SHA. If either differs, preserve local work,
-   refresh the inventory, and reconcile it before proceeding. Fetch the base
-   explicitly with `git fetch origin refs/heads/BASE`, then immediately record
-   `git rev-parse FETCH_HEAD` as `BASE_SHA`; a restricted fetch refspec may
-   leave `origin/BASE` absent or stale.
-3. Run `git rebase BASE_SHA`. Resolve conflicts when the combined result is
-   clear; keep both sides' intent. Stop and report the conflicting files when
-   the intended result is ambiguous.
-4. Run the repository's targeted checks for the touched paths.
-5. Push with `git push --force-with-lease=BRANCH:OBSERVED_SHA origin HEAD:BRANCH`.
-   A rejected lease means someone else pushed; refresh and start over.
-6. Refresh the inventory and record the new head SHA.
-
-For another author's branch, use `gh pr update-branch N` only when the
-repository permits a merge update. If linear history requires rebasing,
-report that the author must rebase; do not rewrite another author's branch
-through `--rebase`. If the update reports conflicts, report them to the author.
+For a behind, conflicting, or nonlinear branch, read [branch-repair.md](references/branch-repair.md) before updating it. Finish stacked base PRs first.
 
 ## Fix failing checks
 
-Unless the invocation is read-only, use this order for each pull request with
-a failing check on the user's own non-fork branch:
-
-1. Capture the head SHA, the failing check, and the run URL.
-2. Reuse or create the head branch's worktree as **Rebase or update the
-   branch** step 1 describes. Rebase first when the branch is behind, so the
-   fix runs on the current base.
-3. Read the relevant code and the full failing log. Make the smallest
-   root-cause fix. Preserve input validation, error handling, security
-   controls, accessibility behavior, and repository output-parity rules.
-4. Run the repository's targeted checks, then any required formatting, lint,
-   type, or test commands documented for the changed paths. Never skip or
-   weaken a check.
-5. Load the `commit` skill, commit only the intended files, and push with a
-   normal push. Use the lease-protected force-push only when a rebase happened
-   in this pass.
-6. Refresh the inventory and record the new head SHA and the started checks.
-   Keep the worktree while local work is needed; use the cleanup section on
-   every completed or blocked outcome.
-
-For an eligible infrastructure failure, capture the run URL and failure reason,
-then run `gh run rerun RUN_ID --failed` at most once per run. Do not rerun a
-code failure or repeatedly rerun a flaky check. After the retry, refresh the
-inventory and classify the new result.
-
-For a fork-owned or another author's branch with a code failure, report the
-failure, the cause, and the fix the author needs.
+For a failed check, read [check-repair.md](references/check-repair.md) before fixes or retries.
 
 ## Watch while CI runs
 
-When checks are pending, run one deterministic watcher for all selected pull
-requests. Pin each observed head SHA:
-
-```sh
-agent-watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
-agent-watch --target 'GROUP/PROJECT!IID@HEAD_SHA' --deadline-seconds 3600
-```
-
-Use the second form for GitLab; quote it because shells expand `!`. Repeat
-`--target` for more pull requests. Monitor that one process through the
-harness completion or Monitor mechanism and capture its complete output. Do
-not poll the same pull requests separately. Use a `cheap` background agent only
-when the process must remain monitored across turns; the agent runs and reports
-the process output without issuing its own GitHub or GitLab polls.
-
-The watcher uses read-only `gh` or `glab` queries and rejects a changed head
-SHA. It reports the initial state, state changes, and one final result. It stops
-on check success, merge, close, head change, failure, missing data, permission
-error, cancellation, or deadline. It never pushes, retries, comments, changes
-pull request state, or merges. `required_checks_passed` describes check state
-only; apply the full passing criteria in this skill.
-
-When the watcher reports `action_required`, inspect the reported state in the
-main session and apply the rebase and fix sections under the standing
-authorization. Start a new watcher with the refreshed head SHA after a mutation.
+For pending checks or queue state, read [watch.md](references/watch.md). Run one deterministic watcher pinned to the selected heads; never poll alongside it.
 
 ## GitLab path
 
-Run these commands in the MR's repository. Prefix `GITLAB_HOST=HOST` for a
-self-hosted GitLab. Verify flags with `glab <command> --help` before use.
-
-| Need | Command |
-| --- | --- |
-| User login | `glab api user \| jq -r .username` |
-| Inventory | `glab mr list --author=@me -F json -P 100 -p 1`; `all` drops `--author`. GitLab caps a page at 100: fetch `-p 2`, `-p 3`, and on until a page has fewer than 100 rows |
-| Filters | `--base` is `--target-branch`, `--head` is `--source-branch`, `--repo` is `-R`; `--assignee`, `--label`, `--search` pass unchanged |
-| MR state | `glab mr view N -F json` |
-| Unresolved threads | `glab mr view N --unresolved` |
-| Failed jobs | `glab ci get --pipeline-id PIPELINE_ID --with-job-details -F json` |
-| Job log | `glab ci trace JOB_ID` |
-| One retry | `glab ci retry JOB_ID` |
-
-Map the `glab mr view` JSON to the blockers above:
-
-- Head SHA is `sha`. Auto-merge is set when `merge_when_pipeline_succeeds` is
-  true. Fork state: `source_project_id` differs from `target_project_id`.
-  `squash_on_merge` true means the merge method is squash.
-- A branch is the user's own when `author.username` equals the login and the
-  MR is not from a fork.
-- `has_conflicts` is true, or `detailed_merge_status` is `need_rebase` or
-  `conflict`: rebase or update the branch.
-- `head_pipeline.status` is `created`, `pending`, or `running`: wait.
-- `head_pipeline.status` is `failed`: read each failed job's full log. Fix or
-  retry per [Fix failing checks](#fix-failing-checks), with `glab ci trace` and
-  `glab ci retry` in place of the `gh run` commands.
-- `detailed_merge_status` is `not_approved` or `requested_changes`: a review
-  blocker. `draft` true or `draft_status`: a draft blocker.
-  `discussions_not_resolved`: an unresolved-thread blocker.
-- `ci_must_pass` or `ci_still_running`: apply the pipeline rules above.
-- `checking`, `unchecked`, `preparing`, or `approvals_syncing`: wait and refresh
-  the MR state.
-- Any other status except `mergeable`: report the exact status and its owner.
-
-GitLab has no merge-update command for another author's branch, and
-`glab mr rebase` rewrites it. Report a stale or conflicting branch to its
-author.
+On GitLab, read [gitlab.md](references/gitlab.md) before inventory or diagnosis; substitute its commands and field mappings throughout.
 
 ## Clean up task resources
 
@@ -259,26 +147,7 @@ Rebase-only and code-fix paths both pass through this section before reporting.
 
 ## Merge and report
 
-Let an enabled auto-merge complete. Merge manually only when the pull request
-has auto-merge enabled but auto-merge cannot complete, or when the invocation
-includes `merge`. Before a manual merge, run a final read-only preflight: open,
-not a draft, mergeable, approved, and passing every required check. Then use
-the configured merge method or the repository default, passed as its flag:
-`gh pr merge N --<METHOD> --match-head-commit HEAD_SHA`, where `METHOD` is
-`merge`, `squash`, or `rebase`. Outside a merge queue, `gh` refuses a
-non-interactive merge without a method flag. Never use `--admin` or
-`--delete-branch`. Do not merge a pull request that still has a review,
-required check, conflict, queue, policy, or permission blocker.
-
-On GitLab, merge with the GitLab command in ship's
-[merge reference](../ship/references/merge.md#enable-auto-merge) and
-`--sha HEAD_SHA`. Never pass `--auto-merge=false`.
-
-With `approve`, approve a pull request only when approval is its last blocker.
-Use the commands and limits in the merge reference's
-[Approve](../ship/references/merge.md#approve) section. Then refresh it and
-run the preflight. Without `merge` or auto-merge, a passing pull request is
-complete; report it as ready.
+Before approval or manual merge, read [merge.md](references/merge.md). Preserve its authorization, preflight, and head-SHA checks.
 
 End with one line per pull request: number, URL, author, state, head SHA,
 blocker or completed action, and next step. State clearly when the skill is
