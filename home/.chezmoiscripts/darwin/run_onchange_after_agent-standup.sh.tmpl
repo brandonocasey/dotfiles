@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Reload the end-of-day standup when its launch agent changes.
-# plist hash: {{ include "private_Library/LaunchAgents/com.bcasey.agent-standup.plist.tmpl" | sha256sum }}
+# plist hash: {{ include "private_Library/private_LaunchAgents/com.bcasey.agent-standup.plist.tmpl" | sha256sum }}
 
 plist="$HOME/Library/LaunchAgents/com.bcasey.agent-standup.plist"
 mkdir -p "$HOME/.local/state/agents/standup"
