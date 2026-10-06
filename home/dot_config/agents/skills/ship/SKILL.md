@@ -106,9 +106,7 @@ Immediately before any push, refresh `BRANCH` and resolve the live
   - The user said no ticket: ship without one.
   - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
 - **Description**: follow the repository template. Otherwise use the MR/PR budget in
-  AGENTS.md **Writing**: 1–4 sentences on what changed and why, then 1–10 bullets,
-  as few as possible, for behavior changes, risks, and validation (what was checked, and the result).
-  No checklists, file-by-file walkthroughs, or filler.
+  AGENTS.md **Writing**.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 
 ## 4. Finish the requested scope

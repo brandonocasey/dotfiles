@@ -14,17 +14,16 @@
 - Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
 - Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never ask me to do work you can do yourself, such as running a command or check, pasting output, reading a file or page, looking something up, writing or editing text, or answering a question that evidence can settle. Do it, then report the result. Do recommended next steps when reversible and in scope. Skill approval gates still apply. Settle open questions with evidence before asking.
 - Run waits longer than 1 minute in the background (`run_in_background` or Monitor), never as a foreground `sleep` or `until` loop.
-- `jira-api` reads `JIRA_EMAIL` from settings and its token from `pass`; never search `env`, `~/.netrc`, or config files for credentials.
+- Never search `env`, `~/.netrc`, or config files for credentials.
 - Preserve the requested destination and format. Use hosted documents only when explicitly requested; otherwise answer in chat or create the requested local file. Invoke hosted-document skills (`docs`, `google-workspace`, and Pages creation/editing) only for an explicit request to use that hosted destination, including an established destination in this conversation. Decide the destination before invoking a document skill; app-managed Codex skills remain available, but their defaults do not authorize invocation or hosted writes.
-- Before starting servers or creating temporary task resources, read `host-preflight/references/task-resources.md` under the skills directory. It owns LAN binding, ports, attachments, and cleanup procedures.
-- At task end, stop task-owned processes and remove disposable resources per the task-resources reference. Keep requested deliverables, unused copy files, and open-PR worktrees; `worktree` owns preservation and removal checks.
+- Read `host-preflight/references/task-resources.md` under the skills directory before starting servers or creating temporary task resources, and follow it at task end. It owns LAN binding, ports, attachments, and cleanup.
 - For commands or text the user must copy, read `host-preflight/references/copyable-output.md` under the skills directory.
 
 ## Directories
 
 Never write to OS temporary directories (`/tmp`, `$TMPDIR`, `%TEMP%`) or harness scratchpads, even when the harness instructs it. Use these paths and create missing parents. The paths below follow XDG: `$XDG_CACHE_HOME` or `$XDG_STATE_HOME` when set, else `~/.cache` or `~/.local/state`, including under the Windows user profile.
 
-- Scratch: `<worktree>/.agent/<task>/` for disposable task files in a task worktree; otherwise use the XDG cache scratch directory (`~/.cache/agents/scratch/<task>/` by default). Follow `host-preflight/references/task-resources.md` for selection, exclusions, and cleanup.
+- Scratch: `<worktree>/.agent/<task>/` for disposable task files in a task worktree; otherwise use the XDG cache scratch directory (`~/.cache/agents/scratch/<task>/` by default).
 - Copy: `~/.cache/agents/copy/`, only for the copy files in **General**.
 - Backups: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`. Files copied before force-removal, overwrite, or migration, with relative paths preserved. Never auto-prune. Report the backup path.
 - Keep files at fixed paths when tools require them, such as repository-root linter configuration.
@@ -33,15 +32,11 @@ Never write to OS temporary directories (`/tmp`, `$TMPDIR`, `%TEMP%`) or harness
 
 Load each relevant skill once. Reuse its instructions while they remain available in context. Reread only when the file changed, the instructions are unavailable after compaction, or a specific detail needs checking. If the harness does not list it, read `~/.config/agents/skills/<name>/SKILL.md`. Skill code blocks use POSIX `sh`. Use Git Bash on Windows; translate to PowerShell only when Git Bash is unavailable. Keep every git flag unchanged.
 
-- For cross-session work, use `session-resume`; keep accepted corrections, authorized scope, and completed checks current.
-- Before using unfamiliar host tools, use `host-preflight`. On `koof`, read `~/.config/agents/environments/koof.md` before server work.
-- Sub-agents: `split-task` owns splitting; apply its thresholds automatically. `sub-agents` owns roles, pins, overrides, prompts, monitoring, handoffs, escalation, and result checks. Load it before a spawn, before watching CI, logs, or builds, or when a failed attempt leaves a specific unresolved question that needs independent reasoning. Keep judgement, integration, and the final check in the main session.
-- Run `review` when requested, and automatically per `review/references/when-to-run.md` under the skills directory: read it before completing changes to code, tests, configuration, or agent instructions. It owns triggers, skip exceptions, follow-up reviews, and when to add a second reviewer. Auto-reviews of your own work use an independent reviewer; the skill owns unavailable-reviewer handling. A low-risk behavior change may use a concrete manual reproduction when no suitable automated test exists; this does not waive review. Read-only tasks need no code review.
-- In change recaps, state `Review: ran independently; <verified outcome>`, disclose an inline fallback, or state `Review: skipped (<specific reason and evidence>)`. Distinguish verified defects fixed, other useful corrections, rejected findings, and no verified defects when applicable; do not report a review that required fixes as clean merely because the fixes are complete. After task commits, include `Ship: pushed <sha>` or `Ship: not run (<reason>)`.
-- Code: load `code-standards` before writing or changing code, tests, config, or dependencies, writing plans, or reviewing code.
-- Browser and docs: load `browser` before any browser MCP use, `ui-verify` for UI changes and visual defects, and `write-docs` for documentation pages.
-- Branches: load `worktree` before any new or existing branch work, including sequential tasks. It owns base selection and branch preservation. Never switch branches in the main checkout.
-- Commits: load `commit`. Use `ship` for push plus MR/PR, or `land` for local landing, under Git's authorization rules.
+- On `koof`, read `~/.config/agents/environments/koof.md` before server work.
+- Load `sub-agents` before watching CI, logs, or builds, and when a failed attempt leaves a specific question that needs independent reasoning.
+- Run `review` when requested, and automatically per `review/references/when-to-run.md` under the skills directory: read it before completing changes to code, tests, configuration, or agent instructions. A low-risk behavior change may use a concrete manual reproduction when no suitable automated test exists; this does not waive review. Read-only tasks need no code review.
+- In change recaps, state `Review: ran independently; <verified outcome>`, disclose an inline fallback, or state `Review: skipped (<specific reason and evidence>)`. Distinguish verified defects fixed, other useful corrections, rejected findings, and no verified defects when applicable. After task commits, include `Ship: pushed <sha>` or `Ship: not run (<reason>)`.
+- Never switch branches in the main checkout. Load `worktree` before branch work, including sequential tasks.
 
 ## Writing
 
@@ -65,7 +60,7 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 - Give time estimates in concrete units. Keep each final answer self-contained.
 - In chat replies only:
   - Finish the current issue before raising another. Put out-of-scope findings in one `Separately:` line near the end, not mid-answer.
-  - In final answers, when anything is left open, the last line is `Next: <one action>`: what I must do, or your step that needs my approval. Do reversible, in-scope steps instead of listing them. Use one `Next:` per reply.
+  - In final answers, when anything is left open, the last line is `Next: <one action>`: what I must do, or your step that needs my approval. Use one `Next:` per reply.
   - Before sending, check that the first and last lines alone tell me what happened and what comes next.
 - Use literal words, not idioms such as "circle back" or "on the same page".
 - For “eli5,” list the real events in order, then give their effect in one sentence. Avoid metaphors and unexplained code names.
@@ -75,11 +70,11 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 
 ## Git
 
-- Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Branch tracking and submodule side effects need none: `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, `git submodule update --init`.
+- Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Config written as a side effect of `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
 - Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. `review --fix` uses the review skill's push step with the same authorization. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
 - Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket.
-- Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits. Stage specific paths, never `git add -A`.
+- Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits.
 - Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
 - Fetch before you make a claim about remote state, such as branches, MR/PR status, or CI.
 - Do not suggest git operations for files you did not change.
-- Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated. Use `commit` for the title type and `ship` for the description; classify squash titles from the whole diff.
+- Update MR/PR titles and descriptions only when asked, or while actively working on one you pushed or that is outdated.
