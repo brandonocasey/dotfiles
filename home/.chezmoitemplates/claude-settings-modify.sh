@@ -135,6 +135,30 @@ managed=$(
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/cache-keepalive.sh prompt",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/cache-keepalive.sh idle",
+            "asyncRewake": true,
+            "timeout": 3300
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
