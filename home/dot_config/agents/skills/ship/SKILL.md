@@ -108,6 +108,7 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 - **Description**: follow the repository template. Otherwise use the MR/PR budget in
   AGENTS.md **Writing**.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
+- When `TICKET` is set, move it to the open-MR/PR status per [mr-ticket](../mr-ticket/SKILL.md) step 6.
 
 ## 4. Finish the requested scope
 
@@ -162,4 +163,5 @@ for a deploy job.
 
 - Never merge, approve, close, or mark ready unless the user asks.
 - Create or transition tickets only through `mr-ticket`, per step 3. Reuse keys you find.
+  Transitions move `TICKET` forward only.
 - Everything in **Shared rules** of `shared/git-flow.md`.

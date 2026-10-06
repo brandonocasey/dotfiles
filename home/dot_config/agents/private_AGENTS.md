@@ -72,7 +72,7 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 
 - Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Config written as a side effect of `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
 - Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. `review --fix` uses the review skill's push step with the same authorization. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
-- Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket.
+- Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket. Exception: move the task's own ticket forward when its MR/PR opens or merges.
 - Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits.
 - Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
 - Fetch before you make a claim about remote state, such as branches, MR/PR status, or CI.

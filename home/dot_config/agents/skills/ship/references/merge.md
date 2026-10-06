@@ -47,6 +47,9 @@ the MRs/PRs shipped for this task. Follow its repair limits, watcher, and merge
 gates on both platforms. Keep the worktree while a repair can still be needed.
 For owned submodules, follow the existing submodule merge order first.
 
+After the merge, move `TICKET` to the merged status per
+[mr-ticket](../../mr-ticket/SKILL.md) step 6.
+
 Return to `ship` cleanup after merge or a concrete blocker. Preserve unfinished
 repairs and report their path. Report the merged head or blocker, rather than
 treating enabled auto-merge as completed work.
