@@ -26,6 +26,7 @@ task checks the audio itself.
 | Chrome | `chrome-headed` | disabled |
 | Firefox | `firefox-devtools`, `firefox-headed` | disabled |
 | WebKit | `safari`, `safari-headed` | disabled |
+| Real Safari | `safari-native` (macOS with `safaridriver --mcp` only) | disabled |
 
 Enable one disabled server for a Codex session with
 `codex -c mcp_servers.<name>.enabled=true`. A repository can instead put the
@@ -38,6 +39,7 @@ session.
 Use headed mode only for DRM, fullscreen, picture-in-picture, a real user gesture,
 or when the user asks to watch.
 The `safari` MCP uses Playwright WebKit; it has no FairPlay DRM.
+Never enable `safari-native` off macOS or when `safaridriver --help` lacks `--mcp`.
 For real Safari or Safari-only bugs, follow `real-safari` for driver selection and approval before starting the visible browser.
 
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.

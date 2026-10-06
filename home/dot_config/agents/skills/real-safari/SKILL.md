@@ -6,11 +6,20 @@ description: "Run visible real Safari for FairPlay or Safari-only checks; confir
 Scope: Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It is visible and needs user confirmation, unless the user asked for a real-Safari run.
 
 
-Check `safaridriver --help` for the installed driver's transports; some versions
-support `--mcp`. The configured `safari` MCP uses Playwright WebKit. For the
-WebDriver flow below, start `safaridriver -p <open port>` and drive it with the
-W3C WebDriver REST API via curl. Every endpoint below is relative to
-`http://localhost:<port>`.
+Real Safari exists only on macOS. On Linux, Windows, or WSL, report that real
+Safari is unavailable; the `safari` MCP there is Playwright WebKit, not Safari.
+
+Prefer the `safari-native` MCP (Apple's, Safari 27+) when `uname` is `Darwin`
+and `/usr/bin/safaridriver --help` lists `--mcp`. Never enable it otherwise.
+Enable it for one session: Claude Code needs a restart with
+`claude --mcp-config ~/.config/agents/mcp/safari-native.json`; Codex uses
+`codex -c mcp_servers.safari-native.enabled=true`. It needs Safari > Settings >
+Developer > "Allow remote automation and external agents"; if tool calls fail,
+ask the user to turn that on.
+
+Without `--mcp`, use the WebDriver flow below: start
+`safaridriver -p <open port>` and drive it with the W3C WebDriver REST API via
+curl. Every endpoint below is relative to `http://localhost:<port>`.
 
 Remote automation must be enabled once per machine, or `POST /session` fails. If it
 does, tell the user to run `safaridriver --enable` — it asks for their password, so

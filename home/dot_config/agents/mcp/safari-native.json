@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "safari-native": {
+      "type": "stdio",
+      "command": "/usr/bin/safaridriver",
+      "args": ["--mcp"],
+      "env": {}
+    }
+  }
+}

@@ -15,6 +15,7 @@ README.md
 .config/iterm2
 .config/linearmouse
 .config/brewfile/Brewfile-mac
+.config/agents/mcp/safari-native.json
 .vscode-oss/
 Library/
 # Mac-only shims — these symlinks target /Users/bcasey paths that only exist on

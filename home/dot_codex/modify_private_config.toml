@@ -19,6 +19,15 @@ if [[ -x "$notify_command" ]]; then
 fi
 export NOTIFY_LINE="$notify_line"
 
+# Apple's Safari MCP needs macOS with Safari 27+; other hosts get no entry.
+safari_native_toml=""
+safaridriver_help=""
+[[ -x /usr/bin/safaridriver ]] && safaridriver_help=$(/usr/bin/safaridriver --help 2>&1 || true)
+if [[ "$safaridriver_help" == *--mcp* ]]; then
+  safari_native_toml=$'[mcp_servers.safari-native]\ncommand = "/usr/bin/safaridriver"\nargs = ["--mcp"]\nenabled = false\n'
+fi
+export SAFARI_NATIVE_TOML="$safari_native_toml"
+
 # Keep app-owned synced bodies intact; wrappers control Codex discovery.
 SKILLS_CONFIG_TOML=""
 for skill in docs google-workspace skill-creator docx xlsx pptx pdf; do
@@ -136,6 +145,7 @@ command = "npx"
 args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800"]
 enabled = false
 
+@SAFARI_NATIVE@
 [mcp_servers.openaiDeveloperDocs]
 url = "https://developers.openai.com/mcp"
 
@@ -267,6 +277,10 @@ printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
   }
   /^@NOTIFY@$/ {
     if (ENVIRON["NOTIFY_LINE"] != "") print ENVIRON["NOTIFY_LINE"]
+    next
+  }
+  /^@SAFARI_NATIVE@$/ {
+    if (ENVIRON["SAFARI_NATIVE_TOML"] != "") print ENVIRON["SAFARI_NATIVE_TOML"]
     next
   }
   {
