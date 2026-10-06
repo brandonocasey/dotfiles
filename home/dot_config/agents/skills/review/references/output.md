@@ -35,7 +35,8 @@ Stop this review's servers, browser pages, and background processes when it ends
 Keep a worktree for an open MR/PR so follow-up repairs can reuse it. For a local
 review or a merged/closed MR/PR, remove only a worktree this review created,
 following the `worktree` skill's **Remove** section. Never remove a pre-existing
-worktree. Keep a worktree while repairs or re-verification remain pending.
+worktree, except under `--merge` step 7 cleanup. Keep a worktree while repairs or
+re-verification remain pending.
 Run resource cleanup separately from outward steps so a blocked approval or
 merge cannot prevent it. Report retained paths and reasons, or the removed path
 and any blocker. Explicit cleanup requests still require preservation checks.
