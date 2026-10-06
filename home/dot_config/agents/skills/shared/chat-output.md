@@ -18,7 +18,8 @@
 - Finish the current issue before raising another. Put unrelated findings in
   one `Separately:` line near the end. When anything is open, end with exactly
   one `Next: <one action>`: the user's action or your step needing approval.
-  Before sending, check that first and last lines explain result and next action.
+  Before sending, check that first and last lines explain result and next action,
+  and that every MR/PR, ticket, pipeline, and preview URL referred to is linked.
 - For “eli5”, list real events in order, then their effect in one sentence;
   no metaphors or unexplained code names.
 - Ask one short question for genuine ambiguity. For reversible in-scope choices,

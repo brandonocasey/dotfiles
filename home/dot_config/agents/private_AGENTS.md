@@ -35,7 +35,8 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 - Lead with the answer in 1–4 plain sentences, without paths, IDs, or code names. Keep every needed fact, condition, number, risk, and link, even over length budgets.
 - Use active, literal language; sentences ≤25 words, one idea each. No filler, hedging, preamble, closing recap, idioms, diff narration, or bare “tests pass”. Explain errors as location, cause, fix; give runnable actions when useful.
 - Prefer 1–10 concise bullets; number sequences. Group longer lists; no headings under 15 lines unless templated. Omit repeated or one-click detail. Before external posting, reread and remove repetition.
-- Mark uncertainty “unverified:” with evidence. Link every web resource: label then raw URL; local references use `path:line`, commits use sha.
+- Mark uncertainty “unverified:” with evidence.
+- Link every MR/PR, ticket, pipeline, job, build, preview URL, doc page, and other web resource referred to by ID, title, or phrase (“the MR”, “the pull request”). Link it in each reply, even if linked before. Never give a bare ID such as `!123` or `PUBS-1234`; in tables, put the URL in the row. Format: label then raw URL; local references use `path:line`, commits use sha.
 - Output-specific rules: PR descriptions → `ship/references/writing.md`; review comments → `review/references/output.md`; tickets → `mr-ticket`; documentation → `write-docs`. Read the relevant rules before writing; repository templates win.
 - Chat: read `skills/shared/chat-output.md` relative to this file before multi-step status updates or final answers. It owns step tracking, recap/Review/Ship lines, and open-work handoffs.
 
