@@ -49,7 +49,8 @@ managed=$(
     "deny": [
       "Skill(frontend-design:frontend-design)",
       "Skill(frontend-design:frontend-design *)",
-      "Bash(gh pr merge*--admin*)"
+      "Bash(gh pr merge*--admin*)",
+      "mcp__claude_ai_Datadog"
     ],
     "defaultMode": "auto"
   },
