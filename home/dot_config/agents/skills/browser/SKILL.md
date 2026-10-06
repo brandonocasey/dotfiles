@@ -42,4 +42,15 @@ For real Safari or Safari-only bugs, follow `real-safari` for driver selection a
 
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
 
+## Screenshots
+
+Every image stays in context and is re-read on each later turn. Tool names
+below are `chrome-devtools`; use the matching tool on other engines.
+
+- Check text, state, and layout with `take_snapshot` or `evaluate_script` first.
+- Take a screenshot only for a visual judgment the DOM cannot give, or for evidence the user or an MR/PR needs.
+- Save evidence screenshots with `filePath`. Do not `Read` them back unless you must judge them by eye.
+- Capture an element by `uid` or the viewport. Use `fullPage`, without `uid`, only when the check needs the whole page.
+- In the main session, delegate more than three visual checks to the `manual-tester` sub-agent. It returns findings and file paths, not images.
+
 Close pages and connections you opened when the task ends. Free ports you took.
