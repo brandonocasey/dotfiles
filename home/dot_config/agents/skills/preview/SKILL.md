@@ -1,6 +1,6 @@
 ---
 name: preview
-description: Show a live preview when possible. Provide visual choices or screenshots only when requested; use a LAN gallery for requested choices.
+description: Show a live preview when possible. Provide screenshots only when requested, and visual choices when requested or for an open-ended design; use a LAN gallery for choices.
 ---
 
 # Preview
@@ -38,9 +38,22 @@ Use the actual app at the requested viewport and state. Attach them natively whe
 otherwise serve them through HTTP. Screenshots are not a prerequisite for
 sharing a live preview.
 
-## Requested choices
+## Choices
 
-Offer alternatives only when the user requests choices, options, or variants.
+Offer alternatives when the user requests choices, options, or variants. Also
+offer them for an open-ended visual design with no reference or set direction,
+such as a new look, layout, icon, or slide style.
+
+- Before the first round, list the hard constraints from the request and
+  earlier feedback, such as "mobile layout is the default". Every variant MUST meet them.
+- Build 3–4 variants per decision. Each differs on a named axis: layout,
+  density, color, type, or motion. Name the axis in the option description.
+- If the user gave no reference image or URL, ask for one in the message that
+  shares the gallery. Do not wait for it.
+- When the user rejects every option, change the axis for the next round
+  instead of tweaking the rejected options. Ask one question about what fails
+  in the message that shares that round.
+
 Use `agent-preview` when those choices benefit from a browser gallery. Read
 [choices.md](references/choices.md) for that gallery workflow. Prefer live
 variants when interaction matters; the gallery's sandboxed HTML cannot run

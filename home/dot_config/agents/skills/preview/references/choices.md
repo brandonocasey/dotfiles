@@ -1,7 +1,7 @@
-# Requested visual choices
+# Visual choices
 
-Use this workflow only when the user requests choices, options, or variants.
-Return to [preview](../SKILL.md) for live previews and requested screenshots.
+Use this workflow when [preview](../SKILL.md) calls for choices.
+Return to preview for live previews and requested screenshots.
 
 ## Ask one decision per question
 
