@@ -1,4 +1,6 @@
 ---
+model: claude-sonnet-5-5
+effort: medium
 name: disk-cleanup
 description: >
   Find and reclaim local disk space from regenerable caches, build outputs,

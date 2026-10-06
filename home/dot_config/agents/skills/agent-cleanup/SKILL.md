@@ -1,4 +1,6 @@
 ---
+model: claude-sonnet-5-5
+effort: medium
 name: agent-cleanup
 description: >
   Clean merged or locally landed worktrees across Claude and Codex project

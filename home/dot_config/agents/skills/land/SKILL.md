@@ -1,4 +1,6 @@
 ---
+model: claude-sonnet-5-5
+effort: medium
 name: land
 description: >
   Commit and fast-forward a branch into the local default branch, then clean

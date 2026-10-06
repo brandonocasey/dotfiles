@@ -1,4 +1,6 @@
 ---
+model: claude-sonnet-5-5
+effort: medium
 name: jira-versions
 description: >
   Create, rename, release, archive, or list Jira fix versions (releases), and

@@ -1,4 +1,6 @@
 ---
+model: claude-sonnet-5-5
+effort: medium
 disable-model-invocation: true
 name: clean-merged-worktrees
 description: >
