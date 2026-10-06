@@ -34,6 +34,8 @@ session_digest() {
     exclude=$(echo "$RUN_DIR" | tr '/.' '--')
     find "$HOME"/.claude*/projects -maxdepth 2 -name '*.jsonl' -newermt "$TODAY 00:00" \
         ! -path '*/subagents/*' ! -path "*/$exclude/*" 2>/dev/null | while read -r f; do
+        # Headless runs (briefs, routines, scripts) are not work the user did.
+        grep -q '"entrypoint":"cli"' "$f" || continue
         prompts=$(jq -r --arg since "$since" '
             select(.timestamp >= $since and .type == "user" and (.isMeta | not))
             | .message.content
