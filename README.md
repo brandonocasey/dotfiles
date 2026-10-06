@@ -8,6 +8,13 @@
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 
+## Tmux
+
+On Linux and macOS, `chezmoi apply` reloads the running tmux server when its
+managed configuration changes. Reloading reapplies bindings, plugins, and agent
+session naming hooks. If no server is running, the script exits without starting
+one. An unchanged configuration does not trigger another reload.
+
 ## Agent skills
 
 On Linux and macOS, `chezmoi apply` installs `frontend-design` for Codex through

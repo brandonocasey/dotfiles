@@ -1,0 +1,12 @@
+#!/bin/sh
+# Including the configuration hash makes chezmoi rerun this after tmux changes.
+# tmux.conf hash: {{ include "dot_config/tmux/tmux.conf" | sha256sum }}
+
+for tmux_command in /opt/homebrew/bin/tmux /home/linuxbrew/.linuxbrew/bin/tmux /usr/local/bin/tmux "$(command -v tmux || true)"; do
+  [ -x "$tmux_command" ] || continue
+  "$tmux_command" list-sessions >/dev/null 2>&1 || continue
+  "$tmux_command" source-file "$HOME/.config/tmux/tmux.conf"
+  exit $?
+done
+
+exit 0
