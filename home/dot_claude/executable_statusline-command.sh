@@ -189,6 +189,17 @@ rate_seg() {
   printf '%s' "$seg"
 }
 
+# Tokens in context from the last API call (same input-only formula as
+# used_percentage). Past the hint threshold the segment suggests /compact,
+# because every later turn re-reads the whole context.
+ctx_used_tokens=$(echo "$input" | jq -r '
+  .context_window.current_usage
+  | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) else empty end
+' 2>/dev/null)
+compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-400000}
+case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=400000 ;; esac
+case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
+
 ctx_used_pct=""
 if [ -n "$ctx_remaining" ]; then
   ctx_used_pct=$(awk -v r="$ctx_remaining" 'BEGIN{printf "%d", 100 - r + 0.5}')
@@ -246,7 +257,12 @@ fi
 # Context window usage (labeled with the window size: 1M / 200k / …)
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
-  parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct")
+  hint=""
+  if [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_hint_tokens" ]; then
+    c=31
+    hint=$(printf ' \033[31m/compact\033[0m')
+  fi
+  parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m%s' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct" "$hint")
 fi
 
 # Project name (green): the git repository root, falling back to the cwd
