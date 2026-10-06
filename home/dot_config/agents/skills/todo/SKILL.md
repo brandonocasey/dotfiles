@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: todo
-description: >
-  Add a one-line entry to TODO.md at the project root. Runs only when the user
-  invokes it.
+description: "Only on explicit invocation, add one-line project TODO.md entries."
 ---
+
+Scope: Add a one-line entry to TODO.md at the project root. Runs only when the user invokes it.
+
 
 Add a todo item to `TODO.md` at the project root.
 

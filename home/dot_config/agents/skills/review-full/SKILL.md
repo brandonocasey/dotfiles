@@ -1,9 +1,10 @@
 ---
 name: review-full
-description: >
-  Review code and manually test affected behavior. Use for review-full requests
-  or reviews with manual testing; --fix repairs defects, CI failures, and conflicts.
+description: "Review code and manually test behavior; --fix repairs defects, CI failures, and conflicts."
 ---
+
+Scope: Review code and manually test affected behavior. Use for review-full requests or reviews with manual testing; --fix repairs defects, CI failures, and conflicts.
+
 
 # Review with manual testing
 

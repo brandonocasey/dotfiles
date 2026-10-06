@@ -1,7 +1,10 @@
 ---
 name: ui-verify
-description: Verify changed UI behavior, responsive layouts, themes, and interaction states in a browser. Use for UI changes, visual defects, test pages, and prototypes.
+description: "Verify UI changes, responsive layouts, themes, and interaction states in a browser."
 ---
+
+Scope: Verify changed UI behavior, responsive layouts, themes, and interaction states in a browser. Use for UI changes, visual defects, test pages, and prototypes.
+
 
 # Verify UI
 

@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: test-page
-description: >
-  Build a standalone test page that loads one or more builds, with numbered
-  scenario buttons and a result and log panel. Explicit-only.
+description: "Explicit-only: build standalone scenario-button test pages with results and logs for one or more builds."
 ---
+
+Scope: Build a standalone test page that loads one or more builds, with numbered scenario buttons and a result and log panel. Explicit-only.
+
 
 Optional arguments: builds (default branch, MR/PR numbers, branches) and scenarios.
 Without builds, use the default branch and the current branch's MR/PR.

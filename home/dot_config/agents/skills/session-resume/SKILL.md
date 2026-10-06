@@ -1,9 +1,10 @@
 ---
 name: session-resume
-description: >
-  Save and resume shared task state across agent sessions or hosts. Use when work
-  must continue later, transfer between agents, or recover prior task context.
+description: "Save or resume task state across sessions, agents, or hosts."
 ---
+
+Scope: Save and resume shared task state across agent sessions or hosts. Use when work must continue later, transfer between agents, or recover prior task context.
+
 
 # Resume task state
 

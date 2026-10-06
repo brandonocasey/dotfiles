@@ -1,7 +1,10 @@
 ---
 name: host-preflight
-description: Check local or SSH host tool availability before relying on an unfamiliar host tool, assigning agent work, or choosing a host-specific workflow.
+description: "Check local or SSH tool availability before unfamiliar tools, agent assignments, or host-specific workflows."
 ---
+
+Scope: Check local or SSH host tool availability before relying on an unfamiliar host tool, assigning agent work, or choosing a host-specific workflow.
+
 
 Run `agent-preflight` before work depends on tools that can differ by host. It
 prints bounded JSON with the OS, current directory, Git context, selected CLI

@@ -1,8 +1,11 @@
 ---
 disable-model-invocation: true
 name: investigate
-description: Reproduce and fix a bug from an issue, error, log, URL, or description using available tools. Narrow unresolved causes to actionable blockers. User-invoked only.
+description: "User-invoked only: reproduce and fix reported bugs; isolate unresolved causes into actionable blockers."
 ---
+
+Scope: Reproduce and fix a bug from an issue, error, log, URL, or description using available tools. Narrow unresolved causes to actionable blockers. User-invoked only.
+
 
 # Investigate and fix an issue
 

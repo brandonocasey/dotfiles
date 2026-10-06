@@ -32,6 +32,8 @@ than hardcode a scratch directory; tools with explicit output paths keep them.
 
 ## Servers and artifacts
 
+On koof, read `~/.config/agents/environments/koof.md` before server work.
+
 Bind application and preview HTTP servers to `0.0.0.0`; tool-control endpoints
 keep their required binding. Report `http://<lan-ip>:<port>`, never `localhost`.
 Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux,

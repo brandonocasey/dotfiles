@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: perf-compare
-description: >
-  Compare the load performance and bundle size of two page or build variants
-  over repeated browser runs. Explicit-only.
+description: "Explicit-only: compare browser load performance and bundle size across repeated variant runs."
 ---
+
+Scope: Compare the load performance and bundle size of two page or build variants over repeated browser runs. Explicit-only.
+
 
 Arguments: a baseline and a candidate: URLs, builds, branches, or MR/PRs.
 

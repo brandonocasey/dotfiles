@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: benchmark-change
-description: >
-  Measure ROM Weaver changes to runtime, memory, compressed size, or data packs
-  against a baseline. Use for optimization work and performance claims.
+description: "Benchmark ROM Weaver runtime, memory, compressed size, or data packs against a baseline."
 ---
+
+Scope: Measure ROM Weaver changes to runtime, memory, compressed size, or data packs against a baseline. Use for optimization work and performance claims.
+
 
 # Benchmark a ROM Weaver change
 

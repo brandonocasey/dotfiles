@@ -1,7 +1,10 @@
 ---
 name: preview
-description: Show a live preview when possible. Provide screenshots only when requested, and visual choices when requested or for an open-ended design; use a LAN gallery for choices.
+description: "Show live previews; screenshots only on request. Offer requested or open-ended design choices through a LAN gallery."
 ---
+
+Scope: Show a live preview when possible. Provide screenshots only when requested, and visual choices when requested or for an open-ended design; use a LAN gallery for choices.
+
 
 # Preview
 

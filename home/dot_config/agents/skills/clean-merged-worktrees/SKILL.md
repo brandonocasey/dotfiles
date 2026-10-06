@@ -3,12 +3,11 @@ model: claude-sonnet-5-5
 effort: medium
 disable-model-invocation: true
 name: clean-merged-worktrees
-description: >
-  Clean local worktrees and branches after verified merges, then assess every
-  retained branch as still relevant, superseded, or no longer useful. Use for
-  merged-work cleanup; closed-without-merge, review, and relevance-based
-  removal need separate confirmation.
+description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation."
 ---
+
+Scope: Clean local worktrees and branches after verified merges, then assess every retained branch as still relevant, superseded, or no longer useful. Use for merged-work cleanup; closed-without-merge, review, and relevance-based removal need separate confirmation.
+
 
 # Clean Merged Worktrees
 

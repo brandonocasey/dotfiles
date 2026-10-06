@@ -1,8 +1,10 @@
 ---
 name: worktree
-description: >
-  Create, reuse, or remove an isolated Git worktree. Use before branch work.
+description: "Create, reuse, or remove isolated Git worktrees before branch work."
 ---
+
+Scope: Create, reuse, or remove an isolated Git worktree. Use before branch work.
+
 
 # Git worktree
 

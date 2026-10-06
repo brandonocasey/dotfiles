@@ -1,63 +1,21 @@
 ---
 name: sub-agents
-description: >
-  Use when spawning, monitoring, or escalating sub-agents. Owns model
-  selection, prompts, handoffs, and result verification across harnesses.
+description: "Select, prompt, monitor, and verify sub-agents across Claude and Codex."
 ---
 
-Every spawn follows these rules. The spawning session owns verification and cleanup.
+Scope: Use when spawning, monitoring, or escalating sub-agents. Owns model selection, prompts, handoffs, and result verification across harnesses.
 
-## Overrides (check first)
 
-- A user-named model overrides the role's pin. Keep the role that fits the work; override only its model and effort.
-- Read effort shorthand: `lo`/`low` low, `med`/`medium` medium, `hi`/`high` high, `xhigh`/`x high` xhigh, `max` max.
-- Use a user-named custom harness agent. Check the loaded roster; ask if the name is unknown.
-- Use a user-requested external tool or agent instead of a sub-agent. Verify its output before acting.
+Before selecting or spawning any agent, read the global [Git policy](../shared/git-policy.md) when the assignment includes Git work. Every spawn follows these rules. The spawning session owns verification and cleanup.
 
-## Roles
-
-Name a role below for every spawn unless the user names another agent.
-Claude Code reads `~/.config/agents/agents/<role>.md`; Codex reads
-`~/.codex/agents/<role>.toml`. Links for another harness do not prove support.
-Check its loaded roster, effective model, thinking setting, and tools before spawning.
-If the role is unavailable or incompatible, work inline and report the limitation.
-
-Unless an override applies, keep the role's model and effort pins.
-Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
-Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex uses `default_subagent_model`.
-
-| Role | Work | Claude Code | Codex |
-| --- | --- | --- | --- |
-| `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
-| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
-| `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-6.1-sol, low |
-| `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
-| `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
-| `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
-| `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
-| `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6.1-sol, high |
-
-Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
-Use them only when a skill explicitly requests an inherited-context fork.
-Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
-Without a sub-agent tool, work inline and identify any review that is not independent.
-
-For delegated named commands with explicit pass/fail criteria, use `cheap` and
-request the exit status and bounded output. This includes executing a named test,
-lint, or build command. Use `tester` when choosing checks or interpreting failures
-requires judgment; use `worker` for diagnosis and fixes. Independent review keeps
-its reviewer role. An explicit user role/model still wins. Do trivial commands
-inline when spawning costs more; this routing does not require extra agents.
-
-Compare total expected context, cache, output, and retry costs.
-Do not retain an expensive role solely for its cache.
+Before choosing a role, model, or effort, read [roles.md](references/roles.md). It owns overrides, role pins, routing, compatibility checks, and escalation between roles.
 
 ## Prompts
 
-- Include the task, exact files or targets, and acceptance criteria. Do not rely on unpassed conversation context.
-- Use fresh context for independent tasks. Pass only required evidence; inherit the full conversation only when the assignment needs it.
+- Include the task, owned files or targets, acceptance criteria, necessary evidence, and required checks. Do not rely on unpassed context.
+- Spawn independent tasks without conversation history. In Codex, explicitly set `fork_turns="none"`; its omission can inherit the full conversation. Use a Claude named role rather than a conversation fork. Inherit history only when the assignment requires it.
 - Give independent reviewers only the context permitted by the `review` skill.
-- For any role configured with `omitClaudeMd: true`, include the applicable repository constraints, required checks, and allowed output paths in its prompt. Pass only what the assignment needs.
+- For roles with `omitClaudeMd: true`, include applicable repository constraints, required checks, allowed output paths, and any relevant global consent, destination, resource, or test protections absent from the role. Pass only what the assignment needs; do not paste the global rules or transcript.
 - Request raw results: data, findings, and paths, not prose for the user.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
 

@@ -1,9 +1,10 @@
 ---
 name: real-safari
-description: >
-  Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It
-  is visible and needs user confirmation, unless the user asked for a real-Safari run.
+description: "Run visible real Safari for FairPlay or Safari-only checks; confirm unless already requested."
 ---
+
+Scope: Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It is visible and needs user confirmation, unless the user asked for a real-Safari run.
+
 
 Check `safaridriver --help` for the installed driver's transports; some versions
 support `--mcp`. The configured `safari` MCP uses Playwright WebKit. For the

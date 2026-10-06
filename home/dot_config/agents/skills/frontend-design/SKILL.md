@@ -1,5 +1,5 @@
 ---
-description: Design distinctive new or reshaped UI, including visual direction and typography. Use for interface design work requiring intentional aesthetic choices.
+description: "Design new or reshaped UI with intentional visual direction and typography."
 license: Complete terms in LICENSE.txt
 metadata:
     github-path: skills/frontend-design
@@ -9,6 +9,9 @@ metadata:
 name: frontend-design
 disable-model-invocation: true
 ---
+
+Scope: Design distinctive new or reshaped UI, including visual direction and typography. Use for interface design work requiring intentional aesthetic choices.
+
 # Frontend Design
 
 Use only when the user explicitly invokes this skill. For verification of the

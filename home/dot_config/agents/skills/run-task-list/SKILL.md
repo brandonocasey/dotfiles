@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: run-task-list
-description: >
-  Run a user-given task list in parallel and review each result. Use for batch
-  or tandem requests; explicit ship/land modes control delivery.
+description: "Run user task lists in parallel and review results; explicit ship/land modes control delivery."
 ---
+
+Scope: Run a user-given task list in parallel and review each result. Use for batch or tandem requests; explicit ship/land modes control delivery.
+
 
 Run tasks in parallel and review every result. Follow `sub-agents` for delegation,
 `review` for code review, and `commit` for commits.

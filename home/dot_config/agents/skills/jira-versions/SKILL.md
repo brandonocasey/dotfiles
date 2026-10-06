@@ -2,8 +2,11 @@
 model: claude-sonnet-5-5
 effort: medium
 name: jira-versions
-description: Manage Jira fix versions and move tickets or MR/PR work between releases. Use for version creation, renaming, release, archival, listing, or reassignment.
+description: "Manage Jira fix-version lifecycle and ticket or MR/PR release assignments."
 ---
+
+Scope: Manage Jira fix versions and move tickets or MR/PR work between releases. Use for version creation, renaming, release, archival, listing, or reassignment.
+
 
 The Atlassian MCP and `acli` cannot manage versions. Use `jira-api`
 (`~/.local/bin/jira-api`). It calls the Jira Cloud REST API v3 with curl.

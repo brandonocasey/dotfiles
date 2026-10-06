@@ -2,8 +2,11 @@
 model: claude-sonnet-5-5
 effort: medium
 name: agent-cleanup
-description: Clean merged or locally landed worktrees, sessions inactive for 30+ days, and disposable caches across Claude and Codex projects. Use for agent housekeeping or cross-project cleanup.
+description: "Clean merged worktrees, sessions inactive for 30+ days, and disposable caches across Claude and Codex projects."
 ---
+
+Scope: Clean merged or locally landed worktrees, sessions inactive for 30+ days, and disposable caches across Claude and Codex projects. Use for agent housekeeping or cross-project cleanup.
+
 
 # Clean agent resources
 

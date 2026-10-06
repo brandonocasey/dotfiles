@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: pr-unblock
-description: >
-  Get open GitHub PRs or GitLab MRs green or merged: rebase, fix failing
-  checks, and watch CI. Use to babysit or unblock them. Not for creation or review.
+description: "Repair and monitor existing GitHub PRs or GitLab MRs until green or merged; excludes creation and review."
 ---
+
+Scope: Get open GitHub PRs or GitLab MRs green or merged: rebase, fix failing checks, and watch CI. Use to babysit or unblock them. Not for creation or review.
+
 
 # Unblock pull requests
 

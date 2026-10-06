@@ -1,11 +1,11 @@
 ---
 disable-model-invocation: true
 name: llm-setup-audit
-description: >
-  Audit skills, agent definitions, rules files, and harness config for bugs,
-  duplication, drift, wasted tokens, and complex language. Fix skills directly;
-  propose rules-file and config edits for approval.
+description: "Audit global skills, roles, rules, and config for defects and token waste; rules/config edits require approval."
 ---
+
+Scope: Audit skills, agent definitions, rules files, and harness config for bugs, duplication, drift, wasted tokens, and complex language. Fix skills directly; propose rules-file and config edits for approval.
+
 
 Give each reader every needed rule once, in plain words and few tokens.
 Fix bugs and remove ineffective text. Preserve every rule that changes behavior.

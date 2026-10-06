@@ -1,8 +1,11 @@
 ---
 disable-model-invocation: true
 name: repo-audit
-description: Audit repository bugs, performance, duplication, compatibility, and consistency with independent agents. Verify findings before approved fixes; also re-verify or work through existing AUDIT.md findings.
+description: "Audit repository defects with independent agents; verify findings before approved fixes or process existing AUDIT.md findings."
 ---
+
+Scope: Audit repository bugs, performance, duplication, compatibility, and consistency with independent agents. Verify findings before approved fixes; also re-verify or work through existing AUDIT.md findings.
+
 
 Run a repo-wide audit as a staged multi-agent pipeline. Findings are never shown unverified,
 and fixes are never applied without the user picking them.

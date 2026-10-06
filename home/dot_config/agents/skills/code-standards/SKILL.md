@@ -1,14 +1,14 @@
 ---
 name: code-standards
-description: Apply code, comment, test, dependency, and planning rules before writing or changing code, tests, configuration, dependencies, plans, or reviewing code.
+description: "Apply before writing or reviewing code, tests, configuration, dependencies, or plans."
 ---
+
+Scope: Apply code, comment, test, dependency, and planning rules before writing or changing code, tests, configuration, dependencies, plans, or reviewing code.
+
 
 ## Code comments
 
-- Comment only what the code cannot show: a reason, constraint, workaround, required behavior, or warning about code that deliberately breaks convention. Do not repeat what the code says or describe the change; put the bug, investigation, and ticket in the commit message. Remove redundant comments, and update or remove comments when the code changes. Each comment must make sense to someone who has not read the conversation.
-- Put the comment at the method or block level, in 1–2 complete sentences
-- State a real requirement with a capitalized RFC 2119 keyword (MUST, SHOULD, MAY, …) https://www.rfc-editor.org/rfc/rfc2119 : `Callers MUST hold the lock`. Lowercase in ordinary prose
-- Link external context at the point of use: the source of copied code, the spec tricky logic implements, the issue a workaround works around, and `TODO` plus an issue reference for known-incomplete code
+Before adding or changing comments, read [comments.md](references/comments.md).
 
 ## Tests & Lint
 
@@ -20,19 +20,8 @@ description: Apply code, comment, test, dependency, and planning rules before wr
 
 ## Planning
 
-- No pseudo code or real code in plans
-- Break plans into the simplest steps, each with the context and location of its changes
-- Delete plans on completion
+Before writing a plan, read [planning.md](references/planning.md).
 
 ## Code Quality
 
-- Choose the smallest solution that solves the problem, and prefer deletion. Before writing code, prefer in order: no new code (no interface with one implementation, factory for one product, or configuration for a value that never changes); an existing codebase helper; the standard library; a native platform feature (CSS over JS, a database constraint over application code); an installed dependency; an established package or plugin for the job; then the minimum new code that works. Add a dependency only when it saves significant time or prevents technical debt; prefer small, well-maintained packages with few transitive dependencies.
-- In unreleased code, change every caller of a renamed or replaced API. Do not keep compat shims, legacy aliases, or deprecation paths unless the user asks.
-- Do not edit CHANGELOG files by hand unless the repository documents manual edits; release tooling writes them.
-- Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first
-- Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
-- Keep each piece of code small and single-purpose; break up components that grow too complex; reduce duplication
-- Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
-- Add logs at appropriate levels. Add trace logs only where a failure would otherwise be hard to diagnose
-- Export only what a current caller uses. Keep the public API minimal
-- New project, or no repo convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
+Before writing or changing production code, read [code-quality.md](references/code-quality.md).

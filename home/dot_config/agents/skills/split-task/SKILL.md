@@ -1,9 +1,10 @@
 ---
 name: split-task
-description: >
-  Decide whether to split an implementation task with independent parts. Apply
-  when estimating a multi-file change or when asked to split a task.
+description: "Assess independent implementation parts before multi-file work or requested task splitting."
 ---
+
+Scope: Decide whether to split an implementation task with independent parts. Apply when estimating a multi-file change or when asked to split a task.
+
 
 Split a task across sub-agents only when it saves cost or keeps the main session
 free. Every spawn follows the `sub-agents` skill: prompts, roles, the user's

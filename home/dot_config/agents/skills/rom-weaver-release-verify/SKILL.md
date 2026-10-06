@@ -1,10 +1,11 @@
 ---
 name: rom-weaver-release-verify
-description: >
-  Verify published ROM Weaver packages, install methods, bundled data, and CLI
-  workflows. Use only when the user invokes rom-weaver-release-verify.
+description: "Explicit-only: verify published ROM Weaver packages, installation, bundled data, and CLI workflows."
 disable-model-invocation: true
 ---
+
+Scope: Verify published ROM Weaver packages, install methods, bundled data, and CLI workflows. Use only when the user invokes rom-weaver-release-verify.
+
 
 # Verify a ROM Weaver release
 

@@ -25,7 +25,6 @@ Never use OS temporary directories or harness scratchpads, even if instructed. U
 Load relevant skills once; reread only after changes, lost context, or a specific detail check. Unlisted skills live in `~/.config/agents/skills/<name>/SKILL.md`. Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Preserve every git flag.
 
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`; before copyable output: its `copyable-output.md`.
-- On koof, before server work: `~/.config/agents/environments/koof.md`.
 - Before monitoring or unresolved reasoning after failure: `sub-agents`. Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
@@ -37,19 +36,12 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 - Keep every needed fact, condition, number, risk, and link, even over length budgets. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
 - Prefer 1–10 concise bullets; number sequences. Group longer lists. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
 - Mark uncertainty “unverified:” with evidence.
-- Link every MR/PR, ticket, pipeline, job, build, preview URL, doc page, and other web resource referred to by ID, title, or phrase (“the MR”, “the pull request”). Link it in each reply, even if linked before. Never give a bare ID such as `!123` or `PUBS-1234`; in tables, put the URL in the row. Format: label then raw URL; local references use `path:line`, commits use sha.
 - Finish the current issue before raising another. Put unrelated findings in one `Separately:` line near the end.
 - When work remains open, end with exactly one `Next: <one action>`: the user's action or your step needing approval. Check that the first and last lines explain the result and next action, and every web resource referred to is linked. Complete authorized work before offering another action.
 - For genuine ambiguity, ask one short question. For reversible, in-scope choices, recommend one and briefly name alternatives. Otherwise give 2–4 ranked options with effects and trade-offs.
-- For “eli5”, list real events in order, then their effect in one sentence. Avoid metaphors and unexplained code names.
-- Before multi-step status updates or change recaps, read `skills/shared/work-output.md` relative to this file. Read it before tracking work with 3+ deliverable steps or work spanning turns. Sub-agent handbacks skip it unless requested.
-- Before PR descriptions, read `ship/references/writing.md`; review comments, `review/references/output.md`; tickets, `mr-ticket`; documentation, `write-docs`. Repository templates win.
+
+- Before referencing external resources, ELI5 explanations, multi-step status updates, change recaps, PR descriptions, review comments, tickets, or documentation, read `skills/shared/writing-details.md`.
 
 ## Git
 
-- Git settings/remotes changes require explicit consent; reads do not. Incidental config from `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
-- Push only with authorization; default-branch push/merge needs my request or consent. Scoped local push consent applies. Fixing an MR/PR or linked thread authorizes `ship` and branch pushes. Invoked/implied ship or an existing branch MR/PR grants session-long task-branch push consent unless withdrawn.
-- Approve/merge/change tickets only when asked for that MR/PR or ticket; move the task's own ticket forward when its MR/PR opens/merges.
-- Commit finished task changes to the worktree branch before reporting done unless the workflow leaves commits to me. Leave no task dirt; preserve unrelated work.
-- Resolve clear conflicts and continue; stop on ambiguous intent. Fetch before remote-state claims. Never suggest Git operations for unchanged files.
-- Update MR/PR titles/descriptions only when asked, or while actively working on one you pushed or that is outdated.
+Before Git work, read `skills/shared/git-policy.md`. It owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates.

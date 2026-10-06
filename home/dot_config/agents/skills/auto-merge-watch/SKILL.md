@@ -1,10 +1,10 @@
 ---
 name: auto-merge-watch
-description: >
-  Watch and unblock existing GitHub auto-merge PRs or GitLab auto-merge MRs
-  until merged or blocked. Use for autonomous monitoring or repair requests,
-  not new PR creation or general review.
+description: "Watch and repair existing auto-merge PRs/MRs until merged or blocked; excludes creation and general review."
 ---
+
+Scope: Watch and unblock existing GitHub auto-merge PRs or GitLab auto-merge MRs until merged or blocked. Use for autonomous monitoring or repair requests, not new PR creation or general review.
+
 
 # Auto-merge watch
 
