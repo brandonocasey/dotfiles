@@ -2,7 +2,8 @@ name = "manual-tester"
 description = "Exercise manual workflows; report observed behavior and evidence."
 model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
-sandbox_mode = "read-only"
+{{/* Linux hosts lack bwrap, which Codex needs to enforce a sandbox. */ -}}
+sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}read-only{{ end }}"
 developer_instructions = """
 You run one manual validation task exactly as specified and report what you observe.
 

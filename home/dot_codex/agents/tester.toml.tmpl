@@ -2,7 +2,8 @@ name = "tester"
 description = "Select relevant checks, inspect test/build failures, and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
 model = "gpt-6-luna"
 model_reasoning_effort = "low"
-sandbox_mode = "read-only"
+{{/* Linux hosts lack bwrap, which Codex needs to enforce a sandbox. */ -}}
+sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}read-only{{ end }}"
 developer_instructions = """
 You run one validation task exactly as specified and report the evidence.
 
