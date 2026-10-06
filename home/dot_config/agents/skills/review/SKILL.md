@@ -12,10 +12,11 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-Arguments: the target (step 0), `--fix` (step 4), `--loop [N]` (step 5),
-`--threads` (step 6), `--approve`, `--auto-merge`, and `--merge` (step 7), and
-`--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to approve or
-merge counts as the matching flag.
+Arguments: the target (step 0), `--test` and `--no-test` (**Manual testing**),
+`--deep` and `--agents <model>[:<effort>][,…]` (**Delegation**), `--fix` (step 4),
+`--loop [N]` (step 5), `--threads` (step 6), and `--approve`, `--auto-merge`, and
+`--merge` (step 7). A request in words to approve or merge, for a deep or hard
+review, or that names reviewer models counts as the matching flag.
 
 ## Automatic completion review
 
@@ -23,7 +24,12 @@ For automatic completion reviews, read [completion.md](references/completion.md)
 
 ## Delegation
 
-Before delegating a review of your own work, --loop, --agents, or an explicitly requested independent review, read [delegation.md](references/delegation.md).
+Before delegating a review of your own work, --loop, --deep, --agents, or an explicitly requested independent review, read [delegation.md](references/delegation.md).
+
+## Manual testing
+
+Manually test the changed behavior by default; `--no-test` skips it. Read
+[manual-testing.md](references/manual-testing.md) for skip rules, cases, and evidence.
 
 ## Fix authorization
 

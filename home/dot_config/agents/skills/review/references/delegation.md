@@ -3,24 +3,28 @@
 Delegate the review to sub-agents, so that the reviewer is independent, when:
 
 - this session or its sub-agents wrote the change;
-- `--loop` or `--agents` is set;
-- the user asks for a hard review or a sub-agent review, or names reviewer models.
+- `--loop`, `--deep`, or `--agents` is set;
+- the user asks for a sub-agent or independent review.
 
 Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
 Exception: review inline a follow-up delta (`<last-reviewed-sha>..<new-head-sha>`)
 on a self-written change that a reviewer already passed, when the delta changes
 fewer than 20 lines of logic and touches nothing listed under when-to-run.md
-Triggers' risk bullets. It never applies when `--loop` or `--agents` is set, or
-when the user asks for a hard, sub-agent, or independent review. Report that the
+Triggers' risk bullets. It never applies when `--loop`, `--deep`, or `--agents` is set, or
+when the user asks for a sub-agent or independent review. Report that the
 follow-up review was not independent.
 For automatic reviews, [when-to-run.md](when-to-run.md) owns the triggers,
 follow-up reviews, and the second-reviewer rule. Inline self-reviews missed about 40% of
 the defects found later, against about 18% for independent reviewers.
 
-Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt. Use `hard-review` when the user requests a hard review.
-`--agents` starts one reviewer per entry, in parallel. A request that names models
-means `--agents` with one entry per model. The `sub-agents` skill owns model and
-effort selection. With several targets, start one reviewer set per target.
+Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
+`--deep` picks the roles and `--agents` picks the models; they combine.
+- Default: one `reviewer`.
+- `--deep`: `reviewer` and `deep-review` in parallel on the same target.
+- `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
+  model and effort. With `--deep`, each entry runs both roles.
+Without `--agents`, the `sub-agents` skill owns model and effort selection.
+With several targets, start one reviewer set per target.
 
 Before the spawn, establish the review checkout once (step 0). Install dependencies
 and build only when required by the affected checks, commit hooks, or review

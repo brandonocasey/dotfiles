@@ -1,25 +1,17 @@
----
-name: review-full
-description: "Review code and manually test behavior; --fix repairs defects, CI failures, and conflicts."
----
+## Manual testing
 
-Scope: Review code and manually test affected behavior. Use for review-full requests or reviews with manual testing; --fix repairs defects, CI failures, and conflicts.
+Manually test the changed behavior by default. Skip it only for `--no-test`, or
+when the change has no runnable behavior: text-only edits, or internal refactors
+whose automated tests pass. State the skip reason in the report. `--test` forces
+the manual pass even then.
 
-
-# Review with manual testing
-
-Extend [review](../review/SKILL.md) with a manual pass against the changed behavior.
-Read and follow that skill once. Preserve the user's target, base, and `--fix` argument.
-Use its adversarial review, finding verification, delegation, fix authorization,
-CI repairs, conflict resolution, output, and cleanup rules.
 Keep the review worktree until manual checks and authorized repairs are complete.
-
 When resuming from a `session-resume` record, retain its exact authorization
 scope. Reuse manual evidence only when the recorded revision, inputs, and
 environment match. Never treat the record as authorization to push or bypass
-this workflow's required review.
+the required review.
 
-## Choose manual cases
+### Choose manual cases
 
 Read repository run instructions and the changed code's callers.
 Identify the affected user journeys, commands, or consumers.
@@ -27,12 +19,12 @@ Select representative successful inputs and changed boundaries or error paths.
 Choose cases that can expose a defect; do not repeat every automated test manually.
 Record the checkout and revision used for each pass.
 
-Complete the manual pass before review steps 2 and 3 verify and report findings.
-For an independent reviewer, the main session runs the manual pass and verifies
-its findings alongside the reviewer's candidates.
+Complete the manual pass before steps 2 and 3 verify and report findings.
+With delegated reviewers, the main session runs the manual pass and verifies
+its findings alongside the reviewers' candidates.
 Feed observed failures into the same verification pass; do not start another review cycle.
 
-## Exercise the actual behavior
+### Exercise the actual behavior
 
 Run repository setup and start commands yourself within the authorized scope.
 Automated tests, static inspection, and screenshots alone do not replace manual interaction.
@@ -54,17 +46,14 @@ State missing credentials, unavailable devices, or unsafe operations as coverage
 Complete reachable checks; do not claim blocked paths passed.
 Follow repository rules for server binding, artifact storage, and cleanup.
 
-## Fix and report
+### Fix and report
 
 Without `--fix`, report verified manual failures alongside code-review findings.
-Review's **Fix authorization** still applies to own work.
-With `--fix`, apply verified repairs and fix CI or conflicts per review's
-[ci-and-conflicts.md](../review/references/ci-and-conflicts.md).
-The rerun manual cases give review step 4's `Checked:` line.
+With `--fix`, the rerun manual cases give step 4's `Checked:` line.
 Rerun affected automated and manual checks after repairs, before committing and pushing.
 Repeat affected manual cases if a later CI fix or conflict resolution changes their behavior.
 Reuse evidence only when the code and inputs for that case are unchanged.
 
-Add manual coverage to the review report: journeys or commands, revision, results,
+Add manual coverage to the report: journeys or commands, revision, results,
 evidence, and untested paths. Distinguish manual results from automated checks and pending CI.
-Stop task-owned servers and browser resources, then finish review's worktree cleanup.
+Stop task-owned servers and browser resources before worktree cleanup.

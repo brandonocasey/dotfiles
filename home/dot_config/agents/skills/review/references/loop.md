@@ -11,4 +11,6 @@
 
 For an MR/PR, push after each round as step 4 says. Keep the review worktree until the
 last round. If no sub-agent is available, stop after round 1 and say that the next reviewer
-is not independent. `review-full` does not take `--loop`; it runs one cycle.
+is not independent. Run the full manual pass in round 1. In later rounds, rerun
+only manual cases whose behavior that round's fixes changed. With `--deep`, start
+both reviewers every round.

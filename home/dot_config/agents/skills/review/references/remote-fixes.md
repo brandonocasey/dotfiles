@@ -10,7 +10,7 @@ these repairs. Step numbers below refer to the review skill.
   3. Resolve clear conflicts with the target branch and fix `new in this change` CI
      failures, per [ci-and-conflicts.md](ci-and-conflicts.md).
   4. Run the repo's tests/lint. Check the fixed HEAD by hand (AGENTS.md manual-check rule;
-     methods in `review-full` **Exercise the actual behavior**). Record one line:
+     methods in [manual-testing.md](manual-testing.md) **Exercise the actual behavior**). Record one line:
      `Checked: <steps, page or command, config> -> <result>`, or `Checked: n/a (<reason>)`
      for docs-, test-, or config-only fixes.
   5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take

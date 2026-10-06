@@ -46,12 +46,10 @@ uncertainty remains. Otherwise apply the triggers and narrow exceptions below.
 
 ## Second reviewer
 
-- Run `--agents` with two reviewers on different models when the change touches a
-  trust boundary, concurrency, or persistence, or exceeds about 400 changed lines
-  of hand-written logic. The `sub-agents` skill owns model and effort selection.
-- If a second compatible model is unavailable, use the available independent
-  reviewer and disclose the coverage limit; never invent a model or bypass tool
-  restrictions to satisfy the count.
+- Run `--deep` when the change touches a trust boundary, concurrency, or
+  persistence, or exceeds about 400 changed lines of hand-written logic.
+- If `deep-review` is unavailable, use the available independent reviewer and
+  disclose the coverage limit; never bypass tool restrictions to satisfy the count.
 
 ## What review cannot replace
 

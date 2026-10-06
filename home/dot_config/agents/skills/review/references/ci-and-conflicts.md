@@ -65,7 +65,7 @@ This preserves published history and permits a normal source-branch push.
 Do not use blanket `ours` or `theirs` resolutions.
 Regenerate generated files with their owning tool after resolving source changes.
 Run the checks needed for the merged result, including affected manual cases
-when invoked through `review-full`.
+unless manual testing was skipped.
 
 For an existing merge or rebase, resolve clear conflicts and continue that operation.
 For local reviews, do not start a branch update without an explicit target or request.
