@@ -95,7 +95,8 @@ read_tools="mcp__claude_ai_Slack__slack_search_public_and_private mcp__claude_ai
 
 digest="$(session_digest)
 $(gitlab_digest)"
-if [ -z "${digest//[[:space:]]/}" ]; then
+# Not ${digest//[[:space:]]/}: macOS bash 3.2 takes minutes on a large digest.
+if [ -z "$(printf %s "$digest" | tr -d '[:space:]')" ]; then
     log "no claude sessions or gitlab activity today; standup skipped"
     exit 0
 fi
