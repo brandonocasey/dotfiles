@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: "Independent review of a change. Read-only; returns verified candidate findings."
-model: claude-opus-5-5
+model: claude-sonnet-5-5
 effort: medium
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Edit, Write, NotebookEdit, Agent

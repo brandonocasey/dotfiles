@@ -32,9 +32,9 @@ Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-6.1-sol, low |
 | `tester` | Run tests, lint, builds, and smoke checks; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
-| `manual-tester` | Exercise manual workflows; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
+| `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
-| `reviewer` | Independent review of a change; read-only | claude-opus-5-5, medium | gpt-6.1-sol, low |
+| `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `hard-review` | Independent review when the user asks for a hard review; read-only | claude-opus-5-5, high | gpt-6.1-sol, high |
 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
