@@ -7,6 +7,12 @@ Delegate the review to sub-agents, so that the reviewer is independent, when:
 - the user asks for a hard review or a sub-agent review, or names reviewer models.
 
 Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
+Exception: review inline a follow-up delta (`<last-reviewed-sha>..<new-head-sha>`)
+on a self-written change that a reviewer already passed, when the delta changes
+fewer than 20 lines of logic and touches nothing listed under when-to-run.md
+Triggers' risk bullets. It never applies when `--loop` or `--agents` is set, or
+when the user asks for a hard, sub-agent, or independent review. Report that the
+follow-up review was not independent.
 For automatic reviews, [when-to-run.md](when-to-run.md) owns the triggers,
 follow-up reviews, and the second-reviewer rule. Inline self-reviews missed about 40% of
 the defects found later, against about 18% for independent reviewers.
