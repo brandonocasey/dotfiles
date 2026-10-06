@@ -72,8 +72,8 @@ question. Never invent a key, project, status, or version.
 
 ## Report
 
-One line per MR/PR: MR/PR, key (new or reused), links, status, version,
-label, title. End with a **Links** section with each MR/PR and ticket URL.
+One line per MR/PR: MR/PR URL, key (new or reused) with its ticket URL,
+related links, status, version, label, title.
 
 ## Ticket writing
 
