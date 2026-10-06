@@ -5,20 +5,18 @@ resources, or cleaning them up.
 
 ## Locations
 
-For new disposable resources in a task worktree, use
-`<worktree>/.agent/<task>/`, where `<worktree>` is the checkout root and `<task>`
-is a unique task name. Keep logs, temporary helpers, generated preview assets,
-and intermediate results there. For work without a task worktree, use
-`$XDG_CACHE_HOME/agents/scratch/<task>/`, defaulting to
-`~/.cache/agents/scratch/<task>/` when unset.
+Put new disposable resources in the Scratch path from AGENTS.md
+**Directories**, where `<task>` is a unique task name. Keep logs, temporary
+helpers, generated preview assets, and intermediate results there.
 
 Before using `.agent/`, verify that the candidate path is ignored with
 `git check-ignore -v <candidate-path>` and that no files under `.agent/` are
 tracked. The managed global ignore file supplies `/.agent/`; repository rules
-can override it. If it is not effective, use external cache scratch and report
-why; do not change repository Git settings. Do not reuse or overwrite an
-existing task directory or follow a symlink at `.agent/` or the task path.
-Use external cache scratch when the root conflicts with existing project files.
+can override it. If it is not effective, use the XDG cache scratch directory
+and report why; do not change repository Git settings. Do not reuse or
+overwrite an existing task directory or follow a symlink at `.agent/` or the
+task path. Use the XDG cache scratch directory when the root conflicts with
+existing project files.
 
 Keep credentials, preview access tokens, and private gallery state outside the
 repository in private external storage. Backups, cross-session recovery records,

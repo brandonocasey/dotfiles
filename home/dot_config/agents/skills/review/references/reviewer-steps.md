@@ -68,7 +68,7 @@ read the diff looking for things that seem off — attack it:
   paths, permissions), spend a pass thinking like an attacker, not a reviewer.
 - **Check the title and description are accurate** (MR/PR only). Report claims
   contradicted by the diff or violations of explicit repository requirements.
-  A useful description may exceed two sentences; do not shorten it just for length.
+  Do not shorten a useful description just for length.
 - Report verified defects and violations of explicit repository requirements.
   Include optional style suggestions only when requested. A comment is a defect
   when it misstates a contract or behavior, not merely because it could be shorter.
