@@ -13,8 +13,9 @@ explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
 Arguments: the target (step 0), `--fix` (step 4), `--loop [N]` (step 5),
-`--threads` (step 6), and `--agents <model>[:<effort>][,…]` (**Delegation**).
-A request to approve or merge is part of step 4.
+`--threads` (step 6), `--approve`, `--auto-merge`, and `--merge` (step 7), and
+`--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to approve or
+merge counts as the matching flag.
 
 ## Automatic completion review
 
@@ -50,3 +51,8 @@ For --loop, read [loop.md](references/loop.md).
 ## 6. Optional: --threads
 
 For --threads or requests to fix or resolve review comments, read [thread-routing.md](references/thread-routing.md).
+
+## 7. Optional: --approve, --auto-merge, --merge
+
+For --approve, --auto-merge, --merge, or a request to approve or merge, read
+[approve-merge.md](references/approve-merge.md).

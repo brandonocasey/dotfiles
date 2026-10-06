@@ -22,6 +22,5 @@ these repairs. Step numbers below refer to the review skill.
      leaves `.git/config` unchanged.
   6. Sync the title and description to the final diff, per `ship` step 3, and read them
      back. Then refresh the source SHA, CI, and mergeability once, per [ci-and-conflicts.md](ci-and-conflicts.md).
-  7. Clean up per step 3. Then, when the request asks to approve or merge, run the `ship` skill's
-     [merge.md](../../ship/references/merge.md) after the push, only when no `bug` or
-     `question` finding remains. Otherwise skip it and name the blocking findings.
+  7. Clean up per step 3. Then run step 7 ([approve-merge.md](approve-merge.md)) when
+     `--approve`, `--auto-merge`, or `--merge` is set.
