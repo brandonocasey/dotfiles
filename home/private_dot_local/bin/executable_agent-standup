@@ -1,6 +1,7 @@
 #!/bin/bash
 # DMs an end-of-day standup built from today's Claude sessions.
 # launchd runs it at 17:00 on weekdays.
+# Usage: agent-standup [--print]   (--print writes the standup to stdout instead)
 
 SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
 MODEL=${AGENT_STANDUP_MODEL:-sonnet}
@@ -57,7 +58,16 @@ if [ -z "$digest" ]; then
     exit 0
 fi
 
+format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-8 bullets total, each bullet under 10 words. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
+intro="The input is a digest of today's Claude Code sessions: the user's prompts and each session's final reply. Write a standup"
+
+if [ "$1" = --print ]; then
+    echo "$digest" | ask_claude "" "$intro. Print only the standup; send it nowhere.
+$format"
+    exit
+fi
+
 echo "$digest" | ask_claude "mcp__claude_ai_Slack__slack_send_message" \
-    "The input is a digest of today's Claude Code sessions: the user's prompts and each session's final reply. Write a standup and send it to Slack user $SLACK_USER as a DM (slack_send_message with channel_id $SLACK_USER).
-Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-8 bullets total, each bullet under 10 words. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro." >/dev/null
+    "$intro and send it to Slack user $SLACK_USER as a DM (slack_send_message with channel_id $SLACK_USER).
+$format" >/dev/null
 log "standup sent"
