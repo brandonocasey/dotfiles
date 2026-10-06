@@ -1,0 +1,63 @@
+#!/bin/bash
+# DMs an end-of-day standup built from today's Claude sessions.
+# launchd runs it at 17:00 on weekdays.
+
+SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
+MODEL=${AGENT_STANDUP_MODEL:-sonnet}
+
+STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/agents/standup
+# Claude runs from here so its own sessions are easy to exclude from the digest.
+RUN_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/agents/standup
+TODAY=$(date +%F)
+LOG=$STATE_DIR/log
+mkdir -p "$STATE_DIR" "$RUN_DIR"
+
+log() {
+    echo "$(date '+%F %T') $*" >>"$LOG"
+}
+
+midnight() {
+    date -j -v0H -v0M -v0S +%s
+}
+
+ask_claude() {
+    local tools=$1 prompt=$2
+    (cd "$RUN_DIR" && claude -p "$prompt" --model "$MODEL" --effort low \
+        --allowedTools "$tools" 2>>"$LOG")
+}
+
+# User prompts and final replies from today's Claude sessions.
+session_digest() {
+    local since exclude prompts
+    since=$(date -u -r "$(midnight)" +%Y-%m-%dT%H:%M:%S)
+    exclude=$(echo "$RUN_DIR" | tr '/.' '--')
+    find "$HOME"/.claude*/projects -maxdepth 2 -name '*.jsonl' -newermt "$TODAY 00:00" \
+        ! -path '*/subagents/*' ! -path "*/$exclude/*" 2>/dev/null | while read -r f; do
+        prompts=$(jq -r --arg since "$since" '
+            select(.timestamp >= $since and .type == "user" and (.isMeta | not))
+            | .message.content
+            | if type == "string" then . else (.[]? | select(.type == "text") | .text) end
+            | .[0:300] | gsub("\n"; " ")' "$f" 2>/dev/null |
+            grep -v -e '<command-' -e '<local-command' -e 'system-reminder' -e 'task-notification' |
+            head -12)
+        # Sessions with no prompts today did no work today.
+        [ -z "$prompts" ] && continue
+        echo "=== $(basename "$(dirname "$f")")"
+        echo "$prompts"
+        # Final replies get truncated, so collect every link the session mentioned.
+        echo "LINKS: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null |
+            grep -oE 'https://(gitlab\.com|jwplayer\.atlassian\.net|github\.com)/[^] )>|"`*,]+' | sed 's/[.:;]*$//' | sort -u | tr '\n' ' ')"
+        echo "LAST: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null | tail -c 700 | tr '\n' ' ')"
+    done
+}
+
+digest=$(session_digest)
+if [ -z "$digest" ]; then
+    log "no claude sessions today; standup skipped"
+    exit 0
+fi
+
+echo "$digest" | ask_claude "mcp__claude_ai_Slack__slack_send_message" \
+    "The input is a digest of today's Claude Code sessions: the user's prompts and each session's final reply. Write a standup and send it to Slack user $SLACK_USER as a DM (slack_send_message with channel_id $SLACK_USER).
+Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-8 bullets total, each bullet under 10 words. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro." >/dev/null
+log "standup sent"
