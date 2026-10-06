@@ -66,6 +66,9 @@ managed=$(
     ]
   },
   "model": "opus",
+  "env": {
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5"
+  },
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
     "dataviz": "name-only",

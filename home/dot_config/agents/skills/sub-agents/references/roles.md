@@ -17,13 +17,13 @@ If the role is unavailable or incompatible, work inline and report the limitatio
 
 Unless an override applies, keep the role's model and effort pins.
 Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
-Omitting the role bypasses its pin: Claude Code inherits the parent model; Codex uses `default_subagent_model`.
+Omitting the role bypasses its pin: Claude Code uses `CLAUDE_CODE_SUBAGENT_MODEL` (Sonnet), or inherits the parent model when that is unset; Codex uses `default_subagent_model`.
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
-| `worker` | Design, debugging, split implementation, research synthesis | claude-opus-5-5, medium | gpt-6.1-sol, low |
+| `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; pass `model: opus` for design or cross-module debugging | gpt-6.1-sol, low |
 | `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |

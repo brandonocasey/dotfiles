@@ -1,7 +1,7 @@
 ---
 name: worker
 description: "Implementation and judgement for one task, split part, or fix. Owns only assigned files."
-model: claude-opus-5-5
+model: claude-sonnet-5-5
 effort: medium
 tools: >
   Bash, Read, Edit, Write, Glob, Grep, Skill, ToolSearch, Monitor, TaskStop,
