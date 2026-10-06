@@ -32,7 +32,7 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 ## Writing
 
-- Make answers self-contained. Lead with the answer in 1–4 plain sentences, without paths, IDs, or code names. The reader should grasp the point in 10 seconds and find needed facts in 60.
+- Make answers self-contained. Lead with the answer in 1–4 plain sentences, without file paths, bare IDs, or code names. Always include the URL of each web resource they mention, per the link rule below. The reader should grasp the point in 10 seconds and find needed facts in 60.
 - Use active, literal language. Keep sentences ≤25 words and one idea each. No filler, hedging, preambles, closing recaps, idioms, diff narration, or bare “tests pass”.
 - Keep every needed fact, condition, number, risk, and link, even over length budgets. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
 - Prefer 1–10 concise bullets; number sequences. Group longer lists. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
