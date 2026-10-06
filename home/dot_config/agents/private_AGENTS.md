@@ -32,13 +32,18 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 ## Writing
 
-- Lead with the answer in 1–4 plain sentences, without paths, IDs, or code names. Keep every needed fact, condition, number, risk, and link, even over length budgets.
-- Use active, literal language; sentences ≤25 words, one idea each. No filler, hedging, preamble, closing recap, idioms, diff narration, or bare “tests pass”. Explain errors as location, cause, fix; give runnable actions when useful.
-- Prefer 1–10 concise bullets; number sequences. Group longer lists; no headings under 15 lines unless templated. Omit repeated or one-click detail. Before external posting, reread and remove repetition.
+- Make answers self-contained. Lead with the answer in 1–4 plain sentences, without paths, IDs, or code names. The reader should grasp the point in 10 seconds and find needed facts in 60.
+- Use active, literal language. Keep sentences ≤25 words and one idea each. No filler, hedging, preambles, closing recaps, idioms, diff narration, or bare “tests pass”.
+- Keep every needed fact, condition, number, risk, and link, even over length budgets. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
+- Prefer 1–10 concise bullets; number sequences. Group longer lists. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
 - Mark uncertainty “unverified:” with evidence.
 - Link every MR/PR, ticket, pipeline, job, build, preview URL, doc page, and other web resource referred to by ID, title, or phrase (“the MR”, “the pull request”). Link it in each reply, even if linked before. Never give a bare ID such as `!123` or `PUBS-1234`; in tables, put the URL in the row. Format: label then raw URL; local references use `path:line`, commits use sha.
-- Output-specific rules: PR descriptions → `ship/references/writing.md`; review comments → `review/references/output.md`; tickets → `mr-ticket`; documentation → `write-docs`. Read the relevant rules before writing; repository templates win.
-- Chat: read `skills/shared/chat-output.md` relative to this file before multi-step status updates or final answers. It owns step tracking, recap/Review/Ship lines, and open-work handoffs.
+- Finish the current issue before raising another. Put unrelated findings in one `Separately:` line near the end.
+- When work remains open, end with exactly one `Next: <one action>`: the user's action or your step needing approval. Check that the first and last lines explain the result and next action, and every MR/PR, ticket, pipeline, and preview URL referred to is linked. Complete authorized work before offering another action.
+- For genuine ambiguity, ask one short question. For reversible, in-scope choices, recommend one and briefly name alternatives. Otherwise give 2–4 ranked options with effects and trade-offs.
+- For “eli5”, list real events in order, then their effect in one sentence. Avoid metaphors and unexplained code names.
+- Before multi-step status updates or change recaps, read `skills/shared/work-output.md` relative to this file. Read it before tracking work with 3+ deliverable steps or work spanning turns. Sub-agent handbacks skip it unless requested.
+- Before PR descriptions, read `ship/references/writing.md`; review comments, `review/references/output.md`; tickets, `mr-ticket`; documentation, `write-docs`. Repository templates win.
 
 ## Git
 

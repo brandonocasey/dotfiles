@@ -19,9 +19,9 @@ if [[ -x "$notify_command" ]]; then
 fi
 export NOTIFY_LINE="$notify_line"
 
-# Keep app-owned synced bodies intact; Codex-only wrappers provide explicit use.
+# Keep app-owned synced bodies intact; wrappers control Codex discovery.
 SKILLS_CONFIG_TOML=""
-for skill in docs google-workspace skill-creator; do
+for skill in docs google-workspace skill-creator docx xlsx pptx pdf; do
   for skill_file in "$HOME"/.config/agents/skills/synced/*/"$skill"/SKILL.md; do
     [[ -f "$skill_file" ]] || continue
     escaped_path=${skill_file//\\/\\\\}
@@ -242,7 +242,10 @@ for key in "${KEEP_KEYS[@]}"; do
 done
 
 # TOML does not expand ~, so the absolute path is filled in per host.
-body=${body//@PLAYWRIGHT_OUTPUT_DIR@/$HOME/.cache/agents/playwright-mcp}
+playwright_output_dir="$HOME/.cache/agents/playwright-mcp"
+playwright_output_dir=${playwright_output_dir//\\/\\\\}
+playwright_output_dir=${playwright_output_dir//\"/\\\"}
+body=${body//@PLAYWRIGHT_OUTPUT_DIR@/$playwright_output_dir}
 
 printf '%s\n' "$body" | awk -v keys="${KEEP_KEYS[*]}" '
   BEGIN {

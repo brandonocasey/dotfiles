@@ -24,10 +24,28 @@ Codex and Claude can select only `ui-verify` automatically. Invoke
 Codex keeps the synced `docs` and `google-workspace` bodies disabled and exposes
 explicit-only wrappers with those names. The wrappers read the installed synced
 skill only for an explicitly requested hosted destination. Codex uses its native
-`skill-creator`; Claude keeps its synced version. File-format skills remain
-available. The Codex config modifier discovers synced paths on each host; rerun
-`chezmoi apply ~/.codex/config.toml` after a synced account path changes, then
-restart Codex to refresh skill discovery.
+`skill-creator`; Claude keeps its synced version.
+
+Codex discovers `docx`, `xlsx`, `pptx`, and `pdf` through compact wrappers that
+load the installed synced skill on demand, including its examples, scripts,
+and assets. These four wrappers remain automatically selectable. Claude keeps
+its existing compact listings. Neither harness changes the app-owned bodies.
+The Codex config modifier discovers synced paths on each host. Apply the
+wrappers before the config on an existing installation:
+
+```sh
+chezmoi apply ~/.codex/skills/docx ~/.codex/skills/xlsx ~/.codex/skills/pptx ~/.codex/skills/pdf
+chezmoi apply ~/.codex/config.toml
+```
+
+Rerun the config apply after a synced account path changes, then restart Codex
+to refresh skill discovery.
+
+Shared writing rules live in `~/.config/agents/AGENTS.md`. Multi-step work and
+change recaps additionally load `skills/shared/work-output.md`. The delegation
+skill loads monitoring and escalation procedures only when those operations
+apply; its role pins, handoff rules, and verification requirements remain in
+the main skill.
 
 The session-start cleanup hook expires scratch files after 30 days. It preserves
 copy files awaiting use regardless of age.

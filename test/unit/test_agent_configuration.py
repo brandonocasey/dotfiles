@@ -52,11 +52,12 @@ class AgentConfigurationTests(unittest.TestCase):
             home = Path(directory) / 'quoted "home" with spaces'
             expected = set()
             for account in ("account-one", "account-two"):
-                for name in ("docs", "google-workspace", "skill-creator", "docx"):
+                for name in ("docs", "google-workspace", "skill-creator",
+                             "docx", "xlsx", "pptx", "pdf", "unrelated"):
                     path = home / ".config/agents/skills/synced" / account / name / "SKILL.md"
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text("fixture")
-                    if name != "docx":
+                    if name != "unrelated":
                         expected.add(str(path))
             live = ('model = "test-model"\nmodel_reasoning_effort = "medium"\n'
                     '[projects."/example"]\ntrust_level = "trusted"\n'
