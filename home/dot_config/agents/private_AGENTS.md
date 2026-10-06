@@ -9,8 +9,7 @@
 - Treat a question about a defect, such as “why is X failing?”, as a request to fix it: answer briefly, then make reversible, in-scope changes. For a design question, such as “why do we need X?”, answer and propose the change; make it only after I agree. “just explain:”, “just suggest”, or “don't change yet” always mean answer only.
 - Apply corrections, constraints, and scope changes to the active task immediately. Queue separate new tasks unless I ask to do them now.
 - Only the explicitly invoked `todo` skill adds to my personal `TODO.md`. You may remove completed items.
-- Manually check every behavior change that a user or caller can see before reporting done: use a headless browser MCP, take a screenshot, or run it by hand. Automated tests alone do not count. Internal refactors with passing tests, and text-only changes such as docs and comments, need only a diff check.
-- For visible UI or behavior changes, capture screenshots or short videos, with before and after when useful. Show them in answers as examples. Attach them to MR/PR descriptions. Skip them when text or a diff shows the change clearly.
+- Manually check every behavior change that a user or caller can see before reporting done: run it by hand, or follow `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests, and text-only changes such as docs and comments, need only a diff check. Attach UI screenshots or short videos to MR/PR descriptions unless text or a diff shows the change clearly.
 - Never skip, remove, or weaken tests, add lint/type-check disable comments, or edit test/lint/type-check config without my consent. You may update tests for intended behavior changes; say when you do.
 - Do every safe step that your tools can do: shell, gh/glab/fj, APIs, MCP, browser, and cleanup. Ask first only for out-of-scope, irreversible, or destructive steps, and for outward-facing steps that no rule authorizes. Also ask for steps that need my credentials, my device, or an approval that a rule requires. Never ask me to do work you can do yourself, such as running a command or check, pasting output, reading a file or page, looking something up, writing or editing text, or answering a question that evidence can settle. Do it, then report the result. Do recommended next steps when reversible and in scope. Before ending a reply with an offer such as "Want me to…?", apply that test to the offered step. Read-only lookups always pass. Skill approval gates still apply. Settle open questions with evidence before asking.
 - Run waits longer than 1 minute in the background (`run_in_background` or Monitor), never as a foreground `sleep` or `until` loop.
@@ -34,8 +33,8 @@ Load each relevant skill once. Reuse its instructions while they remain availabl
 
 - On `koof`, read `~/.config/agents/environments/koof.md` before server work.
 - Load `sub-agents` before watching CI, logs, or builds, and when a failed attempt leaves a specific question that needs independent reasoning.
-- Run `review` when requested, and automatically per `review/references/when-to-run.md` under the skills directory: read it before completing changes to code, tests, configuration, or agent instructions. A low-risk behavior change may use a concrete manual reproduction when no suitable automated test exists; this does not waive review. Read-only tasks need no code review.
-- In change recaps, state `Review: ran independently; <verified outcome>`, disclose an inline fallback, or state `Review: skipped (<specific reason and evidence>)`. Distinguish verified defects fixed, other useful corrections, rejected findings, and no verified defects when applicable. After task commits, include `Ship: pushed <sha>` or `Ship: not run (<reason>)`.
+- Run `review` when requested, and automatically per `review/references/when-to-run.md` under the skills directory: read it before completing changes to code, tests, configuration, or agent instructions. Read-only tasks need no code review.
+- In change recaps, state `Review: ran independently; <verified outcome>`, disclose an inline fallback, or state `Review: skipped (<specific reason and evidence>)`. Distinguish verified defects fixed, other useful corrections, rejected findings, and no verified defects when applicable. After task commits, include `Ship: pushed <sha> to <branch>` or `Ship: not run (<reason>)`.
 - Never switch branches in the main checkout. Load `worktree` before branch work, including sequential tasks.
 
 ## Writing
@@ -49,7 +48,7 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 - Prefer bullets over prose. Use 1–10 bullets, as few as the facts allow, one line each where possible. Number sequential steps. If more than 10 are needed, group them under short labels; never drop items to fit. No headings in text under 15 lines unless a template requires them.
 - Default budgets; a repo template or rule wins:
   - MR/PR description: 1–4 sentences on what changed and why, then 1–10 bullets, as few as possible, for behavior changes, risks, and validation. No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
-  - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix. Add a suggestion block for small fixes.
+  - Review or MR/PR comment: one issue per comment, at most 3 sentences: what breaks, when, and the fix.
   - Ticket: summary under 10 words that names the outcome. Description: problem, expected result, acceptance check, and links, in 1–10 bullets, as few as possible.
   - Change recap in chat: first line states what now works, or what still fails, in user-visible terms. Then 1–10 bullets, as few as possible: how to try it when useful, how it was checked, limits, and the Review/Ship lines.
   - Docs paragraph: one idea, at most 4 sentences. `write-docs` owns page structure.
@@ -71,7 +70,7 @@ Applies to chat, MR/PR text, review comments, tickets, docs, and commits. Target
 ## Git
 
 - Get explicit consent before changing repository git settings, including local config writes, remotes, and fixes prompted by settings questions. Reading config needs no consent. Config written as a side effect of `git push -u`, `git branch -u`/`--unset-upstream`, branch deletion, or `git submodule update --init` needs none.
-- Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. `review --fix` uses the review skill's push step with the same authorization. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
+- Push only with authorization; never push or merge to default unless I ask or consent. Local `AGENTS.md` push consent applies within its scope. Fixing an MR/PR or linked review thread authorizes `ship`: run it yourself and push to that branch without asking. Task-branch push authorization lasts for the session unless I withdraw it. It starts when I invoke or imply `ship`, or an MR/PR already exists for that branch.
 - Approve, merge, or change a tracker ticket only when I ask for that MR/PR or ticket. Exception: move the task's own ticket forward when its MR/PR opens or merges.
 - Commit finished task changes to the worktree branch before reporting done, leaving no uncommitted or untracked task changes, unless the invoked workflow leaves committing to me. Preserve unrelated files and edits.
 - Resolve clear rebase/merge conflicts and continue. Stop only when the intended result is ambiguous.
