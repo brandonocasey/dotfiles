@@ -1,8 +1,8 @@
 ---
 name: cheap
 description: "Well-specified mechanical work: named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, and monitoring CI, logs, or builds."
-model: haiku
-effort: low
+model: claude-haiku-5-5
+effort: medium
 disallowedTools: Agent
 omitClaudeMd: true
 ---

@@ -22,7 +22,7 @@ Workflow `agent()` calls skip that variable and inherit the session model. Pass 
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
-| `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | haiku, low | gpt-6-luna, low |
+| `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, medium | gpt-6-luna, low |
 | `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; pass `model: opus` for design or cross-module debugging | gpt-6.1-sol, low |
 | `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
