@@ -1,5 +1,5 @@
 {
-  "description": "Keep tmux session names aligned with Codex thread names; prune stale agent scratch dirs.",
+  "description": "Keep tmux session names aligned with Codex thread names.",
   "hooks": {
     "SessionStart": [
       {
@@ -10,17 +10,6 @@
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh codex",
             "async": true,
             "timeout": 3
-          }
-        ]
-      },
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/prune-agent-dirs.sh",
-            "async": true,
-            "timeout": 120
           }
         ]
       }

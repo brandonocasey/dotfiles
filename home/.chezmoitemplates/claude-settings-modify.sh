@@ -101,17 +101,6 @@ managed=$(
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/prune-agent-dirs.sh",
-            "async": true,
-            "timeout": 120
-          }
-        ]
-      },
-      {
         "matcher": "startup|resume|clear|compact",
         "hooks": [
           {
