@@ -4,9 +4,6 @@ name: review-auto
 description: "Review and fix an MR/PR, then approve and merge it when no blocking finding remains; review plus --fix --approve --merge."
 ---
 
-Scope: Review an MR/PR, fix its findings, and, when no blocking finding remains, approve it and merge it. Use for review-auto requests.
-
-
 Run the [review](../review/SKILL.md) skill with `--fix --approve --merge` added to the
 user's arguments. Read and follow that skill once. Preserve the user's target and
 every other flag, such as `--loop`, `--deep`, or `--no-test`.

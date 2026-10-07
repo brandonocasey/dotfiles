@@ -3,8 +3,6 @@ name: real-safari
 description: "Run visible real Safari for FairPlay or Safari-only checks; confirm unless already requested."
 ---
 
-Scope: Use real Safari for FairPlay DRM or Safari-only checks via safaridriver. It is visible and needs user confirmation, unless the user asked for a real-Safari run.
-
 Real Safari exists only on macOS. On Linux, Windows, or WSL, report that real
 Safari is unavailable; the `safari` MCP there is Playwright WebKit, not Safari.
 

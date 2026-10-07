@@ -6,11 +6,6 @@ name: clean-merged-worktrees
 description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation."
 ---
 
-Scope: Clean local worktrees and branches after verified merges, then assess every retained branch as still relevant, superseded, or no longer useful. Use for merged-work cleanup; closed-without-merge, review, and relevance-based removal need separate confirmation.
-
-
-# Clean Merged Worktrees
-
 Clean only local state proven safe to remove. Use live PR state for GitHub or
 GitLab repositories because squash merges break ancestry evidence. Report why
 each target was retained. "PR" means a GitHub pull request or GitLab merge request.

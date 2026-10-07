@@ -4,9 +4,6 @@ name: standup
 description: "Explicit-only: draft today's standup from Claude sessions, edit it in chat, then DM it in Slack."
 ---
 
-Scope: Draft today's standup from this machine's Claude sessions, let the user
-edit it, and DM it to them in Slack. Explicit-only.
-
 Optional argument: `send` skips the review and DMs the standup right away.
 
 1. **Send now.** With `send`, run `agent-standup` and report whether

@@ -3,9 +3,6 @@ name: ship
 description: "Commit, push, and open/update PRs/MRs with Git authorization; merge only when requested."
 ---
 
-Scope: Commit, push, and open or update GitHub PRs or GitLab MRs when requested or authorized by Git rules. Supports requested merging.
-
-
 Ship the current branch: push it, open or update the MR/PR, and report. When
 the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. For several branches or `all`, read [multiple-branches.md](references/multiple-branches.md)

@@ -3,9 +3,6 @@ name: commit
 description: "Create logical Conventional Commits; choose amend versus new."
 ---
 
-Scope: Create logical Conventional Commits and choose amend versus new. Use when committing changes, directly or through another workflow.
-
-
 Optional argument: a target file or chunk. Commit only that target.
 
 1. **Gather** — skip if you already know the context. Run `git status --short`,

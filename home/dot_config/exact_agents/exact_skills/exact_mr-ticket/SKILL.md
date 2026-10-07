@@ -3,9 +3,6 @@ name: mr-ticket
 description: "Find, create, link, and update tracker tickets for MR/PR work."
 ---
 
-Scope: Find or create and link tracker tickets for MR/PRs; assign, transition, version, label, and update titles. Use for ticket requests.
-
-
 Arguments: `[<MR/PR url|number|branch>...] [to <version>] [none]`.
 No MR/PR means the current branch's MR/PR.
 

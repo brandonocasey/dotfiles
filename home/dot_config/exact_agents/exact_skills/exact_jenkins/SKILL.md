@@ -3,9 +3,6 @@ name: jenkins
 description: "Inspect player Jenkins jobs, builds, and logs, or trigger requested builds."
 ---
 
-Scope: Inspect jobs, builds, and console logs or trigger builds on the player Jenkins server. Use for Jenkins status, logs, or build requests.
-
-
 Use `jenkins-api` (`~/.local/bin/jenkins-api`). It calls the Jenkins REST API
 with curl.
 

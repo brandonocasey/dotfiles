@@ -3,11 +3,6 @@ name: worktree
 description: "Create, reuse, or remove isolated Git worktrees before branch work."
 ---
 
-Scope: Create, reuse, or remove an isolated Git worktree. Use before branch work.
-
-
-# Git worktree
-
 Do branch work in a worktree. Never switch branches in the main checkout.
 `<main-checkout>` below is the first `worktree` entry of
 `git worktree list --porcelain`. It is not `land`'s `MAIN_WT`, which can be

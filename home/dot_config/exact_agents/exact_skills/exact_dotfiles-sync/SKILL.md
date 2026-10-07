@@ -4,9 +4,6 @@ name: dotfiles-sync
 description: "Explicit-only: sync changed chezmoi targets to sources, scan for secrets, commit, and push."
 ---
 
-Scope: Copy changed chezmoi targets to their sources, scan for secrets, commit, and push the chezmoi source repo. Explicit-only.
-
-
 Optional argument: target paths. Without one, use the targets this session changed.
 
 Invoking this skill is the consent to commit and push the current branch of the

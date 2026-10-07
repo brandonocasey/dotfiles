@@ -4,10 +4,6 @@ name: investigate
 description: "User-invoked only: reproduce and fix reported bugs; isolate unresolved causes into actionable blockers."
 ---
 
-Scope: Reproduce and fix a bug from an issue, error, log, URL, or description using available tools. Narrow unresolved causes to actionable blockers. User-invoked only.
-
-# Investigate and fix an issue
-
 The goal is a verified fix. When a fix is not possible, the goal is a narrowed
 issue: the smallest reproduction, the suspect code, what is ruled out, and the
 next check. Stop only at one of these two results or at a stop point named below.

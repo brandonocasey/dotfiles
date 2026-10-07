@@ -3,9 +3,6 @@ name: review
 description: "Review PRs/MRs, diffs, commits, branches, or threads for verified defects; supports fixes and review loops."
 ---
 
-Scope: Review PRs/MRs, branches, commits, diffs, or review threads for verified defects, including automatic completion reviews. Supports fixes, review loops, and parallel reviewers.
-
-
 Review a code change adversarially: assume it is broken and try to prove it. The
 deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each

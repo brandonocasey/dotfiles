@@ -6,11 +6,6 @@ name: disk-cleanup
 description: "Reclaim disk space from regenerable caches, builds, containers, trash, merged worktrees, and old sessions."
 ---
 
-Scope: Reclaim local disk space from regenerable caches, builds, unused containers, trash, merged worktrees, and old sessions. Use for disk cleanup, agent housekeeping, or cross-project cleanup.
-
-
-# Reclaim local disk space
-
 Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
 approved items. Work locally unless the user explicitly requests a remote host.
 Creating or editing this skill does not invoke cleanup or authorize deletion. A dry run ends at the preview.

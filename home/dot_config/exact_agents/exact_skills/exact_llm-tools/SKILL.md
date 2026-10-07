@@ -4,9 +4,6 @@ name: llm-tools
 description: "Check or install CLI tools required by LLM workflows locally or over SSH using Homebrew."
 ---
 
-Scope: Check and install command-line tools that an LLM workflow requires, on the local host or a requested SSH host, with Homebrew.
-
-
 Resolve `scripts/ensure-tools.sh` against this skill's directory, then run it with Bash.
 With no tool names, it
 checks or installs the core set: Git, jq, ripgrep, Python 3, GitHub CLI,

@@ -3,8 +3,6 @@ name: code-standards
 description: "Apply before writing or reviewing code, tests, configuration, dependencies, or plans."
 ---
 
-Scope: Apply code, comment, test, dependency, and planning rules before writing or changing code, tests, configuration, dependencies, plans, or reviewing code.
-
 ## Code comments
 
 Before adding or changing comments, read [comments.md](references/comments.md).

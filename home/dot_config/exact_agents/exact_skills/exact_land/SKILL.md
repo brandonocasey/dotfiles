@@ -5,9 +5,6 @@ name: land
 description: "On request, commit and fast-forward into the local default branch, then clean up; never fetch or push."
 ---
 
-Scope: Commit and fast-forward a branch into the local default branch, then clean up. Use only when the user asks to land or merge locally; never fetch or push.
-
-
 Land the current branch into the local default branch (`TARGET`, resolved in
 step 0), then clean up. The **Hard rules** apply to every step.
 

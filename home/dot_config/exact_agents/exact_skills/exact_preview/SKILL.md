@@ -3,10 +3,6 @@ name: preview
 description: "Show live previews; screenshots only on request. Offer requested or open-ended design choices through a LAN gallery."
 ---
 
-Scope: Show a live preview when possible. Provide screenshots only when requested, and visual choices when requested or for an open-ended design; use a LAN gallery for choices.
-
-# Preview
-
 Default to a live preview of the actual app or page. A request to preview or
 show the work does not by itself request alternatives or screenshots.
 

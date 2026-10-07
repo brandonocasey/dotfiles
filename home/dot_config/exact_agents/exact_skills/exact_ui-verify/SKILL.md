@@ -3,10 +3,6 @@ name: ui-verify
 description: "Verify UI changes, responsive layouts, themes, and interaction states in a browser."
 ---
 
-Scope: Verify changed UI behavior, responsive layouts, themes, and interaction states in a browser. Use for UI changes, visual defects, test pages, and prototypes.
-
-# Verify UI
-
 Check the affected user journeys against the requested behavior. Scale coverage
 to the change: a shared navigation change needs more routes than a local label
 edit. Keep the existing design direction unless a redesign is part of the task.

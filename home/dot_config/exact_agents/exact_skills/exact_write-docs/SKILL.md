@@ -1,9 +1,7 @@
 ---
 name: write-docs
-description: "Create or restructure documentation using Diátaxis tutorials, how-tos, reference, and explanations."
+description: "Create, edit, or restructure documentation using Diátaxis tutorials, how-tos, reference, and explanations."
 ---
-
-Scope: Use when creating, editing, or restructuring documentation pages. Apply Diátaxis to tutorials, how-tos, reference, and explanations.
 
 - Structure docs by [Diátaxis](https://diataxis.fr/): every page serves exactly one
   mode — tutorial (learning by doing), how-to (working task), reference (working
