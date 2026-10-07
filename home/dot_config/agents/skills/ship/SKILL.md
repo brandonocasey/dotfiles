@@ -42,7 +42,9 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 
 - First push, or new commits on an already-pushed branch: `git push -u origin <BRANCH>`.
 - Branch exists on the remote but histories diverged (rebase/amend since last push):
-  `git push --force-with-lease origin <BRANCH>`. Never plain `--force`; never any force on
+  `git push --force-with-lease --force-if-includes origin <BRANCH>`.
+  If rejected, reconcile remote changes and rerun affected checks; never drop either safeguard.
+  Never plain `--force`; never any force on
   `TARGET` or `REMOTE_DEFAULT`; never push either from this skill.
 - With a changed owned submodule, follow **Ship** in `shared/submodules.md` first: push
   `SUB_BRANCH` from the submodule and open its MR/PR, then push the superproject with

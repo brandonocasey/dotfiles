@@ -59,8 +59,10 @@ The gate covers each changed submodule first, then the superproject:
 Ship submodules first so the superproject never points at a missing commit.
 
 1. Push each changed owned submodule from its worktree clone:
-   `git -C <SUB_PATH> push -u origin <SUB_BRANCH>` (`--force-with-lease` after a
-   rebase or amend, never plain `--force`, never on `SUB_TARGET`).
+   `git -C <SUB_PATH> push -u origin <SUB_BRANCH>`.
+   After a rebase or amend, add `--force-with-lease --force-if-includes`.
+   If rejected, reconcile remote changes and rerun affected checks; never drop either safeguard.
+   Never plain `--force`; never force-push `SUB_TARGET`.
 2. Open or update the submodule MR/PR against `SUB_TARGET` with the same
    planned title as the superproject MR/PR and a one-line description of the
    change. Link the superproject MR/PR when it already exists. Check for an
