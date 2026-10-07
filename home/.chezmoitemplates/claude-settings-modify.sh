@@ -90,7 +90,13 @@ managed=$(
     "workflow-authoring": "name-only",
     "loop": "name-only",
     "schedule": "name-only",
-    "code-review": "user-invocable-only"
+    "code-review": "user-invocable-only",
+    "anthropic-skills:deep-research": "name-only",
+    "run": "name-only",
+    "plugin-authoring": "name-only",
+    "anthropic-skills:built-in-browser": "name-only",
+    "anthropic-skills:chrome-browser": "name-only",
+    "anthropic-skills:computer-use": "name-only"
   },
   "hooks": {
     "SessionStart": [
