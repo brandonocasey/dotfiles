@@ -20,10 +20,8 @@ Read `host-preflight` and its `references/task-resources.md`, then run
 `agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
 resources, also read `worktree`, `session-resume`, and
 [agent-resources.md](references/agent-resources.md) before inventory or removal.
-For merged-worktree cleanup, read `~/.config/agents/skills/clean-merged-worktrees/SKILL.md`
-directly as the repository component; it is explicit-only, so the Skill tool cannot
-load it. Use its merge checks and `worktree` preservation rules. This invocation
-authorizes that component, not its optional branch/review deletion paths. Keep local branch refs. Read
+For merged-worktree cleanup, follow **Merged or landed worktrees** in
+agent-resources.md; it owns the `clean-merged-worktrees` component and its limits. Read
 [tools.md](references/tools.md) when selecting inventory or cleanup commands.
 
 ## Measure and discover

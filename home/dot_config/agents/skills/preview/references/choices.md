@@ -49,7 +49,7 @@ HTML options render in a sandbox without scripts or network access. Inline image
 Start the server detached, so harness time limits on background commands cannot stop it:
 
 ```sh
-agent-preview serve --config "$config" --state-dir "$state_dir" --port "$port" --detach true
+agent-preview serve --config <config> --state-dir <state-dir> --port <port> --detach true
 ```
 
 The command prints JSON with `url`, `token`, and `pid`, then returns. Share only that `url`. Check that the URL, the steps, and the exact option IDs render before sharing it. The token lives in the state directory, so a restart with the same state directory keeps the same URL. If the server stops, start it again the same way and share the same URL.
@@ -65,7 +65,7 @@ Text written before a blocking tool call can stay hidden until the turn ends. So
 Start with cursor `0`, then pass the returned `cursor` as `--after`:
 
 ```sh
-agent-preview wait --state-dir "$state_dir" --after 0 --timeout-seconds 3600
+agent-preview wait --state-dir <state-dir> --after 0 --timeout-seconds 3600
 ```
 
 The timeout only limits one wait call. The call returns as soon as a submission arrives. A timeout prints nothing and does not discard feedback. Run it again with the same cursor, in the same way, and show the URL again. Do not poll a model or ask the user to type that they submitted.
@@ -86,7 +86,7 @@ Stop the gallery server when the user finishes using it or requests shutdown.
 Keep it running if the requested deliverable still depends on its URL:
 
 ```sh
-agent-preview stop --state-dir "$state_dir"
+agent-preview stop --state-dir <state-dir>
 ```
 
 Keep private state until the task finishes and the user has finished with the

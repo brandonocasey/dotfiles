@@ -62,7 +62,7 @@ is missing.
 ## Shared rules
 
 - Never rebase, merge, push, or remove a worktree while the tree is dirty.
-- Resolve rebase and merge conflicts per the global rules (AGENTS.md, **Git**); never guess
+- Resolve rebase and merge conflicts per [git-policy.md](git-policy.md); never guess
   or pick a side. Never `rebase --skip` past a conflict.
 - Stop and ask on any unexpected worktree state or other ambiguity; never hide a problem to
   keep the workflow moving.

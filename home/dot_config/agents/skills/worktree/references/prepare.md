@@ -19,8 +19,8 @@ runs; dependent checks or commits wait for it.
   lockfiles are identical (`cmp`). Clone every dependency directory, nested
   ones included. Then run the lifecycle step that installs git hooks, for npm
   `npm run prepare --if-present`. Report that dependencies came from a clone.
-- A setup step that changes a repo git setting needs consent under AGENTS.md
-  **Git**.
+- A setup step that changes a repo git setting needs consent under
+  [git-policy.md](../../shared/git-policy.md).
 - If a commit hook fails for missing files, finish Prepare and commit again;
   `commit` owns `--no-verify`. If Prepare fails, report the command and error
   as a blocker. Continue work that does not need the missing dependencies.

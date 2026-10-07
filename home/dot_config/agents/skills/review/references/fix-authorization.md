@@ -12,7 +12,7 @@ Own work skips the `--fix` gate, whether auto-triggered or user-requested:
 For own work, apply verified fixes at once per step 4. Re-run tests/lint; follow
 [when-to-run.md](when-to-run.md) for follow-up reviews, or step 5 when
 `--loop` is set. An own MR/PR gets the full MR/PR flow of step 4, including the push
-(AGENTS.md Git rules).
+([git-policy.md](../../shared/git-policy.md)).
 For any other target, print the comments and wait for `--fix`. End with:
 `Reply fix to apply N findings.`
 After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means

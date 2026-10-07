@@ -17,10 +17,11 @@ For a detached worktree without that proof, keep it and report the commit ID.
 A squash merge does not prove the original commits are preserved.
 
 For a remote MR/PR, fetch and refresh its state before using merged/closed status.
-Remove a local branch only through **Remove after push** below or `land`'s merged
-branch checks. If a deleted remote branch prevents that proof, retain the local
+Remove a local branch only through **Remove after push** below, `land`'s merged
+branch checks, or the `-D` exceptions documented in `review` step 7 and
+`clean-merged-worktrees`. If a deleted remote branch prevents that proof, retain the local
 branch; a clean worktree can still be removed when that retained branch preserves
-its HEAD. Never force-delete a branch to finish cleanup.
+its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
 
 Follow [task-resources.md](../../host-preflight/references/task-resources.md) for
 task scratch locations and cleanup, including `.agent/<task>/`. Clean disposable

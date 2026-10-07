@@ -75,9 +75,8 @@ Use the smallest environment that shows the issue, in this order:
 3. A local build. Load `worktree` before you check out another version or change
    code. Load the repository's run skill or README to start it.
 
-Start each server on its own free port, bound to `0.0.0.0`. Report
-`http://<lan-ip>:<port>`. Shell variables do not persist between tool calls,
-so write the port number into each command.
+Shell variables do not persist between tool calls, so write the server's port
+number into each command.
 
 ## 3. Reproduce and collect evidence
 

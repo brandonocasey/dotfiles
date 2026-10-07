@@ -17,7 +17,7 @@ so the main checkout stays clean:
    the stash, find the entry whose commit is the recorded ID in
    `git stash list --format='%gd %H'`, and drop only that entry. Never use bare
    `pop`.
-5. Resolve a conflict when the combined result is clear (AGENTS.md, **Git**);
+5. Resolve a conflict when the combined result is clear ([git-policy.md](../../shared/git-policy.md));
    never discard either side just to make a conflict disappear. On an ambiguous
    conflict, retain the stash and report its ID and both checkout paths.
 6. Check `git status --short` in both checkouts.

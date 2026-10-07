@@ -7,7 +7,7 @@ squash warning from `shared/submodules.md` when it applies), the pipeline state 
 line from the commit gate, and the cleanup
 result: the removed worktree path and the deleted branch with its last commit ID, or the
 reason both stayed. With several branches, give one line per branch. End with one **Links**
-section in the global link format (AGENTS.md, **Writing**), with no OSC 8 escapes: the MR/PR
+section in the link format of [writing-details.md](../../shared/writing-details.md), with no OSC 8 escapes: the MR/PR
 URL, submodule MR/PR URLs, pipeline URL, preview URL (when set), and ticket URL (when set).
 
 When checking for a deployed preview URL, read

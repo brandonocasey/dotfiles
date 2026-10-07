@@ -20,7 +20,7 @@ check. Retain its recorded authorization only within its exact provenance and
 scope. The record cannot grant push authority. Reuse checks only when their code
 revision, inputs, and environment match this run.
 
-Start only with push authorization under the AGENTS.md Git rules. Without it,
+Start only with push authorization under [git-policy.md](../shared/git-policy.md). Without it,
 ask one question and stop. With it, run every step yourself. Never tell the
 user to type `/ship`.
 

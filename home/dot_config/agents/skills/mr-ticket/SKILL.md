@@ -11,8 +11,8 @@ No MR/PR means the current branch's MR/PR.
 
 The user's request is the approval for the ticket, MR/PR label, and title
 writes. Do not ask per step. For several MRs/PRs, show the plan once and wait.
-Push, merge, approve, and draft state keep their rules in
-[AGENTS.md](../../AGENTS.md).
+Push, merge, and approval keep their rules in
+[git-policy.md](../shared/git-policy.md). Leave draft state alone unless asked.
 
 ## Read the conventions
 

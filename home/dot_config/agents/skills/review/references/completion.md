@@ -10,8 +10,7 @@ reviews of this session's work:
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
   and rerun affected checks before reporting completion. Preserve the existing
   authorization rules for pushes and changes outside the intended behavior.
-- Do not repeat a full review merely to obtain a clean result after fixing findings.
-  Apply the follow-up rules in [when-to-run.md](when-to-run.md) to the
-  unreviewed delta with surrounding context. Explicit `--loop` requests retain their workflow.
+- After fixing findings, apply the follow-up rules in [when-to-run.md](when-to-run.md)
+  to the unreviewed delta with surrounding context.
 - Report the verified outcome, including defects fixed, rather than relabeling a
   review as clean after repairs. Disclose any inline fallback in [delegation.md](delegation.md).

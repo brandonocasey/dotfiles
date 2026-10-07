@@ -15,7 +15,7 @@ Run tasks in parallel and review every result. Follow `sub-agents` for delegatio
 - **End mode:** `ship` / `run-task-list-ship` pushes branches and opens or updates MRs/PRs without watching CI.
   `land` / `run-task-list-land` merges locally to default and cleans up.
   Without either, leave branches local and committed.
-  The selected mode authorizes that explicit-only workflow after review.
+  The selected mode authorizes that workflow after review.
   Read [ship](../ship/SKILL.md) or [land](../land/SKILL.md) for the selected mode, then follow every step.
 - **User splits:** follow the requested grouping, agent count, package split, and model choices instead of step 2's grouping.
   If parallel agents would share files, warn once with the concrete reason, then follow the user's decision.

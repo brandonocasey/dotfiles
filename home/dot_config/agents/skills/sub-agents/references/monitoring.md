@@ -9,9 +9,8 @@ While the watcher runs, the main session never polls the same target.
 
 For a long run (workflow, build, or watcher), state an ETA in minutes at the start.
 Report each phase change without a prompt.
-Answer "status?" from the run's own log or journal.
-While a background job you own is pending, end each turn with `Waiting on: <thing>, checked <time>, next check <time>`.
-Answer "status?" in three lines or fewer, state first.
+Answer "status?" from the run's own log or journal, in three lines or fewer, state first.
+While a background job you own is pending, put `Waiting on: <thing>, checked <time>, next check <time>` just before the final `Next:` line.
 
 A sub-agent's prompt cache expires after an idle period set by its harness and model; its next request rewrites its whole context.
 A waiting sub-agent wakes before that expiry: every 4 minutes in Claude Code (5-minute cache), every 25 minutes only on a verified API-billed OpenAI GPT-5.6 or later cache (30-minute minimum), and every 4 minutes on any other harness or model, or when unsure.
