@@ -19,7 +19,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   Propose edits; apply only approved proposals.
-- Use the invocation's scope; without one, audit both defaults.
+- Use the invocation's scope; without one, audit every target above.
   “Talk before making changes” applies the rules flow to every target.
 - A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
   **Left alone** includes every unedited target and unresolved finding, with reasons.

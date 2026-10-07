@@ -82,7 +82,7 @@ disposable task files, including `.agent/<task>/`. Keep a worktree and its branc
 user requests cleanup. After merge or closure, use the `worktree` skill's
 **Remove** section and its preservation checks. If `IN_WORKTREE` is false, leave
 the main checkout and its branch in place. Report retained paths and reasons.
-Keep any server whose URL is still a requested deliverable, per the global rules.
+Keep any server whose URL is still a requested deliverable, per task-resources.md.
 
 ## 6. Report
 
