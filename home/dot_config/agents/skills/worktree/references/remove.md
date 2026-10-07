@@ -71,6 +71,3 @@ must be set (`git push -u` sets it). Without one, `-d` checks against HEAD and
 refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
 `-d` once. Report the removed path and the branch's last commit ID; the remote
 branch keeps the history.
-
-The `worktree` skill's **Submodules** and **Blocked removal** sections point to
-[removal-checks.md](removal-checks.md), which owns those checks.

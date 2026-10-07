@@ -36,7 +36,9 @@ word for that pull request. Never infer `approve` or `merge`.
 
 ## Inventory
 
-On GitHub, use `gh pr list` and keep entries with a non-null
+On GitHub, run
+`gh pr list --state open --limit 100 --json number,url,author,headRefOid,isDraft,isCrossRepository,mergeStateStatus,autoMergeRequest`,
+raise `--limit` until the list is complete, and keep entries with a non-null
 `autoMergeRequest`. On GitLab, read [gitlab.md](references/gitlab.md): list
 with `glab mr list -F json -P 100 -p 1`, fetch pages until one has fewer than
 100 rows, keep `merge_when_pipeline_succeeds` true, and read each MR with

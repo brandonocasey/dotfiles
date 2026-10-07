@@ -76,7 +76,7 @@ authorization before rebasing or force-pushing. Report the blocker if unavailabl
 Before pushing, make sure the destination source branch still matches the
 observed SHA. If it moved, reconcile its new commits and rerun affected checks.
 Never force-push to overcome a non-fast-forward rejection.
-Use the review skill's fork destination rules; do not change remotes or Git settings.
+Push to a fork per [remote-fixes.md](remote-fixes.md) step 5; do not change remotes or Git settings.
 This authorization does not include merging the MR/PR, approving reviews, bypassing
 branch policy, publishing releases, or writing to production.
 

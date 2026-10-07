@@ -26,4 +26,4 @@ medium-sized task costs more than doing it inline.
 - Watching CI, logs, builds: the `sub-agents` skill's monitoring section.
 - Handing a hard sub-problem or the whole task to `consult`: the `sub-agents`
   skill's escalation section.
-- Several independent user-given tasks, one branch each: the `run-task-list` skill.
+- Several independent user-given tasks, one branch each: suggest the explicit-only `run-task-list` skill.

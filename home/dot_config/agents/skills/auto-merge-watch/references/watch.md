@@ -21,7 +21,7 @@ on check success, merge, close, head change, failure, missing data, permission
 error, cancellation, or deadline. It never pushes, retries, comments, changes
 pull request state, or merges. `required_checks_passed` describes check state
 only. It does not mean that reviews, mergeability, draft state, queue state, or
-policy permit a merge; apply the full passing criteria in SKILL.md.
+policy permit a merge; apply the preflight in [merge.md](merge.md).
 
 When the watcher reports `action_required`, inspect the reported state in the
 main session and apply the SKILL.md **Diagnose and repair** section under the current mode's

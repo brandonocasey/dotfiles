@@ -30,7 +30,7 @@ Run this step last: after step 4's push when `--fix` applies, otherwise after st
    - Remove the review worktree and any other clean worktree on the source branch,
      including one that existed before this review. Keep a locked, dirty, or in-use
      worktree and report it.
-   - Delete the local source branch per **Remove after push**. If the remote branch is
+   - Delete the local source branch per the `worktree` skill's **Remove after push**. If the remote branch is
      gone and `branch -d` refuses the squash-merged tip, run `git branch -D <branch>`
      only when the local tip equals the merged MR/PR's recorded head SHA. Otherwise
      keep it and report both IDs.
