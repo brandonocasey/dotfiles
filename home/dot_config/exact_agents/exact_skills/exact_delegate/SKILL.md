@@ -12,6 +12,5 @@ Read only the route needed for the task. Resolve these paths relative to this fi
 - Monitoring, model choice, or a whole-task handoff:
   [sub-agents](../sub-agents/SKILL.md) owns authorization, role selection,
   prompts, monitoring, escalation, and result verification.
-- Running a user-given task list: suggest the explicit-only [run-task-list](../run-task-list/SKILL.md) skill.
 
 Every spawn follows `sub-agents`; this router adds no authorization.
