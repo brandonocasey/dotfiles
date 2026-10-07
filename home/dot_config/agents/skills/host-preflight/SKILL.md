@@ -18,9 +18,10 @@ as unavailable. Report the missing command and inspected host. The check also
 looks in `~/.local/bin`, `~/bin`, and standard Homebrew prefixes.
 When `on_path` is false, use the returned absolute path.
 
-Godot MCP is globally disabled because it scans its project path during every
-startup. In a directory that contains `project.godot`, enable it for one Codex
-session with:
+Godot MCP stays disabled because it scans its project path at every startup.
+Only a host whose `~/.codex/config.toml` defines `[mcp_servers.godot-mcp]` has
+it; elsewhere, report it unavailable. In a directory that contains
+`project.godot`, enable it for one Codex session with:
 
 `codex -c mcp_servers.godot-mcp.enabled=true`
 

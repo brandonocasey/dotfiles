@@ -5,8 +5,8 @@ After a workflow change, select applicable cases from
 and minimal state separately from expected outcomes. Add a case only for a
 verified failure or a changed authorization boundary.
 
-Run deterministic helper tests first. For skill decisions, follow
-`skill-creator`'s independent forward-testing and `sub-agents` rules. Give the
+Run deterministic helper tests first. For skill decisions, run each case
+in a fresh sub-agent per `sub-agents`, without conversation history. Give the
 evaluator only the request, state, relevant skill, and permitted side effects.
 Do not send the expected outcome, implementation rationale, or prior finding.
 Use scratch fixtures and read-only tools. Do not push, merge, deploy, approve,
