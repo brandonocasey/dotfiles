@@ -65,10 +65,12 @@ question. Never invent a key, project, status, or version.
 5. Link related keys from step 2 with the tracker's "relates" link.
 6. Move the status per the lifecycle. Never move a ticket backward.
 7. Set the version when the user gave one or an MR/PR label names one.
-   "Add to" keeps existing versions. "Move" keeps released versions and
-   replaces unreleased ones. Ask before you move a merged MR/PR's ticket.
+   "Add to" keeps existing versions. "Move" removes only the unreleased source version.
+   Keep all other versions, per `jira-versions`. Ask before moving a merged MR/PR's ticket.
 8. When step 7 set a version, add the matching release label in the repo's
-   format. Remove other release labels.
+   format. For a move, remove only the source release label.
+   Omit removal when that label is absent or equals the target label.
+   Keep all other labels.
 9. Append ` [<KEY>]` to the MR/PR title in the repo's format, only when it is absent.
    Keep other keys and the `<type>(<scope>):` prefix.
 10. Read the ticket and MR/PR again to check each field.

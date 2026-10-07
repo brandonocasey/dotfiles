@@ -59,10 +59,11 @@ Output ends with `HTTP <code>`. `201` means created, `200` means ok.
    the full list.
 5. If the project labels MRs/PRs by release, change the label. Get the label
    format from the project's release skill or docs. GitLab:
-   `glab api --method PUT "projects/:id/merge_requests/<iid>" -f "add_labels=<label>"`.
+   `glab api --method PUT "projects/:id/merge_requests/<iid>" -f "add_labels=<label>" -f "remove_labels=<old>"`.
    GitHub: `gh pr edit <n> --add-label <label> --remove-label <old>`.
+   Omit removal when the source label is absent or equals the target label.
    Other platforms are unsupported: tell the user and skip this step.
-6. Read the ticket again to check the result.
+6. Read the ticket and any changed MR/PR again to check the result.
 
 "Move" never removes a released version. "Out of the release" removes only
 the named version.
