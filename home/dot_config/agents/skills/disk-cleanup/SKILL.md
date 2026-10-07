@@ -1,6 +1,7 @@
 ---
 model: claude-sonnet-5-5
 effort: medium
+disable-model-invocation: true
 name: disk-cleanup
 description: "Reclaim disk space from regenerable caches, builds, containers, trash, merged worktrees, and old sessions."
 ---
