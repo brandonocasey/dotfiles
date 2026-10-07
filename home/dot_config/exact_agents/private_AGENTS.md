@@ -30,6 +30,10 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 - Before spawning, monitoring, or escalating after failure: `sub-agents`. It owns roles, models, and Workflow `agent()` settings. Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
+- When an action needs rule files, read its whole set in one parallel batch. Do not read ahead for actions the task may not reach.
+- Sets: spawning = `sub-agents/SKILL.md` + `sub-agents/references/roles.md`; shipping = `ship/SKILL.md` + `shared/git-flow.md` + `shared/default-branch.md`; worktrees = `worktree/SKILL.md` + `worktree/references/create.md` + `shared/default-branch.md` + `shared/git-policy.md`, plus `worktree/references/prepare.md` before checks or commits; MR/PR review = `review/references/remote-target.md` + `review/references/remote-comments.md`.
+- Read rule files whole, once. Line ranges apply to code only.
+- Before each read, send every other read you already know you need in the same batch.
 
 ## Writing
 
