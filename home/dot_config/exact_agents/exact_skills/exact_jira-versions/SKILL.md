@@ -10,8 +10,8 @@ The Atlassian MCP and `acli` cannot manage versions. Use `jira-api`
 
 ## Setup
 
-- Set `JIRA_EMAIL` to the user's Atlassian email for each call. The shell
-  does not set it. Use `git config user.email` if no other source gives it.
+- Use `$JIRA_EMAIL` when set. Otherwise pass the user's Atlassian email on
+  each call, from `git config user.email` if no other source gives it.
 - Set `JIRA_SITE` when the site is not the `jira-api` default.
 - The token comes from `JIRA_API_TOKEN` or `pass show api/jira`.
 - Check auth: `jira-api GET /myself` (expect `HTTP 200`). Its `accountId` is
