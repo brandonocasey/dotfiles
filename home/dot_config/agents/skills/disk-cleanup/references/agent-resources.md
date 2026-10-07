@@ -1,5 +1,7 @@
 # Agent resources
 
+Used by `disk-cleanup`; this file owns agent-resource discovery and qualification.
+
 ## Discover the full scope
 
 Do not limit discovery to the current repository or one `.worktrees` directory.
@@ -34,11 +36,11 @@ Do not claim exhaustive cleanup when discovery was incomplete.
 
 ### Merged or landed worktrees
 
-Use `clean-merged-worktrees` as the repository cleanup component for this explicit
-batch-cleanup request. Read its merge-evidence procedure for each repository;
-this workflow narrows removal to merged/landed worktrees and retains local
-branches. Do not invoke its optional relevance, closed-PR, or open-review removal
-paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
+Read `~/.config/agents/skills/clean-merged-worktrees/SKILL.md` directly. It is
+explicit-only, so the Skill tool cannot load it. The user's `disk-cleanup` request is the explicit batch-cleanup request. Follow its
+merge-evidence procedure for each repository, narrowed to merged/landed
+worktrees. Retain local branches. Skip its relevance, closed-PR, and open-review
+removal paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
 
 - Prove local landing with HEAD ancestry in the verified local target. For
   remote merge claims, fetch the relevant remote and refresh forge state;
@@ -55,8 +57,8 @@ paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
   retain a parent containing any protected child.
 - Prove HEAD remains reachable from a named branch that will be retained or a
   fetched merge target. A squash merge alone does not preserve original commits.
-  Retain detached worktrees without that proof. Do not delete branch refs as
-  part of this skill, and never force-delete one to make cleanup succeed.
+  Retain detached worktrees without that proof. Do not delete branch refs in
+  this workflow, and never force-delete one to make cleanup succeed.
 
 ### Sessions inactive for at least 30 days
 

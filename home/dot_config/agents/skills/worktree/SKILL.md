@@ -34,7 +34,7 @@ Before restoring a removed worktree, read [restore.md](references/restore.md).
 
 Before removing a worktree or branch, read [remove.md](references/remove.md).
 It owns cleanup eligibility, preservation checks, and removal after push.
-Batch cleanup runs only when the user invokes `clean-merged-worktrees`.
+Batch cleanup runs only when the user invokes `clean-merged-worktrees` or `disk-cleanup`.
 
 ### Submodules
 

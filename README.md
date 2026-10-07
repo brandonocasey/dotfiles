@@ -23,10 +23,8 @@ files and source metadata. After installation, chezmoi sets the Codex invocation
 policy so `frontend-design` needs an explicit invocation. The managed Claude
 settings apply the same restriction to the installed skill and to its plugin.
 
-Chezmoi also manages `ui-verify`, `rom-weaver-release-verify`, and
-`benchmark-change` in the shared skills directory. Of these three skills,
-Codex and Claude can select only `ui-verify` automatically. Invoke
-`rom-weaver-release-verify` and `benchmark-change` explicitly.
+Chezmoi also manages `ui-verify` in the shared skills directory. Codex and
+Claude can select it automatically.
 
 Codex keeps the synced `docs` and `google-workspace` bodies disabled and exposes
 explicit-only wrappers with those names. The wrappers read the installed synced

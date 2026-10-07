@@ -14,7 +14,7 @@ self-hosted GitLab. Verify flags with `glab <command> --help` before use.
 | Job log | `glab ci trace JOB_ID` |
 | One retry | `glab ci retry JOB_ID` |
 
-Map the `glab mr view` JSON to the blockers above:
+Map the `glab mr view` JSON to the blockers in SKILL.md:
 
 - Head SHA is `sha`. Auto-merge is set when `merge_when_pipeline_succeeds` is
   true. Fork state: `source_project_id` differs from `target_project_id`.
@@ -22,10 +22,11 @@ Map the `glab mr view` JSON to the blockers above:
 - A branch is the user's own when `author.username` equals the login and the
   MR is not from a fork.
 - `has_conflicts` is true, or `detailed_merge_status` is `need_rebase` or
-  `conflict`: rebase or update the branch.
+  `conflict`: default mode reports it; broader mode follows
+  [branch-repair.md](branch-repair.md).
 - `head_pipeline.status` is `created`, `pending`, or `running`: wait.
 - `head_pipeline.status` is `failed`: read each failed job's full log. Fix or
-  retry per [Fix failing checks](check-repair.md), with `glab ci trace` and
+  retry per [check-repair.md](check-repair.md), with `glab ci trace` and
   `glab ci retry` in place of the `gh run` commands.
 - `detailed_merge_status` is `not_approved` or `requested_changes`: a review
   blocker. `draft` true or `draft_status`: a draft blocker.

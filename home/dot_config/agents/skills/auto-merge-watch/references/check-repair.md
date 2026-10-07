@@ -4,8 +4,8 @@ Unless the invocation is read-only, use this order for each pull request with
 a failing check on the user's own non-fork branch:
 
 1. Capture the head SHA, the failing check, and the run URL.
-2. Reuse or create the head branch's worktree as [Rebase or update the branch](branch-repair.md) step 1 describes. Rebase first when the branch is behind, so the
-   fix runs on the current base.
+2. Reuse or create the head branch's worktree as [Rebase or update the branch](branch-repair.md) step 1 describes. In broader mode, rebase first when the branch is
+   behind, so the fix runs on the current base. Default mode never rebases.
 3. Read the relevant code and the full failing log. Make the smallest
    root-cause fix. Preserve input validation, error handling, security
    controls, accessibility behavior, and repository output-parity rules.

@@ -5,26 +5,25 @@ name: disk-cleanup
 description: "Reclaim disk space from regenerable caches, builds, containers, trash, merged worktrees, and old sessions."
 ---
 
-Scope: Reclaim local disk space from regenerable caches, builds, unused containers, trash, merged worktrees, and old sessions. Use for disk cleanup or agent housekeeping.
+Scope: Reclaim local disk space from regenerable caches, builds, unused containers, trash, merged worktrees, and old sessions. Use for disk cleanup, agent housekeeping, or cross-project cleanup.
 
 
 # Reclaim local disk space
 
 Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
 approved items. Work locally unless the user explicitly requests a remote host.
-Creating or editing this skill does not invoke cleanup. A dry run ends at the preview.
-Honor narrower scope and existing approval; expanded deletion sets need approval.
-Prefer automatic execution within authorized scope, with an audit preview and
-pre-deletion rechecks; do not repeatedly request unchanged authorization.
+Creating or editing this skill does not invoke cleanup or authorize deletion. A dry run ends at the preview.
+Honor narrower scope. Within authorized scope, execute automatically with an audit
+preview and pre-deletion rechecks; do not repeat unchanged authorization requests.
 
 Read `host-preflight` and its `references/task-resources.md`, then run
 `agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
 resources, also read `worktree`, `session-resume`, and
 [agent-resources.md](references/agent-resources.md) before inventory or removal.
-For merged-worktree cleanup, explicitly run the `clean-merged-worktrees` workflow
-as the repository component; use its merge checks and `worktree` preservation
-rules. This invocation authorizes that component, not its optional branch/review
-deletion paths. Keep local branch refs. Read
+For merged-worktree cleanup, read `~/.config/agents/skills/clean-merged-worktrees/SKILL.md`
+directly as the repository component; it is explicit-only, so the Skill tool cannot
+load it. Use its merge checks and `worktree` preservation rules. This invocation
+authorizes that component, not its optional branch/review deletion paths. Keep local branch refs. Read
 [tools.md](references/tools.md) when selecting inventory or cleanup commands.
 
 ## Measure and discover
@@ -125,9 +124,11 @@ deletion paths. Keep local branch refs. Read
 - Show category, canonical path or tool resource ID, allocated size, activity where
   relevant, disposal/merge evidence, and remove/keep reason. Rank by reclaimable bytes,
   count overlaps once, and distinguish apparent size from estimated disk recovery.
-  State what cannot be restored and what must be downloaded or rebuilt.
+  State what cannot be restored and what must be downloaded or rebuilt. Retained Git refs
+  allow worktree recreation; deleted transcripts and unbacked cache contents are not restorable.
 - Obtain approval for the exact deletion set unless that action and scope are already
-  explicitly approved. Approval for one category does not authorize the rest.
+  explicitly approved. Expanded sets need new approval. Approval for one category does
+  not authorize the rest.
 - Recheck identity, contents, activity and ownership before each operation. Skip changed
   entries. Never follow replacement symlinks or delete an ancestor of protected data.
   Use literal resolved paths or structured tool IDs, never broad deletion globs.
@@ -139,5 +140,5 @@ deletion paths. Keep local branch refs. Read
   only this run's disposable scratch.
 - Re-enumerate affected resources and verify protected paths remain. Measure free space
   again and report removed counts/bytes by category, observed filesystem change,
-  retained reasons and coverage gaps. Concurrent writes and hard links can make measured
-  free-space recovery differ from estimates. Do not schedule recurring cleanup unless asked.
+  retained reasons, coverage gaps, and partial failures. Concurrent writes and hard links can make measured
+  free-space recovery differ from estimates.

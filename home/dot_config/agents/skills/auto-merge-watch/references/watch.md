@@ -20,8 +20,10 @@ SHA. It reports the initial state, state changes, and one final result. It stops
 on check success, merge, close, head change, failure, missing data, permission
 error, cancellation, or deadline. It never pushes, retries, comments, changes
 pull request state, or merges. `required_checks_passed` describes check state
-only; apply the full passing criteria in this skill.
+only. It does not mean that reviews, mergeability, draft state, queue state, or
+policy permit a merge; apply the full passing criteria in SKILL.md.
 
 When the watcher reports `action_required`, inspect the reported state in the
-main session and apply [branch-repair.md](branch-repair.md) and [check-repair.md](check-repair.md) under the standing
-authorization. Start a new watcher with the refreshed head SHA after a mutation.
+main session and apply the SKILL.md **Diagnose and repair** section under the current mode's
+authorization. Start a
+new watcher with the refreshed head SHA after a mutation.

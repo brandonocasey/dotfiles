@@ -1,5 +1,8 @@
 ## Rebase or update the branch
 
+Broader mode only. Default mode uses the merge update in SKILL.md and never
+rebases or force-pushes.
+
 For a stacked pull request whose base is another open pull request's branch,
 rebase onto that branch, not the default branch, and finish the base pull
 request first.
