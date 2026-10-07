@@ -29,8 +29,8 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   mergeability, repair authorization, retries, and conflict handling.
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
-- After you create a review worktree, run the `worktree` skill's **Prepare** section
-  before tests or a `--fix` commit.
+- After you create a review worktree, follow the `worktree` skill's **Prepare** section
+  before tests or a `--fix` commit; it installs only when a step needs it.
 - When `.gitmodules` exists and the review runs tests, initialize submodules per the
   `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
   same skill's **Submodules** section owns the `--force` decision.

@@ -1,11 +1,12 @@
 ## Prepare
 
 A new worktree has no ignored files: no dependencies, builds, or generated git
-hooks. Install dependencies and build only when required by the affected checks,
-commit hooks, or review evidence. A commit alone does not require installation;
-check the repository's setup instructions and hooks first. Preserve all required
-checks and hooks. Start required setup in the background and read code while it
-runs; dependent checks or commits wait for it.
+hooks. Install dependencies and build only when a step you will actually run
+needs them: affected checks, commit hooks, or review evidence. Never install at
+creation, by default, or in case a later step might need it. A commit alone does
+not require installation; check the repository's setup instructions and hooks
+first. Preserve all required checks and hooks. Once setup is needed, start it in
+the background and read code while it runs; dependent checks or commits wait for it.
 
 - When setup is required, run the worktree setup that the repo documents (the repo's agent
   instructions and the files they link, CONTRIBUTING, README). Without one, run the install of
