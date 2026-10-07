@@ -24,6 +24,5 @@ only. It does not mean that reviews, mergeability, draft state, queue state, or
 policy permit a merge; apply the preflight in [merge.md](merge.md).
 
 When the watcher reports `action_required`, inspect the reported state in the
-main session and apply the SKILL.md **Diagnose and repair** section under the current mode's
-authorization. Start a
-new watcher with the refreshed head SHA after a mutation.
+main session and apply the SKILL.md **Diagnose and repair** section under the
+invocation's authorization. Start a new watcher with the refreshed head SHA after a mutation.

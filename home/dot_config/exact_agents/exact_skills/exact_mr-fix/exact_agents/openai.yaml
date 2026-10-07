@@ -1,0 +1,7 @@
+interface:
+  display_name: "Fix merge requests"
+  short_description: "Alias for pr-fix"
+  default_prompt: "Use $mr-fix to fix CI on my merge requests until they are green."
+
+policy:
+  allow_implicit_invocation: false

@@ -14,7 +14,7 @@ self-hosted GitLab. Verify flags with `glab <command> --help` before use.
 | Job log | `glab ci trace JOB_ID` |
 | One retry | `glab ci retry JOB_ID` |
 
-Map the `glab mr view` JSON to the blockers above:
+Map the `glab mr view` JSON to the blockers in SKILL.md:
 
 - Head SHA is `sha`. Auto-merge is set when `merge_when_pipeline_succeeds` is
   true. Fork state: `source_project_id` differs from `target_project_id`.

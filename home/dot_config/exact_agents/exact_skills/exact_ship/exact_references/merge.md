@@ -42,7 +42,7 @@ approval from `--merge`.
 
 ## Watch
 
-Load [auto-merge-watch](../../auto-merge-watch/SKILL.md). Limit its inventory to
+Load [pr-fix](../../pr-fix/SKILL.md). Limit its inventory to
 the MRs/PRs shipped for this task. Follow its repair limits, watcher, and merge
 gates on both platforms. Keep the worktree while a repair can still be needed.
 For owned submodules, follow the existing submodule merge order first.

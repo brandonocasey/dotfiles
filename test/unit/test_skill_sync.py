@@ -99,7 +99,7 @@ class SkillSyncTests(unittest.TestCase):
             self.assertEqual(upstream_extra.read_text(), "GitHub CLI owns this\n")
             self.assertTrue(neighbor.exists())
             apply()
-            for name in ("llm-tools", "rom-weaver-release-verify", "pr-unblock"):
+            for name in ("llm-tools", "pr-fix", "ship"):
                 self.assertTrue((skills / name / "SKILL.md").exists(), f"Preserve {name}")
 
 

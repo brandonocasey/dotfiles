@@ -1,5 +1,8 @@
 ## Rebase or update the branch
 
+When SKILL.md **Authorization** rules out a rebase, use the update or report
+path for another author's branch below.
+
 For a stacked pull request whose base is another open pull request's branch,
 rebase onto that branch, not the default branch, and finish the base pull
 request first.

@@ -20,7 +20,7 @@ Never start a second watcher or query the watched target directly.
 A wake costs a cache read at 0.025–0.1× the base input price, by model; an expiry rewrites the context at up to 1.25×.
 This applies only to waits; never add calls during active work to keep the cache warm.
 
-Never watch an MR/PR or pipeline for success unless the user asks; `auto-merge-watch` counts as that request.
+Never watch an MR/PR or pipeline for success unless the user asks; `pr-fix` counts as that request.
 "When it merges, do X" also counts. Start one watcher with a long `--deadline-seconds`.
 Run the queued action only when the watcher reports reason `merged`.
 On any other result, such as `required_checks_passed`, a deadline, or a new head SHA, report it to the user.

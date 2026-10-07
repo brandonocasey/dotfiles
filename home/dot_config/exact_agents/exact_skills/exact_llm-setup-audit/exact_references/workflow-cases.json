@@ -38,7 +38,7 @@
     "id": "ship-through-merge",
     "request": "ship --merge",
     "state": {"host": "github.com", "draft": false, "fork": false, "method": "squash", "requiredChecks": "pending"},
-    "skills": ["ship", "auto-merge-watch"],
+    "skills": ["ship", "pr-fix"],
     "expected": ["Ship and enable auto-merge with the configured method", "Run the deterministic watcher for this PR", "Keep worktree until repairs end", "Finish merged or report a concrete blocker", "Do not bypass reviews, draft state, or branch policy"]
   },
   {

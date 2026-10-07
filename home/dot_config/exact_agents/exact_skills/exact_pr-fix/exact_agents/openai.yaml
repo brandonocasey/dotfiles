@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fix pull requests"
+  short_description: "Fix CI on PRs or MRs, then approve or merge on request"
+  default_prompt: "Use $pr-fix to get my open pull requests or merge requests green: update the branch, fix failing checks, and watch CI."

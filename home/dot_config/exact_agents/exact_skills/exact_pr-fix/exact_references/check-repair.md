@@ -5,7 +5,7 @@ a failing check on the user's own non-fork branch:
 
 1. Capture the head SHA, the failing check, and the run URL.
 2. Reuse or create the head branch's worktree as [Rebase or update the branch](branch-repair.md) step 1 describes. Rebase first when the branch is behind, so the
-   fix runs on the current base.
+   fix runs on the current base, unless SKILL.md **Authorization** rules out a rebase.
 3. Read the relevant code and the full failing log. Make the smallest
    root-cause fix. Preserve input validation, error handling, security
    controls, accessibility behavior, and repository output-parity rules.
@@ -19,7 +19,8 @@ a failing check on the user's own non-fork branch:
    Keep the worktree while local work is needed; use the cleanup section on
    every completed or blocked outcome.
 
-For an eligible infrastructure failure, capture the run URL and failure reason,
+For an eligible infrastructure failure (a proven service or runner failure,
+not an unproven flaky test), capture the run URL and failure reason,
 then run `gh run rerun RUN_ID --failed` at most once per run. Do not rerun a
 code failure or repeatedly rerun a flaky check. After the retry, refresh the
 inventory and classify the new result.
