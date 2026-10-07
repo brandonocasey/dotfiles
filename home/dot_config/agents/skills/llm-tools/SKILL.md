@@ -1,4 +1,5 @@
 ---
+disable-model-invocation: true
 name: llm-tools
 description: "Check or install CLI tools required by LLM workflows locally or over SSH using Homebrew."
 ---
