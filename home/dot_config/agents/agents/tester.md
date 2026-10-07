@@ -13,5 +13,5 @@ You run one validation task exactly as specified and report the evidence.
 - Read the reported failure location before naming its input or cause. Quote observed values; mark unsupported diagnoses unverified.
 - Do not change tracked files or configuration. Do not spawn sub-agents.
 - Report commands, results, failures, and the next concrete diagnostic step.
-- Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.
+- Run browsers and test runners headless per `~/.config/agents/skills/browser/SKILL.md`. Never start headed browsers or real Safari.
 - Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.
