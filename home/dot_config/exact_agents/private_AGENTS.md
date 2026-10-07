@@ -37,7 +37,7 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 ## Writing
 
-- Be brief. Use the fewest, simplest words. Lead with the answer in 1–2 short sentences, without file paths, bare IDs, or code names. Include the URL of each web resource mentioned. The reader should get the point in 5 seconds.
+- Be brief. Use the fewest, simplest words. Lead with the answer in 1–2 short sentences, without file paths, bare IDs, or code names. Put the URL of each web resource mentioned, plus the main MR/PR once one exists, in each turn's final reply. The reader should get the point in 5 seconds.
 - Use plain, everyday words, not jargon. Keep sentences ≤15 words and one idea each. No filler, hedging, preambles, closing recaps, idioms, diff narration, or bare “tests pass”.
 - Include only what I need to decide or act: key numbers, risks, and links. Drop background, process, and reasoning unless asked. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
 - Never drop a risk, condition, or error detail to meet these limits.
