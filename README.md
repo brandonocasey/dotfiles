@@ -17,12 +17,12 @@ one. An unchanged configuration does not trigger another reload.
 
 ## Agent skills
 
-Chezmoi manages owned folders under `~/.config/agents/skills/` as
+Chezmoi manages `~/.config/agents/` and every owned folder under it as
 [exact directories](https://www.chezmoi.io/reference/source-state-attributes/).
 Applying removes files and folders absent from the source, including nested references.
 Claude's ignored `synced/` tree and GitHub CLI's `frontend-design/` contents retain their existing ownership.
 
-Delete owned skills or files from `home/dot_config/agents/exact_skills/` in this repository.
+Delete owned skills or files from `home/dot_config/exact_agents/exact_skills/` in this repository.
 Commit and sync those source deletions, then apply on each machine.
 Deleting only an installed file causes chezmoi to restore it.
 New owned source directories need the `exact_` prefix at every depth.

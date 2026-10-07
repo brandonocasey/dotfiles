@@ -24,11 +24,15 @@ class SkillSyncTests(unittest.TestCase):
             (home / ".config/agents").mkdir(parents=True)
             env = dict(os.environ, HOME=str(home), XDG_CONFIG_HOME=str(root / "config"),
                        XDG_CACHE_HOME=str(root / "cache"), XDG_STATE_HOME=str(root / "state"))
+            agents_source = next(
+                path for path in (REPO / "home/dot_config").iterdir()
+                if path.name.removeprefix("exact_") == "agents"
+            )
             skills_source = next(
-                path for path in (REPO / "home/dot_config/agents").iterdir()
+                path for path in agents_source.iterdir()
                 if path.name.removeprefix("exact_") == "skills"
             )
-            fixture_skills = source / "dot_config/agents" / skills_source.name
+            fixture_skills = source / "dot_config" / agents_source.name / skills_source.name
             fixture_skills.mkdir(parents=True)
             # Use the real directory attributes without copying personal skill content.
             for path in skills_source.rglob("*"):
