@@ -6,12 +6,11 @@ description: "User-invoked only: reproduce and fix reported bugs; isolate unreso
 
 Scope: Reproduce and fix a bug from an issue, error, log, URL, or description using available tools. Narrow unresolved causes to actionable blockers. User-invoked only.
 
-
 # Investigate and fix an issue
 
 The goal is a verified fix. When a fix is not possible, the goal is a narrowed
 issue: the smallest reproduction, the suspect code, what is ruled out, and the
-next check. Stop only at one of these two results.
+next check. Stop only at one of these two results or at a stop point named below.
 
 Use every tool that can add evidence. When one tool fails or is not connected,
 try the next one before you call a fact unknown.
@@ -101,13 +100,11 @@ A click on an ad can bill the advertiser.
 
 ### Headed browser and sound
 
-Headless is the default. Use a headed browser when the issue needs one of these:
-DRM, fullscreen, picture-in-picture, casting, a real user gesture, autoplay
-policy, or audio.
+Headless is the default. Use a headed browser for the cases `browser` lists.
 
-This skill allows audible sound when the issue is about audio: no sound, wrong
-volume, mute state, unmuted autoplay, audio tracks, or audio sync. For this case
-only, this overrides the `browser` skill's rule against sound. Rules:
+Audible sound is allowed when the issue is about audio: no sound, wrong
+volume, mute state, unmuted autoplay, audio tracks, or audio sync. This is the
+exception in the `browser` skill's sound rule. Rules:
 
 - Before audible playback starts, tell the user in one line, for example
   "Starting headed Firefox with sound to check the audio track."

@@ -28,15 +28,14 @@ task checks the audio itself.
 | WebKit | `safari`, `safari-headed` | disabled |
 | Real Safari | `safari-native` (macOS with `safaridriver --mcp` only) | disabled |
 
-Enable one disabled server for a Codex session with
-`codex -c mcp_servers.<name>.enabled=true`. A repository can instead put the
-same setting in `.codex/config.toml`. For a Claude Code session, start it with
-`claude --mcp-config ~/.config/agents/mcp/<name>.json`; ask the user to restart
-the session that way, because a running session cannot add a server. Do not
-enable extra engines globally; each enabled server adds startup work to every
-session.
+Enable one disabled server per session:
 
-Use headed mode only for DRM, fullscreen, picture-in-picture, a real user gesture,
+- Codex: `codex -c mcp_servers.<name>.enabled=true`, or the same setting in the repository's `.codex/config.toml`.
+- Claude Code: `claude --mcp-config ~/.config/agents/mcp/<name>.json`. A running session cannot add a server, so ask the user to restart it that way.
+
+Do not enable extra engines globally; each enabled server adds startup work to every session.
+
+Use headed mode only for DRM, fullscreen, picture-in-picture, casting, autoplay policy, audio checks, a real user gesture,
 or when the user asks to watch.
 The `safari` MCP uses Playwright WebKit; it has no FairPlay DRM.
 Never enable `safari-native` off macOS or when `safaridriver --help` lacks `--mcp`.

@@ -9,7 +9,7 @@ on a named branch. Never remove the main checkout, a locked worktree, or one
 another task uses. Report retained paths and reasons or the removed path.
 
 Before removal, check tracked, untracked, ignored, and submodule state. Preserve
-unknown files and requested deliverables; use **Blocked removal** for classification
+unknown files and requested deliverables; use **Blocked removal** (`removal-checks.md`) for classification
 and backups even when ignored files would not stop Git. Dirty work is a blocker.
 Prove the worktree's HEAD is preserved on a named local branch that will remain,
 a current remote source branch, or a fetched merge target containing that commit.
@@ -71,18 +71,5 @@ refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
 `-d` once. Report the removed path and the branch's last commit ID; the remote
 branch keeps the history.
 
-### Submodules
-
-Before removing an initialized submodule worktree, read
-[removal-checks.md](../references/removal-checks.md), **Submodules**.
-It owns the recorded, clean, and preserved commit checks and the single-force rule.
-
-### Blocked removal
-
-If ordinary removal fails, read
-[removal-checks.md](../references/removal-checks.md), **Blocked removal**.
-Keep unknown work. Follow its classification, backup, and submodule checks
-before any force removal. Never force removal of a locked worktree.
-
-Batch cleanup runs only when the user invokes `clean-merged-worktrees`.
-Do not start it because a worktree task ended.
+The `worktree` skill's **Submodules** and **Blocked removal** sections point to
+[removal-checks.md](removal-checks.md), which owns those checks.

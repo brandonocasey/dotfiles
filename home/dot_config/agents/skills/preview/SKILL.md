@@ -5,7 +5,6 @@ description: "Show live previews; screenshots only on request. Offer requested o
 
 Scope: Show a live preview when possible. Provide screenshots only when requested, and visual choices when requested or for an open-ended design; use a LAN gallery for choices.
 
-
 # Preview
 
 Default to a live preview of the actual app or page. A request to preview or
@@ -48,7 +47,7 @@ offer them for an open-ended visual design with no reference or set direction,
 such as a new look, layout, icon, or slide style.
 
 - Before the first round, list the hard constraints from the request and
-  earlier feedback, such as "mobile layout is the default". Every variant MUST meet them.
+  earlier feedback, such as "mobile layout is the default". Every variant must meet them.
 - Build 3–4 variants per decision. Each differs on a named axis: layout,
   density, color, type, or motion. Name the axis in the option description.
 - If the user gave no reference image or URL, ask for one in the message that

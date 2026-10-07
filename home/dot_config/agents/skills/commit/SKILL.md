@@ -45,7 +45,6 @@ Split unrelated changes.
 - The scope is optional. Include one when the repo's commitlint config requires it
 - Repository conventions override these defaults: commitlint config, AGENTS.md,
   or CONTRIBUTING. They can require a ticket suffix or a longer header limit
-- Mark a breaking change with `!`, such as `feat!:` or `fix(api)!:` (**Choosing the type** below)
 - Keep the description minimal, with no filler, and make it say why the change happened
 - Add a body only when it gives context the description cannot hold
 
@@ -60,8 +59,8 @@ stay with that change and take its type. For a squash PR, consider the full diff
   for closing an exploit, and `a11y` or `i18n` for accessibility or localization.
 - Other areas: `docs`, `test`, `ci`, `build`, `deps`, or `dx` for developer
   tooling, including agent rules and skills. A docs-only PR is `docs`.
-- Mark a breaking change with `!` and a `BREAKING CHANGE:` footer describing
-  the required migration. Repository conventions take precedence.
+- Mark a breaking change with `!` (`feat!:`, `fix(api)!:`) and a `BREAKING CHANGE:` footer
+  describing the required migration. Repository conventions take precedence.
 
 When two types fit or the main purpose is unclear, read
 [choosing-type.md](references/choosing-type.md). Read its linked examples only

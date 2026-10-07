@@ -19,7 +19,7 @@ these repairs. Step numbers below refer to the review skill.
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead
      (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and
-     leaves `.git/config` unchanged.
+     leaves the git config unchanged.
   6. Sync the title and description to the final diff, per `ship` step 3, and read them
      back. Then refresh the source SHA, CI, and mergeability once, per [ci-and-conflicts.md](ci-and-conflicts.md).
   7. Clean up per step 3. Then run step 7 ([approve-merge.md](approve-merge.md)) when

@@ -56,7 +56,8 @@ For --loop, read [loop.md](references/loop.md).
 
 ## 6. Optional: --threads
 
-For --threads or requests to fix or resolve review comments, read [thread-routing.md](references/thread-routing.md).
+Only when the user asks (`--threads`, "are all comments resolved?", "fix and resolve the
+comments"). Follow [threads.md](references/threads.md) for the named MR/PR.
 
 ## 7. Optional: --approve, --auto-merge, --merge
 

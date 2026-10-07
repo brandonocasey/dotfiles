@@ -5,7 +5,6 @@ description: "Verify UI changes, responsive layouts, themes, and interaction sta
 
 Scope: Verify changed UI behavior, responsive layouts, themes, and interaction states in a browser. Use for UI changes, visual defects, test pages, and prototypes.
 
-
 # Verify UI
 
 Check the affected user journeys against the requested behavior. Scale coverage
@@ -54,8 +53,7 @@ those limits and use the `real-safari` skill when that specific check is needed.
 Measure each layout claim with a DOM script, not only by eye. Examples: the
 offset between two centers, the right edges of aligned items, equal heights,
 `scrollWidth > clientWidth`, and a tap target of at least the project's target
-size, or 44 px when the project sets none. Report the numbers. If no browser script is available, say that the measurement is
-unverified.
+size, or 44 px when the project sets none. Report the numbers. If no browser script is available, mark the measurement "unverified:".
 
 Save representative screenshots with their viewport, theme, state, and revision.
 Use the repository's output convention, or `dist/ui-verify/<task>` for new
@@ -71,8 +69,8 @@ site data.
 Report the checked journey and states, concrete failures, screenshots,
 measurements, and untested device or engine coverage. For a reported defect,
 include before and after screenshots at the same viewport. Do not say "fixed"
-without this evidence. Fix in-scope defects and
-rerun the affected checks. Reuse results for unchanged code and inputs.
+without this evidence. Fix in-scope defects and rerun the affected checks.
+Reuse results for unchanged code and inputs.
 
 Return evidence to the requesting task or `review`; do not start another review
 or shipping cycle from this skill. `frontend-design` owns a requested design

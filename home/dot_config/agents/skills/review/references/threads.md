@@ -28,10 +28,10 @@ Prefix each command with `GITLAB_HOST=<host>` when self-hosted.
 
 ## GitHub
 
-List threads with `isResolved: false`:
+List threads with `isResolved: false`. When `hasNextPage` is true, repeat with `reviewThreads(first:100,after:"<endCursor>")` until it is false:
 
 ```sh
-gh api graphql -f o=<owner> -f r=<repo> -F n=<n> -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{id isResolved isOutdated path line comments(first:20){nodes{author{login} body url}}}}}}}'
+gh api graphql -f o=<owner> -f r=<repo> -F n=<n> -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated path line comments(first:20){nodes{author{login} body url}}}}}}}'
 ```
 
 Reply to and resolve one thread:

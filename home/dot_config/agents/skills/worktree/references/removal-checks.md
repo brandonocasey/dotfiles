@@ -5,7 +5,7 @@
 Git refuses to remove a worktree that holds an initialized submodule, clean or
 not: `working trees containing submodules cannot be moved or removed`. Only
 `--force` removes it, and `--force` deletes the submodule's git directory under
-`.git/worktrees/<name>/modules/`, so a submodule commit that exists nowhere else
+`<git-common-dir>/worktrees/<name>/modules/`, so a submodule commit that exists nowhere else
 is lost. Before that single `--force`, prove all three points for every
 initialized submodule (an entry of `git -C <worktree-path> submodule status
 --recursive` without a leading `-`):
@@ -70,6 +70,3 @@ initialized submodule passes **Submodules**.
    Never pass `--force` twice. A locked worktree (`locked` in
    `git worktree list --porcelain`) is never removed; report it.
 6. Report each blocker with its class, evidence, and backup path.
-
-Batch cleanup runs only when the user invokes `clean-merged-worktrees`. Do not
-start it because a worktree task ended.

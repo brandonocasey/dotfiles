@@ -42,4 +42,4 @@ merge cannot prevent it. Report retained paths and reasons, or the removed path
 and any blocker. Explicit cleanup requests still require preservation checks.
 
 For MR/PR comment links and suggestion syntax, read
-[remote-comments.md](../references/remote-comments.md). Local reviews do not need it.
+[remote-comments.md](remote-comments.md). Local reviews do not need it.

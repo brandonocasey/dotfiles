@@ -5,7 +5,7 @@ Return to preview for live previews and requested screenshots.
 
 ## Ask one decision per question
 
-Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Never mix two decisions in one question, and never ask the user to type option codes into notes.
+Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Put one decision in each question. Do not ask the user to type option codes into notes.
 
 - Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
 - Give each question a `prompt` that says what to decide.

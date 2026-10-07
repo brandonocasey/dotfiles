@@ -82,8 +82,8 @@ Ship submodules first so the superproject never points at a missing commit.
 ## Land
 
 Each worktree has its own submodule clone under
-`.git/worktrees/<name>/modules/<SUB_NAME>`. The clone that persists is the
-main checkout's, under `.git/modules/<SUB_NAME>`, so the submodule branch
+`<git-common-dir>/worktrees/<name>/modules/<SUB_NAME>`. The clone that persists is the
+main checkout's, under `<git-common-dir>/modules/<SUB_NAME>`, so the submodule branch
 lands there. The fetches below read local paths, not remotes; `land` allows
 both directions between these clones. This flow requires `MAIN_WT` to be
 that main checkout (the

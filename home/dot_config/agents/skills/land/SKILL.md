@@ -142,12 +142,12 @@ ask only for blockers that it explicitly requires the user to resolve.
 Follow [task-resources.md](../host-preflight/references/task-resources.md): stop
 task-owned servers and background processes, close task-owned browser resources,
 and remove known disposable task files, including `.agent/<task>/`. Keep
-requested deliverables and any server or files still needed for a live preview the user is using; report that
-exception and its URL, and defer removal of any worktree it needs until the
+requested deliverables. Keep any server or files a live preview in use still needs.
+Report that exception and its URL, and defer removal of any worktree it needs until the
 preview ends. Never stop another task's processes or remove its files.
 
-A branch may track a remote upstream, and `git branch -d` checks against that upstream,
-not HEAD — so it can refuse a branch that was only landed locally. The delete below unsets the
+A branch may track a remote upstream. `git branch -d` checks against that upstream,
+not HEAD, so it can refuse a branch that was only landed locally. The delete below unsets the
 upstream first, so `-d` checks against `TARGET` instead.
 
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be

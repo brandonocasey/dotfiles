@@ -7,5 +7,4 @@ Write a patch under the task scratch location from AGENTS.md:
 `git diff -U0 -- <file> > <patch>`. Delete hunks belonging to the other change,
 then stage it with `git apply --cached --unidiff-zero <patch>`.
 Check `git diff --staged` before committing. Repeat for the remaining change.
-Do not use `git add -p` or `-i`; these workflows must be non-interactive.
-Remove the patch after the commit succeeds.
+The `commit` skill's **Constraints** ban `git add -p`/`-i` and require removing the patch after the commit.

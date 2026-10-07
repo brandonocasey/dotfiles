@@ -6,7 +6,6 @@ description: "Audit repository defects with independent agents; verify findings 
 
 Scope: Audit repository bugs, performance, duplication, compatibility, and consistency with independent agents. Verify findings before approved fixes; also re-verify or work through existing AUDIT.md findings.
 
-
 Run a repo-wide audit as a staged multi-agent pipeline. Findings are never shown unverified,
 and fixes are never applied without the user picking them.
 
@@ -62,7 +61,7 @@ a JSON array of findings:
   "title": "one line", "detail": "what is wrong, why it matters, concrete fix direction" }
 ```
 
-State in the prompt that the agent's final message IS the JSON — no prose around it.
+State in the prompt that the agent's final message is the JSON, with no prose around it.
 
 ## 2. Merge and dedupe
 
@@ -96,8 +95,8 @@ they answer.
   same file run in the same agent, sequentially.
 - One fixer agent per group, in the step-0 worktree. Every fixer prompt must contain: the
   worktree path, the finding(s) verbatim (id, file:line, detail, evidence), and these rules:
-  the decision is already made — implement it faithfully, do NOT re-litigate; edit ONLY inside
-  the worktree; HARD BOUNDARY — touch only your assigned files, others are being edited in
+  the decision is already made, so implement it faithfully and do not re-litigate; edit only inside
+  the worktree; touch only your assigned files, because others are being edited in
   parallel; do not commit; report per finding: fixed / blocked / already-fixed, with the diff
   summary.
 - After all fixers return: write or update the step-6 remainder file, loading

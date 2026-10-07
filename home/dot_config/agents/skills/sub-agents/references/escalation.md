@@ -1,6 +1,6 @@
 ## Escalate with `consult`
 
-Only the main session may escalate. Sub-agents report blockers without escalating.
+Only the main session may escalate.
 Use the current model stated in the system prompt; do not invent one.
 Request a fresh independent assessment when it can resolve a specific blocker,
 even if the consultant uses the same model. Same-model consultation is exceptional: a

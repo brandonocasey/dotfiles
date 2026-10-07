@@ -31,7 +31,7 @@ Read comments only when the issue body points to them.
 Choose independent tasks with separate files, checkable outcomes, and no user decisions needed mid-task.
 Skip destructive, outward-facing, or vague tasks; report each skipped task and reason.
 Never add to the source list. Report completions either way.
-You may remove an item after its task passes step 3. Only the main session edits the source, never a task worktree.
+You may remove an item after its task passes step 3. Task agents never edit the source; only the main session does.
 If the source is tracked, commit the removal on that task's branch; otherwise edit the file in place.
 
 Write one line of acceptance criteria per selected task.
@@ -68,7 +68,6 @@ Never report completion without passing review or refutation against the accepta
 - Commit every worktree through `commit`; leave no task changes uncommitted.
 - Follow the selected end-mode skill for branches whose assigned tasks all passed step 3.
   Keep blocked or partial branches local. Land eligible branches one at a time.
-  Without an end mode, keep branches local.
 - If the user asked for as many or all source items, select the next batch from items that no earlier batch of this run selected.
   Repeat steps 1-4. Stop when no eligible item is left or when a batch has no task that passes step 3.
 - On completion, failure, cancellation, or blocked exit, stop servers, free ports, and close browser pages opened by the batch.

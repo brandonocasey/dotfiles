@@ -14,4 +14,4 @@ Preserve the user's tasks, arguments, model choices, and split choices.
 Treat `tandem-ship` as `run-task-list ship` and `tandem-land` as
 `run-task-list land`; `/tandem ship` and `/tandem land` select the same modes.
 Keep this alias's worktree naming: `.worktrees/tandem-<slug>` with branch
-`<type>/<slug>`. With no end mode, leave the results local and committed.
+`<type>/<slug>`.

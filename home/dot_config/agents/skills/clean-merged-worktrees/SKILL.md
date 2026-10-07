@@ -34,8 +34,7 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   the local branch, and any attached worktree is clean and idle. This proves every commit
   reachable from the local tip was included in that PR. Recheck the exact tip immediately before
   deletion. Never use this exception when the local tip is a descendant of or diverges from the
-  PR head, or when the PR head commit is unavailable locally. Never use `-D` for a branch that is
-  merely closed, named like a feature, or believed to be merged.
+  PR head, or when the PR head commit is unavailable locally.
 - **Closed-without-merge exception**: `git branch -D` only after the user names the branch in
   the step 5 confirmation, the exact local tip equals the closed PR head, and any attached
   worktree is clean and idle. A confirmation never authorizes force-removing a worktree with Unknown blockers; **Blocked removal** in the `worktree` skill owns the classification.
@@ -43,9 +42,8 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   matches a remote PR head, including detached worktrees and multiple worktrees for one PR. It
   never authorizes deleting local branch refs unless those branches separately qualify.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
-  stale local ref.
+  stale local ref. Use `-D` only under the exceptions above.
 - Retain a branch used by an open PR even if an older PR for that branch was merged.
-  The review-worktree confirmation can remove only a qualifying worktree, not that ref.
 - **Relevance findings are advice, not evidence.** A verdict of superseded or no longer useful
   from step 5 never authorizes deletion by itself. Such a branch may be removed only with
   `git branch -D` after the user names that branch and confirms, with the exact tip SHA recorded
@@ -191,8 +189,8 @@ evidence, or a user-confirmed exact closed-without-merge head. Current, target,
 open-PR, and otherwise protected branches remain protected in every category.
 
 Before mutating anything, show a compact table with `remove`, `keep`, and `reason` for every
-candidate. Every `keep` row then goes through step 5. If the user asked for a dry run, stop after
-the step 5 report. Otherwise ask the user to approve the `remove` rows before step 6. Ask in the
+candidate. Every `keep` row then goes through step 5. If the user asked for a dry run, show the step 5
+assessment, ask nothing, and stop. Otherwise ask the user to approve the `remove` rows before step 6. Ask in the
 same message as the step 5 question when step 5 asks one.
 
 ### 5. Assess retained candidates
@@ -231,9 +229,9 @@ git -C <target-worktree-path> branch -D -- <branch>   # exact-head or contained-
 
 Before any `-D`, re-verify the matching exception's exact-tip and state conditions immediately
 before the command, including the ancestry check for contained-history cleanup, and report which
-exception — exact squash-merged PR head, merged-PR-contained history, or user-confirmed
-closed-without-merge head, or user-confirmed relevance removal — backed the forced local ref
-deletion. Relevance removal requires the named-branch confirmation and recorded recovery tip
+exception backed the forced local ref deletion: exact squash-merged PR head,
+merged-PR-contained history, user-confirmed closed-without-merge head, or user-confirmed
+relevance removal. Relevance removal requires the named-branch confirmation and recorded recovery tip
 from step 5; it is not merge evidence. If the target branch is not checked out anywhere, retain
 candidates requiring `-d` rather than switching a user's checkout; an eligible
 PR-head exception or relevance deletion may use `-D` from the current checkout instead.

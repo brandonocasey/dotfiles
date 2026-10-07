@@ -5,7 +5,6 @@ description: "Create or restructure documentation using Diátaxis tutorials, how
 
 Scope: Use when creating, editing, or restructuring documentation pages. Apply Diátaxis to tutorials, how-tos, reference, and explanations.
 
-
 - Structure docs by [Diátaxis](https://diataxis.fr/): every page serves exactly one
   mode — tutorial (learning by doing), how-to (working task), reference (working
   facts), explanation (learning background). Map an existing repo's folders onto
@@ -15,7 +14,7 @@ Scope: Use when creating, editing, or restructuring documentation pages. Apply D
   thinking+learning = explanation
 - When a section drifts into another mode, move it to the owning page and leave a
   one-line link both ways — never duplicate content across pages
-- Improve docs one page, one flaw at a time — never plan a restructure; good
+- Improve docs one page, one flaw at a time; do not plan a whole-docs restructure. Good
   structure emerges from small fixes
 - Docs must be useful at every state: no "coming soon" stubs, and don't hold back a
   page because it isn't finished

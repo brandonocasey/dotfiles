@@ -51,7 +51,7 @@ Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, no
 
 1. Run `chezmoi status ~/.config/agents ~/.codex ~/.claude ~/.claude-two` first.
    For each listed target, summarize `chezmoi diff <target>` in one line.
-   Skip targets modified in the last few minutes; another agent may own them.
+   Skip targets under the ownership rule below.
    Recommend one action for each: copy the target to its source (step 3), or `chezmoi apply <target>`.
    Ask once for all of them. Apply only the approved actions.
    If a listed source has no target, audit and edit the source itself.
