@@ -220,13 +220,13 @@ if [ $is_1m -eq 0 ]; then
 fi
 
 # --- Context window label: window size instead of generic "ctx" ---
-# 1M models -> "1M"; otherwise derive "<n>k" from the known total, else "200k".
-if [ $is_1m -eq 1 ]; then
-  ctx_label="1M"
-elif [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]; then
+# Prefer reported capacity; model-based defaults apply only when capacity is absent.
+if [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]; then
   ctx_label=$(awk -v t="$ctx_total" 'BEGIN{
     if (t+0 >= 1000000) printf "%gM", t/1000000; else printf "%dk", int(t/1000 + 0.5)
   }')
+elif [ $is_1m -eq 1 ]; then
+  ctx_label="1M"
 else
   ctx_label="200k"
 fi
