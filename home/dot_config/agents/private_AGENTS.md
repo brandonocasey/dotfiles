@@ -33,14 +33,15 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 ## Writing
 
-- Make answers self-contained. Lead with the answer in 1–4 plain sentences, without file paths, bare IDs, or code names. Always include the URL of each web resource they mention. The reader should grasp the point in 10 seconds and find needed facts in 60.
-- Use active, literal language. Keep sentences ≤25 words and one idea each. No filler, hedging, preambles, closing recaps, idioms, diff narration, or bare “tests pass”.
-- Keep every needed fact, condition, number, risk, and link, even over length budgets. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
-- Prefer 1–10 concise bullets; number sequences. Group longer lists. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
+- Be brief. Use the fewest, simplest words. Lead with the answer in 1–2 short sentences, without file paths, bare IDs, or code names. Include the URL of each web resource mentioned. The reader should get the point in 5 seconds.
+- Use plain, everyday words, not jargon. Keep sentences ≤15 words and one idea each. No filler, hedging, preambles, closing recaps, idioms, diff narration, or bare “tests pass”.
+- Include only what I need to decide or act: key numbers, risks, and links. Drop background, process, and reasoning unless asked. Give time estimates in concrete units. Explain errors through location, cause, and fix; provide runnable actions when useful.
+- Never drop a risk, condition, or error detail to meet these limits.
+- Prefer ≤5 bullets, one line each; number sequences. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
 - Mark uncertainty “unverified:” with evidence.
 - Finish the current issue before raising another. Put unrelated findings in one `Separately:` line near the end.
 - When work remains open, end with exactly one `Next: <one action>`: the user's action or your step needing approval. Check that the first and last lines explain the result and next action.
-- For genuine ambiguity, ask one short question. For reversible, in-scope choices, recommend one and briefly name alternatives. Otherwise give 2–4 ranked options with effects and trade-offs.
+- For genuine ambiguity, ask one short question. For reversible, in-scope choices, pick one and proceed. Otherwise list 2–4 numbered options, one line each: what it does and its main cost. Mark one “(recommended)”.
 - Before referencing external resources, ELI5 explanations, multi-step status updates, change recaps, PR descriptions, review comments, tickets, or documentation, read `shared/writing-details.md`.
 
 ## Git
