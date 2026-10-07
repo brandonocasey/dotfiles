@@ -1,6 +1,11 @@
 ## Remove
 
 Keep worktrees and branches for open MRs/PRs unless the user requests cleanup.
+Exception: remove a review worktree this review created when the review ends,
+even for an open MR/PR, unless the review installed dependencies in it. Its
+HEAD counts as preserved when it is still the commit the review fetched (no
+local commits), or when a fresh fetch of the MR/PR source branch or head ref
+contains it (`git merge-base --is-ancestor HEAD FETCH_HEAD`).
 Stop task-owned servers and background processes when finished; worktree retention
 is separate from process cleanup. Remove a task worktree after merge or closure,
 or on explicit cleanup, only after the preservation checks below. A temporary

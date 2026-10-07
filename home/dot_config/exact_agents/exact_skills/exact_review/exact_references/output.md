@@ -32,11 +32,12 @@ conflict status separately, with the observed source SHA and job or pipeline lin
 Pending checks are unverified, not passing.
 
 Stop this review's servers, browser pages, and background processes when it ends.
-Keep a worktree for an open MR/PR so follow-up repairs can reuse it. For a local
-review or a merged/closed MR/PR, remove only a worktree this review created,
-following the `worktree` skill's **Remove** section. Never remove a pre-existing
-worktree, except under `--merge` step 7 cleanup. Keep a worktree while repairs or
-re-verification remain pending.
+When the review ends, remove the worktree this review created, following the
+`worktree` skill's **Remove** section. This includes open MRs/PRs. Exception:
+keep an open MR/PR's worktree when this review installed dependencies in it, so
+follow-up repairs can reuse them. Never remove a pre-existing worktree, except
+under `--merge` step 7 cleanup. Keep a worktree while repairs or
+re-verification in this run remain pending.
 Run resource cleanup separately from outward steps so a blocked approval or
 merge cannot prevent it. Report retained paths and reasons, or the removed path
 and any blocker. Explicit cleanup requests still require preservation checks.
