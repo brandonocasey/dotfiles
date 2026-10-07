@@ -45,6 +45,9 @@ that the platform is unsupported and stop before any mutation.
   # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
   ```
 
+  Record the worktree's starting SHA (`git -C <wt> rev-parse HEAD`); cleanup compares
+  against it.
+
 ## Linked MRs/PRs
 
 When the request or the MR/PR description names a companion or linked MR/PR, review it in
