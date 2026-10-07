@@ -14,8 +14,10 @@ Run this step last: after step 4's push when `--fix` applies, otherwise after st
 
 1. **Gate**: run only when no `bug`, `requirement`, or `question` finding remains
    unfixed. Otherwise skip every flag and name the blocking findings.
-2. **Head**: refresh the source SHA. If it moved since the review or the fix push,
-   check each finding again before continuing. Use the fresh SHA as `HEAD_SHA`.
+2. **Head**: refresh the source SHA. If it moved since the review or fix push,
+   review the changed commits through steps 0–2 and recheck affected findings.
+   Run affected checks and manual cases, then repeat the gate above.
+   Use only that verified SHA as `HEAD_SHA`.
 3. **Approve** (`--approve`): follow the `ship` skill's
    [merge.md](../../ship/references/merge.md#approve) **Approve** section with `HEAD_SHA`.
    On GitHub, report your own PR as a blocker instead of approving it.
