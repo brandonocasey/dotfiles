@@ -1,5 +1,12 @@
 [
   {
+    "id": "retained-merge-only-work",
+    "request": "Assess whether the retained candidate branch is superseded. Do not remove anything.",
+    "state": {"fixtureProfile": "merge-only-work", "repository": "scratch fixture", "targetBranch": "target", "candidateBranch": "candidate", "forgeAccess": false},
+    "skills": ["clean-merged-worktrees"],
+    "expected": ["Inspect local-only merge commits as well as non-merge patches", "Do not classify patch equivalence alone as superseded", "Observe that the virtual merge adds the unique file", "Retain the branch and authorize no deletion"]
+  },
+  {
     "id": "existing-dependent-pr",
     "request": "ship",
     "state": {"branch": "fix/child", "default": "main", "openPR": {"number": 955, "base": "fix/parent", "head": "fix/child"}},
