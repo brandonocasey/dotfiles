@@ -23,12 +23,15 @@ uncertainty remains. Otherwise apply the triggers and narrow exceptions below.
 
 ## Skip exceptions
 
-- Skip only when the user did not request review, no material uncertainty remains,
+- Prototypes built only to show through `preview` or Artifacts (`/preview`,
+  `/artifacts`) skip review unless the user requests it. The triggers apply once
+  that code moves into a change that will ship.
+- Otherwise, skip only when the user did not request review, no material uncertainty remains,
   and every change is a prose-only correction, cosmetic styling that preserves
   interaction, or a narrow mechanical edit with verified equivalence.
 - No decisions, state transitions, accepted inputs, error behavior, or integration
   assumptions may change. Passing tests alone does not justify skipping.
-- A dependency bump, config value, test-only change, or prototype is not automatically
+- A dependency bump, config value, or test-only change is not automatically
   exempt. Broad refactors still require review. Inspect the diff and run relevant
   checks; visible behavior changes still need the manual check in AGENTS.md.
 
