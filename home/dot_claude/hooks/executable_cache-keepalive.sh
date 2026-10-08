@@ -1,5 +1,5 @@
 #!/bin/sh
-# Keeps an idle main session's 1-hour prompt cache warm for up to 3 idle hours.
+# Keeps an idle main session's 1-hour prompt cache warm for about 2.5 idle hours.
 #   prompt: UserPromptSubmit hook; records the last prompt time.
 #   idle:   Notification idle_prompt hook with asyncRewake; sleeps, then exits 2
 #           to wake Claude for a one-word reply that reads the cache.
@@ -23,8 +23,8 @@ prompt)
   date +%s >"$state/$sid.last_prompt"
   ;;
 idle)
-  sleep_s=${CACHE_KEEPALIVE_SLEEP:-2880}
-  max_idle=${CACHE_KEEPALIVE_MAX_IDLE:-10800}
+  sleep_s=${CACHE_KEEPALIVE_SLEEP:-2700}
+  max_idle=${CACHE_KEEPALIVE_MAX_IDLE:-7200}
   transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
   [ -f "$transcript" ] || exit 0
   find "$state" -type f -mtime +2 -delete 2>/dev/null
