@@ -76,7 +76,7 @@ Before finishing the requested shipping scope: [finish-scope.md](references/fini
 ## 5. Clean up
 
 Follow [task-resources.md](../host-preflight/references/task-resources.md): stop
-task-owned servers, browser pages, and background processes; remove known
+task-owned servers, browser pages, and background processes, except a running CI watch from step 4; remove known
 disposable task files, including `.agent/<task>/`. Keep a worktree and its branch while the MR/PR is open, unless the
 user requests cleanup. After merge or closure, use the `worktree` skill's
 **Remove** section and its preservation checks. If `IN_WORKTREE` is false, leave

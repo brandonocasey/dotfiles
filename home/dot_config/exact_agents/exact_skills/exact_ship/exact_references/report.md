@@ -2,8 +2,8 @@
 
 State plainly: the commits shipped (`<short> <subject>` each), whether the MR/PR was created
 or updated, the same for each submodule MR/PR with the merge order (submodule first, and the
-squash warning from `shared/submodules.md` when it applies), the pipeline state at push time
-(do not wait unless requested), the merge result or blocker when requested, the `Checked:`
+squash warning from `shared/submodules.md` when it applies), the pipeline state at push time,
+whether the CI watch is running or why it was skipped (do not wait for it), the merge result or blocker when requested, the `Checked:`
 line from the commit gate, and the cleanup
 result: the removed worktree path and the deleted branch with its last commit ID, or the
 reason both stayed. With several branches, give one line per branch. End with one **Links**
