@@ -32,7 +32,7 @@ branch; a clean worktree can still be removed when that retained branch preserve
 its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
 
 Follow [task-resources.md](../../host-preflight/references/task-resources.md) for
-task scratch locations and cleanup, including `.agent/<task>/`. Clean disposable
+task scratch locations and cleanup, including `.cache/agents/scratch/<task>/`. Clean disposable
 resources even when retaining an open-PR worktree. Stop task-owned processes
 before removing their files; retain a worktree while a requested live preview
 needs it.

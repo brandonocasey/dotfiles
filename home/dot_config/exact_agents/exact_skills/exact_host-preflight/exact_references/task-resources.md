@@ -9,19 +9,19 @@ Put new disposable resources in the Scratch path from AGENTS.md
 **Directories**, where `<task>` is a unique task name. Keep logs, temporary
 helpers, generated preview assets, and intermediate results there.
 
-Before using `.agent/`, verify that the candidate path is ignored with
-`git check-ignore -v <candidate-path>` and that no files under `.agent/` are
-tracked. The managed global ignore file supplies `/.agent/`; repository rules
+Before using `.cache/agents/scratch/`, verify that the candidate path is ignored with
+`git check-ignore -v <candidate-path>` and that no files under `.cache/agents/scratch/` are
+tracked. The managed global ignore file supplies `/.cache/agents/scratch/`; repository rules
 can override it. If it is not effective, use the XDG cache scratch directory
 and report why; do not change repository Git settings. Do not reuse or
-overwrite an existing task directory or follow a symlink at `.agent/` or the
+overwrite an existing task directory or follow a symlink at `.cache/agents/scratch/` or the
 task path. Use the XDG cache scratch directory when the root conflicts with
 existing project files.
 
 Keep credentials, preview access tokens, and private gallery state outside the
 repository in private external storage. Backups, cross-session recovery records,
 copy files awaiting use, and requested deliverables keep their established
-locations; never place them in disposable `.agent/` storage. A temporary preview
+locations; never place them in disposable `.cache/agents/scratch/` storage. A temporary preview
 may use scratch assets while its URL is in use, but retain those assets for the
 entire preview lifetime. Promote a file to the requested destination if the
 user asks to keep it.
@@ -49,12 +49,12 @@ a skill's default does not authorize a hosted write.
 Close task-owned MCP resources, stop servers and background processes, and free
 their ports before deleting their resources. Remove only known task-owned
 disposable scratch files, helpers, test data, debug output, and logs, even when
-an open-PR worktree stays. Inspect contents first: `.agent/` or a Git ignore
+an open-PR worktree stays. Inspect contents first: `.cache/agents/scratch/` or a Git ignore
 match alone is not evidence that a file is disposable. Preserve unknown files
-and other tasks' directories; do not recursively remove a shared `.agent/` root.
+and other tasks' directories; do not recursively remove a shared `.cache/agents/scratch/` root.
 Delete with literal resolved task paths, never `rm -rf "$VAR"`.
 
-When removing a worktree, its remaining disposable `.agent/` contents go with
+When removing a worktree, its remaining disposable `.cache/agents/scratch/` contents go with
 it, but directory removal does not stop processes. Run the `worktree` skill's
 preservation checks before removal, including its checks of ignored files.
 Keep requested files and copy files awaiting use. If a helper could serve a

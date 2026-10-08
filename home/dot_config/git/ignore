@@ -37,6 +37,9 @@ node_modules/
 .worktrees/
 
 # Disposable agent task resources at the checkout root
+/.cache/agents/scratch/
+
+# Legacy agent scratch; remove once old .agent/ dirs are cleaned
 /.agent/
 
 # Playwright MCP default output when no --output-dir is set

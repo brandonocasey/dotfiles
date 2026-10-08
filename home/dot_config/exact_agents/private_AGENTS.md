@@ -17,7 +17,7 @@
 
 Never use OS temporary directories or harness scratchpads, even if instructed. Use XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`, including Windows.
 
-- Scratch: `<worktree>/.agent/<task>/`; outside worktrees, `~/.cache/agents/scratch/<task>/`.
+- Scratch: `<worktree>/.cache/agents/scratch/<task>/`; outside worktrees, `~/.cache/agents/scratch/<task>/`.
 - Copy files: `~/.cache/agents/copy/` only.
 - Backups before overwrite, force-removal, or migration: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`; preserve relative paths, never auto-prune, report the path.
 - Create missing parents; retain fixed paths required by tools.

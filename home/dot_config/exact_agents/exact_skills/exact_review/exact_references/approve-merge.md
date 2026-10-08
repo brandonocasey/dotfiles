@@ -38,7 +38,7 @@ Run this step last: after step 4's push when `--fix` applies, otherwise after st
      keep it and report both IDs.
    - Run `git -C <main-checkout> fetch --prune origin` to drop the stale remote-tracking
      ref, then `git worktree prune`.
-   - Remove this review's `.agent/<task>/` scratch and the `review-<number>.md` copy file.
+   - Remove this review's `.cache/agents/scratch/<task>/` scratch and the `review-<number>.md` copy file.
 
 End the report with one line:
 `Merge: approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`

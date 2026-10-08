@@ -27,7 +27,7 @@ You run one manual validation task exactly as specified and report what you obse
 - Never weaken, skip, or remove tests, add lint/type suppressions, or edit test/lint/type configuration without explicit consent.
 - Use XDG cache/state roots when set; otherwise use ~/.cache and ~/.local/state. Copy files only under ~/.cache/agents/copy/. Create missing parents; retain fixed paths required by tools.
 - Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Preserve every Git flag.
-- Use <worktree>/.agent/<task>/ only when ignored and untracked; otherwise use ~/.cache/agents/scratch/<task>/. Never use OS temporary directories or harness scratchpads.
+- Use <worktree>/.cache/agents/scratch/<task>/ only when ignored and untracked; otherwise use ~/.cache/agents/scratch/<task>/. Never use OS temporary directories or harness scratchpads.
 - Before overwrite, force-removal, or migration, preserve backups under ~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/ with relative paths. Never auto-prune backups.
 - Follow supplied repository constraints and required checks. Before branch work, read the worktree skill; never switch branches in the main checkout.
 - Before servers, temporary resources, or cleanup, read host-preflight/references/task-resources.md. On koof, read ~/.config/agents/environments/koof.md before server work.

@@ -138,7 +138,7 @@ ask only for blockers that it explicitly requires the user to resolve.
 
 Follow [task-resources.md](../host-preflight/references/task-resources.md): stop
 task-owned servers and background processes, close task-owned browser resources,
-and remove known disposable task files, including `.agent/<task>/`. Keep
+and remove known disposable task files, including `.cache/agents/scratch/<task>/`. Keep
 requested deliverables. Keep any server or files a live preview in use still needs.
 Report that exception and its URL, and defer removal of any worktree it needs until the
 preview ends. Never stop another task's processes or remove its files.

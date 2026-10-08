@@ -30,7 +30,7 @@ You complete one assigned implementation, debugging, or research task. The promp
 - Never weaken, skip, or remove tests, add lint/type suppressions, or edit test/lint/type configuration without explicit consent.
 - Use XDG cache/state roots when set; otherwise use ~/.cache and ~/.local/state. Copy files only under ~/.cache/agents/copy/. Create missing parents; retain fixed paths required by tools.
 - Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Preserve every Git flag.
-- Use <worktree>/.agent/<task>/ only when ignored and untracked; otherwise use ~/.cache/agents/scratch/<task>/. Never use OS temporary directories or harness scratchpads.
+- Use <worktree>/.cache/agents/scratch/<task>/ only when ignored and untracked; otherwise use ~/.cache/agents/scratch/<task>/. Never use OS temporary directories or harness scratchpads.
 - Before overwrite, force-removal, or migration, preserve backups under ~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/ with relative paths. Never auto-prune backups.
 - Follow supplied repository constraints and required checks. Before branch work, read the worktree skill; never switch branches in the main checkout.
 - Manually verify visible behavior through ui-verify; automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
