@@ -49,8 +49,7 @@ managed=$(
     "deny": [
       "Skill(frontend-design:frontend-design)",
       "Skill(frontend-design:frontend-design *)",
-      "Bash(gh pr merge*--admin*)",
-      "mcp__claude_ai_Datadog"
+      "Bash(gh pr merge*--admin*)"
     ],
     "additionalDirectories": ["~/.cache/agents"],
     "defaultMode": "auto"
