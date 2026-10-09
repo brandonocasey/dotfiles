@@ -21,5 +21,6 @@ After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means
 Before the final review of this session's own work, inspect CI failures that already
 finished for any existing task-branch push, once, per
 [ci-and-conflicts.md](ci-and-conflicts.md), and fix them. Do not wait for
-running CI or push solely to obtain CI before review. Complete the required review
-before the next authorized push; without push authorization, review locally.
+running CI or push solely to obtain CI before review. During `ship`, skip that
+inspection when the push starts a new pipeline. Follow when-to-run.md **Timing** for
+when the review runs relative to pushes. Without push authorization, review locally.

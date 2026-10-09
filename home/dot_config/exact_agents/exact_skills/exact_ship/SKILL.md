@@ -8,7 +8,7 @@ the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. For several branches or `all`, read [multiple-branches.md](references/multiple-branches.md)
 before selecting or pushing anything. Other argument text is a task to finish first.
 Parse `--merge` as an option, not a branch or task name.
-Ordinary shipping ends after the push and MR/PR update.
+Ordinary shipping ends after the push, MR/PR update, and any triggered review with its fix push.
 With `--merge`, read [merge.md](references/merge.md) before mutations to check
 platform support and scope. Continue that workflow after shipping.
 
@@ -36,6 +36,9 @@ submodule and the gitlink bump before the superproject.
 
 Immediately before any push, refresh `BRANCH` and resolve the live
 `REMOTE_DEFAULT` again. Stop if `BRANCH` equals it or `TARGET`.
+Refresh the auto-merge state of `EXISTING` and any submodule MR/PR, and pause any
+that is on, per [auto-merge-pause.md](../shared/auto-merge-pause.md). If `EXISTING`
+is queued, follow that file's **Queued MR/PR** rule, then rerun step 0 on the new branch.
 
 - First push, or new commits on an already-pushed branch: `git push -u origin <BRANCH>`.
 - Branch exists on the remote but histories diverged (rebase/amend since last push):

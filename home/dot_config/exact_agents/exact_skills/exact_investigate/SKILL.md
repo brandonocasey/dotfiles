@@ -162,8 +162,9 @@ exists, and go to section 6 for the rest.
    tools. Capture before and after evidence, such as screenshots or logs.
 6. Search for the same defect at sibling call sites, and fix them in the
    same change.
-7. Run `review`, then commit per `commit`. Push or open a pull request only
-   when the Git rules allow it.
+7. Commit per `commit`. Run `review` at the hand-off in
+   `review/references/when-to-run.md` **Timing**. Push or open a pull request
+   only when the Git rules allow it.
 
 Before any irreversible step, such as a migration, a data fix, or a release,
 show a read-only preview and get the user's approval.

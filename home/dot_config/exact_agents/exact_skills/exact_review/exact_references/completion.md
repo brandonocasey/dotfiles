@@ -4,7 +4,7 @@ AGENTS.md routes automatic reviews to [when-to-run.md](when-to-run.md),
 which owns triggers, skip exceptions, follow-ups, and reviewer count. For triggered
 reviews of this session's work:
 
-- Review the combined task diff after implementation and relevant checks. Include
+- Review the combined task diff at the hand-off in when-to-run.md **Timing**. Include
   committed and uncommitted task changes; a clean working tree does not mean the
   task has nothing to review. Use the task's recorded starting revision and scope.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,

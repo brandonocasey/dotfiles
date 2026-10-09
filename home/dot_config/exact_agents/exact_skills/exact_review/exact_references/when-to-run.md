@@ -1,8 +1,22 @@
 # When to run a review automatically
 
 Applies to every model. Run an independent `review` on this session's own change
-before reporting completion or pushing. Review when requested or when material
-uncertainty remains. Otherwise apply the triggers and narrow exceptions below.
+once the work is complete. Review when requested or when material uncertainty
+remains. Otherwise apply the triggers and narrow exceptions below.
+
+## Timing
+
+- Complete means implementation, relevant checks, and the manual check are done.
+  Never run an automatic review mid-task: not per edit, todo, or intermediate commit.
+- Review once per hand-off. A task that ends in `ship` reviews only there.
+- During `ship`, start the review right after the push and MR/PR update, so CI runs
+  while the review does. `ship`'s finish-scope.md owns that flow. When the MR/PR
+  has auto-merge on, pause it per `shared/auto-merge-pause.md` and still push first;
+  a queued one gets a new MR/PR.
+  If the pause fails, that file moves the review before the push.
+- During `land`, review after its step 3 rebase and checks, before the fast-forward.
+- Otherwise, review just before the hand-off: a push outside `ship`, or the final
+  report to the user.
 
 ## Triggers
 

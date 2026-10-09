@@ -68,6 +68,8 @@ git rebase <TARGET>
 - If the rebase replayed commits (it was not a no-op), re-run the step 2 tests and the
   **Manual check** of `shared/git-flow.md` before proceeding — the branch was tested on its
   old base, not on top of the current `TARGET`. The same applies after a step 2 fix commit.
+- Then run any review that `review/references/when-to-run.md` triggers. A review fix
+  commit repeats the step 2 tests and the **Manual check** before step 4.
 
 ## 4. Fast-forward the target to the branch
 

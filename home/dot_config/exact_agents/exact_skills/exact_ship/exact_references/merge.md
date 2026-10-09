@@ -8,7 +8,7 @@ before any mutation. Ordinary `ship` still supports that platform.
 
 ## Inspect
 
-After shipping, use `HEAD_SHA` from `ship` step 2.
+After shipping, use the last `HEAD_SHA` from `ship` step 2, after any review fix push.
 Inspect the MR/PR at that head: draft state, fork state, and auto-merge
 configuration. Keep an existing merge method. Otherwise use the user's method
 or the repository convention, checked against its enabled methods.
@@ -16,6 +16,11 @@ If several methods remain possible, ask for the method before enabling auto-merg
 Report a draft, fork, or unavailable auto-merge permission as a blocker.
 
 ## Enable auto-merge
+
+When `ship` runs a review, enable auto-merge only after the review ends, any fix
+push lands, and no blocking finding remains. CI could otherwise merge unreviewed
+code. A method recorded by [auto-merge-pause.md](../../shared/auto-merge-pause.md)
+counts as the existing method.
 
 - GitHub: `gh pr merge <number> --auto --match-head-commit <HEAD_SHA>` with the
   selected `--merge`, `--squash`, or `--rebase` flag. It merges at once when

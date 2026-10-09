@@ -62,7 +62,8 @@ needed rebase. `--approve`, `--merge`, and enabled auto-merge add only what
   these branches may be rewritten. Never force-push without
   `--force-with-lease=BRANCH:OBSERVED_SHA`.
 - Do not dismiss or request reviews, mark a draft ready, close a pull request,
-  delete a remote branch, disable auto-merge, change branch protection, bypass
+  delete a remote branch, disable auto-merge (except the push pause in
+  [auto-merge-pause.md](../shared/auto-merge-pause.md)), change branch protection, bypass
   required checks, or push to a fork-owned branch. Report those blockers with
   the exact owner and next action.
 - Do not edit tests, lint configuration, or CI configuration only to make a
@@ -125,7 +126,9 @@ Required checks, mergeability, draft state, and queue state control that.
 
 ## Approve and merge
 
-Let an enabled auto-merge finish. Before any approval or manual merge, read
+Before starting a fix that will be pushed, pause auto-merge; restore it after the push, per
+[auto-merge-pause.md](../shared/auto-merge-pause.md). Otherwise let an enabled
+auto-merge finish. Before any approval or manual merge, read
 [merge.md](references/merge.md). Preserve its preflight and head-SHA checks.
 Never use `--admin` or `--delete-branch`. Without `--merge` or auto-merge, a
 passing pull request is complete; report it as ready.

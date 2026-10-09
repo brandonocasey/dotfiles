@@ -31,7 +31,7 @@ Otherwise, report the pipeline URL and stop: no watcher or polling.
 
 ## Watch CI after shipping
 
-After `ship` finishes its pushes, start one `agent-watch` with a `--target` for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--deadline-seconds 3300`.
+After each `ship` push, without waiting for its review, start one `agent-watch` with a `--target` for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--deadline-seconds 3300`.
 Before starting it, stop any earlier CI watch this session started for the same MR/PR. A later push in the same task starts a new watch at the new head.
 Skip it, and give the reason in the report, for `ship --merge` (`merge.md` owns the watch), an explicit monitoring request, a user request not to watch, or a platform other than GitHub or GitLab.
 In Claude Code, run it as a background command in the main session; its exit is the only wake.
@@ -47,7 +47,7 @@ On exit, read the final event's top-level `reason`, then each target's `results[
   For each failed target, give one `worker` agent, on its role pin, the failed job URLs, that target's checkout path and branch, and these limits. Assign it to commit, never push, and to change only files the failing jobs need.
   It returns each job's first error, up to 20 log lines, and its cause: flaky or infrastructure, this ship's change, or other. A cancelled job without an error is other.
   For this ship's change, it runs `ship`'s [ci-repair.md](../../ship/references/ci-repair.md) step 1, fixes the error, makes one commit through the `commit` skill, and stops.
-  The main session then checks that `<watched head>..HEAD` holds only the worker's one commit, runs the **Manual check** of `shared/git-flow.md`, and pushes per `ship` step 2.
+  The main session then checks that `<watched head>..HEAD` holds only the worker's one commit, runs the **Manual check** of `shared/git-flow.md`, and pushes per `ship` step 2. Then it restores any paused auto-merge per `shared/auto-merge-pause.md`.
   If either check fails, do not push; report it and leave the commit for the user.
   For flaky or infrastructure, the main session retries the job per ci-repair.md.
   Per MR/PR per ship, allow at most 1 retry and 2 fix pushes. A job that fails again after its retry is not flaky.

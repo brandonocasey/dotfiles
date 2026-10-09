@@ -15,7 +15,9 @@ these repairs. Step numbers below refer to the review skill.
      `Checked: diff only`; test-only fixes run the changed tests; classify config by effect.
   5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take
      the type from its **Choosing the type** procedure; carry any issue-tracker reference
-     from the MR/PR title. Push to the source branch — the review
+     from the MR/PR title. Pause auto-merge per `shared/auto-merge-pause.md` when work
+     starts, and restore it after the push. A queued MR/PR gets a new MR/PR instead,
+     per that file's **Queued MR/PR**. Push to the source branch — the review
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead
      (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and
