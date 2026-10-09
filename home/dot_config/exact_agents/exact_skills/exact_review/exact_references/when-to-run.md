@@ -63,8 +63,11 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 
 ## Second reviewer
 
-- Run `--deep` when the change touches a trust boundary, concurrency, or
-  persistence, or exceeds about 400 changed lines of hand-written logic.
+- Use one reviewer for narrow configuration fixes to already exposed services.
+  Require two (`--deep`) when changing access controls, exposing additional
+  services, or weakening security checks.
+- For other changes, run `--deep` when touching a trust boundary, concurrency,
+  or persistence, or exceeding about 400 changed lines of hand-written logic.
 - If `deep-review` is unavailable, use the available independent reviewer and
   disclose the coverage limit; never bypass tool restrictions to satisfy the count.
 
