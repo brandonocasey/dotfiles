@@ -55,6 +55,6 @@ homeProject.hasTrustDialogAccepted = true;
 projects[home] = homeProject;
 config.projects = projects;
 
-process.stdout.write(`${JSON.stringify(config, null, 2)}\n`);
+process.stdout.write(`${JSON.stringify(config, null, 2)}`);
 });
 '
