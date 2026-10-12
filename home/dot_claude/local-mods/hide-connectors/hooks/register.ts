@@ -1,15 +1,11 @@
 import type { Register } from 'claude-code'
 
-// claude.ai connectors used often enough to stay listed. The rest stay callable through ToolSearch.
-const KEEP = new Set(['Atlassian', 'Atlassian_MCP', 'Slack'])
+// claude.ai connectors whose server notes stay in the prompt. Every connector's tools stay callable through ToolSearch.
+const NOTES = new Set(['Atlassian', 'Atlassian_MCP'])
 const TOOL = /^mcp__claude_ai_(.+?)__/
 const HEADING = /^## claude\.ai (.+)$/
 
-const hiddenServer = (tool: string) => {
-  const server = TOOL.exec(tool)?.[1]
-
-  return server !== undefined && !KEEP.has(server) ? server : undefined
-}
+const hiddenServer = (tool: string) => TOOL.exec(tool)?.[1]
 
 const hideTools = (text: string) => {
   const servers = new Set<string>()
@@ -33,7 +29,7 @@ const hideInstructions = (text: string) => {
   const sections = text.split(/\n\n(?=## )/).filter(section => {
     const server = HEADING.exec(section.split('\n', 1)[0])?.[1].replace(/[^A-Za-z0-9_-]/g, '_')
 
-    return server === undefined || KEEP.has(server)
+    return server === undefined || NOTES.has(server)
   })
 
   return sections.some(section => section.startsWith('## ')) ? sections.join('\n\n') : null
