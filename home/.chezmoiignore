@@ -55,3 +55,30 @@ Library/
 
 # Type files Claude Code writes beside each local mod it loads.
 .claude/local-mods/*/.claude-plugin/types
+
+# Write markers Claude Code drops where it edits.
+.config/agents/**/.claude
+
+# Agent tool credentials and state: manage config files one by one, never these.
+.gemini/oauth_creds.json
+.gemini/google_accounts.json
+.gemini/installation_id
+.gemini/state.json
+.gemini/projects.json
+.gemini/history
+.gemini/tmp
+.gemini/extensions
+.gemini/**/*.bak
+.gemini/*.bak
+.pi/agent/auth.json
+.pi/agent/sessions
+.pi/agent/missions
+.pi/agent/npm
+.pi/agent/*cache*.json
+.pi/agent/models-store.json
+.config/opencode/node_modules
+.config/opencode/package.json
+.config/opencode/package-lock.json
+.config/opencode/bun.lock
+.config/opencode/.gitignore
+.config/opencode/*.bak
