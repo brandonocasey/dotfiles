@@ -25,8 +25,7 @@ Follow these steps for each commit. For a PR title, use the whole diff.
    | Deps | Dependency versions in manifests and their lockfile changes |
    | Tooling | Lint and formatter config, git hooks, editor config, agent instructions (`AGENTS.md`, skills), local dev scripts |
 
-2. **Mixed areas:** keep one logical change together, including supporting
-   tests and docs. Split unrelated changes. For a commit or squash PR title,
+2. **Mixed areas:** for a commit or squash PR title,
    find the main purpose: the change that would remain if you removed the rest. Use the
    area of the main purpose in step 3 or 4. Docs, tests, deps, and build
    changes that support a product change take the product type. A product

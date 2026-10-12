@@ -211,3 +211,5 @@ Before you hand back:
   are free: `lsof -nP -iTCP:<port> -sTCP:LISTEN`.
 - Remove temporary logging, debug flags, scratch files, and test data. Keep
   screenshots only when they are in the report.
+- Remove bisect and repro worktrees you created, per `worktree`. Keep a
+  worktree that holds the fix branch.

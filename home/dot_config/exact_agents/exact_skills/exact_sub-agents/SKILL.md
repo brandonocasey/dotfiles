@@ -3,7 +3,7 @@ name: sub-agents
 description: "Select, prompt, monitor, and verify sub-agents across Claude and Codex."
 ---
 
-Before selecting or spawning any agent, read the global [Git policy](../shared/git-policy.md) when the assignment includes Git work. Every spawn follows these rules. The spawning session owns verification and cleanup.
+When the assignment includes Git work, read the global [Git policy](../shared/git-policy.md) before spawning. Every spawn follows these rules. The spawning session owns verification and cleanup.
 
 Before choosing a role, model, or effort, read [roles.md](references/roles.md). It owns overrides, role pins, routing, compatibility checks, and escalation between roles.
 

@@ -13,6 +13,4 @@ reason both stayed. With several branches, give one line per branch. End with on
 section in the link format of [writing-details.md](../../shared/writing-details.md), with no OSC 8 escapes: the MR/PR
 URL, submodule MR/PR URLs, pipeline URL, preview URL (when set), and ticket URL (when set).
 
-When checking for a deployed preview URL, read
-[preview-url.md](preview-url.md). Only report platform-confirmed URLs;
-never infer one from CI files or wait for deployment.
+When checking for a deployed preview URL, read [preview-url.md](preview-url.md).

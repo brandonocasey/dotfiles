@@ -17,9 +17,9 @@ Optional argument: a target file or chunk. Commit only that target.
 4. **Commit.** Stage each chunk explicitly, including new and untracked files. Stage only
    the target when the user gave one. When one file spans multiple logical changes, follow
    [partial-staging.md](references/partial-staging.md). Then run one of:
-   - New commit: `git commit -m '<message>'`.
+   - New commit: `git commit -m '<message>'`; use `-F <file>` if it has an apostrophe.
    - Amend, message unchanged: `git commit --amend -C HEAD`.
-   - Amend, message changed (the commit's purpose changed): `git commit --amend -m '<message>'`.
+   - Amend, message changed (the commit's purpose changed): `git commit --amend -m '<message>'`, or `-F <file>` as above.
 
    Fix the cause of any hook error and commit again. Never `--no-verify` a failing hook
    unless the user has said the failure is irrelevant to the change.

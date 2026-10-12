@@ -5,7 +5,7 @@ Return to preview for live previews and requested screenshots.
 
 ## Ask one decision per question
 
-Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Put one decision in each question. Do not ask the user to type option codes into notes.
+Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Do not ask the user to type option codes into notes.
 
 - Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
 - Give each question a `prompt` that says what to decide.
@@ -69,8 +69,6 @@ agent-preview wait --state-dir <state-dir> --after 0 --timeout-seconds 3600
 ```
 
 The timeout only limits one wait call. The call returns as soon as a submission arrives. A timeout prints nothing and does not discard feedback. Run it again with the same cursor, in the same way, and show the URL again. Do not poll a model or ask the user to type that they submitted.
-If native file watchers are unavailable, the helper checks file metadata every
-250 milliseconds. Browser updates still arrive through server events.
 
 ## Read the answers
 

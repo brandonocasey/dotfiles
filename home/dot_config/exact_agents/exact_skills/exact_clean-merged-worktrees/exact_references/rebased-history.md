@@ -14,7 +14,7 @@ original commits were merged.
 - Check `git cat-file -e <pr-head>^{commit}`. A normal branch fetch can miss
   a merged PR head after its source branch was deleted. Fetch that exact PR
   head through the forge's PR ref, then verify it matches the recorded live SHA.
-  For GitHub: `git fetch origin refs/pull/<number>/head`. Do not create or
+  GitHub: `git fetch origin refs/pull/<number>/head`; GitLab: `git fetch origin refs/merge-requests/<iid>/head`. Do not create or
   overwrite a local branch merely to fetch evidence.
 - Check `git rev-parse --is-shallow-repository`. If shallow boundaries prevent
   checking the relevant history, deepen or unshallow that history before

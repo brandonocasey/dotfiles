@@ -52,7 +52,7 @@ offset between two centers, the right edges of aligned items, equal heights,
 size, or 44 px when the project sets none. Report the numbers. If no browser script is available, mark the measurement "unverified:".
 
 Save representative screenshots with their viewport, theme, state, and revision.
-Use the repository's output convention, or `dist/ui-verify/<task>` for new
+Use the repository's output convention, or the task scratch directory for new
 artifacts. Capture relevant console or network failures with the reproduction.
 
 When the user reports no visible change, make sure that the URL serves the

@@ -20,6 +20,6 @@ medium-sized task costs more than doing it inline.
 
 ## Not this skill
 
-- Watching CI, logs, builds: the `sub-agents` skill's monitoring section.
-- Handing a hard sub-problem or the whole task to `consult`: the `sub-agents`
-  skill's escalation section.
+- Watching CI, logs, builds: `sub-agents/references/monitoring.md`.
+- Handing a hard sub-problem or the whole task to `consult`:
+  `sub-agents/references/escalation.md`.

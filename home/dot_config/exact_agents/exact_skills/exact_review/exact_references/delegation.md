@@ -13,8 +13,7 @@ fewer than 20 lines of logic and touches nothing listed under when-to-run.md
 Triggers' risk bullets. It never applies when `--loop`, `--deep`, or `--agents` is set, or
 when the user asks for a sub-agent or independent review. Report that the
 follow-up review was not independent.
-For automatic reviews, [when-to-run.md](when-to-run.md) owns the triggers,
-follow-up reviews, and the second-reviewer rule. Inline self-reviews missed about 40% of
+Inline self-reviews missed about 40% of
 the defects found later, against about 18% for independent reviewers.
 
 Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.

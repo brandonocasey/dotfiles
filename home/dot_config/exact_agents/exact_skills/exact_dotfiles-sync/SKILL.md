@@ -27,7 +27,7 @@ wherever `<src>` appears below.
    - Plain source: copy the target to that source path.
    - Source name starts with `symlink_`, `modify_`, `run_`, `create_`, or
      `encrypted_`, or ends in `.tmpl`: do not copy. Edit the source by hand
-     and show the diff. For `symlink_`, sync the link target instead.
+     and show the diff. Edit any `.chezmoitemplates/` partial it renders. For `symlink_`, sync the link target instead.
    - New file: run `chezmoi source-path <parent-directory>`. Add the file with
      the prefixes its siblings use, such as `private_` or `executable_`.
      Prefix every new owned skill source directory with `exact_`, including nested directories.

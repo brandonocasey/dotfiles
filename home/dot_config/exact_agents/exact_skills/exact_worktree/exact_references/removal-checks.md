@@ -21,7 +21,7 @@ initialized submodule (an entry of `git -C <worktree-path> submodule status
    `git -C <worktree-path>/<sub-path> fetch --quiet` and then
    `git -C <worktree-path>/<sub-path> branch -r --contains HEAD` prints a
    remote branch, or the main checkout's clone holds it:
-   `git -C <main-checkout>/<sub-path> merge-base --is-ancestor <commit> <sub-target>`
+   `git -C <main-checkout>/<sub-path> merge-base --is-ancestor <commit> <sub-target-commit>`
    succeeds (the `land` path in `shared/submodules.md`). Neither: push the
    commit to the submodule's remote first, or keep the worktree and report the
    submodule path and commit ID.

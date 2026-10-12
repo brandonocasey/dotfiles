@@ -32,7 +32,7 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   PR head, or when the PR head commit is unavailable locally.
 - **Closed-without-merge exception**: `git branch -D` only after the user names the branch in
   the step 5 confirmation, the exact local tip equals the closed PR head, and any attached
-  worktree is clean and idle. A confirmation never authorizes force-removing a worktree with Unknown blockers; **Blocked removal** in the `worktree` skill owns the classification.
+  worktree is clean and idle. A confirmation never authorizes force-removing a worktree with Unknown blockers.
 - **Review-worktree confirmation**: may remove every clean, idle worktree whose HEAD exactly
   matches a remote PR head, including detached worktrees and multiple worktrees for one PR. It
   never authorizes deleting local branch refs unless those branches separately qualify.
