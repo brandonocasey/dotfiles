@@ -52,3 +52,6 @@ Library/
 
 # Synced by Claude; do not track
 .config/agents/skills/synced
+
+# Type files Claude Code writes beside each local mod it loads.
+.claude/local-mods/*/.claude-plugin/types
