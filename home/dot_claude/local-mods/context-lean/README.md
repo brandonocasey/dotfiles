@@ -28,16 +28,18 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 
 ## See what it hides
 
-Send at least one message, then run `/context-lean`. It shows:
+Run `/context-lean` at any time. It shows:
 
 - the real context size of the last request, from the API;
 - how many tokens the mod hid, and the size without it;
-- one row per hidden or kept item, with exact token counts;
+- one row per hidden or kept item, with its token count from your session model's tokenizer;
 - the `/context` estimate, which doesn't account for this mod.
 
-The first run counts tokens with one small request per row to your session's model, which costs about as many input tokens as were hidden. Later runs reuse those counts. Hidden built-in tools count their descriptions only, not their input schemas, so the real saving is a little higher.
+Before your first message nothing has been sent, so it shows your last report instead, with the time it was measured. With no saved report yet, it asks you to send a message first.
 
-The mod saves what it hid per session in its plugin store, so a resumed session still reports it. It keeps the last 30 sessions.
+Counting costs one small request per row to your session's model, about as many input tokens as were hidden. Counts are saved and reused across sessions while a row's text and the model stay the same, so usually only changed rows are counted again. Failed counts show as "not counted" and are retried next time. Hidden built-in tools count their descriptions only, not their input schemas, so the real saving is a little higher.
+
+The mod saves what it hid per session in its plugin store, so a resumed session still reports it. It keeps the last 10 sessions.
 
 ## Choose which server notes stay
 

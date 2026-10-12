@@ -22,3 +22,8 @@ test('lists kept notes and uncounted rows', () => {
   expect(text).toContain('| Atlassian MCP server notes | 1 | 640 |')
   expect(text).not.toContain('/context estimate')
 })
+
+test('puts a note above the report', () => {
+  const text = report({ ...BASE, hidden: [], kept: [], note: 'From your last report.' })
+  expect(text.startsWith('From your last report.\n\n## Real context')).toBe(true)
+})

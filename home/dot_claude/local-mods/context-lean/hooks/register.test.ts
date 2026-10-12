@@ -57,6 +57,14 @@ test('replaces the Artifact entry and drops rare and connector names', async ($,
   expect(result.text).toContain('tools from Datadog, Slack.')
 })
 
+test('keeps removal notices whole', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = 'The following tools are no longer available. Do not call them:\nmcp__claude_ai_Datadog__search_logs\nAgent'
+  const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text })
+  expect(result.text).toBe(text)
+})
+
 test('drops a paragraph left with only its header', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
 
@@ -97,4 +105,39 @@ test('drops the server notes when no server is left', async ($, on) => {
   const text = '# MCP Server Instructions\n\nIntro.\n\n## claude.ai Notion\nSearch.'
   const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
   expect(result.text).toBeNull()
+})
+
+test('keeps the MCP disconnect notice when all notes are hidden', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch.\nThe following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog\nThis is ambient context.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toBe('The following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog\nThis is ambient context.')
+})
+
+test('keeps a disconnect-only MCP notice', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = 'The following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Atlassian MCP\nThis is ambient context.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toBe(text)
+})
+
+test('keeps Atlassian notes and the disconnect notice together', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\n\n## claude.ai Atlassian MCP\nUse Jira.\n\n## claude.ai Notion\nSearch.\nThe following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toContain('Use Jira.')
+  expect(result.text).not.toContain('Search.')
+  expect(result.text).toContain('claude.ai Datadog')
+})
+
+test('hides a first server block that follows the intro on the next line', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch.\n\n## claude.ai Atlassian MCP\nUse Jira.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).not.toContain('Search.')
+  expect(result.text).toContain('Use Jira.')
 })

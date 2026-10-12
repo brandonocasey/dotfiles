@@ -1,2 +1,4 @@
 .config/fish/functions/claude-tmux-session.fish
 .config/fish/functions/codex-tmux-session.fish
+.claude/local-mods/defer-tools
+.claude/local-mods/hide-connectors

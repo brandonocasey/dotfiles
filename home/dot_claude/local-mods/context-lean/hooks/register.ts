@@ -1,5 +1,5 @@
 import type { Register } from 'claude-code'
-import { type Counted, type Row, report } from './report'
+import { type Counted, type Report, type Row, report } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
@@ -13,9 +13,31 @@ const HINT = `\n\nNot in the deferred tools list but loadable with select:<name>
 const CONNECTOR = /^mcp__claude_ai_(.+?)__/
 const LISTED_NAME = /^([\w-]+)(?::|$)/
 const HEADING = /^## claude\.ai (.+)$/
+const REMOVED = /no longer available/
+const DISCONNECTED = 'The following MCP servers have disconnected.'
+const DESCRIPTION = ' description'
+const NAMES = ' names'
 const COUNT_SYSTEM = 'Reply with only: ok'
+const BASE = '(base)'
+const COUNTS = 'counts'
+const LAST_REPORT = 'last-report'
 
 const connectorOf = (tool: string) => CONNECTOR.exec(tool)?.[1]
+
+// A short, stable hash (cyrb53) to tell whether a row's text changed since it was counted.
+const hashOf = (text: string) => {
+  let a = 0xdeadbeef ^ text.length
+  let b = 0x41c6ce57 ^ text.length
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    a = Math.imul(a ^ code, 2654435761)
+    b = Math.imul(b ^ code, 1597334677)
+  }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909)
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909)
+
+  return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36)
+}
 const shown = (server: string) => server.replace(/_/g, ' ')
 
 // The parts of the mod API these helpers use.
@@ -24,37 +46,55 @@ type Host = {
   store: { get(key: string): Promise<unknown>; set(key: string, value: unknown): Promise<void>; delete(key: string): Promise<void>; keys(): Promise<string[]> }
 }
 type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>> }
+// Token counts by row, reused across sessions while the row's text and the model stay the same.
+type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
+type LastReport = Report & { at: number }
 
-// What this session hid or kept, for /context-lean. Saved per session so a resumed session still reports it.
-const SESSIONS_KEPT = 30
+// What the current session hid or kept, for /context-lean. Saved per session so a resumed session still reports it.
+const SESSIONS_KEPT = 10
 const hidden = new Map<string, Row>()
 const kept = new Map<string, Row>()
-const counts = new Map<string, Promise<number | undefined>>()
-// Tools only this mod defers. Their whole description is counted, so their listed names are not counted again.
-const deferredHere = new Set<string>()
-let loaded: Promise<string | undefined> | undefined
+let session: { key: string; ready: Promise<void> } | undefined
+
+const record = (rows: Map<string, Row>, label: string, key: string, text: string) => {
+  const row = rows.get(label) ?? { label, texts: new Map<string, string>() }
+  row.texts.set(key, text)
+  rows.set(label, row)
+}
 
 const toObject = (rows: Map<string, Row>) => Object.fromEntries([...rows].map(([label, row]) => [label, Object.fromEntries(row.texts)]))
 const fromObject = (rows: Map<string, Row>, saved: Record<string, Record<string, string>> = {}) => {
   for (const [label, texts] of Object.entries(saved)) for (const [key, text] of Object.entries(texts)) record(rows, label, key, text)
 }
 
-// Loads this session's saved rows once per process and drops the oldest saved sessions.
+const restore = async ($: Host, key: string) => {
+  const saved = (await $.store.get(key)) as Saved | undefined
+  fromObject(hidden, saved?.hidden)
+  fromObject(kept, saved?.kept)
+  const others = (await $.store.keys()).filter(other => other.startsWith('session:') && other !== key)
+  if (others.length < SESSIONS_KEPT) return
+  const dated = await Promise.all(others.map(async other => ({ other, at: ((await $.store.get(other)) as Saved | undefined)?.at ?? 0 })))
+  await Promise.all(dated.sort((a, b) => a.at - b.at).slice(0, others.length - SESSIONS_KEPT + 1).map(({ other }) => $.store.delete(other)))
+}
+
+// Loads the current session's saved rows once per session and drops the oldest saved sessions.
+// A new session in the same process, such as after /clear, starts from its own rows.
 // Bookkeeping never blocks hiding: when the store fails, the report only covers this process.
-const load = ($: Host) =>
-  (loaded ??= (async (): Promise<string | undefined> => {
+const load = async ($: Host) => {
+  try {
     const key = `session:${await $.session.id()}`
-    const saved = (await $.store.get(key)) as Saved | undefined
-    fromObject(hidden, saved?.hidden)
-    fromObject(kept, saved?.kept)
-    const others = (await $.store.keys()).filter(other => other.startsWith('session:') && other !== key)
-    if (others.length >= SESSIONS_KEPT) {
-      const dated = await Promise.all(others.map(async other => ({ other, at: ((await $.store.get(other)) as Saved | undefined)?.at ?? 0 })))
-      await Promise.all(dated.sort((a, b) => a.at - b.at).slice(0, others.length - SESSIONS_KEPT + 1).map(({ other }) => $.store.delete(other)))
+    if (session?.key !== key) {
+      hidden.clear()
+      kept.clear()
+      session = { key, ready: restore($, key).catch(() => undefined) }
     }
+    await session.ready
 
     return key
-  })().catch(() => undefined))
+  } catch {
+    return undefined
+  }
+}
 
 const save = async ($: Host) => {
   const key = await load($)
@@ -63,26 +103,20 @@ const save = async ($: Host) => {
   await $.store.set(key, saved).catch(() => undefined)
 }
 
-const record = (rows: Map<string, Row>, label: string, key: string, text: string) => {
-  const row = rows.get(label) ?? { label, texts: new Map<string, string>() }
-  row.texts.set(key, text)
-  rows.set(label, row)
-}
-
 const hideNames = (text: string) => {
   const servers = new Set<string>()
   const paragraphs = text.split('\n\n').flatMap(paragraph => {
     const lines = paragraph.split('\n')
+    // Removal notices stay whole, so Claude still learns which tools went away.
+    if (REMOVED.test(lines[0])) return [paragraph]
     const left = lines.filter(line => {
       const name = LISTED_NAME.exec(line.trim())?.[1]
       const server = name === undefined ? undefined : connectorOf(name)
-      const isCounted = name !== undefined && deferredHere.has(name)
-      if (server !== undefined) {
+      if (name !== undefined && server !== undefined) {
         servers.add(server)
-        if (!isCounted) record(hidden, `${shown(server)} tool names`, line, line)
-      } else if (name !== undefined && RARE_TOOLS.has(name)) {
-        if (!isCounted) record(hidden, 'Built-in tool names', name, line)
-      } else return true
+        record(hidden, `${shown(server)} tool${NAMES}`, name, line)
+      } else if (name !== undefined && RARE_TOOLS.has(name)) record(hidden, `Built-in tool${NAMES}`, name, line)
+      else return true
       return false
     })
 
@@ -94,16 +128,21 @@ const hideNames = (text: string) => {
   return [...paragraphs, note].join('\n\n')
 }
 
+// The engine appends its disconnect notice right after the last server's notes, so it is split off and always kept.
 const hideInstructions = (text: string) => {
-  const sections = text.split(/\n\n(?=## )/).filter(section => {
+  const cut = text.indexOf(DISCONNECTED)
+  const notes = cut === -1 ? text : text.slice(0, cut).trimEnd()
+  const notice = cut === -1 ? '' : text.slice(cut)
+  const sections = notes.split(/\n+(?=## )/).filter(section => {
     const server = HEADING.exec(section.split('\n', 1)[0])?.[1].replace(/[^A-Za-z0-9_-]/g, '_')
     if (server === undefined) return true
     record(NOTES.has(server) ? kept : hidden, `${shown(server)} server notes`, server, section)
 
     return NOTES.has(server)
   })
+  const parts = [sections.some(section => section.startsWith('## ')) ? sections.join('\n\n') : '', notice].filter(part => part !== '')
 
-  return sections.some(section => section.startsWith('## ')) ? sections.join('\n\n') : null
+  return parts.length === 0 ? null : parts.join('\n')
 }
 
 export const register: Register = on => {
@@ -114,39 +153,55 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'context-lean' }, async $ => {
-    await load($)
-    const usage = await $.session.usage({ breakdown: 'summary' })
-    if (usage.context.tokens === 0) return { text: 'Send a message first. The real size comes from the last API request.' }
-    const model = await $.session.model()
-    const count = (text: string) => {
-      const cached = counts.get(text)
-      if (cached !== undefined) return cached
-      const counting = $.model
-        .complete({ model, system: COUNT_SYSTEM, prompt: `.\n${text}`, maxTokens: 1, effort: 'low' })
-        .then(answer => (answer.isAnswered ? answer.usage.input_tokens : undefined))
-        .catch(() => undefined)
-      counts.set(text, counting)
-      return counting
-    }
-    const base = await count('')
-    const rows = (from: Map<string, Row>) =>
-      Promise.all(
-        [...from.values()].map(async (row): Promise<Counted> => {
-          const total = await count([...row.texts.values()].join('\n'))
-          return { label: row.label, items: row.texts.size, tokens: total === undefined || base === undefined ? undefined : total - base }
-        }),
-      )
-    const [hiddenRows, keptRows] = await Promise.all([rows(hidden), rows(kept)])
+    try {
+      await load($)
+      const usage = await $.session.usage({ breakdown: 'summary' })
+      if (!usage.context.tokens) {
+        // Nothing was sent yet, so there is no real size. Show the last report instead.
+        const last = (await $.store.get(LAST_REPORT).catch(() => undefined)) as LastReport | undefined
+        if (typeof last?.real !== 'number') return { text: 'Nothing measured yet. Send a message, then run /context-lean again.' }
+        const when = new Date(last.at).toLocaleString()
 
-    return {
-      text: report({
-        real: usage.context.tokens,
-        window: usage.context.window,
-        estimate: usage.context.breakdown?.totalTokens,
-        model,
-        hidden: hiddenRows,
-        kept: keptRows,
-      }),
+        return { text: report({ ...last, note: `No request sent in this session yet, so these numbers are from your last report (${when}). Send a message for this session's numbers.` }) }
+      }
+      const model = await $.session.model()
+      const stored = (await $.store.get(COUNTS).catch(() => undefined)) as Counts | undefined
+      const known = stored?.model === model ? stored.rows : {}
+      const fresh: Counts['rows'] = {}
+      // Failed counts are not saved, so the next run tries again.
+      const count = async (label: string, text: string) => {
+        const hash = hashOf(text)
+        const cached = known[label]
+        if (cached?.hash === hash) return (fresh[label] = cached).tokens
+        const answer = await $.model.complete({ model, system: COUNT_SYSTEM, prompt: `.\n${text}`, maxTokens: 1, effort: 'low' }).catch(() => undefined)
+        // An empty reply still reports the input tokens it was billed for.
+        const tokens = answer?.usage.input_tokens ?? 0
+        if (tokens === 0) return undefined
+        fresh[label] = { hash, tokens }
+
+        return tokens
+      }
+      const base = await count(BASE, '')
+      // A tool whose whole description is counted is not counted again for its listed name.
+      const described = new Set([...hidden.values()].filter(row => row.label.includes(DESCRIPTION)).flatMap(row => [...row.texts.keys()]))
+      const rows = (from: Map<string, Row>) =>
+        Promise.all(
+          [...from.values()].flatMap(row => {
+            const texts = [...row.texts].filter(([key]) => !row.label.endsWith(NAMES) || !described.has(key))
+            if (texts.length === 0) return []
+            const counting = count(row.label, texts.map(([, text]) => text).join('\n'))
+
+            return [counting.then((total): Counted => ({ label: row.label, items: texts.length, tokens: total === undefined || base === undefined ? undefined : total - base }))]
+          }),
+        )
+      const [hiddenRows, keptRows] = await Promise.all([rows(hidden), rows(kept)])
+      const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, hidden: hiddenRows, kept: keptRows }
+      const last: LastReport = { ...measured, at: Date.now() }
+      await Promise.all([$.store.set(COUNTS, { model, rows: { ...known, ...fresh } }), $.store.set(LAST_REPORT, last)]).catch(() => undefined)
+
+      return { text: report(measured) }
+    } catch (error) {
+      return { text: `context-lean could not build the report: ${String(error)}` }
     }
   })
 
@@ -161,9 +216,8 @@ export const register: Register = on => {
     if (!ARTIFACT_TOOLS.has(e.tool) && !RARE_TOOLS.has(e.tool) && server === undefined) return next(e)
     const described = await next(e)
     if (e.isDeferred !== true) {
-      deferredHere.add(e.tool)
       await load($)
-      record(hidden, server === undefined ? `${e.tool} description` : `${shown(server)} tool descriptions`, e.tool, described.description)
+      record(hidden, server === undefined ? `${e.tool}${DESCRIPTION}` : `${shown(server)} tool${DESCRIPTION}s`, e.tool, described.description)
       await save($)
     }
     const description = ARTIFACT_TOOLS.has(e.tool) ? NOTE + described.description : described.description
