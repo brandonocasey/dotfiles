@@ -1,23 +1,27 @@
 import { expect, test } from 'claude-code/testing'
-import { type Category, report } from './report'
+import { type Category, type Report, report as colored } from './report'
+
+// The report's text without its terminal color codes.
+const report = (measured: Report) => colored(measured).replace(/\u001b\[[0-9;]*m/g, '')
 
 const CATEGORIES: Category[] = [
-  { name: 'System prompt', tokens: 1505, kind: 'used' },
-  { name: 'System tools', tokens: 9295, kind: 'used' },
-  { name: 'MCP tools', tokens: 615, kind: 'used' },
-  { name: 'MCP server instructions', tokens: 2304, kind: 'used' },
-  { name: 'MCP tools (deferred)', tokens: 566678, kind: 'deferred' },
-  { name: 'Messages', tokens: 296, kind: 'used' },
-  { name: 'Autocompact buffer', tokens: 33000, kind: 'buffer' },
-  { name: 'Free space', tokens: 949735, kind: 'free' },
+  { name: 'System prompt', tokens: 1505, kind: 'used', color: 'promptBorder' },
+  { name: 'System tools', tokens: 9295, kind: 'used', color: 'inactive' },
+  { name: 'MCP tools', tokens: 615, kind: 'used', color: 'cyan_FOR_SUBAGENTS_ONLY' },
+  { name: 'MCP server instructions', tokens: 2304, kind: 'used', color: 'green_FOR_SUBAGENTS_ONLY' },
+  { name: 'MCP tools (deferred)', tokens: 566678, kind: 'deferred', color: 'inactive' },
+  { name: 'Messages', tokens: 296, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' },
+  { name: 'Autocompact buffer', tokens: 33000, kind: 'buffer', color: 'inactive' },
+  { name: 'Free space', tokens: 949735, kind: 'free', color: 'promptBorder' },
 ]
 const BASE = { real: 19943, window: 1000000, estimate: 17265, model: 'claude-opus-5-5', categories: CATEGORIES }
 
 test('draws the /context grid beside the header and categories', () => {
   const lines = report({ ...BASE, hidden: [], kept: [] }).split('\n')
   expect(lines[0]).toBe('Context Usage (context-lean)')
-  // 19,943 of 1m is 4 of 200 squares; the 33k buffer is 7.
-  expect(lines[1]).toBe('⛁ ⛁ ⛁ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
+  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, server instructions ⛀, Messages ⛀,
+  // and the 5.9k difference ⛁. The 33k buffer is 7 squares.
+  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛀ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
   expect(lines[2]).toContain('   19.9k/1m tokens (2%), real')
   expect(lines[10]).toMatch(/^(⛶ ){13}⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝/)
   expect(lines.some(line => line.endsWith('⛶ Free space: 947.1k (94.7%)'))).toBe(true)
@@ -84,7 +88,31 @@ test('folds the smallest rows of a long section into one line', () => {
 test('fills the grid when the real total is over the window or the window is unknown', () => {
   for (const window of [1000000, 0]) {
     const lines = report({ ...BASE, real: 1003000, window, hidden: [], kept: [] }).split('\n')
-    expect(lines[1].startsWith('⛁ ⛁ ⛁')).toBe(true)
+    expect(lines[1]).not.toContain('⛶')
     expect(lines[10].startsWith('⛁ ⛁ ⛁')).toBe(true)
   }
+})
+
+test('shades hidden tokens as boxes after the used squares, with a legend line', () => {
+  const lines = report({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 415, tokens: 11133 }, { label: 'Workflow description', items: 1, tokens: 7300 }], kept: [] }).split('\n')
+  // 7 used squares as above; 18,433 hidden is 4 more.
+  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛀ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
+  const legend = lines.findIndex(line => line.endsWith('⛋ Hidden by context-lean: 18.4k tokens (1.8%)'))
+  const free = lines.findIndex(line => line.includes('⛶ Free space'))
+  expect(legend).toBeGreaterThan(0)
+  expect(legend + 1).toBe(free)
+})
+
+test("colors squares and legend symbols with /context's colors, and hidden tokens in their own", () => {
+  const text = colored({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 415, tokens: 11133 }], kept: [] })
+  expect(text).toContain('\u001b[38;5;244m⛀\u001b[39m')
+  expect(text).toContain('\u001b[38;5;35m⛁\u001b[39m MCP server instructions: ')
+  expect(text).toContain('\u001b[38;5;140m⛁\u001b[39m Messages: ')
+  expect(text).toContain('\u001b[38;5;208m⛋\u001b[39m Hidden by context-lean: ')
+  expect(text).toContain('\u001b[38;5;208m⛋\u001b[39m \u001b[38;5;208m⛋\u001b[39m')
+})
+
+test('leaves out the difference row when the estimate matches the real total', () => {
+  const text = report({ ...BASE, real: 14015, hidden: [], kept: [] })
+  expect(text).not.toContain('Difference from the real total')
 })

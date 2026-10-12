@@ -30,8 +30,8 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 
 Run `/context-lean` at any time. It looks like `/context`, with the real numbers on top and a savings section at the bottom:
 
-- a grid of the context window, filled from the real size of the last request, from the API;
-- `/context`'s estimated categories, plus a "Difference from the real total" row;
+- a grid of the context window in `/context`'s colors, with hidden tokens shaded as orange ⛋ boxes after the used squares;
+- `/context`'s estimated categories, plus a "Difference from the real total" row when the real size from the API differs;
 - how many tokens the mod saved, and the size without it;
 - one section each for hidden tool names, hidden tool descriptions, hidden server notes, and notes sent on first use. A section with more than 8 rows shows the 7 largest and folds the rest into one "more" line.
 

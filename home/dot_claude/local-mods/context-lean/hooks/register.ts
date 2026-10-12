@@ -213,7 +213,7 @@ export const register: Register = on => {
       const sentRows = new Map([...hidden].filter(([, row]) => isSent(row)).map(([label, row]) => [label, { ...row, label: `${row.label}${SENT}` }]))
       const stillHidden = new Map([...hidden].filter(([label]) => !sentRows.has(label)))
       const [hiddenRows, keptRows] = await Promise.all([rows(stillHidden), rows(new Map([...kept, ...sentRows]))])
-      const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind }: Category) => ({ name, tokens, kind }))
+      const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
       const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
       const last: LastReport = { ...measured, at: Date.now() }
       await Promise.all([$.store.set(COUNTS, { model, rows: { ...known, ...fresh } }), $.store.set(LAST_REPORT, last)]).catch(() => undefined)

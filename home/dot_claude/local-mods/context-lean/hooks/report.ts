@@ -2,7 +2,7 @@
 export type Row = { label: string; texts: Map<string, string> }
 export type Counted = { label: string; items: number; tokens: number | undefined }
 // One /context category, as the engine's usage breakdown reports it.
-export type Category = { name: string; tokens: number; kind: string }
+export type Category = { name: string; tokens: number; kind: string; color?: string }
 export type Report = {
   real: number
   window: number
@@ -45,22 +45,60 @@ const categoriesOf = ({ real, window, categories }: Report) => {
   const free: Category = { name: 'Free space', tokens: Math.max(0, window - real - total('buffer')), kind: 'free' }
 
   // In /context's order: what is used, then free space, then the autocompact buffer.
-  return [...categories.filter(row => row.kind === 'used'), gap, free, ...categories.filter(row => row.kind === 'buffer')]
+  return [...categories.filter(row => row.kind === 'used'), ...(gap.tokens === 0 ? [] : [gap]), free, ...categories.filter(row => row.kind === 'buffer')]
 }
 
-// /context's grid: 10 rows of 20 squares over the whole window. Used squares come from the real total.
+// /context's colors, as 256-color terminal codes, by the theme names its usage breakdown reports.
+// cyan_FOR_SUBAGENTS_ONLY (MCP tools) was not seen in a live /context; 37 is a guess.
+const COLORS: Record<string, number> = {
+  promptBorder: 244,
+  inactive: 246,
+  permission: 153,
+  claude: 174,
+  warning: 220,
+  purple_FOR_SUBAGENTS_ONLY: 140,
+  green_FOR_SUBAGENTS_ONLY: 35,
+  cyan_FOR_SUBAGENTS_ONLY: 37,
+}
+const GRAY = 246
+// Hidden tokens get a color no /context category uses.
+const HIDDEN = 208
+const paint = (color: number, text: string) => `\u001b[38;5;${color}m${text}\u001b[39m`
+const colorOf = (category: Category) => COLORS[category.color ?? ''] ?? GRAY
+
+// /context's grid: 10 rows of 20 squares over the whole window. Each used category fills its share in its color,
+// a full square ⛁ or a partial one ⛀. Hidden squares ⛋ follow, showing where the hidden tokens would sit without context-lean.
 const GRID_ROWS = 10
 const GRID_COLUMNS = 20
-const SYMBOL: Record<string, string> = { used: '⛁', free: '⛶', buffer: '⛝' }
-const grid = (real: number, window: number, buffer: number) => {
+const SYMBOL: Record<string, string> = { used: '⛁', partial: '⛀', hidden: '⛋', free: '⛶', buffer: '⛝' }
+type Cell = { symbol: string; color: number }
+const grid = (categories: Category[], saved: number, window: number) => {
   const squares = GRID_ROWS * GRID_COLUMNS
   const per = window / squares
-  // A real total over the window, or an unknown window, fills the grid instead of failing.
-  const used = real <= 0 ? 0 : window > 0 ? Math.min(squares, Math.max(1, Math.round(real / per))) : squares
-  const reserved = window > 0 ? Math.max(0, Math.min(squares - used, Math.round(buffer / per))) : 0
-  const cells = [...Array(used).fill(SYMBOL.used), ...Array(squares - used - reserved).fill(SYMBOL.free), ...Array(reserved).fill(SYMBOL.buffer)]
+  const buffer = categories.filter(row => row.kind === 'buffer').reduce((all, row) => all + row.tokens, 0)
+  // An unknown window fills the grid instead of failing.
+  const reserved = window > 0 ? Math.min(squares, Math.round(buffer / per)) : 0
+  const used: Cell[] = categories
+    .filter(row => row.kind === 'used' && row.tokens > 0)
+    .flatMap(row => {
+      const share = window > 0 ? row.tokens / per : squares
+      return Array(Math.max(1, Math.round(share))).fill({ symbol: share >= 1 ? SYMBOL.used : SYMBOL.partial, color: colorOf(row) })
+    })
+    .slice(0, squares - reserved)
+  const hidden = window > 0 ? Math.max(0, Math.min(squares - reserved - used.length, Math.round(saved / per))) : 0
+  const cells: Cell[] = [
+    ...used,
+    ...Array(hidden).fill({ symbol: SYMBOL.hidden, color: HIDDEN }),
+    ...Array(squares - reserved - used.length - hidden).fill({ symbol: SYMBOL.free, color: GRAY }),
+    ...Array(reserved).fill({ symbol: SYMBOL.buffer, color: GRAY }),
+  ]
 
-  return Array.from({ length: GRID_ROWS }, (_, row) => cells.slice(row * GRID_COLUMNS, (row + 1) * GRID_COLUMNS).join(' '))
+  return Array.from({ length: GRID_ROWS }, (_, row) =>
+    cells
+      .slice(row * GRID_COLUMNS, (row + 1) * GRID_COLUMNS)
+      .map(cell => paint(cell.color, cell.symbol))
+      .join(' '),
+  )
 }
 
 // One "└" section per kind of hidden item, largest first, like /context's MCP tools and Skills sections.
@@ -75,7 +113,7 @@ const section = (title: string, rows: Counted[], name: (label: string) => string
   const lines = shown.map(row => `└ ${name(row.label)} · ${plural(row.items, unit)} · ${row.tokens === undefined ? 'not counted' : `${short(row.tokens)} tokens`}`)
   const more = rest.length === 0 ? [] : [`└ ${rest.length} more · ${plural(rest.reduce((all, row) => all + row.items, 0), unit)} · ${short(sum(rest))} tokens`]
 
-  return ['', `${title} · ${short(sum(rows))} tokens`, ...lines, ...more]
+  return ['', `${title} · ${short(sum(rows))} tokens`, ...[...lines, ...more].map(line => paint(GRAY, line))]
 }
 const without = (suffix: string) => (label: string) => label.slice(0, label.length - suffix.length)
 
@@ -84,35 +122,40 @@ export const report = (measured: Report) => {
   const saved = sum(hidden)
   const total = real + saved
   const categories = categoriesOf(measured)
-  const buffer = categories.filter(row => row.kind === 'buffer').reduce((all, row) => all + row.tokens, 0)
+  const line = (symbol: string, color: number, name: string, value: string) => `${paint(color, symbol)} ${name}: ${paint(GRAY, value)}`
   const side = [
     model,
-    `${short(real)}/${short(window)} tokens (${wholePercent(real, window)}), real`,
-    `${short(saved)} saved by context-lean (${wholePercent(saved, total)})`,
+    paint(GRAY, `${short(real)}/${short(window)} tokens (${wholePercent(real, window)}), real`),
+    paint(HIDDEN, `${short(saved)} saved by context-lean (${wholePercent(saved, total)})`),
     '',
-    'Estimated usage by category',
+    `\u001b[3m${paint(GRAY, 'Estimated usage by category')}\u001b[23m`,
     ...(measured.categories.length === 0
-      ? ['(no breakdown available)']
-      : categories.map(row => `${SYMBOL[row.kind] ?? SYMBOL.used} ${row.name}: ${short(row.tokens)}${row.kind === 'free' ? '' : ' tokens'} (${percent(row.tokens, window)})`)),
+      ? [paint(GRAY, '(no breakdown available)')]
+      : categories.flatMap(row => [
+          ...(row.kind === 'free' ? [line(SYMBOL.hidden, HIDDEN, 'Hidden by context-lean', `${short(saved)} tokens (${percent(saved, window)})`)] : []),
+          row.kind === 'buffer'
+            ? paint(GRAY, `${SYMBOL.buffer} ${row.name}: ${short(row.tokens)} tokens (${percent(row.tokens, window)})`)
+            : line(SYMBOL[row.kind] ?? SYMBOL.used, colorOf(row), row.name, `${short(row.tokens)}${row.kind === 'free' ? '' : ' tokens'} (${percent(row.tokens, window)})`),
+        ])),
   ]
-  const squares = grid(real, window, buffer)
-  const indent = ' '.repeat(squares[0].length)
+  const squares = grid(categories, saved, window)
+  const indent = ' '.repeat(GRID_COLUMNS * 2 - 1)
   const top = Array.from({ length: Math.max(squares.length, side.length) }, (_, i) => `${squares[i] ?? indent}   ${side[i] ?? ''}`.trimEnd())
   const lines = [
     ...(note === undefined ? [] : [note, '']),
     'Context Usage (context-lean)',
     ...top,
     '',
-    `Saved by context-lean · ${short(saved)} tokens (${percent(saved, total)})`,
-    `└ Without context-lean: ${short(total)} tokens`,
-    ...(estimate === undefined ? [] : [`└ /context estimate: ${short(estimate)} tokens`]),
+    `${paint(HIDDEN, SYMBOL.hidden)} Saved by context-lean · ${short(saved)} tokens (${percent(saved, total)})`,
+    paint(GRAY, `└ Without context-lean: ${short(total)} tokens`),
+    ...(estimate === undefined ? [] : [paint(GRAY, `└ /context estimate: ${short(estimate)} tokens`)]),
     ...section('Hidden tool names', hidden.filter(row => row.label.endsWith(' tool names')), without(' tool names'), 'name'),
     ...section('Hidden tool descriptions', hidden.filter(row => isBuiltInDescription(row.label) || isConnectorDescriptions(row.label)), label => label.replace(/ tool descriptions$| description$/, ''), 'tool'),
     ...section('Hidden server notes', hidden.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     ...section('Server notes sent on first use', kept.filter(row => isSentNotes(row.label)), without(`${NOTES}${SENT}`), 'server'),
     ...section('Server notes kept in the prompt', kept.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     '',
-    `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates.`,
+    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates.`),
   ]
 
   return lines.join('\n')
