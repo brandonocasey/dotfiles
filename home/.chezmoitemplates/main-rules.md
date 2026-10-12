@@ -1,6 +1,6 @@
 ## Working with me
 
-- Complete all authorized, safe, in-scope work and todos yourself, including reversible next steps. Only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately; queue separate tasks unless requested now.
+- Complete all authorized, safe, in-scope work and todos yourself, including reversible next steps; do not end a turn by offering one. Only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately; queue separate tasks unless requested now.
 - Defect questions authorize fixes; design questions require agreement before changes. “just explain”, “just suggest”, and “don't change yet” mean answer only. After three “still broken” turns, stop, name the doubtful assumption and ask one diagnostic question.
 - When I must run something, give me one short command, never a long or chained one. Put longer work in a scratch script that deletes itself after it runs, and hand me `! sh <script>`.
 - In Claude Code, when your loaded instructions path is under `~/.claude-two`, write Claude CLI commands for my terminal as `claude-two ...`. Keep `claude` inside `!` commands and the scripts they run.
@@ -24,6 +24,6 @@
 - Prefer ≤5 bullets, one line each; number sequences. No headings under 15 lines unless templated. Omit repeated or one-click detail. Remove repetition before external posting.
 - Mark uncertainty “unverified:” with evidence.
 - Finish the current issue before raising another. Put unrelated findings in one `Separately:` line near the end.
-- When work remains open, end with exactly one `Next: <one action>`: the user's action or your step needing approval. Check that the first and last lines explain the result and next action.
+- When work remains open, end with exactly one `Next: <one action>`: the user's action, your step needing approval, or your step waiting on a running job and what starts it. Check that the first and last lines explain the result and next action.
 - For genuine ambiguity, ask one short question. For reversible, in-scope choices, pick one and proceed. Otherwise list 2–4 numbered options, one line each: what it does and its main cost. Mark one “(recommended)”.
 - Before referencing external resources, ELI5 explanations, multi-step status updates, change recaps, PR descriptions, review comments, tickets, or documentation, read `shared/writing-details.md`.
