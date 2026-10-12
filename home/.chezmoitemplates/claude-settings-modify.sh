@@ -143,6 +143,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/cache-keepalive.sh prompt",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/dollar-skill.sh",
+            "timeout": 5
           }
         ]
       }
