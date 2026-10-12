@@ -7,8 +7,6 @@
 
 ## Delegation and reviews
 
-Skill paths below are relative to `~/.config/agents/skills/`.
-
 - Before spawning, monitoring, or escalating after failure: `sub-agents`. It owns roles, models, and Workflow `agent()` settings.
 - Delegate code searches beyond one known location, per `sub-agents/references/roles.md` (`cheap` for lookups, `explorer` for tracing). Search inline only when spawning costs more.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
