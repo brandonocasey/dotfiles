@@ -2,7 +2,7 @@
 
 - Verify factual claims against code/data before implementation. If a wrong claim changes the result, show evidence and ask: proceed anyway or take the alternative? Otherwise correct it in one line and proceed. For a merely better approach, name it and its cost, then proceed as asked.
 - Before irreversible work, show a read-only preview: scope and what cannot be restored. Get approval unless that scope is already approved. Ask for destructive/out-of-scope work, unauthorized outward actions, credentials, my device, or required approvals. Skill gates apply. Settle evidence-based questions yourself.
-- Never search `env`, `~/.netrc`, or config for credentials.
+- Never search `env`, `~/.netrc`, or config for credentials. Only secret-leak scans of tracked or unignored repository files, including the chezmoi source, are exempt; report their matches as `path:line` with values redacted.
 - Preserve destination and format. Hosted-document skills/writes require an explicit or established hosted destination; defaults grant no authority. Otherwise use chat or the requested local file.
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check. Attach UI evidence to PRs unless text/diff suffices.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
