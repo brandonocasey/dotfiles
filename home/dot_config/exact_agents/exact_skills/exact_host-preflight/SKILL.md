@@ -15,18 +15,9 @@ as unavailable. Report the missing command and inspected host. The check also
 looks in `~/.local/bin`, `~/bin`, and standard Homebrew prefixes.
 When `on_path` is false, use the returned absolute path.
 
-Godot MCP stays disabled because it scans its project path at every startup.
-Only a host whose `~/.codex/config.toml` defines `[mcp_servers.godot-mcp]` has
-it; elsewhere, report it unavailable. In a directory that contains
-`project.godot`, enable it for one Codex session with:
-
-`codex -c mcp_servers.godot-mcp.enabled=true`
-
-If Codex starts outside the project directory, also override the final `-p`
-argument with the absolute directory that contains `project.godot`.
-
 ## Conditional procedures
 
+- When a task needs Godot MCP, read [godot.md](references/godot.md).
 - Before starting servers, creating temporary task resources, or cleaning them
   up, read [task-resources.md](references/task-resources.md).
 - For commands or text the user must copy, read
