@@ -3,12 +3,16 @@ model: claude-sonnet-5-5
 effort: medium
 disable-model-invocation: true
 name: disk-cleanup
-description: "Reclaim disk space from regenerable caches, builds, containers, trash, merged worktrees, and old sessions."
+description: "Find what uses disk space and large files, then reclaim space from regenerable caches, builds, containers, trash, merged worktrees, and old sessions."
 ---
 
 Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
 approved items. Work locally unless the user explicitly requests a remote host.
-A dry run ends at the preview.
+A dry run ends at the preview. A request only to find what uses space or to list
+large files ends at the report. It writes only scan files to the task scratch
+directory. It skips agent-resource and worktree inventory unless the user asks.
+Ask for the target path when it is unclear. Before scanning `/` or a whole home
+directory, say so first.
 Honor narrower scope. **Preview, approve, remove, verify** owns authorization and
 automatic execution; every removal keeps its audit preview and pre-deletion rechecks.
 
@@ -27,10 +31,18 @@ agent-resources.md; it owns the `clean-merged-worktrees` component and its limit
   roots, downloads, trash, and accessible system cache/log locations. Stay within each
   filesystem, resolve aliases, avoid symlink loops, and deduplicate overlapping entries
   and hard-linked files. Report inaccessible roots and incomplete scans.
+- Cap every scan's depth and result count. Start at depth 2 with about 30 results.
+  Rescan only the top few entries, one level deeper each pass, until the largest items
+  are identifiable. Redirect scan errors to a file in the task scratch directory, not
+  the terminal. Never discard them, because an unreadable root otherwise looks like a
+  complete scan. Count them for the coverage report. Save a large full scan once as
+  JSON and query it with `jq` instead of rescanning.
 - Drill into large entries before prioritizing small logs. Common candidates include
-  compiler caches (sccache, ccache, Go), package download caches (npm, pip, uv, pnpm,
-  Cargo, Homebrew), project build/test outputs and dependencies, browser automation
-  downloads/profiles, container images/build caches, and trash. Discover their actual
+  compiler caches (sccache, ccache, Go), package download caches (npm, yarn, pip, uv,
+  pnpm, Cargo, Homebrew; Gradle's `caches/` and downloaded Maven artifacts only, never
+  their settings, credentials, or locally installed artifacts), project build/test outputs and dependencies,
+  browser automation downloads/profiles, container images/build caches, Xcode
+  DerivedData and unavailable simulators, and trash. Discover their actual
   paths from installed tools and safe configuration path fields, not names alone.
 - Use installed tools' read-only usage/status/dry-run operations where available.
   Inspect cleanup command semantics before proposing them; an “unused” resource may
@@ -63,6 +75,8 @@ agent-resources.md; it owns the `clean-merged-worktrees` component and its limit
   Do not remove downloads, trash contents, or system logs merely because they are old;
   show their contents/purpose and restoration limits for specific approval. Do not
   delete shared history or edit application databases/indexes by hand.
+- Mark VM images, databases, photo/video libraries, device (iOS) backups, and other
+  backups as needing user review, never as cleanup candidates.
 
 ## Worktree priority and task resources
 
@@ -105,10 +119,16 @@ agent-resources.md; it owns the `clean-merged-worktrees` component and its limit
   removal, recheck and clean its approved scratch paths; on failure or new activity,
   retain dependent scratch and report why. Verify both paths and retained artifacts.
 
+## Report
+
+Every run gives the total size scanned and the top 5–10 consumers by path and size.
+Add a one-line note on what each one is. An analysis-only request stops here.
+
 ## Preview, approve, remove, verify
 
 - Show category, canonical path or tool resource ID, allocated size, activity where
-  relevant, disposal/merge evidence, and remove/keep reason. Rank by reclaimable bytes,
+  relevant, disposal/merge evidence, remove/keep reason, and the exact cleanup command
+  for each removal. Rank by reclaimable bytes,
   count overlaps once, and distinguish apparent size from estimated disk recovery.
   State what cannot be restored and what must be downloaded or rebuilt. Retained Git refs
   allow worktree recreation; deleted transcripts and unbacked cache contents are not restorable.

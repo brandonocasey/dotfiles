@@ -3,10 +3,24 @@
 Prefer installed tools. Verify local help and cleanup semantics before use; tools do
 not replace ownership, active-process, content, merge, or approval checks.
 
-- **Disk inventory:** `dust` provides a ranked directory view; use filesystem limits,
-  no symlink dereferencing, bounded output and visible scan errors. `du` and `df` are
-  the fallback. Interactive `dua`/`ncdu` can help human exploration when already
-  installed, but interactive selection alone does not prove safe deletion.
+- **Disk inventory:** use the first installed tool in this order: `dust`, `gdu`, `ncdu`,
+  then the fallback. Stay on one filesystem, never dereference symlinks, and cap output.
+  Send scan errors to `"$err"`, a file in the task scratch directory, and report its
+  line count.
+  - `dust` (quick summary): `dust -x -d 2 -n 30 -b -P <path> 2>>"$err"`. Its JSON
+    (`-j`) is a capped snapshot with human-readable size strings, so do not treat it as a full scan.
+  - `gdu` (saved full scan): `gdu -x -n <path>`; ncdu-compatible JSON: `gdu -x -o <file>.json <path>`.
+    Homebrew coreutils installs GNU `du` as `gdu`, and Homebrew's real tool is then
+    `gdu-go`. Use `gdu-go` when present. Otherwise use `gdu` only if
+    `gdu --version` names gdu, not GNU coreutils.
+  - `ncdu`: export without the UI: `ncdu -1xo- <path> > <file>.json`.
+  - Fallback: `du -xh -d 2 <path> 2>>"$err" | sort -rh | head -30` for directories;
+    `find <path> -xdev -type f -size +500M -exec ls -lh {} + 2>>"$err" | sort -k5 -rh | head -30`
+    for large files. `df` reports capacity and free space.
+  - Save JSON scans in the task scratch directory. Never run interactive TUIs (`ncdu`
+    browser, interactive `gdu`, `dua`, `diskonaut`); they need a human at the keyboard.
+- **Docker:** use `docker system df` to read usage. Before proposing a prune, explain
+  exactly what it removes. Never include volumes; the main skill's container rules apply.
 - **Worktrees:** use `git worktree list --porcelain -z` for discovery, the existing
   `clean-merged-worktrees` skill for live merge qualification, and `worktree` for
   preservation/removal. Use a documented repository removal helper only after
