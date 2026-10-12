@@ -95,7 +95,10 @@ managed=$(
     "plugin-authoring": "name-only",
     "anthropic-skills:built-in-browser": "name-only",
     "anthropic-skills:chrome-browser": "name-only",
-    "anthropic-skills:computer-use": "name-only"
+    "anthropic-skills:computer-use": "name-only",
+    "artifact-design": "name-only",
+    "artifact-diagramming": "name-only",
+    "artifact-capabilities": "name-only"
   },
   "hooks": {
     "SessionStart": [
@@ -165,9 +168,17 @@ managed=$(
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
-    "frontend-design@claude-plugins-official": false
+    "frontend-design@claude-plugins-official": false,
+    "defer-tools@local-mods": true
   },
-  "extraKnownMarketplaces": {},
+  "extraKnownMarketplaces": {
+    "local-mods": {
+      "source": {
+        "source": "directory",
+        "path": "{{ .chezmoi.homeDir }}/.claude/local-mods/defer-tools"
+      }
+    }
+  },
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,
   "effortLevel": "medium",
