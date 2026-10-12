@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Update the local-mods Claude plugins when their files change. Claude Code runs a snapshot taken at install
+# time and `plugin update` skips a plugin whose version did not change, so bump the version with each change.
+# local-mods hash: {{ output "sh" "-c" (printf "cd %q && find dot_claude/local-mods -type f | LC_ALL=C sort | xargs shasum" .chezmoi.sourceDir) | sha256sum }}
+# Changes once Claude Code registers the marketplace, so a skipped first run happens again then.
+# local-mods registered: {{ output "sh" "-c" "grep -qs '\"local-mods\"' \"$HOME/.claude/plugins/known_marketplaces.json\" && echo yes || echo no" | trim }}
+
+export PATH="$HOME/.local/bin:$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+if ! command -v claude >/dev/null || ! command -v python3 >/dev/null; then
+  echo "claude or python3 not found; skipping local-mods plugin update."
+  exit 0
+fi
+
+# Claude Code registers the marketplace from settings on first start, which can come after the first apply.
+if ! claude plugin marketplace update local-mods; then
+  if grep -qs '"local-mods"' "$HOME/.claude/plugins/known_marketplaces.json"; then
+    echo "local-mods marketplace update failed."
+    exit 1
+  fi
+  echo "local-mods marketplace not registered yet; start Claude Code once, then run chezmoi apply again."
+  exit 0
+fi
+
+# Prints "<plugin> <action>": install when missing, update when the version changed, stale when it did not.
+actions="$(python3 -I - "$HOME/.claude/local-mods" "$HOME/.claude/plugins/installed_plugins.json" <<'EOF'
+import json, os, sys
+
+root, installed_path = sys.argv[1], sys.argv[2]
+installed = {}
+if os.path.exists(installed_path):
+    installed = json.load(open(installed_path)).get("plugins", {})
+for plugin in json.load(open(os.path.join(root, ".claude-plugin", "marketplace.json")))["plugins"]:
+    name = plugin["name"]
+    wanted = json.load(open(os.path.join(root, plugin["source"], ".claude-plugin", "plugin.json"))).get("version")
+    have = {entry.get("version") for entry in installed.get(f"{name}@local-mods", [])}
+    print(name, "install" if not have else "stale" if have == {wanted} else "update")
+EOF
+)"
+
+changed=false
+failed=false
+while read -r plugin action; do
+  case "$action" in
+    install | update)
+      if claude plugin "$action" "$plugin@local-mods"; then changed=true; else failed=true; fi
+      ;;
+    stale) echo "warning: $plugin files changed but its version did not; bump the version in its plugin.json." ;;
+  esac
+done <<<"$actions"
+
+if [[ "$changed" == true ]]; then
+  echo "Restart Claude Code to load the updated local-mods plugins."
+fi
+# A failure leaves the hash unrecorded, so the next apply tries again.
+[[ "$failed" == false ]]
