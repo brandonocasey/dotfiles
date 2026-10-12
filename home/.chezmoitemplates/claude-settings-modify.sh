@@ -74,7 +74,8 @@ managed=$(
       "playwright *",
       "glab *",
       "gh *",
-      "git push *",
+      "git",
+      "git *",
       "jira-api *",
       "curl *",
       "wget *",
@@ -82,12 +83,6 @@ managed=$(
       "scp *",
       "rsync *",
       "npm publish *",
-      "git fetch",
-      "git fetch *",
-      "git pull",
-      "git pull *",
-      "git ls-remote *",
-      "git clone *",
       "tmux *",
       "docker *",
       "claude *",
@@ -170,16 +165,6 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
-            "timeout": 3
-          }
-        ]
-      },
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh ~/.claude/hooks/account-hint.sh",
             "timeout": 3
           }
         ]

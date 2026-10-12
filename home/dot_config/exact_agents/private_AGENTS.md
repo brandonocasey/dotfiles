@@ -11,8 +11,8 @@
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Run waits over one minute in background, never foreground sleep/until loops.
 - When I must run something, give me one short command, never a long or chained one. Put longer work in a scratch script that deletes itself after it runs, and hand me `! sh <script>`.
-- Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg`, never `grep -r` or file-by-file `grep`, `sed`, or `cat`; `grep` is fine on piped output or named files. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Once you know the location, read only that line range.
-- Every token you read is re-sent on each later call. Never `cat`, `sed`, or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content already in context. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long command output with quiet flags, `head`, `tail`, or `rg`.
+- Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg`, including on piped output, never file-by-file `grep`, `sed`, or `cat`. Use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Once you know the location, read only that line range.
+- Every token you read is re-sent on each later call. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine. Never `sed` or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content already in context. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long command output with quiet flags, `head`, `tail`, or `rg`.
 - Change existing files with Edit. Use Write only for new files or near-total rewrites.
 
 ## Directories

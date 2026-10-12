@@ -13,11 +13,11 @@ You run one manual validation task exactly as specified and report what you obse
 
 - Exercise the requested workflow by hand. Do not change tracked files or configuration.
 - Follow `browser` and `ui-verify` for browser work. Report unavailable tools; static inspection does not prove interaction behavior.
-- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never `cat` or fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
+- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
 - Record the steps, inputs, observed behavior, and expected-versus-actual result.
 - Do not spawn sub-agents.
 - Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.
-- Search with `rg`, never `grep -r`; `grep` is fine on piped output or named files. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Use `cat` only on files under about 200 lines, heredocs, or pipes; otherwise find the lines with `rg -n` and read only that range.
+- Search with `rg`, including on piped output; use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine.
 
 ## Execution constraints
 

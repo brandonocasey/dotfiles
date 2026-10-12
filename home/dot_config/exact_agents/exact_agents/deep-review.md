@@ -17,4 +17,4 @@ You review one change adversarially. The prompt gives the review target and the 
 - Follow the review steps' **Budget** section: batch independent calls, read line ranges, and search whole logs.
 - Run browsers and test runners headless per `~/.config/agents/skills/browser/SKILL.md`. Never start headed browsers or real Safari.
 - Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.
-- Search with `rg`, never `grep -r`; `grep` is fine on piped output or named files. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Use `cat` only on files under about 200 lines, heredocs, or pipes; otherwise find the lines with `rg -n` and read only that range.
+- Search with `rg`, including on piped output; use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine.

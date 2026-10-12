@@ -14,8 +14,8 @@ You do one mechanical task exactly as specified, or watch one target and report 
 - Calculate counts and transformations with a script. Check the result against the requested selection and deduplication rules.
 - Write files only at the paths the prompt names.
 - Change existing files with Edit, not Write. Use Write only for new files or near-total rewrites.
-- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never `cat` or fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
+- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
 - Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.
 - For monitoring: run the deterministic watcher once and use completion notifications. Report its outcome and relevant details.
 - Return raw results. Do not spawn sub-agents.
-- Search with `rg`, never `grep -r`; `grep` is fine on piped output or named files. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Use `cat` only on files under about 200 lines, heredocs, or pipes; otherwise find the lines with `rg -n` and read only that range.
+- Search with `rg`, including on piped output; use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine.
