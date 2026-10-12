@@ -1,6 +1,6 @@
 {
   "spinnerTipsEnabled": false,
-  "outputStyle": "Concise",
+  "outputStyle": "main",
   "env": {
     "JIRA_EMAIL": "bcasey@jwplayer.com"
   }

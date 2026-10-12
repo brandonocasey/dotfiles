@@ -17,5 +17,5 @@ description: "Create, edit, or restructure documentation using Diátaxis tutoria
 - Docs must be useful at every state: no "coming soon" stubs, and don't hold back a
   page because it isn't finished
 
-- Each paragraph covers one idea in at most four sentences. Apply the global
+- Each paragraph covers one idea in at most four sentences. Apply the main-session
   Writing rules and repository templates.

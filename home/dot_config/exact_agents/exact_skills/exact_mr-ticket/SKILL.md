@@ -81,5 +81,5 @@ related links, status, version, label, title.
 
 Use a summary under 10 words naming the outcome. Describe the problem,
 expected result, acceptance check, and links in 1–10 bullets, as few as possible.
-Apply the global Writing rules and repository templates. Reread before posting
+Apply the main-session Writing rules and repository templates. Reread before posting
 and remove sentences repeating another sentence, the title, or the diff.

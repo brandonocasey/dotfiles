@@ -1,6 +1,6 @@
 ## Automatic completion review
 
-AGENTS.md routes automatic reviews to [when-to-run.md](when-to-run.md),
+The main-session rules route automatic reviews to [when-to-run.md](when-to-run.md),
 which owns triggers, skip exceptions, follow-ups, and reviewer count. For triggered
 reviews of this session's work:
 

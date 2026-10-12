@@ -214,6 +214,7 @@ managed=$(
   "fileCheckpointingEnabled": true,
   "skipAutoPermissionPrompt": true,
   "inputNeededNotifEnabled": true,
+  "outputStyle": "main",
   "remoteControlAtStartup": false
 }
 JSON

@@ -4,9 +4,6 @@ name: llm-setup-audit
 description: "Audit global skills, roles, rules, and config for defects and token waste; rules/config edits require approval."
 ---
 
-Scope: Audit skills, agent definitions, rules files, and harness config for bugs, duplication, drift, wasted tokens, and complex language. Fix skills directly; propose rules-file and config edits for approval.
-
-
 Give each reader every needed rule once, in plain words and few tokens.
 Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 
@@ -14,8 +11,10 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 
 - **Skills:** audit whole `SKILL.md` files, linked shared instructions, and agent definitions. Fix directly, then report.
   Defaults: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and `~/.codex/agents/`.
+  Both harnesses' role files render from chezmoi's `.chezmoitemplates/agents/`; edit those templates.
 - **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Propose edits; apply only approved proposals.
-  Default: `~/.config/agents/AGENTS.md`.
+  Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
+  Those render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   Propose edits; apply only approved proposals.
@@ -98,7 +97,7 @@ One harness's setting does not control another.
   Never remove a check or authorization boundary merely because it restates a default.
 - **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
   Narrow or remove other stop points; agents follow them literally.
-- **Language:** apply `~/.config/agents/AGENTS.md` Writing rules, including sentence limits.
+- **Language:** apply the main-session Writing rules, including sentence limits.
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
 - **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.

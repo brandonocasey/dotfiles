@@ -7,5 +7,5 @@ Follow the repository template when present. Otherwise:
 - No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
 - Lead with the concrete problem and resulting behavior. Describe the final
   change for someone who has not read the conversation.
-- Apply the global Writing rules; reread before posting and remove sentences
+- Apply the main-session Writing rules; reread before posting and remove sentences
   repeating another sentence, the title, or the diff.
