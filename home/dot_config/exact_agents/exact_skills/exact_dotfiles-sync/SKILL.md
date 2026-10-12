@@ -1,14 +1,13 @@
 ---
-disable-model-invocation: true
 name: dotfiles-sync
-description: "Explicit-only: sync changed chezmoi targets to sources, scan for secrets, commit, and push."
+description: "Sync changed chezmoi targets to sources, scan for secrets, commit, and push. Use when the user asks to commit or push chezmoi or dotfiles changes."
 ---
 
 Optional argument: target paths. Without one, use the targets this session changed.
 
-Invoking this skill is the consent to commit and push the current branch of the
-chezmoi source repo, for this run only. It gives no standing consent. No rule
-runs it automatically. Force-push stays forbidden.
+A user request to commit or push dotfiles is the consent to commit and push the
+current branch of the chezmoi source repo, for this run only. It gives no standing
+consent. Never run it without that request. Force-push stays forbidden.
 
 Resolve the repo once: `git -C "$(chezmoi source-path)" rev-parse --show-toplevel`.
 Shell variables do not persist between tool calls, so write that literal path
