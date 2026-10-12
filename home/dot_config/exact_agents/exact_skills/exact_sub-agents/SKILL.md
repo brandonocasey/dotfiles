@@ -26,7 +26,6 @@ Continue an existing agent for related follow-up work when the harness supports 
 
 - Before monitoring a command or external target, read [monitoring.md](references/monitoring.md).
 - After a failed attempt leaves unresolved reasoning, read [escalation.md](references/escalation.md) before escalating or reporting blocked.
-- Sub-agents report blockers to the parent; they never escalate.
 
 ## After they return
 

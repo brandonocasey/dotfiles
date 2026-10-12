@@ -3,9 +3,6 @@ name: pr-fix
 description: "Fix CI on existing GitHub PRs or GitLab MRs until green, then approve or merge only with --approve or --merge; excludes creation and review."
 ---
 
-Scope: Get existing GitHub PRs or GitLab MRs green: update or rebase the branch, fix failing checks, and watch CI. Then approve or merge only when asked. Not new PRs or review. `mr-fix` is an alias.
-
-
 # Fix pull requests
 
 Get every selected pull request to a passing state, then approve or merge it

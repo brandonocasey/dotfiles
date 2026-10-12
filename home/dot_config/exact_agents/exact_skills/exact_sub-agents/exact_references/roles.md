@@ -34,7 +34,6 @@ Workflow `agent()` calls skip that variable and inherit the session model. Pass 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
 Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
-In the main session, delegate code searches beyond one known location; search inline when spawning costs more.
 Use `cheap` to find one named file, definition, string, or config value; tell it not to edit.
 Use `explorer` to list usages, trace calls, or map affected files.
 Verify the key claims of any `haiku` run before acting on them.
