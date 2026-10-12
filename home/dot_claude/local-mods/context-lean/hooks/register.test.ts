@@ -89,16 +89,6 @@ test('passes an empty deferred list through', async ($, on) => {
   expect(result.text).toBeNull()
 })
 
-test('keeps only Atlassian server notes', async ($, on) => {
-  on('prompt.attachment', ($, e) => ({ text: e.text }))
-
-  const text = '# MCP Server Instructions\n\nIntro.\n\n## claude.ai Atlassian MCP\nUse Jira.\n\n## claude.ai Claude Docs\nMake docs.\n\n## claude.ai monday.com\nBoards.'
-  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
-  expect(result.text).toContain('Use Jira.')
-  expect(result.text).not.toContain('Make docs.')
-  expect(result.text).not.toContain('Boards.')
-})
-
 test('drops the server notes when no server is left', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
 
@@ -123,21 +113,53 @@ test('keeps a disconnect-only MCP notice', async ($, on) => {
   expect(result.text).toBe(text)
 })
 
-test('keeps Atlassian notes and the disconnect notice together', async ($, on) => {
+const NOTES_TEXT = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch first.\n\n## claude.ai Atlassian MCP\nGet the site ID.'
+const searchResult = (names: string[]) => ({ result: { content: names.map(tool_name => ({ type: 'tool_reference', tool_name })) } })
+
+test('hides every server note, Atlassian included', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
 
-  const text = '# MCP Server Instructions\n\n## claude.ai Atlassian MCP\nUse Jira.\n\n## claude.ai Notion\nSearch.\nThe following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog'
-  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
-  expect(result.text).toContain('Use Jira.')
-  expect(result.text).not.toContain('Search.')
-  expect(result.text).toContain('claude.ai Datadog')
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text: NOTES_TEXT })
+  expect(result.text).toBeNull()
 })
 
-test('hides a first server block that follows the intro on the next line', async ($, on) => {
+test('hides notes but keeps the disconnect notice after them', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
 
-  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch.\n\n## claude.ai Atlassian MCP\nUse Jira.'
+  const text = `${NOTES_TEXT}\nThe following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog`
   const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
-  expect(result.text).not.toContain('Search.')
-  expect(result.text).toContain('Use Jira.')
+  expect(result.text).toBe('The following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog')
+})
+
+test('sends a connector notes with its first ToolSearch result, once per agent', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => searchResult(['mcp__claude_ai_Notion__search', 'mcp__claude_ai_Atlassian_MCP__getJiraIssue']))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: NOTES_TEXT })
+  const first = await $.tool.call({ tool: 'ToolSearch', input: { query: 'notion' }, tool_use_id: 'a' })
+  const context = (first.context ?? []).join('\n')
+  expect(context).toContain('Search first.')
+  expect(context).toContain('Get the site ID.')
+
+  const again = await $.tool.call({ tool: 'ToolSearch', input: { query: 'notion' }, tool_use_id: 'b' })
+  expect(again.context ?? []).toEqual([])
+
+  const subagent = await $.tool.call({ tool: 'ToolSearch', input: { query: 'notion' }, tool_use_id: 'c', agentId: 'sub' })
+  expect((subagent.context ?? []).join('\n')).toContain('Search first.')
+})
+
+test('leaves other tool calls alone', async ($, on) => {
+  on('tool.call', () => ({ result: 'mcp__claude_ai_Notion__search' }))
+
+  const result = await $.tool.call({ tool: 'Bash', input: { command: 'ls' }, tool_use_id: 'd' })
+  expect(result.context ?? []).toEqual([])
+})
+
+test('sends notes with a connector tool call whose result does not name it', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.' })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'e' })
+  expect((result.context ?? []).join('\n')).toContain('Use log queries.')
 })

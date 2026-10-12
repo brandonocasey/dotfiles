@@ -1,16 +1,18 @@
 import type { Register } from 'claude-code'
-import { type Counted, type Report, type Row, report } from './report'
+import { type Category, type Counted, type Report, type Row, report, SENT } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
 const RARE_TOOLS = new Set(['ScheduleWakeup', 'SendFeedback', 'ReportFindings', 'ListAgents', 'AskUserQuestion', 'Workflow', 'ShareOnboardingGuide', 'Agent'])
-// claude.ai connectors whose server notes stay in the prompt. Every connector's tool names are hidden but findable through ToolSearch.
-const NOTES = new Set(['Atlassian', 'Atlassian_MCP'])
+// claude.ai connectors whose server notes stay in the prompt. Every other connector's notes are sent with the
+// first ToolSearch or tool call that uses it. Every connector's tool names are hidden but findable through ToolSearch.
+const NOTES = new Set<string>()
 const RULE = 'Use only when the user explicitly asks for an artifact.'
 const NOTE = `${RULE}\n\n`
 const ARTIFACT_ENTRY = /^Artifact: .*$/m
 const HINT = `\n\nNot in the deferred tools list but loadable with select:<name>: ${[...RARE_TOOLS].join(', ')}. Load one before calling it.`
 const CONNECTOR = /^mcp__claude_ai_(.+?)__/
+const CONNECTOR_ANYWHERE = /mcp__claude_ai_([A-Za-z0-9_-]+?)__/g
 const LISTED_NAME = /^([\w-]+)(?::|$)/
 const HEADING = /^## claude\.ai (.+)$/
 const REMOVED = /no longer available/
@@ -23,6 +25,14 @@ const COUNTS = 'counts'
 const LAST_REPORT = 'last-report'
 
 const connectorOf = (tool: string) => CONNECTOR.exec(tool)?.[1]
+// A tool result as text, to find the connectors it names. Results with no JSON form name none.
+const mentions = (result: unknown) => {
+  try {
+    return JSON.stringify(result) ?? ''
+  } catch {
+    return ''
+  }
+}
 
 // A short, stable hash (cyrb53) to tell whether a row's text changed since it was counted.
 const hashOf = (text: string) => {
@@ -45,7 +55,7 @@ type Host = {
   session: { id(): Promise<string> }
   store: { get(key: string): Promise<unknown>; set(key: string, value: unknown): Promise<void>; delete(key: string): Promise<void>; keys(): Promise<string[]> }
 }
-type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>> }
+type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[] }
 // Token counts by row, reused across sessions while the row's text and the model stay the same.
 type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
 type LastReport = Report & { at: number }
@@ -55,6 +65,8 @@ const SESSIONS_KEPT = 10
 const hidden = new Map<string, Row>()
 const kept = new Map<string, Row>()
 let session: { key: string; ready: Promise<void> } | undefined
+// Connectors whose notes were already sent, by agent ("main" for the main session).
+const sent = new Set<string>()
 
 const record = (rows: Map<string, Row>, label: string, key: string, text: string) => {
   const row = rows.get(label) ?? { label, texts: new Map<string, string>() }
@@ -71,6 +83,7 @@ const restore = async ($: Host, key: string) => {
   const saved = (await $.store.get(key)) as Saved | undefined
   fromObject(hidden, saved?.hidden)
   fromObject(kept, saved?.kept)
+  for (const entry of saved?.sent ?? []) sent.add(entry)
   const others = (await $.store.keys()).filter(other => other.startsWith('session:') && other !== key)
   if (others.length < SESSIONS_KEPT) return
   const dated = await Promise.all(others.map(async other => ({ other, at: ((await $.store.get(other)) as Saved | undefined)?.at ?? 0 })))
@@ -86,6 +99,7 @@ const load = async ($: Host) => {
     if (session?.key !== key) {
       hidden.clear()
       kept.clear()
+      sent.clear()
       session = { key, ready: restore($, key).catch(() => undefined) }
     }
     await session.ready
@@ -99,7 +113,7 @@ const load = async ($: Host) => {
 const save = async ($: Host) => {
   const key = await load($)
   if (key === undefined) return
-  const saved: Saved = { at: Date.now(), hidden: toObject(hidden), kept: toObject(kept) }
+  const saved: Saved = { at: Date.now(), hidden: toObject(hidden), kept: toObject(kept), sent: [...sent] }
   await $.store.set(key, saved).catch(() => undefined)
 }
 
@@ -155,14 +169,14 @@ export const register: Register = on => {
   on('command.run', { command: 'context-lean' }, async $ => {
     try {
       await load($)
-      const usage = await $.session.usage({ breakdown: 'summary' })
+      const usage = await $.session.usage({ breakdown: 'full' })
       if (!usage.context.tokens) {
         // Nothing was sent yet, so there is no real size. Show the last report instead.
         const last = (await $.store.get(LAST_REPORT).catch(() => undefined)) as LastReport | undefined
         if (typeof last?.real !== 'number') return { text: 'Nothing measured yet. Send a message, then run /context-lean again.' }
         const when = new Date(last.at).toLocaleString()
 
-        return { text: report({ ...last, note: `No request sent in this session yet, so these numbers are from your last report (${when}). Send a message for this session's numbers.` }) }
+        return { text: report({ ...last, categories: last.categories ?? [], note: `No request sent in this session yet, so these numbers are from your last report (${when}). Send a message for this session's numbers.` }) }
       }
       const model = await $.session.model()
       const stored = (await $.store.get(COUNTS).catch(() => undefined)) as Counts | undefined
@@ -194,8 +208,13 @@ export const register: Register = on => {
             return [counting.then((total): Counted => ({ label: row.label, items: texts.length, tokens: total === undefined || base === undefined ? undefined : total - base }))]
           }),
         )
-      const [hiddenRows, keptRows] = await Promise.all([rows(hidden), rows(kept)])
-      const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, hidden: hiddenRows, kept: keptRows }
+      // Notes already sent on first use are back in the context, so they count as kept, not saved.
+      const isSent = (row: Row) => row.label.endsWith(' server notes') && [...row.texts.keys()].every(server => sent.has(`main:${server}`))
+      const sentRows = new Map([...hidden].filter(([, row]) => isSent(row)).map(([label, row]) => [label, { ...row, label: `${row.label}${SENT}` }]))
+      const stillHidden = new Map([...hidden].filter(([label]) => !sentRows.has(label)))
+      const [hiddenRows, keptRows] = await Promise.all([rows(stillHidden), rows(new Map([...kept, ...sentRows]))])
+      const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind }: Category) => ({ name, tokens, kind }))
+      const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
       const last: LastReport = { ...measured, at: Date.now() }
       await Promise.all([$.store.set(COUNTS, { model, rows: { ...known, ...fresh } }), $.store.set(LAST_REPORT, last)]).catch(() => undefined)
 
@@ -203,6 +222,28 @@ export const register: Register = on => {
     } catch (error) {
       return { text: `context-lean could not build the report: ${String(error)}` }
     }
+  })
+
+  // Sends a hidden connector's server notes with the first ToolSearch result or tool call that uses it.
+  on('tool.call', async ($, e, next) => {
+    if (e.tool !== 'ToolSearch' && connectorOf(e.tool) === undefined) return next(e)
+    const ran = await next(e)
+    if (!('result' in ran)) return ran
+    await load($)
+    const agent = e.agentId ?? 'main'
+    const servers = new Set([...mentions(ran.result).matchAll(CONNECTOR_ANYWHERE)].map(match => match[1]))
+    if (e.tool !== 'ToolSearch') servers.add(connectorOf(e.tool)!)
+    const notes = [...servers].flatMap(server => {
+      const text = hidden.get(`${shown(server)} server notes`)?.texts.get(server)
+      if (text === undefined || sent.has(`${agent}:${server}`)) return []
+      sent.add(`${agent}:${server}`)
+
+      return [`Server notes for this connector, sent now that its tools are in use:\n${text}`]
+    })
+    if (notes.length === 0) return ran
+    await save($)
+
+    return { ...ran, context: [...(ran.context ?? []), ...notes] }
   })
 
   on('tool.describe', { tool: 'ToolSearch' }, async ($, e, next) => {

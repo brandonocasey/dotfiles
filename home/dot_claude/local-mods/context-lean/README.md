@@ -20,9 +20,9 @@ That is about 22,700 fewer tokens on every request once all connectors have load
 | `Artifact`, `ArtifactComments`, `ArtifactData`, `DesignSync` | Deferred. Description gains "Use only when the user explicitly asks for an artifact." The `Artifact` entry in the deferred-tools list is replaced with the same rule. |
 | `ScheduleWakeup`, `SendFeedback`, `ReportFindings`, `ListAgents`, `AskUserQuestion`, `Workflow`, `ShareOnboardingGuide`, `Agent` | Deferred and dropped from the deferred-tools list. ToolSearch's description names them as loadable with `select:<name>`. |
 | claude.ai connector tools (`mcp__claude_ai_*`) | Deferred and dropped from the deferred-tools list. One line names the hidden connectors so Claude searches for them by keyword. |
-| claude.ai connector server notes | Dropped, except for the connectors in `NOTES`. |
+| claude.ai connector server notes | Dropped from the prompt. Each connector's notes are attached to the first ToolSearch result or tool call that uses it, once per session and once per subagent. Connectors in `NOTES` keep theirs in the prompt. |
 
-Local MCP servers, such as `chrome-devtools`, and all other tools are unchanged.
+Local MCP servers, such as `chrome-devtools`, and all other tools are unchanged. Subagents get the same hiding: in a test, a subagent saw no Datadog or Gmail tool names and got the "findable with ToolSearch" line.
 
 Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog for "any error logs for playlist-delivery?" and Google Calendar for "what meetings do I have tomorrow?" without being told the connector names.
 
@@ -30,10 +30,12 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 
 Run `/context-lean` at any time. It shows:
 
-- the real context size of the last request, from the API;
-- how many tokens the mod hid, and the size without it;
+- the real context size of the last request, from the API, and the size without the mod;
+- `/context`'s categories, corrected for what the mod hides, with an "Unattributed" row that lines the table up with the real size;
 - one row per hidden or kept item, with its token count from your session model's tokenizer;
 - the `/context` estimate, which doesn't account for this mod.
+
+It reports the main session only, not subagents.
 
 Before your first message nothing has been sent, so it shows your last report instead, with the time it was measured. With no saved report yet, it asks you to send a message first.
 
@@ -41,15 +43,13 @@ Counting costs one small request per row to your session's model, about as many 
 
 The mod saves what it hid per session in its plugin store, so a resumed session still reports it. It keeps the last 10 sessions.
 
-## Choose which server notes stay
+## Keep server notes in the prompt
 
-Server notes that stay in the prompt are listed in `NOTES` in `hooks/register.ts`:
+By default every connector's server notes wait until the connector is used. To keep a connector's notes in the prompt from the start, add it to `NOTES` in `hooks/register.ts`:
 
 ```ts
-const NOTES = new Set(['Atlassian', 'Atlassian_MCP'])
+const NOTES = new Set(['Atlassian_MCP'])
 ```
-
-Keep notes for a connector when its tools need setup steps that tool names can't show. Atlassian's notes explain getting a site ID and finding operations before running them. Datadog, Notion and Claude Docs also send notes; they are dropped.
 
 Each entry is the `<Server>` part of the tool name, for example `Atlassian_MCP` for `mcp__claude_ai_Atlassian_MCP__search`. After editing, run `claude plugin test .` and start a new session.
 
