@@ -15,7 +15,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   Role frontmatter lives in `dot_config/exact_agents/exact_agents/*.md.tmpl` and `dot_codex/agents/*.toml.tmpl`.
 - **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Propose edits; apply only approved proposals.
   Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
-  Those render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
+  Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   Propose edits; apply only approved proposals.
@@ -46,10 +46,10 @@ sync, check hashes and linked references again; report every remaining mismatch.
 
 ### Chezmoi
 
-It manages `~/.config/agents/`, `~/.codex/`, `~/.claude/`, and `~/.claude-two/` with automatic commits and pushes enabled.
+It manages `~/.config/agents/`, `~/.codex/`, `~/.claude/`, `~/.claude-two/`, and the Gemini, opencode, and pi rules files with automatic commits and pushes enabled.
 Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, not plain files.
 
-1. Run `chezmoi status ~/.config/agents ~/.codex ~/.claude ~/.claude-two` first.
+1. Run `chezmoi status ~/.config/agents ~/.codex ~/.claude ~/.claude-two ~/.gemini/GEMINI.md ~/.config/opencode/AGENTS.md ~/.pi/agent/AGENTS.md` first.
    For each listed target, summarize `chezmoi diff <target>` in one line.
    Skip targets under the ownership rule below.
    Recommend one action for each: copy the target to its source (step 3), or `chezmoi apply <target>`.
