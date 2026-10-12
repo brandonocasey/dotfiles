@@ -157,52 +157,12 @@ managed=$(
     "artifact-capabilities": "name-only"
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|resume|clear|compact",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
-            "async": true,
-            "timeout": 3
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh ~/.claude/hooks/promote-ai-title.sh",
-            "async": true,
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
-            "async": true,
-            "timeout": 3
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "sh ~/.claude/hooks/cache-keepalive.sh prompt",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "sh ~/.claude/hooks/dollar-skill.sh",
             "timeout": 5
           }
         ]
