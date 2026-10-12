@@ -66,7 +66,36 @@ managed=$(
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
-    "allowAppleEvents": true,
+    "excludedCommands": [
+      "open *",
+      "osascript *",
+      "safaridriver *",
+      "npx playwright *",
+      "playwright *",
+      "glab *",
+      "gh *",
+      "git push *",
+      "jira-api *",
+      "curl *",
+      "wget *",
+      "ssh *",
+      "scp *",
+      "rsync *",
+      "npm publish *",
+      "git fetch",
+      "git fetch *",
+      "git pull",
+      "git pull *",
+      "git ls-remote *",
+      "git clone *",
+      "tmux *",
+      "docker *",
+      "claude *",
+      "codex *",
+      "xcrun *",
+      "xcodebuild *",
+      "screencapture *"
+    ],
     "network": {
       "allowedDomains": ["*"],
       "allowLocalBinding": true
@@ -78,7 +107,10 @@ managed=$(
         "~/.config/agents",
         "~/.claude",
         "~/.claude-two",
-        "~/.codex"
+        "~/.codex",
+        "~/Projects",
+        "~/.cache",
+        "~/Library/Caches"
       ]
     }
   },
@@ -91,7 +123,8 @@ managed=$(
       "$defaults",
       "Approving an MR/PR with `glab mr approve`, `glab api --method POST .../merge_requests/<iid>/approve`, or `gh pr review --approve` when the user asked to approve that MR/PR in this session. Read-only polling of MR/PR state (`glab mr view`, GET `glab api`) is never Self-Approval.",
       "Commenting on, closing, or editing MRs in gitlab.com/jwpconnatix/*, and updating Jira issues or fix versions in jwplayer.atlassian.net, when the user asked for that action in this session.",
-      "Editing files under ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, or ~/.codex/ (settings, hooks, skills, agents), running `chezmoi apply`, and committing, amending unpushed commits, or `git pull --rebase` in ~/.local/share/chezmoi, when the user ran /llm-setup-audit or asked for that change in this session."
+      "Editing files under ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, or ~/.codex/ (settings, hooks, skills, agents), running `chezmoi apply`, and committing, amending unpushed commits, or `git pull --rebase` in ~/.local/share/chezmoi, when the user ran /llm-setup-audit or asked for that change in this session.",
+      "Retrying a Bash command with dangerouslyDisableSandbox after it failed with sandbox evidence (Operation not permitted, EPERM, sandbox violation, socket or browser launch failure), when the same command would be allowed without the flag."
     ]
   },
   "model": "opus",
@@ -137,6 +170,16 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
+            "timeout": 3
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/account-hint.sh",
             "timeout": 3
           }
         ]
