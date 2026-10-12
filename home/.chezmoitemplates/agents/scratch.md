@@ -1,0 +1,1 @@
+- Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.

@@ -1,0 +1,6 @@
+name = "deep-review"
+description = "Deep independent adversarial review of a change; review --deep runs it beside reviewer. Read-only; returns verified candidate findings."
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+developer_instructions = """
+{{ template "agents/deep-review.md" (dict "harness" "codex") }}"""

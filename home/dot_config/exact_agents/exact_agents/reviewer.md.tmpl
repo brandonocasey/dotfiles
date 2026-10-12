@@ -1,0 +1,10 @@
+---
+name: reviewer
+description: "Independent review of a change. Read-only; returns verified candidate findings."
+model: claude-sonnet-5-5
+effort: medium
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
+disallowedTools: Edit, Write, NotebookEdit, Agent
+omitClaudeMd: true
+---
+{{ template "agents/reviewer.md" (dict "harness" "claude") }}

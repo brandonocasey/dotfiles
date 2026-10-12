@@ -1,0 +1,11 @@
+---
+name: manual-tester
+description: "Exercise manual workflows; report observed behavior and evidence."
+model: claude-sonnet-5-5
+effort: medium
+tools: >
+  Read, Grep, Glob, Bash, ToolSearch,
+  mcp__chrome-devtools__*, mcp__firefox-devtools__*, mcp__safari__*
+disallowedTools: Edit, Write, NotebookEdit, Agent
+---
+{{ template "agents/manual-tester.md" (dict "harness" "claude") }}

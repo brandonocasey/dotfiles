@@ -1,0 +1,10 @@
+---
+name: explorer
+description: "Read-only code exploration: locate usages, trace calls, and map affected files. Returns paths, symbols, and excerpts, not prose."
+model: sonnet
+effort: medium
+tools: Read, Grep, Glob, Bash
+disallowedTools: Edit, Write, NotebookEdit, Agent
+omitClaudeMd: true
+---
+{{ template "agents/explorer.md" (dict "harness" "claude") }}

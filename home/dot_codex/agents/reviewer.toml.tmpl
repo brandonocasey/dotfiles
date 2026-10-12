@@ -1,0 +1,6 @@
+name = "reviewer"
+description = "Independent review of a change. Read-only; returns verified candidate findings."
+model = "gpt-6.1-sol"
+model_reasoning_effort = "low"
+developer_instructions = """
+{{ template "agents/reviewer.md" (dict "harness" "codex") }}"""

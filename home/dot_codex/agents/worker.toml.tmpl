@@ -1,0 +1,6 @@
+name = "worker"
+description = "Implementation and judgement for one task, split part, or fix. Owns only assigned files."
+model = "gpt-6.1-sol"
+model_reasoning_effort = "low"
+developer_instructions = """
+{{ template "agents/worker.md" (dict "harness" "codex") }}"""

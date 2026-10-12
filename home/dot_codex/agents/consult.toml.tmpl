@@ -5,11 +5,4 @@ model_reasoning_effort = "max"
 {{/* Linux hosts lack bwrap, which Codex needs to enforce a sandbox. */ -}}
 sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}read-only{{ end }}"
 developer_instructions = """
-You answer one hard question for a session that is stuck. The prompt gives the problem, the evidence gathered so far, the files involved, and what a good answer must settle.
-
-- Verify the caller's evidence against the code before you build on it. Say when a premise is wrong, with file:line.
-- Settle every point the prompt lists. Give the root cause, the fix as concrete steps or a diff in a code block, and how to verify it.
-- Do not change files. Do not spawn sub-agents.
-- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never `cat` or fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
-- State what you could not verify and the command or file that would settle it.
-"""
+{{ template "agents/consult.md" (dict "harness" "codex") }}"""

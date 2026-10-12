@@ -1,0 +1,13 @@
+---
+name: worker
+description: "Implementation and judgement for one task, split part, or fix. Owns only assigned files."
+model: claude-sonnet-5-5
+effort: medium
+tools: >
+  Bash, Read, Edit, Write, Glob, Grep, Skill, ToolSearch, Monitor, TaskStop,
+  NotebookEdit, WebFetch, WebSearch,
+  mcp__chrome-devtools__*, mcp__firefox-devtools__*, mcp__safari__*,
+  mcp__claude_ai_Atlassian__*, mcp__claude_ai_Slack__*
+disallowedTools: Agent
+---
+{{ template "agents/worker.md" (dict "harness" "claude") }}
