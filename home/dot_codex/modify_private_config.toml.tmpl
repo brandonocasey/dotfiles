@@ -30,14 +30,12 @@ export SAFARI_NATIVE_TOML="$safari_native_toml"
 
 # Keep app-owned synced bodies intact; wrappers control Codex discovery.
 SKILLS_CONFIG_TOML=""
-for skill in docs google-workspace skill-creator docx xlsx pptx pdf; do
-  for skill_file in "$HOME"/.config/agents/skills/synced/*/"$skill"/SKILL.md; do
-    [[ -f "$skill_file" ]] || continue
-    escaped_path=${skill_file//\\/\\\\}
-    escaped_path=${escaped_path//\"/\\\"}
-    SKILLS_CONFIG_TOML+=$(printf '\n[[skills.config]]\npath = "%s"\nenabled = false' "$escaped_path")
-    SKILLS_CONFIG_TOML+=$'\n'
-  done
+for skill_file in "$HOME"/.config/agents/skills/synced/*/*/SKILL.md; do
+  [[ -f "$skill_file" ]] || continue
+  escaped_path=${skill_file//\\/\\\\}
+  escaped_path=${escaped_path//\"/\\\"}
+  SKILLS_CONFIG_TOML+=$(printf '\n[[skills.config]]\npath = "%s"\nenabled = false' "$escaped_path")
+  SKILLS_CONFIG_TOML+=$'\n'
 done
 export SKILLS_CONFIG_TOML
 
