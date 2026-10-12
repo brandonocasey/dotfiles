@@ -28,12 +28,12 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 
 ## See what it hides
 
-Run `/context-lean` at any time. It shows:
+Run `/context-lean` at any time. It looks like `/context`, with the real numbers on top and a savings section at the bottom:
 
-- the real context size of the last request, from the API, and the size without the mod;
-- `/context`'s categories, corrected for what the mod hides, with an "Unattributed" row that lines the table up with the real size;
-- one row per hidden or kept item, with its token count from your session model's tokenizer;
-- the `/context` estimate, which doesn't account for this mod.
+- a grid of the context window, filled from the real size of the last request, from the API;
+- `/context`'s estimated categories, plus a "Difference from the real total" row;
+- how many tokens the mod saved, and the size without it;
+- one section each for hidden tool names, hidden tool descriptions, hidden server notes, and notes sent on first use. A section with more than 8 rows shows the 7 largest and folds the rest into one "more" line.
 
 It reports the main session only, not subagents.
 

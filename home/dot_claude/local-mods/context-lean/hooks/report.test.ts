@@ -13,57 +13,78 @@ const CATEGORIES: Category[] = [
 ]
 const BASE = { real: 19943, window: 1000000, estimate: 17265, model: 'claude-opus-5-5', categories: CATEGORIES }
 
-test('shows real, saved and without totals in /context style', () => {
-  const text = report({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 412, tokens: 11203 }, { label: 'Workflow description', items: 1, tokens: 1950 }], kept: [] })
-  expect(text).toContain('## Context Usage (context-lean)')
-  expect(text).toContain('**Tokens:** 19.9k / 1m (2%), real, from the API')
-  expect(text).toContain('**Without context-lean:** 33.1k (13.2k saved, 39.7%)')
-  expect(text).toContain('**/context estimate:** 17.3k, which ignores this mod')
-  expect(text.indexOf('Datadog tool names')).toBeLessThan(text.indexOf('Workflow description'))
-  expect(text).toContain('| Datadog tool names | 412 | 11.2k |')
-  expect(text).not.toContain('Kept in the prompt')
+test('draws the /context grid beside the header and categories', () => {
+  const lines = report({ ...BASE, hidden: [], kept: [] }).split('\n')
+  expect(lines[0]).toBe('Context Usage (context-lean)')
+  // 19,943 of 1m is 4 of 200 squares; the 33k buffer is 7.
+  expect(lines[1]).toBe('⛁ ⛁ ⛁ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
+  expect(lines[2]).toContain('   19.9k/1m tokens (2%), real')
+  expect(lines[10]).toMatch(/^(⛶ ){13}⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝/)
+  expect(lines.some(line => line.endsWith('⛶ Free space: 947.1k (94.7%)'))).toBe(true)
+  expect(lines.some(line => line.includes('MCP tools (deferred)'))).toBe(false)
 })
 
-test('moves hidden items out of the estimated categories and lines up with the real total', () => {
+test('ends with a savings section and one section per kind of hidden item', () => {
   const text = report({
     ...BASE,
     hidden: [
-      { label: 'Workflow description', items: 1, tokens: 1295 },
-      { label: 'Claude Docs tool descriptions', items: 3, tokens: 115 },
+      { label: 'Datadog tool names', items: 412, tokens: 11203 },
+      { label: 'Gmail tool names', items: 30, tokens: 635 },
+      { label: 'Workflow description', items: 1, tokens: 1950 },
       { label: 'Notion server notes', items: 1, tokens: 394 },
     ],
-    kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 793 }],
+    kept: [{ label: 'Atlassian MCP server notes (sent on first use)', items: 1, tokens: 793 }],
   })
-  expect(text).toContain('| System tools | 8k | 0.8% |')
-  expect(text).toContain('| MCP tools | 500 | 0.1% |')
-  // Only the hidden notes leave the estimate; kept and local servers' notes stay.
-  expect(text).toContain('| MCP server instructions | 1.9k | 0.2% |')
-  // 19,943 real minus (1,505 + 8,000 + 500 + 1,910 + 296) estimated.
-  expect(text).toContain('| Unattributed (real minus estimates) | 7.7k | 0.8% |')
-  expect(text).toContain('| Free space | 947.1k | 94.7% |')
-  expect(text.indexOf('Unattributed')).toBeLessThan(text.indexOf('Free space'))
+  expect(text).toContain('Saved by context-lean · 14.2k tokens (41.6%)\n└ Without context-lean: 34.1k tokens\n└ /context estimate: 17.3k tokens')
+  expect(text).toContain('Hidden tool names · 11.8k tokens\n└ Datadog · 412 names · 11.2k tokens\n└ Gmail · 30 names · 635 tokens')
+  expect(text).toContain('Hidden tool descriptions · 1.9k tokens\n└ Workflow · 1 tool · 1.9k tokens')
+  expect(text).toContain('Hidden server notes · 394 tokens\n└ Notion · 1 server · 394 tokens')
+  expect(text).toContain('Server notes sent on first use · 793 tokens\n└ Atlassian MCP · 1 server · 793 tokens')
+  expect(text).not.toContain('kept in the prompt')
 })
 
-test('lists kept notes and uncounted rows', () => {
-  const text = report({ ...BASE, estimate: undefined, hidden: [{ label: 'Gmail tool names', items: 3, tokens: undefined }], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 640 }] })
-  expect(text).toContain('| Gmail tool names | 3 | not counted |')
-  expect(text).toContain('### Kept in the prompt')
-  expect(text).toContain('| Atlassian MCP server notes | 1 | 640 |')
+test('shows uncounted rows and skips the estimate line without one', () => {
+  const text = report({ ...BASE, estimate: undefined, hidden: [{ label: 'Gmail tool names', items: 3, tokens: undefined }], kept: [] })
+  expect(text).toContain('└ Gmail · 3 names · not counted')
   expect(text).not.toContain('/context estimate')
 })
 
-test('skips the category table without categories', () => {
+test('says when no breakdown is available', () => {
   const text = report({ ...BASE, categories: [], hidden: [], kept: [] })
-  expect(text).not.toContain('Usage by category')
+  expect(text).toContain('(no breakdown available)')
 })
 
 test('puts a note above the report', () => {
   const text = report({ ...BASE, hidden: [], kept: [], note: 'From your last report.' })
-  expect(text.startsWith('From your last report.\n\n## Context Usage')).toBe(true)
+  expect(text.startsWith('From your last report.\n\nContext Usage (context-lean)')).toBe(true)
 })
 
-test('takes notes sent on first use out of the server instructions estimate', () => {
-  const text = report({ ...BASE, hidden: [{ label: 'Notion server notes', items: 1, tokens: 394 }], kept: [{ label: 'Atlassian MCP server notes (sent on first use)', items: 1, tokens: 793 }] })
-  // 2,304 estimated minus 394 hidden minus 793 sent.
-  expect(text).toContain('| MCP server instructions | 1.1k | 0.1% |')
+test('lists /context categories as estimated, plus the difference from the real total', () => {
+  const text = report({ ...BASE, hidden: [{ label: 'Workflow description', items: 1, tokens: 1295 }], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 793 }] })
+  expect(text).toContain('Estimated usage by category')
+  expect(text).toContain('⛁ System tools: 9.3k tokens (0.9%)')
+  expect(text).toContain('⛁ MCP server instructions: 2.3k tokens (0.2%)')
+  // 19,943 real minus 14,015 estimated.
+  expect(text).toContain('⛁ Difference from the real total: 5.9k tokens (0.6%)')
+  expect(text.indexOf('Difference')).toBeLessThan(text.indexOf('Free space'))
+  expect(text.indexOf('Free space')).toBeLessThan(text.indexOf('Autocompact buffer'))
+  expect(text).toContain('Server notes kept in the prompt · 793 tokens\n└ Atlassian MCP · 1 server · 793 tokens')
+})
+
+test('folds the smallest rows of a long section into one line', () => {
+  const hidden = Array.from({ length: 10 }, (_, i) => ({ label: `Server${i} tool names`, items: 2, tokens: 100 - i }))
+  const text = report({ ...BASE, hidden, kept: [] })
+  expect(text).toContain('└ Server0 · 2 names · 100 tokens')
+  expect(text).toContain('└ Server6 · 2 names · 94 tokens')
+  expect(text).not.toContain('Server7 ·')
+  // Servers 7 to 9: 93 + 92 + 91 tokens.
+  expect(text).toContain('└ 3 more · 6 names · 276 tokens')
+})
+
+test('fills the grid when the real total is over the window or the window is unknown', () => {
+  for (const window of [1000000, 0]) {
+    const lines = report({ ...BASE, real: 1003000, window, hidden: [], kept: [] }).split('\n')
+    expect(lines[1].startsWith('⛁ ⛁ ⛁')).toBe(true)
+    expect(lines[10].startsWith('⛁ ⛁ ⛁')).toBe(true)
+  }
 })
