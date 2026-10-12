@@ -10,7 +10,7 @@ request first.
 For the user's own branch:
 
 1. Load the `worktree` skill and reuse or create the head branch's worktree.
-   Without a local branch, use the two commands at the end of its **Restore a removed worktree**; they fetch the branch first.
+   Without a local branch, use the two `git` commands in [restore.md](../../worktree/references/restore.md); they fetch the branch first.
 2. Fetch the head branch and verify that its fetched SHA and the worktree
    HEAD equal the observed SHA. If either differs, preserve local work,
    refresh the inventory, and reconcile it before proceeding. Fetch the base

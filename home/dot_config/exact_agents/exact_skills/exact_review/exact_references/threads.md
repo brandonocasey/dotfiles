@@ -1,6 +1,6 @@
 # MR/PR threads
 
-Use this reference for `review --threads`. GitLab and GitHub only. For another
+GitLab and GitHub only. For another
 platform, report that `--threads` is unsupported and stop before any reply or resolve.
 
 ## Procedure

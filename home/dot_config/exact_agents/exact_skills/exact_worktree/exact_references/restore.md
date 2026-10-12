@@ -8,3 +8,5 @@ Read [create.md](create.md) for an existing branch. Only when the branch was als
 git -C <main-checkout> fetch origin <branch>:refs/remotes/origin/<branch>
 git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
 ```
+
+Then set up submodules per [create.md](create.md).

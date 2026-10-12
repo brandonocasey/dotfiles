@@ -54,7 +54,7 @@ Search writes coverage JSON to standard error, including when it finds no match.
 Resolve includes coverage in its JSON object. Use `--file <path>` to add or
 refresh one known transcript.
 
-To transfer a task between hosts, copy only its private JSON record with `ssh`,
+When the user asks to transfer a task between hosts, copy only its private JSON record with `ssh`,
 then set its mode to `0600`. Run `show` on the destination and validate the host,
 repository, worktree, and HEAD before work. Do not copy transcripts or credentials.
 The skill never starts remote commands automatically.

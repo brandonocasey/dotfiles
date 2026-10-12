@@ -17,7 +17,7 @@
   [auto-merge-pause.md](../../shared/auto-merge-pause.md) **Restore**. It stays off
   while a blocking finding or failed repair remains.
 - With `--merge`, after that point and with no blocking finding left, read
-  [merge.md](merge.md) and finish that workflow before cleanup. It supports GitHub and GitLab through `pr-fix`.
+  [merge.md](merge.md) and finish that workflow before cleanup.
 - Honor an explicit monitoring or repair request in the current turn. Keep the
   worktree until that work ends. Without one, start the CI watch in
   [monitoring.md](../../sub-agents/references/monitoring.md) **Watch CI after shipping**

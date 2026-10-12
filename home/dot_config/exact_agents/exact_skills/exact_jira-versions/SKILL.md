@@ -38,7 +38,7 @@ Every command is `JIRA_EMAIL=<email> jira-api <METHOD> <path> [json]`.
   `PUT /version/<id> '{"released":true,"releaseDate":"<YYYY-MM-DD>","driver":"<accountId>"}'`
   (driver: the current user's `accountId`).
 - Archive: `PUT /version/<id> '{"archived":true}'`
-- Delete: `DELETE /version/<id>` (irreversible; get approval first).
+- Delete: `DELETE /version/<id>` (irreversible).
 
 Output ends with `HTTP <code>`. `201` means created, `200` means ok.
 
@@ -62,7 +62,7 @@ Output ends with `HTTP <code>`. `201` means created, `200` means ok.
    Other platforms are unsupported: tell the user and skip this step.
 6. Read the ticket and any changed MR/PR again to check the result.
 
-"Move" never removes a released version. "Out of the release" removes only
+"Out of the release" removes only
 the named version.
 
 ## Rules

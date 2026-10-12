@@ -12,9 +12,9 @@ a failing check on the user's own non-fork branch:
 4. Run the repository's targeted checks, then any required formatting, lint,
    type, or test commands documented for the changed paths. Never skip or
    weaken a check.
-5. Load the `commit` skill, commit only the intended files, and push with a
-   normal push. Use the lease-protected force-push only when a rebase happened
-   in this pass.
+5. Load the `commit` skill, commit only the intended files, and push with
+   `git push origin HEAD:<head-branch>`. Use the lease-protected force-push from
+   [branch-repair.md](branch-repair.md) step 5 only when a rebase happened in this pass.
 6. Refresh the inventory and record the new head SHA and the started checks.
    Keep the worktree while local work is needed; use the cleanup section on
    every completed or blocked outcome.

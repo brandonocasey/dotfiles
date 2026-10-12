@@ -1,6 +1,6 @@
 ## 7. Optional: --approve, --auto-merge, --merge
 
-Each flag is the user's request to approve or merge the reviewed MR/PR (Git policy).
+Each flag is the user's request to approve or merge the reviewed MR/PR ([git-policy.md](../../shared/git-policy.md)).
 Apply them only to MRs/PRs the user names or authored. Local targets have nothing to
 approve or merge: report `Merge: not run (local target)`.
 
@@ -38,7 +38,7 @@ Run this step last: after step 4's push when `--fix` applies, otherwise after st
      keep it and report both IDs.
    - Run `git -C <main-checkout> fetch --prune origin` to drop the stale remote-tracking
      ref, then `git worktree prune`.
-   - Remove this review's `.cache/agents/scratch/<task>/` scratch and the `review-<number>.md` copy file.
+   - Remove this review's `.cache/agents/scratch/<task>/` scratch. Delete the `review-<number>.md` copy file only after the user has used it.
 
 End the report with one line:
 `Merge: approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`

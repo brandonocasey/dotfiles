@@ -12,8 +12,7 @@ description: "Create, edit, or restructure documentation using Diátaxis tutoria
   thinking+learning = explanation
 - When a section drifts into another mode, move it to the owning page and leave a
   one-line link both ways — never duplicate content across pages
-- Improve docs one page, one flaw at a time; do not plan a whole-docs restructure. Good
-  structure emerges from small fixes
+- Improve docs one page, one flaw at a time; do not plan a whole-docs restructure.
 - Docs must be useful at every state: no "coming soon" stubs, and don't hold back a
   page because it isn't finished
 

@@ -1,6 +1,5 @@
 # CI failures and conflicts
 
-Use this reference for remote review status and authorized repairs.
 Apply the repository's instructions and the review target's existing push rules.
 Load `code-standards` before changes, `worktree` before branch work, and `commit`
 before commits. Load `sub-agents` before CI monitoring or delegation.

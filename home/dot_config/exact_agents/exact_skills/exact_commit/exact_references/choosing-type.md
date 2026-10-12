@@ -3,9 +3,8 @@
 Read when the compact rules in [SKILL.md](../SKILL.md) leave the type unclear.
 
 The type says what the change does, not how important it is. Changelogs and
-version tools read it. Semver tools bump the minor version for `feat` and the
-patch version for other release types. A wrong `feat` misleads users and
-inflates versions. A wrong internal type hides a real change from users.
+version tools read it: a wrong `feat` inflates versions, and a wrong internal
+type hides a real change from users.
 
 Follow these steps for each commit. For a PR title, use the whole diff.
 

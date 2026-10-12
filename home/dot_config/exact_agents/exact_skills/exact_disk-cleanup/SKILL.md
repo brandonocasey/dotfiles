@@ -8,7 +8,7 @@ description: "Reclaim disk space from regenerable caches, builds, containers, tr
 
 Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
 approved items. Work locally unless the user explicitly requests a remote host.
-Creating or editing this skill does not invoke cleanup or authorize deletion. A dry run ends at the preview.
+A dry run ends at the preview.
 Honor narrower scope. **Preview, approve, remove, verify** owns authorization and
 automatic execution; every removal keeps its audit preview and pre-deletion rechecks.
 

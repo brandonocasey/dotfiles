@@ -1,6 +1,6 @@
 # Shared git flow — facts, commit gate, rules
 
-Shared by the `land` and `ship` skills. This directory is not a skill.
+Shared by `land` and `ship`; not a skill.
 
 ## Facts
 

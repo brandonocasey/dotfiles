@@ -32,7 +32,7 @@ reduced motion when their styling or transitions changed.
 
 Load the `browser` skill before browser MCP calls. It owns engine selection,
 focus, audio, and browser cleanup. Use a repository run/test skill when
-available to start the app with its required headers and assets.
+available to start the app with its required headers and assets. Stop servers you start per [task-resources.md](../host-preflight/references/task-resources.md).
 
 Inspect the rendered DOM before choosing selectors. Prefer roles and accessible
 names. Wait for the state under test, such as a visible result or completed

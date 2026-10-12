@@ -36,8 +36,7 @@ reviewers do not repeat the checks. A failing check is evidence: reviewers decid
 whether the change caused it. Run the checks again for each new pinned target,
 including each `--loop` round.
 Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
-file). Do not commit, amend, or rebase the target while a reviewer runs; one reviewer
-reviewed an empty diff because the commit landed first.
+file). Do not commit, amend, or rebase the target while a reviewer runs.
 Give every reviewer the same prompt: the review target verbatim, worktree path,
 the absolute path of [reviewer-steps.md](reviewer-steps.md), applicable
 repository constraints, and required check commands. Do not pass implementation

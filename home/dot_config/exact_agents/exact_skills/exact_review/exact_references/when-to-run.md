@@ -1,6 +1,6 @@
 # When to run a review automatically
 
-Applies to every model. Run an independent `review` on this session's own change
+Run an independent `review` on this session's own change
 once the work is complete. Review when requested or when material uncertainty
 remains. Otherwise apply the triggers and narrow exceptions below.
 

@@ -1,6 +1,5 @@
 # Review output and cleanup
 
-Brief beats complete-sounding: no padding, no restating the diff.
 Review and MR/PR comments cover one issue in at most three sentences:
 what breaks, when, and the fix. Apply repository templates when present.
 
@@ -27,7 +26,7 @@ what breaks, when, and the fix. Apply repository templates when present.
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. Do not post anything to the MR/PR unless the user asks; step 6 lists what
 `--threads` may post. Print for the user to post. For an MR/PR, put all comments in one copy
-file, `review-<number>.md`, numbered by finding, and add follow-ups to it. Report CI and
+file, `~/.cache/agents/copy/review-<number>.md`, numbered by finding, and add follow-ups to it. Report CI and
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.
 

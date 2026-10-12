@@ -57,8 +57,8 @@ the user explicitly requested it. A push alone is not a cleanup trigger.
 When the remote source branch still exists, prove it holds the local tip:
 
 ```sh
-git ls-remote origin refs/heads/<branch>   # remote tip
-git rev-parse <branch>                     # local tip; must be the same ID
+git -C <main-checkout> ls-remote origin refs/heads/<branch>   # remote tip
+git -C <main-checkout> rev-parse <branch>                     # local tip; must be the same ID
 ```
 
 Pass the full ref: a bare `<branch>` pattern also matches

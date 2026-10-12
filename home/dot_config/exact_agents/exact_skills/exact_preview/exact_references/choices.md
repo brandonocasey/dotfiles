@@ -12,7 +12,7 @@ Split the choices into separate questions, one decision each. The gallery shows 
 - Keep each option's `description` to what differs from the other options.
 - Show faithful HTML or existing visual assets; when screenshots are requested,
   capture the real app at the size the user cares about.
-- Show at most about eight options per question. Offer more through a later round.
+- Show 3–4 options per question, as `preview` requires. Offer more through a later round.
 
 Read [task-resources.md](../../host-preflight/references/task-resources.md).
 Put the config and disposable visual assets in the selected task scratch
@@ -40,7 +40,7 @@ with stable question and option IDs:
 }
 ```
 
-Paths are relative to the config file unless absolute. `kind` is `image` or `html`. IDs contain letters, digits, dots, underscores, or hyphens. Option IDs are unique across all questions and stay stable across revisions. A flat `options` list instead of `questions` still works and becomes one multiple-choice question.
+Paths are relative to the config file unless absolute. `kind` is `image` or `html`. IDs contain letters, digits, dots, underscores, or hyphens. Option IDs are unique across all questions and stay stable across revisions.
 
 HTML options render in a sandbox without scripts or network access. Inline images as `data:` URIs.
 

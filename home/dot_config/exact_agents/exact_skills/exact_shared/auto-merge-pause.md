@@ -40,8 +40,8 @@ rule to wait on a queued PR.
      a self-hosted GitLab; `:id` comes from that checkout.
 3. Read the state back and confirm auto-merge is off.
 
-If it cannot be disabled, report why. Then review before the
-push; that review is the hand-off review, and `ship` skips its after-push review.
+If it cannot be disabled, report why and push only after the user agrees.
+Then review before the push; that review is the hand-off review, and `ship` skips its after-push review.
 
 ## Restore
 

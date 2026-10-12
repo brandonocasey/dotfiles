@@ -18,7 +18,7 @@ curl. Every endpoint below is relative to `http://localhost:<port>`.
 
 Remote automation must be enabled once per machine, or `POST /session` fails. If it
 does, tell the user to run `safaridriver --enable` — it asks for their password, so
-do not run it yourself. Steps:
+do not run it yourself.
 
 1. Create the session: `POST /session` with
    `{"capabilities":{"alwaysMatch":{"browserName":"safari"}}}`. Read the session id from
@@ -28,7 +28,7 @@ do not run it yourself. Steps:
 Constraints:
 
 - One session at a time system-wide. On every exit path, including failure,
-  `DELETE` the session and kill `safaridriver`.
+  close the pages you opened. For WebDriver, also `DELETE` the session and kill `safaridriver`.
 - Media autoplay needs the `webkit:alwaysAllowAutoplay` capability in `alwaysMatch`,
   or a real gesture via `POST /session/<id>/element/<element-id>/click`.
 - Real Safari is always headed and visible. A user request to test or run in real Safari

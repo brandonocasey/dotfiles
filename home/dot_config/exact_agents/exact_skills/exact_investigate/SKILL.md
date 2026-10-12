@@ -12,8 +12,8 @@ Use every tool that can add evidence. When one tool fails or is not connected,
 try the next one before you call a fact unknown.
 
 Never comment on, edit, close, or transition issues, pull requests, or chat
-threads unless the user asks. Never write to production data. Follow the Git
-rules for commits and pushes.
+threads unless the user asks. Never write to production data. Follow
+[git-policy.md](../shared/git-policy.md) for commits and pushes.
 
 ## 0. Take stock of tools
 

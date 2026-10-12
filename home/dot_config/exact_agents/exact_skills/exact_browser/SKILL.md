@@ -54,4 +54,4 @@ below are `chrome-devtools`; use the matching tool on other engines.
 - Capture an element by `uid` or the viewport. Use `fullPage`, without `uid`, only when the check needs the whole page.
 - In the main session, delegate more than three visual checks to the `manual-tester` sub-agent. It returns findings and file paths, not images.
 
-Close pages and connections you opened when the task ends. Free ports you took.
+Close pages and connections you opened on every exit path, including failure. Stop servers and free ports you started.

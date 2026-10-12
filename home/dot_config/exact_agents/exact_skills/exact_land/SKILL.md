@@ -60,7 +60,7 @@ Run the project's test suite before rebasing.
 git rebase <TARGET>
 ```
 
-- This replays `BRANCH` onto the current local `TARGET` tip. No fetch — local only.
+- This replays `BRANCH` onto the current local `TARGET` tip.
 - On conflict: follow the **Shared rules** of `shared/git-flow.md` — resolve it when the
   combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
   how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.

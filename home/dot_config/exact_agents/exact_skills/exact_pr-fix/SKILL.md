@@ -42,7 +42,8 @@ count as `--merge`.
 
 ## Authorization
 
-The invocation authorizes unattended work; do not pause between these actions:
+The invocation authorizes unattended work within
+[git-policy.md](../shared/git-policy.md); do not pause between these actions:
 read-only inspection, the smallest root-cause fix, the required local checks, a
 normal push, a rebase with a lease-protected force-push on the user's own
 branch, one eligible CI retry per run, a normal branch update on another

@@ -26,9 +26,8 @@ may use scratch assets while its URL is in use, but retain those assets for the
 entire preview lifetime. Promote a file to the requested destination if the
 user asks to keep it.
 
-Do not migrate existing scratch directories or running previews. Apply this
-layout to new resources only. Skills should use this location policy rather
-than hardcode a scratch directory; tools with explicit output paths keep them.
+Do not migrate existing scratch directories or running previews. Tools with
+explicit output paths keep them.
 
 ## Servers and artifacts
 
