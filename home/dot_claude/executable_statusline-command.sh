@@ -286,14 +286,17 @@ rate_seg() {
 }
 
 # Tokens in context from the last API call (same input-only formula as
-# used_percentage). Past the hint threshold the segment suggests /compact,
-# because every later turn re-reads the whole context.
+# used_percentage). Past the warn threshold the segment shows a yellow ⚠, and
+# past the hint threshold a red ⚠, suggesting /compact because every later
+# turn re-reads the whole context.
 ctx_used_tokens=$(echo "$input" | jq -r '
   .context_window.current_usage
   | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) else empty end
 ' 2>/dev/null)
-compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-400000}
-case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=400000 ;; esac
+compact_warn_tokens=${CLAUDE_COMPACT_WARN_TOKENS:-300000}
+case $compact_warn_tokens in *[!0-9]*) compact_warn_tokens=300000 ;; esac
+compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-500000}
+case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=500000 ;; esac
 case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
 
 ctx_used_pct=""
@@ -356,7 +359,11 @@ if [ -n "$ctx_used_pct" ]; then
   hint=""
   if [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_hint_tokens" ]; then
     c=31
-    hint=$(printf ' \033[31m/compact\033[0m')
+    hint=$(printf '\033[31m⚠\033[0m')
+  elif [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_warn_tokens" ]; then
+    # Never downgrade a red percent to yellow.
+    [ "$c" = 32 ] && c=33
+    hint=$(printf '\033[33m⚠\033[0m')
   fi
   parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m%s' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct" "$hint")
 fi
