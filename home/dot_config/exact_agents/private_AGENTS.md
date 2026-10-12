@@ -10,6 +10,8 @@
 - Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg`, including on piped output, never file-by-file `grep`, `sed`, or `cat`. Use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Once you know the location, read only that line range.
 - Every token you read is re-sent on each later call. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine. Never `sed` or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content already in context. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long command output with quiet flags, `head`, `tail`, or `rg`.
 - Change existing files with Edit. Use Write only for new files or near-total rewrites.
+- Plan reads before reading. Get exact ranges first from the LSP tool's document symbols, or `ast-grep` when no server covers the language, else `rg -n`. Then read all known or likely ranges in one parallel batch, or one multi-file `sed -n` call. Read one range at a time only when the next depends on its result. Keep ranges tight; guess narrow, not wide.
+- Read rule files whole, once; line ranges and the 200-line limit apply to code only. When an action needs rule files, read its whole set in one parallel batch; do not read ahead for actions the task may not reach.
 
 ## Directories
 
@@ -27,10 +29,4 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`.
 - Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
-- When an action needs rule files, read its whole set in one parallel batch. Do not read ahead for actions the task may not reach.
-- Read rule files whole, once. Line ranges apply to code only.
-- Plan reads before reading. Get exact ranges first from the LSP tool's document symbols, or `ast-grep` when no server covers the language, else `rg -n`. Then read all known or likely ranges in one parallel batch, or one multi-file `sed -n` call. Read one range at a time only when the next depends on its result. Keep ranges tight; guess narrow, not wide.
-
-## Git
-
-Before Git work, read `shared/git-policy.md`. It owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates.
+- Before Git work: `shared/git-policy.md`. It owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates.
