@@ -11,7 +11,7 @@
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Run waits over one minute in background, never foreground sleep/until loops.
 - When I must run something, give me one short command, never a long or chained one. Put longer work in a scratch script that deletes itself after it runs, and hand me `! sh <script>`.
-- Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg` instead of file-by-file `grep`, `sed`, or `cat`. Once you know the location, read only that line range.
+- Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg`, never `grep -r` or file-by-file `grep`, `sed`, or `cat`; `grep` is fine on piped output or named files. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Once you know the location, read only that line range.
 - Every token you read is re-sent on each later call. Never `cat`, `sed`, or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content already in context. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long command output with quiet flags, `head`, `tail`, or `rg`.
 - Change existing files with Edit. Use Write only for new files or near-total rewrites.
 
@@ -36,7 +36,7 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 - When an action needs rule files, read its whole set in one parallel batch. Do not read ahead for actions the task may not reach.
 - Sets: spawning = `sub-agents/SKILL.md` + `sub-agents/references/roles.md`; shipping = `ship/SKILL.md` + `shared/git-flow.md` + `shared/default-branch.md`; worktrees = `worktree/SKILL.md` + `worktree/references/create.md` + `shared/default-branch.md` + `shared/git-policy.md`, plus `worktree/references/prepare.md` before checks or commits; MR/PR review = `review/references/remote-target.md` + `review/references/remote-comments.md`.
 - Read rule files whole, once. Line ranges apply to code only.
-- Before each read, send every other read you already know you need in the same batch.
+- Plan reads before reading. Get exact ranges first from the LSP tool's document symbols, or `ast-grep` when no server covers the language, else `rg -n`. Then read all known or likely ranges in one parallel batch, or one multi-file `sed -n` call. Read one range at a time only when the next depends on its result. Keep ranges tight; guess narrow, not wide.
 
 ## Writing
 
