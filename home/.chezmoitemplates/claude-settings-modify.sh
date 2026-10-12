@@ -131,6 +131,13 @@ managed=$(
   },
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
+    "jira-triage": "name-only",
+    "mr-triage": "name-only",
+    "release-verify": "name-only",
+    "preview": "name-only",
+    "session-resume": "name-only",
+    "pr-fix": "name-only",
+    "host-preflight": "name-only",
     "dataviz": "name-only",
     "claude-api": "name-only",
     "anthropic-skills:docs": "user-invocable-only",
