@@ -29,6 +29,13 @@ With several targets, start one reviewer set per target.
 Before the spawn, establish the review checkout once (step 0). Install dependencies
 and build only when required by the affected checks, commit hooks, or review
 evidence; share any required build output across reviewers.
+After any required install, start the repository's full test, lint, and typecheck
+commands once in the background, on the pinned target. Write each full log to a file
+in the task scratch directory, ending with an `exit N` line. Pass the log paths and
+commands to every reviewer and start the reviewers without waiting, so parallel
+reviewers do not repeat the checks. A failing check is evidence: reviewers decide
+whether the change caused it. Run the checks again for each new pinned target,
+including each `--loop` round.
 Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
 file). Do not commit, amend, or rebase the target while a reviewer runs; one reviewer
 reviewed an empty diff because the commit landed first.

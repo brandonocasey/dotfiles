@@ -57,7 +57,10 @@ read the diff looking for things that seem off — attack it:
   E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
   in suites the author did not run were the most common CI-only failure after a review.
 - **Run what CI runs.** Run the repository's full test, lint, and typecheck commands when
-  they finish in a few minutes, not only the focused tests. When the repo enforces size,
+  they finish in a few minutes, not only the focused tests. When the prompt gives check
+  logs, read them instead of rerunning those commands. Wait for a log's `exit N` line
+  for up to about 10 minutes, then report that check as not run. Rerun only focused
+  tests a finding hinges on and checks the logs lack. When the repo enforces size,
   accessibility, or performance budgets, check whether the change moves them. Where the
   change is runtime-only (workers, WASM, a server route, a CLI), exercise it once with a
   realistic input; reviewers that ran the code found the most severe defects.
@@ -89,3 +92,17 @@ For a finding about rendered UI, use the `ui-verify` skill when browser evidence
 needed. For a performance claim, use the repository's benchmark skill or command when
 measurements are needed. Reuse results for the same revision and inputs; these checks return
 evidence to this review, not another review cycle.
+
+## Budget
+
+Every tool call re-sends the whole context, so cost grows with turns times context.
+Cut both without skipping any step above:
+
+- Batch independent reads, searches, and commands into one call. Search the whole
+  scope with one `rg`, not file by file.
+- Read line ranges that cover the whole function under review. Read whole config
+  files, small modules, and files you need most of.
+- Write test, lint, and build output to a scratch log. Search the whole log for
+  failures, errors, and warnings, and match the failure count to the summary line.
+  Do not judge a log from its tail alone.
+- Review the highest-risk hunks first.
