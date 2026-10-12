@@ -104,10 +104,106 @@ ctx_total=$(echo "$input" | jq -r '
 ' 2>/dev/null)
 
 # --- Rate limits (each window: countdown to reset, then usage %) ---
-five_hr=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty' 2>/dev/null)
-five_hour_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty' 2>/dev/null)
-seven_day=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty' 2>/dev/null)
-seven_day_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty' 2>/dev/null)
+# Claude Code sends rate_limits only after a session's first API response, and
+# an idle session keeps resending its last copy. Limits are per account, so all
+# sessions share a cache of the newest value per window. Within one window usage
+# only grows, so the higher value is newer and a late or repeated copy can't
+# replace it. The exception is a real drop (e.g. a plan upgrade): a session
+# that sees its own value fall, per its file of what it last saw, overrides the
+# cache, and sessions resending an unchanged copy don't restore the old value.
+rl_dir="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline"
+rl_key=$(printf '%s' "${account:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}" | tr -c 'A-Za-z0-9._@-' '_')
+rl_cache="$rl_dir/rate-limits-$rl_key.json"
+rl_lock="$rl_dir/rate-limits-$rl_key.lock"
+rl_sid=$(echo "$input" | jq -j '.session_id // empty' 2>/dev/null | tr -c 'A-Za-z0-9._-' '_')
+rl_prev_file=""
+[ -n "$rl_sid" ] && rl_prev_file="$rl_dir/session-$rl_sid.json"
+rl_locked=""
+rl_tmp=""
+# Claude Code cancels a running script when a new update fires; don't leave
+# temp files or a held lock behind.
+trap 'rm -f "$rl_tmp"; [ -n "$rl_locked" ] && rmdir "$rl_lock" 2>/dev/null' EXIT
+trap 'exit 1' HUP INT TERM
+
+# Atomic write so concurrent readers never see a partial file.
+rl_write() {
+  rl_tmp=$(mktemp "$1.XXXXXX" 2>/dev/null) || return 1
+  printf '%s\n' "$2" > "$rl_tmp" && mv -f "$rl_tmp" "$1" || return 1
+  rl_tmp=""
+}
+
+# Hold the lock across read, merge and write so sessions don't drop each
+# other's updates. Without it, display the merge, write nothing, and retry on
+# the next run.
+mkdir -p "$rl_dir" 2>/dev/null
+if mkdir "$rl_lock" 2>/dev/null; then
+  rl_locked=1
+else
+  rl_lock_mtime=$(stat -c %Y "$rl_lock" 2>/dev/null || stat -f %m "$rl_lock" 2>/dev/null)
+  case $rl_lock_mtime in
+    '' | *[!0-9]*) ;;
+    *)
+      # A lock older than 10 s belongs to a killed run.
+      if [ $(($(date +%s) - rl_lock_mtime)) -gt 10 ]; then
+        rmdir "$rl_lock" 2>/dev/null
+        mkdir "$rl_lock" 2>/dev/null && rl_locked=1
+      fi
+      ;;
+  esac
+fi
+
+rl_live=$(echo "$input" | jq -c '.rate_limits // {}' 2>/dev/null)
+rl_cached=$(jq -cs '.[0] // null' "$rl_cache" 2>/dev/null)
+rl_prev=""
+[ -n "$rl_prev_file" ] && rl_prev=$(jq -cs '.[0] // null' "$rl_prev_file" 2>/dev/null)
+rl_state=$(jq -ncS --argjson now "$(date +%s)" --argjson live "${rl_live:-null}" \
+  --argjson cache "${rl_cached:-null}" --argjson prev "${rl_prev:-null}" '
+  def fresh: type == "object" and (.resets_at | type) == "number" and .resets_at > $now;
+  def clean: if type == "object" then with_entries(select(.value | fresh)) else {} end;
+  # resets_at can jitter between responses for the same window.
+  def same(x; y): ((x.resets_at - y.resets_at) | if . < 0 then -. else . end) < 600;
+  def newer(x; y):
+    if y == null then x
+    elif same(x; y) then (if x.used_percentage >= y.used_percentage then x else y end)
+    elif x.resets_at > y.resets_at then x
+    else y end;
+  ($live | clean) as $l
+  | ($prev | clean) as $p
+  | ($cache | clean) as $c
+  | reduce (($l | keys) + ($c | keys) | unique)[] as $k ({};
+      $l[$k] as $mine | $p[$k] as $old | $c[$k] as $cached
+      | .[$k] =
+        if $mine == null then $cached
+        elif $mine == $old then ($cached // $mine)
+        elif $old != null and same($mine; $old) and $mine.used_percentage < $old.used_percentage then $mine
+        else newer($mine; $cached) end)
+  | {live: $l, cache: ., cache_changed: (. != $cache), prev_changed: ($l != $prev)}
+' 2>/dev/null)
+[ -z "$rl_state" ] && rl_state='{"live":{},"cache":{}}'
+
+if [ -n "$rl_locked" ]; then
+  if [ "$(echo "$rl_state" | jq -r '.cache_changed')" != true ] ||
+    rl_write "$rl_cache" "$(echo "$rl_state" | jq -cS '.cache')"; then
+    # Record what this session saw only once the cache holds it.
+    if [ -n "$rl_prev_file" ] && [ "$(echo "$rl_state" | jq -r '.prev_changed')" = true ]; then
+      rl_write "$rl_prev_file" "$(echo "$rl_state" | jq -cS '.live')"
+    fi
+  fi
+  # Session files last past every window they hold (7 days at most); temp
+  # files are left only by runs killed outright.
+  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name '*.json.*' -mmin +60 \) \
+    -delete 2>/dev/null
+  rmdir "$rl_lock" 2>/dev/null
+  rl_locked=""
+fi
+
+# Values this session has no live copy of come from the cache and are dimmed.
+five_hr=$(echo "$rl_state" | jq -r '.cache.five_hour.used_percentage // empty' 2>/dev/null)
+five_hour_reset=$(echo "$rl_state" | jq -r '.cache.five_hour.resets_at // empty' 2>/dev/null)
+five_hour_dim=$(echo "$rl_state" | jq -r 'if .live.five_hour then "" else "2;" end' 2>/dev/null)
+seven_day=$(echo "$rl_state" | jq -r '.cache.seven_day.used_percentage // empty' 2>/dev/null)
+seven_day_reset=$(echo "$rl_state" | jq -r '.cache.seven_day.resets_at // empty' 2>/dev/null)
+seven_day_dim=$(echo "$rl_state" | jq -r 'if .live.seven_day then "" else "2;" end' 2>/dev/null)
 
 # --- Extra / overage usage (probe several likely field names) ---
 extra_pct=$(echo "$input" | jq -r '
@@ -151,14 +247,14 @@ color_for_pct() {
 # overstates the time left: "6.5d", "4.2h", "45m", "0m". The unit sets the
 # hue (days violet, hours teal, minutes blue).
 countdown_str() {
-  awk -v r="$1" -v n="$(date +%s)" '
+  awk -v r="$1" -v n="$(date +%s)" -v dim="$rl_dim" '
   function part(v, u, c) {
     v = sprintf("%.1f", int(v * 10) / 10)
     sub(/\.0$/, "", v)
     return c v u "\033[0m"
   }
   BEGIN{
-    DAYS = "\033[38;5;141m"; HOURS = "\033[38;5;43m"; MINS = "\033[38;5;111m"
+    DAYS = "\033[" dim "38;5;141m"; HOURS = "\033[" dim "38;5;43m"; MINS = "\033[" dim "38;5;111m"
     d = r - n
     if (d < 0) d = 0
     if (d >= 86400)     out = part(d / 86400, "d", DAYS)
@@ -181,9 +277,9 @@ rate_seg() {
     p=$(printf '%.0f' "$pct")
     c=$(color_for_pct "$p")
     if [ -n "$seg" ]; then
-      seg=$(printf '%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m' "$seg" "$c" "$p")
+      seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
     else
-      seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$p")
+      seg=$(printf '\033[%s%sm%d%%\033[0m' "$rl_dim" "$c" "$p")
     fi
   fi
   printf '%s' "$seg"
@@ -273,8 +369,10 @@ if [ -n "$dir_base" ]; then
 fi
 
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels
+rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr")
 [ -n "$fh_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$fh_seg")
+rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day")
 [ -n "$sd_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$sd_seg")
 

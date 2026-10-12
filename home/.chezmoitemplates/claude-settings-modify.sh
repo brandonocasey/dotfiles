@@ -163,7 +163,8 @@ managed=$(
   },
   "statusLine": {
     "type": "command",
-    "command": "bash ~/.claude/statusline-command.sh"
+    "command": "bash ~/.claude/statusline-command.sh",
+    "refreshInterval": 15
   },
   "enabledPlugins": {
     "rust-analyzer-lsp@claude-plugins-official": false,
