@@ -23,9 +23,9 @@ Workflow `agent()` calls skip that variable and inherit the session model. Pass 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, medium | gpt-6-luna, low |
-| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium | gpt-6-luna, medium |
+| `explorer` | Locate usages and trace code paths; read-only | sonnet, medium; pass `model: haiku` for usage lists | gpt-6-luna, medium |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; pass `model: opus` for design or cross-module debugging | gpt-6.1-sol, low |
-| `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium | gpt-6-luna, low |
+| `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for test selection only | gpt-6-luna, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
 | `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
@@ -34,6 +34,10 @@ Workflow `agent()` calls skip that variable and inherit the session model. Pass 
 Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
 Use them only when a skill explicitly requests an inherited-context fork.
 Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
+In the main session, delegate code searches beyond one known location; search inline when spawning costs more.
+Use `cheap` to find one named file, definition, string, or config value; tell it not to edit.
+Use `explorer` to list usages, trace calls, or map affected files.
+Verify the key claims of any `haiku` run before acting on them.
 Without a sub-agent tool, work inline and identify any review that is not independent.
 
 For delegated named commands with explicit pass/fail criteria, use `cheap` and

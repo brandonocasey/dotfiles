@@ -28,6 +28,7 @@ Load relevant skills once; reread only after changes, lost context, or a specifi
 
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`; before copyable output: its `copyable-output.md`.
 - Before spawning, monitoring, or escalating after failure: `sub-agents`. It owns roles, models, and Workflow `agent()` settings. Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
+- Main session only: delegate code searches beyond one known location, per `sub-agents/references/roles.md` (`cheap` for lookups, `explorer` for tracing). Search inline only when spawning costs more.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Run requested/triggered reviews; read-only tasks need none.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
 - When an action needs rule files, read its whole set in one parallel batch. Do not read ahead for actions the task may not reach.
