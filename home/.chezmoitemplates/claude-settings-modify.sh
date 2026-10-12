@@ -43,7 +43,16 @@ managed=$(
       "mcp__claude_ai_Atlassian__createJiraIssue",
       "mcp__claude_ai_Atlassian__editJiraIssue",
       "mcp__claude_ai_Atlassian__transitionJiraIssue",
-      "Bash(git worktree prune*)"
+      "Bash(git worktree prune*)",
+      "Bash(tmux capture-pane *)",
+      "Bash(chezmoi source-path)",
+      "Bash(chezmoi source-path *)",
+      "Bash(chezmoi status)",
+      "Bash(chezmoi status *)",
+      "Bash(chezmoi diff *)",
+      "Bash(glab mr list *)",
+      "Bash(glab mr view *)",
+      "Bash(claude plugin validate *)"
     ],
     "ask": [],
     "deny": [
