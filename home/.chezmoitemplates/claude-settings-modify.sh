@@ -170,13 +170,14 @@ managed=$(
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "defer-tools@local-mods": true
+    "defer-tools@local-mods": true,
+    "hide-connectors@local-mods": true
   },
   "extraKnownMarketplaces": {
     "local-mods": {
       "source": {
         "source": "directory",
-        "path": "{{ .chezmoi.homeDir }}/.claude/local-mods/defer-tools"
+        "path": "{{ .chezmoi.homeDir }}/.claude/local-mods"
       }
     }
   },

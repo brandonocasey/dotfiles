@@ -1,5 +1,0 @@
-{
-  "name": "local-mods",
-  "owner": { "name": "bcasey" },
-  "plugins": [{ "name": "defer-tools", "source": "./" }]
-}
