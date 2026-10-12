@@ -163,3 +163,12 @@ test('sends notes with a connector tool call whose result does not name it', asy
   const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'e' })
   expect((result.context ?? []).join('\n')).toContain('Use log queries.')
 })
+
+test('names a hidden connector as the keyword example', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = [HEADER, 'mcp__claude_ai_Google_Calendar__list_events', 'mcp__claude_ai_Slack__slack_send_message'].join('\n')
+  const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text })
+  expect(result.text).toContain('(e.g. "google"): tools from Google_Calendar, Slack.')
+  expect(result.text).not.toContain('datadog')
+})

@@ -137,7 +137,9 @@ const hideNames = (text: string) => {
     return left.length === lines.length || left.length > 1 ? [left.join('\n')] : []
   })
   if (servers.size === 0) return paragraphs.join('\n\n')
-  const note = `Not listed but findable with ToolSearch keywords (e.g. "datadog logs"): tools from ${[...servers].sort().join(', ')}.`
+  const sorted = [...servers].sort()
+  const example = shown(sorted[0]).trim().split(' ')[0].toLowerCase() || sorted[0].toLowerCase()
+  const note = `Not listed but findable with ToolSearch keywords, such as a service name (e.g. "${example}"): tools from ${sorted.join(', ')}.`
 
   return [...paragraphs, note].join('\n\n')
 }

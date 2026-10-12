@@ -11,7 +11,7 @@ Measured on 2026-10-12 with Claude Code 2.1.296, `claude-opus-5-5` and the `~/.c
 | context-lean on | 14,227–14,361 | 15,727–15,995 |
 | No mod | 25,309 | 38,591–38,594 |
 
-That is about 22,700 fewer tokens on every request once all connectors have loaded. After the first request, most of these tokens are billed as cached reads, so the main gain is context window space.
+That is about 22,700 fewer tokens on every request once all connectors have loaded. Most of the saving comes from claude.ai connectors, so you save less with fewer connectors enabled. After the first request, most of these tokens are billed as cached reads, so the main gain is context window space.
 
 ## What it hides
 
@@ -28,7 +28,7 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 
 ## See what it hides
 
-Run `/context-lean` at any time. It looks like `/context`, with the real numbers on top and a savings section at the bottom:
+Use `/context-lean` in place of `/context`. `/context` still works, but it does not show what the mod hid or the real size from the API. `/context-lean` looks like `/context`, with the real numbers on top and a savings section at the bottom:
 
 - a grid of the context window in `/context`'s colors, with hidden tokens shaded as orange ⛋ boxes after the used squares;
 - `/context`'s estimated categories, plus a "Difference from the real total" row when the real size from the API differs;
