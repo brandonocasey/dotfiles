@@ -170,8 +170,7 @@ managed=$(
     "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "defer-tools@local-mods": true,
-    "hide-connectors@local-mods": true
+    "context-lean@local-mods": true
   },
   "extraKnownMarketplaces": {
     "local-mods": {
