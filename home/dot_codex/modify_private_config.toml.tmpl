@@ -52,7 +52,7 @@ approval_policy = "never"
 sandbox_mode    = "danger-full-access"
 allow_login_shell = true
 developer_instructions = """
-{{ template "main-rules.md" . }}"""
+{{ template "main-rules.md" (dict "claude" false) }}"""
 
 [shell_environment_policy]
 inherit = "all"

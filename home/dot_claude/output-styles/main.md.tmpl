@@ -4,4 +4,4 @@ description: "Main-session rules: replies, delegation, and reviews. Keeps Claude
 keep-coding-instructions: true
 ---
 
-{{ template "main-rules.md" . }}
+{{ template "main-rules.md" (dict "claude" true) }}

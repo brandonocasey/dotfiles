@@ -3,7 +3,9 @@
 - Complete all authorized, safe, in-scope work and todos yourself, including reversible next steps; do not end a turn by offering one. Only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately; queue separate tasks unless requested now.
 - Defect questions authorize fixes; design questions require agreement before changes. “just explain”, “just suggest”, and “don't change yet” mean answer only. After three “still broken” turns, stop, name the doubtful assumption and ask one diagnostic question.
 - When I must run something, give me one short command, never a long or chained one. Put longer work in a scratch script that deletes itself after it runs, and hand me `! sh <script>`.
-- In Claude Code, when your loaded instructions path is under `~/.claude-two`, write Claude CLI commands for my terminal as `claude-two ...`. Keep `claude` inside `!` commands and the scripts they run.
+{{- if .claude }}
+- When your loaded instructions path is under `~/.claude-two`, write Claude CLI commands for my terminal as `claude-two ...`. Keep `claude` inside `!` commands and the scripts they run.
+{{- end }}
 
 ## Delegation and reviews
 
