@@ -1,0 +1,1 @@
+{ "name": "hide-connectors", "version": "0.1.0", "description": "Keeps unused claude.ai connectors out of the prompt but findable through ToolSearch" }

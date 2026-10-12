@@ -1,0 +1,8 @@
+{
+  "name": "local-mods",
+  "owner": { "name": "bcasey" },
+  "plugins": [
+    { "name": "defer-tools", "source": "./defer-tools" },
+    { "name": "hide-connectors", "source": "./hide-connectors" }
+  ]
+}
