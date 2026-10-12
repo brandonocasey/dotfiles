@@ -34,14 +34,18 @@ formula_for() {
     yq) printf '%s\n' yq ;;
     glab) printf '%s\n' glab ;;
     uv) printf '%s\n' uv ;;
+    ast-grep) printf '%s\n' ast-grep ;;
+    pyright-langserver) printf '%s\n' pyright ;;
+    typescript-language-server) printf '%s\n' typescript-language-server ;;
     *) return 1 ;;
   esac
 }
 
 list_tools() {
   local tool
-  for tool in git jq rg python3 gh chezmoi node shellcheck shfmt fd yq glab uv; do
-    printf '%-12s %s\n' "$tool" "$(formula_for "$tool")"
+  for tool in git jq rg python3 gh chezmoi node shellcheck shfmt fd yq glab uv \
+    ast-grep pyright-langserver typescript-language-server; do
+    printf '%-28s %s\n' "$tool" "$(formula_for "$tool")"
   done
 }
 

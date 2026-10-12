@@ -31,6 +31,16 @@ new formula. If Homebrew is missing, report it as the prerequisite instead of
 bootstrapping it. On a root host with `/root/bin/brew`, the helper uses that
 wrapper instead of invoking Homebrew as root.
 
+For code navigation, install the outline tool and language servers, then the
+matching Claude Code plugins. Plugins load after a session restart. The helper
+does not install plugins; with `--remote`, run the plugin commands on that host.
+
+```sh
+bash scripts/ensure-tools.sh ast-grep pyright-langserver typescript-language-server
+claude plugin install pyright-lsp@claude-plugins-official
+claude plugin install typescript-lsp@claude-plugins-official
+```
+
 Use `--list` to see built-in tool names and their Brew formulas. For another
 tool, pass `COMMAND=FORMULA` only after `brew info <formula>` or official Brew
 documentation verifies the command-to-formula mapping. Keep a tap-qualified
