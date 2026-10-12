@@ -50,6 +50,9 @@ managed=$(
       "Bash(chezmoi status)",
       "Bash(chezmoi status *)",
       "Bash(chezmoi diff *)",
+      "Bash(chezmoi apply ~/.config/agents/AGENTS.md ~/.claude/output-styles/main.md ~/.codex/config.toml)",
+      "Edit(~/.local/share/chezmoi/home/dot_config/exact_agents/private_AGENTS.md)",
+      "Edit(~/.local/share/chezmoi/home/.chezmoitemplates/main-rules.md)",
       "Bash(glab mr list *)",
       "Bash(glab mr view *)",
       "Bash(claude plugin validate *)"
