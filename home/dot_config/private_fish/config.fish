@@ -57,10 +57,16 @@ if status is-interactive
 
     function add_all_ssh_identities -d "Add ssh identities"
         set -l existing_keys (ssh-add -l)
+        # macOS: read/store passphrases in the login keychain so reloads after
+        # a reboot don't prompt (falls back to a prompt if it's locked).
+        set -l keychain_flag
+        if test (uname) = Darwin
+            set keychain_flag --apple-use-keychain
+        end
         for file in (grep -slR "PRIVATE" $HOME/.ssh/ | sort)
             if not string match -q (string join '' '*' (ssh-keygen -lf "$file") '*') "$existing_keys"
                 # 2592000 seconds = 30 days
-                ssh-add -t 2592000 "$file"
+                ssh-add $keychain_flag -t 2592000 "$file"
             end
         end
     end
