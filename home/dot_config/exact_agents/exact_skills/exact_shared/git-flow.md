@@ -50,12 +50,11 @@ After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees 
 move.
 
 **Manual check.** Before pushing or landing, verify the commits in
-`<COMMIT_BASE>..HEAD`, including commits this run created. For behavior changes,
-follow AGENTS.md's manual-check rule and use the repository's documented harness.
-Internal refactors require passing relevant tests and a diff check; docs and
-comments require a diff check. For test changes, run the changed tests and inspect
-their results. Classify configuration by its effect. Reuse evidence while its
-code, inputs, and environment remain unchanged. Record
+`<COMMIT_BASE>..HEAD`, including commits this run created. Follow AGENTS.md's
+manual-check rule; refactors also need passing relevant tests. For behavior
+changes, use the repository's documented harness. For test changes, run the
+changed tests and inspect their results. Classify configuration by its effect.
+Reuse evidence while its code, inputs, and environment remain unchanged. Record
 `Checked: <checks> -> <result>`. Do not push or land when required verification
 is missing.
 
