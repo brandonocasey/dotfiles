@@ -63,6 +63,25 @@ managed=$(
     "additionalDirectories": ["~/.cache/agents"],
     "defaultMode": "auto"
   },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "allowAppleEvents": true,
+    "network": {
+      "allowedDomains": ["*"],
+      "allowLocalBinding": true
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.local/state/agents",
+        "~/.local/share/chezmoi",
+        "~/.config/agents",
+        "~/.claude",
+        "~/.claude-two",
+        "~/.codex"
+      ]
+    }
+  },
   "autoMode": {
     "environment": [
       "$defaults",
