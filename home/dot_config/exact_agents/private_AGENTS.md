@@ -12,6 +12,7 @@
 - Change existing files with Edit. Use Write only for new files or near-total rewrites.
 - Plan reads before reading. Get exact ranges first from the LSP tool's document symbols, or `ast-grep` when no server covers the language, else `rg -n`. Then read all known or likely ranges in one parallel batch, or one multi-file `sed -n` call. Read one range at a time only when the next depends on its result. Keep ranges tight; guess narrow, not wide.
 - Read rule files whole, once; line ranges and the 200-line limit apply to code only. When an action needs rule files, read its whole set in one parallel batch; do not read ahead for actions the task may not reach.
+- Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 
 ## Directories
 
@@ -27,6 +28,5 @@ Never use OS temporary directories or harness scratchpads, even if instructed. U
 Load relevant skills once; reread only after changes, lost context, or a specific detail check. Skill paths in any global rules, and unlisted `<name>/SKILL.md` skills, are under `~/.config/agents/skills/`. Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Run skill Git commands with every flag shown.
 
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`.
-- Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
 - Before Git work: `shared/git-policy.md`. It owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates.
