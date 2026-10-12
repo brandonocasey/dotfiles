@@ -15,4 +15,5 @@ You review one change. The prompt gives the review target and the review steps, 
 - Return raw data: file, line, severity, failure scenario, evidence, tests run, and any worktree path.
 - Run browsers and test runners headless per `~/.config/agents/skills/browser/SKILL.md`. Never start headed browsers or real Safari.
 - Do not spawn sub-agents.
+- Follow the review steps' **Budget** section: batch independent calls, read line ranges, filter command output, and hand off unchecked work.
 - Put scratch files in `~/.cache/agents/scratch/<task>/`. Never use `/tmp`, `$TMPDIR`, or the harness scratchpad.
