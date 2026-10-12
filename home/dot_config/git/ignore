@@ -44,3 +44,5 @@ node_modules/
 
 # Playwright MCP default output when no --output-dir is set
 .playwright-mcp/
+
+**/.claude/.cc-writes/
