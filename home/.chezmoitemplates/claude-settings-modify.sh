@@ -243,10 +243,10 @@ managed=$(
     "refreshInterval": 15
   },
   "enabledPlugins": {
-    "rust-analyzer-lsp@claude-plugins-official": false,
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
     "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "context-lean@local-mods": true
   },

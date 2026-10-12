@@ -37,6 +37,7 @@ formula_for() {
     ast-grep) printf '%s\n' ast-grep ;;
     pyright-langserver) printf '%s\n' pyright ;;
     typescript-language-server) printf '%s\n' typescript-language-server ;;
+    rust-analyzer) printf '%s\n' rust-analyzer ;;
     *) return 1 ;;
   esac
 }
@@ -44,7 +45,7 @@ formula_for() {
 list_tools() {
   local tool
   for tool in git jq rg python3 gh chezmoi node shellcheck shfmt fd yq glab uv \
-    ast-grep pyright-langserver typescript-language-server; do
+    ast-grep pyright-langserver typescript-language-server rust-analyzer; do
     printf '%-28s %s\n' "$tool" "$(formula_for "$tool")"
   done
 }

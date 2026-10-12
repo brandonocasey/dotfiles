@@ -36,9 +36,10 @@ matching Claude Code plugins. Plugins load after a session restart. The helper
 does not install plugins; with `--remote`, run the plugin commands on that host.
 
 ```sh
-bash scripts/ensure-tools.sh ast-grep pyright-langserver typescript-language-server
+bash scripts/ensure-tools.sh ast-grep pyright-langserver typescript-language-server rust-analyzer
 claude plugin install pyright-lsp@claude-plugins-official
 claude plugin install typescript-lsp@claude-plugins-official
+claude plugin install rust-analyzer-lsp@claude-plugins-official
 ```
 
 Use `--list` to see built-in tool names and their Brew formulas. For another
