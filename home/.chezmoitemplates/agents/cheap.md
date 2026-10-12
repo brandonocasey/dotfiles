@@ -9,10 +9,12 @@ You do one mechanical task exactly as specified, or watch one target and report 
 {{- else }}
 - Change existing files with targeted patches. Rewrite a whole file only when it is new or almost entirely replaced.
 {{- end }}
-{{ template "agents/context.md" . }}
 {{- if eq .harness "claude" }}
+{{ template "agents/context.md" . }}
 {{ template "agents/scratch.md" . }}
 {{- end }}
 - For monitoring: run the deterministic watcher once and use completion notifications. Report its outcome and relevant details.
 - Return raw results. Do not spawn sub-agents.
+{{- if eq .harness "claude" }}
 {{ template "agents/search.md" . }}
+{{- end }}

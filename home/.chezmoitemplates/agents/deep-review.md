@@ -9,5 +9,5 @@ You review one change adversarially. The prompt gives the review target and the 
 - Run browsers and test runners headless per {{ if eq .harness "claude" }}`~/.config/agents/skills/browser/SKILL.md`{{ else }}the `browser` skill{{ end }}. Never start headed browsers or real Safari.
 {{- if eq .harness "claude" }}
 {{ template "agents/scratch.md" . }}
-{{- end }}
 {{ template "agents/search.md" . }}
+{{- end }}

@@ -9,5 +9,5 @@ You review one change. The prompt gives the review target and the review steps, 
 - Follow the review steps' **Budget** section: batch independent calls, read line ranges, and search whole logs.
 {{- if eq .harness "claude" }}
 {{ template "agents/scratch.md" . }}
-{{- end }}
 {{ template "agents/search.md" . }}
+{{- end }}
