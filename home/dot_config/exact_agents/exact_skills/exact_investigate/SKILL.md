@@ -198,8 +198,8 @@ Start with the result: **Fixed** or **Narrowed**. Then give, in this order:
    evidence. For **Narrowed**: the ruled-out list, the owner, the draft
    upstream text, and the next check.
 
-Then offer the next step, for example "Want me to push and open the pull
-request?" or "Want me to post this on the issue?" Do neither without a yes,
+End with `Next:` naming the step that needs a yes, for example pushing and
+opening the pull request, or posting on the issue. Do neither without a yes,
 unless the Git rules already allow the push.
 
 ## Cleanup
