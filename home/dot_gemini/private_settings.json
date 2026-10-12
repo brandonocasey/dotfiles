@@ -1,0 +1,65 @@
+{
+  "general": {
+    "previewFeatures": true,
+    "sessionRetention": {
+      "enabled": true,
+      "maxAge": "30d",
+      "warningAcknowledged": true
+    }
+  },
+  "hooks": {
+    "AfterTool": [
+      {
+        "hooks": [
+          {
+            "command": "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx hook observe",
+            "type": "command"
+          }
+        ],
+        "matcher": ".*"
+      }
+    ],
+    "BeforeTool": [
+      {
+        "hooks": [
+          {
+            "command": "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx hook rewrite",
+            "type": "command"
+          }
+        ],
+        "matcher": "shell|execute_command|run_shell_command"
+      },
+      {
+        "hooks": [
+          {
+            "command": "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx hook redirect",
+            "type": "command"
+          }
+        ],
+        "matcher": "read_file|read_many_files|grep|search|list_dir"
+      }
+    ]
+  },
+  "mcpServers": {
+    "codegraph": {
+      "args": [
+        "serve",
+        "--mcp"
+      ],
+      "command": "codegraph",
+      "type": "stdio"
+    },
+    "lean-ctx": {
+      "command": "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx",
+      "trust": true
+    }
+  },
+  "model": {
+    "name": "gemini-3.1-flash-lite-preview"
+  },
+  "security": {
+    "auth": {
+      "selectedType": "oauth-personal"
+    }
+  }
+}

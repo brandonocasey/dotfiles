@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "lean-ctx": {
+      "command": [
+        "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx"
+      ],
+      "enabled": true,
+      "type": "local"
+    }
+  }
+}
