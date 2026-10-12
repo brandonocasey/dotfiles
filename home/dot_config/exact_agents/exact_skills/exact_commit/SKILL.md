@@ -6,7 +6,8 @@ description: "Create logical Conventional Commits; choose amend versus new."
 Optional argument: a target file or chunk. Commit only that target.
 
 1. **Gather** — skip if you already know the context. Run `git status --short`,
-   `git diff`, `git diff --staged`, and `git log --oneline -5`.
+   `git diff --stat`, `git diff --staged --stat`, and `git log --oneline -5`. Then diff
+   only the files whose changes you still need to see.
 2. **Decide amend or new.** Amend only when HEAD is not pushed to any remote and the change relates
    directly to it. Never amend a pushed commit. Make a new commit when none exist,
    HEAD is pushed, or the change has a different purpose or is a distinct unit.

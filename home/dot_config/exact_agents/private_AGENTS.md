@@ -12,6 +12,8 @@
 - Run waits over one minute in background, never foreground sleep/until loops.
 - When I must run something, give me one short command, never a long or chained one. Put longer work in a scratch script that deletes itself after it runs, and hand me `! sh <script>`.
 - Each tool call re-sends the whole context, so use fewer calls. Combine independent commands into one call. Search the whole scope with one `rg` instead of file-by-file `grep`, `sed`, or `cat`. Once you know the location, read only that line range.
+- Every token you read is re-sent on each later call. Never `cat`, `sed`, or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content already in context. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long command output with quiet flags, `head`, `tail`, or `rg`.
+- Change existing files with Edit. Use Write only for new files or near-total rewrites.
 
 ## Directories
 
