@@ -2,9 +2,12 @@
 model: claude-sonnet-5-5
 effort: medium
 disable-model-invocation: true
-name: clean-merged-worktrees
+name: worktree-cleanup
 description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation."
 ---
+
+`disk-cleanup` also runs this skill as a required step, under the limits in its
+`references/agent-resources.md`.
 
 Clean only local state proven safe to remove. Use live PR state for GitHub or
 GitLab repositories because squash merges break ancestry evidence. Report why

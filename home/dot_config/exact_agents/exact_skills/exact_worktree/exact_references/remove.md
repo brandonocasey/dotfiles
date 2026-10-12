@@ -27,7 +27,7 @@ A squash merge does not prove the original commits are preserved.
 For a remote MR/PR, fetch and refresh its state before using merged/closed status.
 Remove a local branch only through **Remove after push** below, `land`'s merged
 branch checks, or the `-D` exceptions documented in `review` step 7 and
-`clean-merged-worktrees`. If a deleted remote branch prevents that proof, retain the local
+`worktree-cleanup`. If a deleted remote branch prevents that proof, retain the local
 branch; a clean worktree can still be removed when that retained branch preserves
 its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
 

@@ -3,10 +3,10 @@
 Prefer installed tools. Verify local help and cleanup semantics before use; tools do
 not replace ownership, active-process, content, merge, or approval checks.
 
-- **Disk inventory:** use the first installed tool in this order: `dust`, `gdu`, `ncdu`,
-  then the fallback. Stay on one filesystem, never dereference symlinks, and cap output.
-  Send scan errors to `"$err"`, a file in the task scratch directory, and report its
-  line count.
+- **Disk inventory:** use the first installed tool in this order: `dust`, `gdu`,
+  `ncdu`, then the fallback. Stay on one filesystem, never dereference symlinks, and
+  cap output. Send scan errors to `"$err"`, a file in the task scratch directory, and
+  report its line count. Use depth 1 for a full-disk first pass.
   - `dust` (quick summary): `dust -x -d 2 -n 30 -b -P <path> 2>>"$err"`. Its JSON
     (`-j`) is a capped snapshot with human-readable size strings, so do not treat it as a full scan.
   - `gdu` (saved full scan): `gdu -x -n <path>`; ncdu-compatible JSON: `gdu -x -o <file>.json <path>`.
@@ -22,7 +22,7 @@ not replace ownership, active-process, content, merge, or approval checks.
 - **Docker:** use `docker system df` to read usage. Before proposing a prune, explain
   exactly what it removes. Never include volumes; the main skill's container rules apply.
 - **Worktrees:** use `git worktree list --porcelain -z` for discovery, the existing
-  `clean-merged-worktrees` skill for live merge qualification, and `worktree` for
+  `worktree-cleanup` skill for live merge qualification, and `worktree` for
   preservation/removal. Use a documented repository removal helper only after
   inspecting it and completing those checks. `git worktree prune` removes stale
   administrative records, not existing checkout contents; dry-run and verify missing
