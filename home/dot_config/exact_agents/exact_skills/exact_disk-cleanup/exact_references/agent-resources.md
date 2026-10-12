@@ -41,6 +41,9 @@ explicit-only, so the Skill tool cannot load it. The user's `disk-cleanup` reque
 merge-evidence procedure for each repository, narrowed to merged/landed
 worktrees. Retain local branches. Skip its relevance, closed-PR, and open-review
 removal paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
+Show its step 4 table in the disk-cleanup preview. disk-cleanup's batch approval
+replaces its step 4 prompt only when that batch covers these worktrees;
+otherwise ask its step 4 question.
 
 - Prove local landing with HEAD ancestry in the verified local target. For
   remote merge claims, fetch the relevant remote and refresh forge state;

@@ -9,8 +9,8 @@ description: "Reclaim disk space from regenerable caches, builds, containers, tr
 Measure the host, preview exact candidates ranked by reclaimable bytes, then remove
 approved items. Work locally unless the user explicitly requests a remote host.
 Creating or editing this skill does not invoke cleanup or authorize deletion. A dry run ends at the preview.
-Honor narrower scope. Within authorized scope, execute automatically with an audit
-preview and pre-deletion rechecks; do not repeat unchanged authorization requests.
+Honor narrower scope. **Preview, approve, remove, verify** owns authorization and
+automatic execution; every removal keeps its audit preview and pre-deletion rechecks.
 
 Read `host-preflight` and its `references/task-resources.md`, then run
 `agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
@@ -64,26 +64,18 @@ agent-resources.md; it owns the `clean-merged-worktrees` component and its limit
   show their contents/purpose and restoration limits for specific approval. Do not
   delete shared history or edit application databases/indexes by hand.
 
-## Automatic execution and worktree priority
+## Worktree priority and task resources
 
 - First qualify whole merged/landed worktrees with `clean-merged-worktrees`. For retained
   checkouts, independently qualify inactive build outputs and linked scratch. Do not
   keep a merged worktree solely because it contains proven regenerable files; classify
   those files under `worktree` preservation/removal checks. Unknown files and requested
   deliverables still protect the checkout.
-- When the current request or recorded approval explicitly authorizes removal of
-  specified categories within specified roots, write/show the read-only deletion
-  preview and execute qualifying entries without another confirmation. Record that
-  authorization and its scope with the preview. Tool flags that suppress prompts
-  implement existing approval; they never supply it.
 - Automatically clean this task’s known disposable resources as authorized by
   `host-preflight/references/task-resources.md`. Other tasks’ shared scratch requires
   its own ownership/disposal evidence and authorization. Keep a batch moving when
   individual entries are protected, changed, or fail.
-- If authorization is missing, ask once for the concrete combined batch rather than
-  once per worktree/cache. A preference for automation alone is not permission to
-  delete unknown content or broaden scope. Do not add cron jobs or timers unless
-  recurring cleanup is explicitly requested.
+- Do not add cron jobs or timers unless recurring cleanup is explicitly requested.
 
 ## Pair worktrees with their build outputs and shared scratch
 
@@ -120,9 +112,16 @@ agent-resources.md; it owns the `clean-merged-worktrees` component and its limit
   count overlaps once, and distinguish apparent size from estimated disk recovery.
   State what cannot be restored and what must be downloaded or rebuilt. Retained Git refs
   allow worktree recreation; deleted transcripts and unbacked cache contents are not restorable.
-- Obtain approval for the exact deletion set unless that action and scope are already
-  explicitly approved. Expanded sets need new approval. Approval for one category does
-  not authorize the rest.
+- Obtain approval for the exact deletion set unless the current request or recorded
+  approval explicitly authorizes removal of specified categories within specified
+  roots. With that authorization, show the read-only deletion preview, record the
+  authorization and its scope with it, and execute qualifying entries without another
+  confirmation; do not repeat unchanged authorization requests. If authorization is
+  missing, ask once for the concrete combined batch, not once per worktree or cache.
+  Expanded sets need new approval. Approval for one category does not authorize the
+  rest. A preference for automation alone is not permission to delete unknown content
+  or broaden scope. Tool flags that suppress prompts implement existing approval; they
+  never supply it.
 - Recheck identity, contents, activity and ownership before each operation. Skip changed
   entries. Never follow replacement symlinks or delete an ancestor of protected data.
   Use literal resolved paths or structured tool IDs, never broad deletion globs.
