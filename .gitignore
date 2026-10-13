@@ -3,3 +3,6 @@
 
 # Host runtime state bind-mount dir
 state/
+
+# Python bytecode from tests
+__pycache__/
