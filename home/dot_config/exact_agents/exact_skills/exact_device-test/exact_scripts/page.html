@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Device test</title>
+<style>
+body{font:16px/1.35 system-ui,sans-serif;margin:0;background:#f4f4f6;color:#111}
+header{position:sticky;top:0;background:#111;color:#fff;padding:8px 12px;font-size:14px;z-index:1}
+li{list-style:none;background:#fff;border-radius:8px;margin:8px;padding:10px;border-left:6px solid #bbb}
+ul{padding:0;margin:0}li.pass{border-color:#1a9c3c}li.fail{border-color:#d33}li.skip{border-color:#e90}
+h3{margin:0 0 4px;font-size:16px}ol{margin:4px 0 8px;padding-left:20px;font-size:14px}
+button{font:inherit;padding:10px 16px;margin-right:6px;border:0;border-radius:6px;background:#ddd;min-height:44px}
+button.p{background:#1a9c3c;color:#fff}button.f{background:#d33;color:#fff}
+input{font:inherit;width:100%;box-sizing:border-box;padding:8px;margin-top:6px}
+</style></head><body>
+<header id="h">Loading...</header><ul id="l"></ul>
+<script>
+const $=(t,c,x)=>Object.assign(document.createElement(t),{className:c||'',...x});
+fetch('scenarios.json').then(r=>r.json()).then(s=>{
+ h.textContent=(s.title||'Device test')+(s.device?' | device: '+s.device:'')+' | tap Pass or Fail for each';
+ s.scenarios.forEach((sc,i)=>{
+  const id=sc.id||String(i+1),li=$('li'),n=$('input','',{placeholder:'Notes (optional)'});
+  li.append($('h3','',{textContent:id+'. '+sc.title}));
+  if(sc.steps&&sc.steps.length){const o=$('ol');sc.steps.forEach(t=>o.append($('li','',{textContent:t,style:'background:none;margin:0;padding:0;border:0;list-style:decimal'})));li.append(o)}
+  const send=st=>fetch('result',{method:'POST',headers:{'content-type':'application/json'},
+   body:JSON.stringify({id,status:st,notes:n.value,ua:navigator.userAgent})})
+   .then(r=>{if(!r.ok)throw 0;li.className=st;b.textContent='Sent: '+st}).catch(()=>b.textContent='Send failed, retry');
+  const b=$('span');
+  [['Pass','p','pass'],['Fail','f','fail'],['Skip','','skip']].forEach(([t,c,st])=>li.append($('button',c,{textContent:t,onclick:()=>send(st)})));
+  li.append(b,n);l.append(li)})
+});
+</script></body></html>
