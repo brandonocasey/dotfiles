@@ -24,6 +24,7 @@ Continue an existing agent for related follow-up work when the harness supports 
 
 ## Conditional procedures
 
+- Before writing or starting a Workflow, read [workflows.md](references/workflows.md).
 - Before monitoring a command or external target, read [monitoring.md](references/monitoring.md).
 - After a failed attempt leaves unresolved reasoning, read [escalation.md](references/escalation.md) before escalating or reporting blocked.
 

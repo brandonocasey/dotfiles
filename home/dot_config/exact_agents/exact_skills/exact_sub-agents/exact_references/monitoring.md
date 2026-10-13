@@ -10,6 +10,7 @@ While the watcher runs, the main session never polls the same target.
 For a long run (workflow, build, or watcher), state an ETA in minutes at the start.
 Report each phase change without a prompt.
 Answer "status?" from the run's own log or journal, in three lines or fewer, state first.
+For a Workflow, use `agent-wf-status` per [workflows.md](workflows.md).
 While a background job you own is pending, put `Waiting on: <thing>, checked <time>, next check <time>` just before the final `Next:` line.
 
 A sub-agent's prompt cache expires after an idle period set by its harness and model; its next request rewrites its whole context.

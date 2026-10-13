@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const usage = 'usage: agent-wf-status <transcript-dir|journal.jsonl> [--follow] [--every <minutes>]';
+const POLL_MS = 5000;
+
+function fail(message) {
+  console.error(message);
+  process.exit(2);
+}
+
+function parseArgs(argv) {
+  const opts = { target: null, follow: false, everyMs: 0 };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--follow') opts.follow = true;
+    else if (arg === '--every') {
+      const minutes = Number(argv[i + 1]);
+      if (!(minutes > 0)) fail(`--every needs a positive number of minutes\n${usage}`);
+      opts.everyMs = minutes * 60000;
+      i += 1;
+    } else if (arg === '-h' || arg === '--help') {
+      console.log(usage);
+      process.exit(0);
+    } else if (!opts.target) opts.target = arg;
+    else fail(`unexpected argument: ${arg}\n${usage}`);
+  }
+  if (!opts.target) fail(usage);
+  if (opts.everyMs && !opts.follow) fail(`--every requires --follow\n${usage}`);
+  return opts;
+}
+
+function journalPath(target) {
+  const file = target.endsWith('.jsonl') ? target : path.join(target, 'journal.jsonl');
+  if (!fs.existsSync(file)) fail(`no workflow journal at ${file}`);
+  return file;
+}
+
+function readState(file) {
+  const running = new Map();
+  let started = 0;
+  let done = 0;
+  let phase = '';
+  // Phases in order of first start; journals can return to an earlier phase.
+  const phases = [];
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    let event;
+    try {
+      event = JSON.parse(line);
+    } catch {
+      // The workflow may be mid-write on the last line.
+      continue;
+    }
+    if (event.type === 'started') {
+      started += 1;
+      if (event.phase) {
+        phase = event.phase;
+        if (!phases.includes(phase)) phases.push(phase);
+      }
+      running.set(event.key, event.label || event.agentId || 'agent');
+    } else if (event.type === 'result') {
+      done += 1;
+      running.delete(event.key);
+    }
+  }
+  return { started, done, phase, phases, running: [...running.values()], mtimeMs: fs.statSync(file).mtimeMs };
+}
+
+function ago(ms) {
+  const minutes = Math.floor(ms / 60000);
+  return minutes < 1 ? 'under 1m ago' : `${minutes}m ago`;
+}
+
+function summary(state) {
+  const status = state.running.length ? 'running' : 'agents idle';
+  const phase = state.phase ? `phase ${state.phase}` : 'no phase yet';
+  return `${status} · ${phase} · ${state.done}/${state.started} agents done · last event ${ago(Date.now() - state.mtimeMs)}`;
+}
+
+function activeLine(state) {
+  if (!state.running.length) return '';
+  const shown = state.running.slice(0, 3).join(', ');
+  const more = state.running.length > 3 ? `, +${state.running.length - 3} more` : '';
+  return `active: ${shown}${more}`;
+}
+
+function snapshot(file) {
+  const state = readState(file);
+  console.log(summary(state));
+  const active = activeLine(state);
+  if (active) console.log(active);
+}
+
+// Follow mode runs until the caller stops it; only the workflow completion notice proves the run ended.
+function follow(file, everyMs) {
+  let last = readState(file);
+  let lastPrint = Date.now();
+  console.log(summary(last));
+  setInterval(() => {
+    let state;
+    try {
+      state = readState(file);
+    } catch {
+      console.log(`workflow journal removed: ${file}`);
+      process.exit(1);
+    }
+    const now = Date.now();
+    const newPhases = state.phases.filter((phase) => !last.phases.includes(phase));
+    for (const phase of newPhases) console.log(`phase ${phase} started · ${state.done}/${state.started} agents done`);
+    if (newPhases.length) lastPrint = now;
+    else if (everyMs && now - lastPrint >= everyMs) {
+      console.log(summary(state));
+      lastPrint = now;
+    }
+    last = state;
+  }, POLL_MS);
+}
+
+const opts = parseArgs(process.argv.slice(2));
+const file = journalPath(opts.target);
+if (opts.follow) follow(file, opts.everyMs);
+else snapshot(file);
