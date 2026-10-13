@@ -15,6 +15,8 @@ another task uses. Show each with its ahead count and ask once before the first
 push. For branches that depend on each other, follow **Chains of dependent
 MRs/PRs** in [dependent-branches.md](../shared/dependent-branches.md).
 Ordinary shipping ends after the push, MR/PR update, and any triggered review with its fix push.
+When a rebase of more than about 5 commits conflicts on a lockfile, read
+[lockfile-rebase.md](references/lockfile-rebase.md).
 With `--approve` or `--merge`, read [merge.md](references/merge.md) before
 mutations to check platform support and scope. The post-push review then runs as
 `review-auto` with only those flags (step 4).
@@ -70,7 +72,8 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
   none, never invent a key:
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
-  - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
+  - Otherwise run mr-ticket to find or create one; it picks the project.
+    Skip the ticket for dx, docs, or test-only changes. Ask once only when two candidate tickets match.
 - **Description**: follow the repository template when present. Otherwise:
   - Use 1–4 sentences on what changed and why, then 1–10 bullets, as few as
     possible, for behavior changes, risks, and validation.
