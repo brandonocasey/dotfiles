@@ -1,5 +1,5 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
-import { AGENTS, type Category, type Counted, type Report, type Row, report, SENT, summary } from './report'
+import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
@@ -17,6 +17,18 @@ const AGENT_SUMMARIES: Record<string, string> = {
   'statusline-setup': 'Configures the status line.',
 }
 const AGENT_LINE = /^- ([\w-]+): (.*?)( \(Tools: [^)]*\))?$/
+const AGENTS_GONE = 'The following agent types are no longer available:'
+const AGENTS_POINTER = 'Available agent types are listed in <system-reminder> messages in the conversation.'
+const AGENTS_HEADER = 'Available agent types (pass one as subagent_type):'
+// The main session's agent listing moves into the deferred Agent tool's description, so it is read only when Claude
+// loads that tool. Subagents keep their listing, with built-in descriptions shortened.
+const AGENT_LISTING = [...TRIMMED][0]
+// Attachments trimmed from every request. Claude can still find these facts with a command when it needs them.
+const [, EMAIL_CONTEXT, AUTO_MODE_NOTE, ENVIRONMENT_LINES] = [...TRIMMED]
+const USER_EMAIL = /^# userEmail\n[\s\S]*?(?=^# |(?![\s\S]))/m
+const AUTO_MODE = 'While auto mode is active:'
+// Facts Claude can get with `uname` or `echo $SHELL`. The shell line also names the login shell, not the one in use.
+const ENVIRONMENT_LINE = /^ - (Platform|Shell|OS Version): .*\n?/gm
 // claude.ai connectors whose server notes stay in the prompt. Every other connector's notes are sent with the
 // first ToolSearch or tool call that uses it. Every MCP tool name, local or connector, is hidden but findable through ToolSearch.
 const NOTES = new Set<string>()
@@ -87,7 +99,7 @@ type Host = {
   session: { id(): Promise<string> }
   store: { get(key: string): Promise<unknown>; set(key: string, value: unknown): Promise<void>; delete(key: string): Promise<void>; keys(): Promise<string[]> }
 }
-type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[] }
+type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[]; agents?: Record<string, string> }
 // Token counts by row, reused across sessions while the row's text and the model stay the same.
 type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
 
@@ -106,6 +118,9 @@ const seen = new Set<string>()
 // Local MCP servers seen in tool names, to group a local server's "## " sub-headings with it in the report.
 // Kept across sessions, since notes can arrive before this process has seen the server's tools.
 const localServers = new Set<string>()
+// The main session's agent types, by name, as the Agent tool's description lists them.
+const agents = new Map<string, string>()
+let agentDescribed = false
 let saving: Promise<void> | undefined
 let dirty = false
 
@@ -144,6 +159,7 @@ const restore = async ($: Host, key: string) => {
   for (const entry of saved?.sent ?? []) sent.add(entry)
   for (const entry of saved?.used ?? []) used.add(entry)
   for (const entry of saved?.seen ?? []) seen.add(entry)
+  for (const [name, line] of Object.entries(saved?.agents ?? {})) if (!agents.has(name)) agents.set(name, line)
   const others = (await $.store.keys()).filter(other => other.startsWith('session:') && other !== key)
   if (others.length < SESSIONS_KEPT) return
   const dated = await Promise.all(others.map(async other => ({ other, at: ((await $.store.get(other)) as Saved | undefined)?.at ?? 0 })))
@@ -168,6 +184,8 @@ const load = async ($: Host) => {
       sent.clear()
       used.clear()
       seen.clear()
+      agents.clear()
+      agentDescribed = false
       const next = { key, ready: Promise.resolve(), loaded: false }
       next.ready = restore($, key)
         .catch(() => undefined)
@@ -184,7 +202,7 @@ const load = async ($: Host) => {
   }
 }
 
-const snapshot = (): Saved => ({ at: Date.now(), hidden: toObject(hidden), kept: toObject(kept), sent: [...sent], used: [...used], seen: [...seen] })
+const snapshot = (): Saved => ({ at: Date.now(), hidden: toObject(hidden), kept: toObject(kept), sent: [...sent], used: [...used], seen: [...seen], agents: Object.fromEntries(agents) })
 
 const write = async ($: Host) => {
   const key = await load($)
@@ -206,18 +224,45 @@ const save = ($: Host) => {
   })()
 }
 
-const shortenAgents = (text: string) =>
+const shortenAgents = (text: string, track = true) =>
   text
     .split('\n')
     .map(line => {
       const [, name, description, tools = ''] = AGENT_LINE.exec(line) ?? []
       const summary = name === undefined ? undefined : AGENT_SUMMARIES[name]
       if (name === undefined || summary === undefined || description === undefined || description === summary) return line
-      record(hidden, AGENTS, name, description)
+      if (track) record(hidden, AGENTS, name, description)
 
       return `- ${name}: ${summary}${tools}`
     })
     .join('\n')
+
+// Takes the main session's agent listing in, as added and removed types, and says whether the list changed.
+const takeAgents = (text: string) => {
+  let changed = false
+  for (const paragraph of text.split('\n\n')) {
+    const [first, ...rest] = paragraph.split('\n')
+    if (first === AGENTS_GONE) {
+      for (const line of rest) {
+        const name = line.replace(/^- /, '').trim()
+        if (agents.delete(name)) changed = true
+      }
+      continue
+    }
+    for (const line of [first, ...rest]) {
+      const name = AGENT_LINE.exec(line)?.[1]
+      if (name === undefined) continue
+      record(hidden, AGENT_LISTING, name, line)
+      const short = shortenAgents(line, false)
+      if (agents.get(name) !== short) changed = true
+      agents.set(name, short)
+    }
+  }
+
+  return changed
+}
+
+const agentListing = () => (agents.size === 0 ? '' : `\n\n${AGENTS_HEADER}\n${[...agents.keys()].sort().map(name => agents.get(name)).join('\n')}`)
 
 const hideNames = (text: string) => {
   const servers = new Set<string>()
@@ -512,7 +557,14 @@ export const register: Register = on => {
       await load($)
       if (record(hidden, server === undefined ? `${e.tool}${DESCRIPTION}` : `${shown(server)} tool${DESCRIPTION}s`, e.tool, described.description)) save($)
     }
-    const description = ARTIFACT_TOOLS.has(e.tool) ? NOTE + described.description : described.description
+    let description = ARTIFACT_TOOLS.has(e.tool) ? NOTE + described.description : described.description
+    if (e.tool === 'Agent') {
+      await load($)
+      agentDescribed = true
+      const listing = agentListing()
+      // The engine's text points at the reminder this mod leaves out, so it points at the list below instead.
+      if (listing !== '') description = description.replace(AGENTS_POINTER, 'Available agent types are listed below.') + listing
+    }
 
     return { description, isDeferred: true }
   })
@@ -532,10 +584,56 @@ export const register: Register = on => {
     const { text } = await next(e)
     if (text === null) return { text }
     await load($)
-    const left = shortenAgents(text)
+    if (e.agentId !== undefined) {
+      const left = shortenAgents(text)
+      save($)
+
+      return { text: left }
+    }
+    // A list that changed after the Agent tool was described is described again. Until Claude loads the tool, its
+    // description is not in the prompt, so this costs no cache.
+    if (takeAgents(text) && agentDescribed) {
+      agentDescribed = false
+      try {
+        $.ui.invalidate('tool.describe')
+      } catch {
+        // Without a redescribe the tool keeps the list it was described with.
+      }
+    }
     save($)
 
-    return { text: left }
+    return { text: null }
+  })
+
+  on('prompt.attachment', { type: 'session_context' }, async ($, e, next) => {
+    const { text } = await next(e)
+    const email = text === null ? undefined : USER_EMAIL.exec(text)?.[0]
+    if (text === null || email === undefined) return { text }
+    await load($)
+    if (record(hidden, EMAIL_CONTEXT, 'userEmail', email)) save($)
+    const left = text.replace(USER_EMAIL, '')
+
+    // Only the context's opening line is left, so nothing is sent.
+    return { text: left.includes('\n# ') || left.startsWith('# ') ? left.trimEnd() : null }
+  })
+
+  on('prompt.attachment', { type: 'auto_mode' }, async ($, e, next) => {
+    const { text } = await next(e)
+    if (text === null || !text.startsWith(AUTO_MODE)) return { text }
+    await load($)
+    if (record(hidden, AUTO_MODE_NOTE, 'auto_mode', text)) save($)
+
+    return { text: null }
+  })
+
+  on('prompt.attachment', { type: 'environment' }, async ($, e, next) => {
+    const { text } = await next(e)
+    const lines = text?.match(ENVIRONMENT_LINE)
+    if (text === null || lines === null || lines === undefined) return { text }
+    await load($)
+    if (record(hidden, ENVIRONMENT_LINES, 'environment', lines.join(''))) save($)
+
+    return { text: text.replace(ENVIRONMENT_LINE, '') }
   })
 
   on('prompt.attachment', { type: 'skill_listing' }, async ($, e, next) => {

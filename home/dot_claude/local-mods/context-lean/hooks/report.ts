@@ -18,6 +18,8 @@ export type Report = {
 export const SENT = ' (sent on first use)'
 // The row of built-in agent descriptions replaced with one-line summaries.
 export const AGENTS = 'Built-in agent descriptions (shortened)'
+// Rows of attachment text kept out of every request: the agent listing, email context, auto mode note, and environment lines.
+export const TRIMMED = new Set(['Agent listing (moved to the Agent tool)', 'Email context', 'Auto mode note', 'Environment lines'])
 const MCP_NOTES = 'MCP server instructions'
 
 // /context's number styles: 10, 1.5k, 566.7k, 1m; 0.2%; 1%.
@@ -163,6 +165,7 @@ export const report = (measured: Report) => {
     ...section('Hidden tool descriptions', hidden.filter(row => isBuiltInDescription(row.label) || isConnectorDescriptions(row.label)), label => label.replace(/ tool descriptions$| description$/, ''), 'tool'),
     ...section('Hidden server notes', hidden.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     ...section('Shortened agent descriptions', hidden.filter(row => row.label === AGENTS), () => 'Built-in agents', 'agent'),
+    ...section('Trimmed attachments', hidden.filter(row => TRIMMED.has(row.label)), label => label, 'item'),
     ...section('Server notes sent on first use', kept.filter(row => isSentNotes(row.label)), without(`${NOTES}${SENT}`), 'server'),
     ...section('Server notes kept in the prompt', kept.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     '',

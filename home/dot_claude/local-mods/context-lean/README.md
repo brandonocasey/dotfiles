@@ -24,6 +24,18 @@ That is about 24,300 fewer tokens on every request once all connectors have load
 
 The `Skill` tool is deferred too; the skill listing gains one line saying to load it with `ToolSearch select:Skill`. In the agent listing, long descriptions of built-in agents (`claude-code-guide`, `general-purpose`, `claude`, `Explore`, `Plan`, `statusline-setup`) become one-line summaries; custom agents are unchanged.
 
+In the main session, the agent listing leaves the prompt and joins the deferred `Agent` tool's description, so Claude reads it only after loading that tool. Subagents keep their listing, with built-in descriptions shortened.
+
+Three attachments are trimmed on every request:
+
+| Attachment | Change |
+|---|---|
+| Email context (`userEmail`) | Dropped. Other context blocks stay. |
+| Auto mode note ("While auto mode is active") | Dropped. |
+| Environment | The platform, shell and OS version lines are dropped; Claude can run `uname` when it needs them. The working folder, scratchpad and download rules stay. |
+
+The system prompt cannot be changed: Claude Code's built-in security plugin skips `prompt.compose`, `prompt.section` and `prompt.context` hooks from user plugins. Tools a claude.ai connector marks as always loaded, such as Claude Docs' `batch`, `guide` and `update`, are sent before any hook can defer them; disable that connector with `/mcp` to drop them.
+
 Local MCP servers, such as `chrome-devtools`, keep their tools and notes, but their tool names leave the deferred-tools list and join the "findable with ToolSearch" line. All other tools are unchanged. Subagents get the same hiding: in a test, a subagent saw no Datadog or Gmail tool names and got the "findable with ToolSearch" line.
 
 Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog for "any error logs for playlist-delivery?" and Google Calendar for "what meetings do I have tomorrow?" without being told the connector names.

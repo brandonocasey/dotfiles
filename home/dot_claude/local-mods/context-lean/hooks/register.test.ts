@@ -303,7 +303,7 @@ test('does not send notes for a connector named inside another connector result'
   expect((result.context ?? []).join('\n')).not.toContain('Search first.')
 })
 
-test('shortens built-in agent descriptions and keeps custom ones', async ($, on) => {
+test('shortens built-in agent descriptions and keeps custom ones in a subagent listing', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
 
   const text = [
@@ -312,11 +312,78 @@ test('shortens built-in agent descriptions and keeps custom ones', async ($, on)
     '- claude-code-guide: Use this agent when the user asks questions about Claude Code and much more. (Tools: Bash, Read, WebFetch, WebSearch)',
     '- general-purpose: General-purpose agent for researching complex questions. (Tools: *)',
   ].join('\n')
-  const result = await $.prompt.attachment({ type: 'agent_listing_delta', text })
+  const result = await $.prompt.attachment({ type: 'agent_listing_delta', text, agentId: 'sub' })
   expect(result.text).toContain('- cheap: Mechanical work. (Tools: Bash, Read)')
   expect(result.text).toContain('- claude-code-guide: Questions about Claude Code, the Agent SDK, the Claude API, or Claude in Slack. Continue a running one with SendMessage. (Tools: Bash, Read, WebFetch, WebSearch)')
   expect(result.text).toContain('- general-purpose: Generic research and multi-step tasks. Use only when no named role fits. (Tools: *)')
   expect(result.text).not.toContain('much more')
+})
+
+test('moves the main agent listing into the Agent tool description', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.describe', ($, e) => ({ description: e.description }))
+
+  const text = [
+    'Available agent types for the Agent tool:',
+    '- cheap: Mechanical work. (Tools: Bash, Read)',
+    '- general-purpose: General-purpose agent for researching complex questions. (Tools: *)',
+    '',
+    'When you launch multiple agents for independent work, send them in a single message with multiple tool uses so they run concurrently.',
+  ].join('\n')
+  const listing = await $.prompt.attachment({ type: 'agent_listing_delta', text })
+  expect(listing.text).toBeNull()
+  const agent = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.\n\nAvailable agent types are listed in <system-reminder> messages in the conversation.', provider: ENGINE })
+  expect(agent.isDeferred).toBe(true)
+  expect(agent.description).toBe(
+    [
+      'Launch an agent.',
+      '',
+      'Available agent types are listed below.',
+      '',
+      'Available agent types (pass one as subagent_type):',
+      '- cheap: Mechanical work. (Tools: Bash, Read)',
+      '- general-purpose: Generic research and multi-step tasks. Use only when no named role fits. (Tools: *)',
+    ].join('\n'),
+  )
+})
+
+test('drops agent types the engine says are gone', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.describe', ($, e) => ({ description: e.description }))
+
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: 'Available agent types for the Agent tool:\n- cheap: Mechanical work.\n- tester: Runs checks.' })
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: 'The following agent types are no longer available:\n- tester' })
+  const agent = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.', provider: ENGINE })
+  expect(agent.description).toContain('- cheap: Mechanical work.')
+  expect(agent.description).not.toContain('tester')
+})
+
+test('drops the email context and keeps other context blocks', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const intro = "As you answer the user's questions, you can use the following context:\n"
+  const email = '# userEmail\nThe user is someone@example.com.\n'
+  const alone = await $.prompt.attachment({ type: 'session_context', text: intro + email })
+  expect(alone.text).toBeNull()
+  const mixed = await $.prompt.attachment({ type: 'session_context', text: `${intro}${email}# attachedProject\nProject notes.` })
+  expect(mixed.text).toBe(`${intro}# attachedProject\nProject notes.`)
+})
+
+test('drops the auto mode note', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const note = await $.prompt.attachment({ type: 'auto_mode', text: 'While auto mode is active:\n\nUse Bash freely.' })
+  expect(note.text).toBeNull()
+  const other = await $.prompt.attachment({ type: 'auto_mode', text: 'Auto mode is now off.' })
+  expect(other.text).toBe('Auto mode is now off.')
+})
+
+test('drops the platform, shell and OS lines from the environment', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# Environment\n - Primary working directory: /w\n - Platform: darwin\n - Shell: zsh\n - OS Version: Darwin 27.0.0\n - Scratchpad directory: /s'
+  const result = await $.prompt.attachment({ type: 'environment', text })
+  expect(result.text).toBe('# Environment\n - Primary working directory: /w\n - Scratchpad directory: /s')
 })
 
 test('defers the Skill tool and says how to load it in the skill listing', async ($, on) => {
