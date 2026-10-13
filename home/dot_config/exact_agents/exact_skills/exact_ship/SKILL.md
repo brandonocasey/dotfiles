@@ -27,7 +27,8 @@ user to type `/ship`.
 
 ## 0. Detect context (always run first)
 
-Always read first: [context.md](references/context.md).
+Always read first, in one parallel batch: [context.md](references/context.md),
+`shared/git-flow.md`, `shared/default-branch.md`, and `shared/git-policy.md`.
 
 ## 1. Commit gate
 

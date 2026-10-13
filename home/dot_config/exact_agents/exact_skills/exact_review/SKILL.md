@@ -9,6 +9,10 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
+For an MR/PR, first read in one parallel batch: `reviewer-steps.md`,
+`remote-target.md`, `ci-and-conflicts.md`, `output.md`, and `remote-comments.md`,
+all in `references/`.
+
 Arguments: `--test` and `--no-test` (**Manual testing**), `--deep` and
 `--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to approve
 or merge, for a deep or hard review, or that names reviewer models counts as the
