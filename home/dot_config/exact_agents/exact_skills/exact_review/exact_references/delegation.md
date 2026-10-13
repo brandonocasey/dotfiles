@@ -16,7 +16,10 @@ follow-up review was not independent.
 
 Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
 `--deep` and `--loop` pick the roles and `--agents` picks the models; they combine.
-- Default: one `reviewer`.
+- Default: one `deep-review` when the change touches logic (any when-to-run.md
+  **Triggers** item). One `reviewer` for prose, cosmetic styling, config values,
+  and test-only changes. In a side-by-side trial, adding `reviewer` or a low-effort
+  Opus beside `deep-review` found nothing extra.
 - `--deep` or `--loop`: `reviewer` and `deep-review` in parallel on the same target.
 - `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
   model and effort. With `--deep` or `--loop`, each entry runs both roles.
@@ -35,10 +38,26 @@ whether the change caused it. Run the checks again for each new pinned target,
 including each `--loop` pass.
 Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
 file). Do not commit, amend, or rebase the target while a reviewer runs.
-Give every reviewer the same prompt: the review target verbatim, worktree path,
-the absolute path of [reviewer-steps.md](reviewer-steps.md), applicable
-repository constraints, and required check commands. Do not pass implementation
-rationale, earlier findings, or conversation history. Exception: a `--loop` fix check
+Give every reviewer the same prompt, built only from this template. Fill the fields
+and add nothing else:
+
+```text
+Review <target verbatim> for verified defects. Read-only: no edits, commits,
+cleanup, or sub-agents.
+Worktree: <path>
+Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
+Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md that apply>
+Checks: <commands, or log paths with their commands>
+Severity scale: <pasted from output.md>
+Return raw data: file, line, severity, failure scenario, evidence, tests run.
+```
+
+For an MR/PR, the target is its URL, so the reviewer reads the author's title and
+description the way a human reviewer does. Never write your own summary of the
+change, what to focus on, what to skip, what already passed, or where code came
+from ("copied unchanged", "already in use"). That framing steers the reviewer away
+from the code that needs review. Do not pass earlier findings or conversation
+history. Exception: a `--loop` fix check
 passes the inputs [loop.md](loop.md) lists, to continued or fresh reviewers. Tell reviewers not to
 rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
 runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,

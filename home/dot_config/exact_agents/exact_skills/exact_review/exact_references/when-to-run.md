@@ -72,10 +72,11 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 - Use one reviewer for narrow configuration fixes to already exposed services.
   Require two (`--loop` runs both) when changing access controls, exposing
   additional services, or weakening security checks.
-- For other changes, require two when touching a trust boundary, concurrency,
-  or persistence, or exceeding about 400 changed lines of hand-written logic.
+- For other changes, run `deep-review` whenever the change touches logic: any
+  **Triggers** item, regardless of size. This includes code described as copied,
+  ported, or already in use elsewhere.
 - If `deep-review` is unavailable, use the available independent reviewer and
-  disclose the coverage limit; never bypass tool restrictions to satisfy the count.
+  disclose the coverage limit; never bypass tool restrictions to satisfy the role.
 
 ## What review cannot replace
 
