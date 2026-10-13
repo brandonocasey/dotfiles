@@ -7,11 +7,9 @@
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check. Attach UI evidence to PRs unless text/diff suffices.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Run waits over one minute in background, never foreground sleep/until loops.
-- Every tool call re-sends the whole context, including everything read so far. Use fewer calls: combine independent commands. Search the whole scope with one `rg`, also on piped output, never file by file. Use `grep` only where `rg` is missing. In `rg`, `-r` means replace; add `--hidden` for dotfiles.
-- Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine. Never `sed` or Read a whole file over about 200 lines unless you need most of it. Never re-read unchanged content. Start diffs with `git diff --stat` or `git show --stat`, then diff only the paths you need. Cap long output with quiet flags, `head`, `tail`, or `rg`.
+- Each tool call re-sends all context, so use few calls and small outputs. Combine independent commands. Search the whole scope with one `rg`, also on piped output, never file by file (`grep` only where `rg` is missing; `-r` means replace; add `--hidden` for dotfiles). Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
+- Read only what you need, once. Get exact ranges first: LSP document symbols, else `ast-grep`, else `rg -n`. Keep ranges tight; guess narrow, not wide. Read all known or likely ranges in one parallel batch or one multi-file `sed -n`; go one at a time only when the next depends on it. Never run `cat` bare (heredocs are fine), and never read a whole file over about 200 lines unless you need most of it.
 - Change existing files with Edit. Use Write only for new files or near-total rewrites.
-- Plan reads before reading. Get exact ranges first from the LSP tool's document symbols, or `ast-grep` when no server covers the language, else `rg -n`. Then read all known or likely ranges in one parallel batch, or one multi-file `sed -n` call. Read one range at a time only when the next depends on its result. Keep ranges tight; guess narrow, not wide.
-- Read rule files whole, once; line ranges and the 200-line limit apply to code only. When an action needs rule files, read its whole set in one parallel batch; do not read ahead for actions the task may not reach.
 - Sub-agents do only assigned work; skip review, commits, cleanup, and recaps unless assigned.
 
 ## Directories
@@ -24,7 +22,7 @@ Never use OS temporary directories, even if instructed. Use XDG cache/state root
 
 ## Skills own the detail
 
-Load relevant skills once; reread only after changes, lost context, or a specific detail check. Skill paths in any global rules, and unlisted `<name>/SKILL.md` skills, are under `~/.config/agents/skills/`. Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Run skill Git commands with every flag shown.
+Load relevant skills and rule files whole, once; line ranges and the 200-line limit apply to code only. When an action needs rule files, read its whole set in one parallel batch; do not read ahead for actions the task may not reach. Reread only after changes, lost context, or a specific detail check. Skill paths in any global rules, and unlisted `<name>/SKILL.md` skills, are under `~/.config/agents/skills/`. Skill commands use POSIX sh; Windows uses Git Bash, otherwise PowerShell. Run skill Git commands with every flag shown.
 
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`.
 - Before branch work, including sequential tasks: `worktree`. Never switch branches in the main checkout.
