@@ -30,9 +30,9 @@ managed=$(
       "WebFetch",
       "WebSearch",
       "Write",
-      "mcp__claude_ai_Atlassian__createJiraIssue",
-      "mcp__claude_ai_Atlassian__editJiraIssue",
-      "mcp__claude_ai_Atlassian__transitionJiraIssue",
+      "mcp__claude_ai_Atlassian_MCP__createJiraIssue",
+      "mcp__claude_ai_Atlassian_MCP__editJiraIssue",
+      "mcp__claude_ai_Atlassian_MCP__transitionJiraIssue",
       "Bash(glab mr approve*)",
       "Bash(glab mr merge*)",
       "Bash(gh pr merge*)",
@@ -210,9 +210,9 @@ managed=$(
   "enabledPlugins": {
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": false,
+    "rust-analyzer-lsp@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
     "context-lean@local-mods": true
   },
   "extraKnownMarketplaces": {

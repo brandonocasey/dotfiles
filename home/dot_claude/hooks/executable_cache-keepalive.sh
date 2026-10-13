@@ -3,6 +3,7 @@
 #   prompt: UserPromptSubmit hook; records the last prompt time.
 #   idle:   Notification idle_prompt hook with asyncRewake; sleeps, then exits 2
 #           to wake Claude for a one-word reply that reads the cache.
+#           Skips sessions with an active /goal (latest goal_status unmet).
 mode=$1
 state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/cache-keepalive
 mkdir -p "$state"
@@ -13,6 +14,16 @@ sid=$(printf '%s' "$input" | jq -r '.session_id // empty')
 # Last conversation entry; bookkeeping lines written while idle do not count.
 last_entry() {
   tail -n 300 "$1" | jq -R -r 'fromjson? | select(.type == "user" or .type == "assistant") | .uuid' | tail -n 1
+}
+
+# True when the latest /goal state in the transcript is an active, unmet goal.
+# The Stop-hook loop already keeps such a session busy; a ping only feeds it.
+goal_active() {
+  last=$(grep -a -E '"type":"goal_status"|<local-command-stdout>Goal cleared' "$1" | tail -n 1)
+  case $last in
+  *'"type":"goal_status"'*) case $last in *'"met":true'* | *'"failed":true'*) return 1 ;; esac; return 0 ;;
+  esac
+  return 1
 }
 
 case $mode in
@@ -28,6 +39,7 @@ idle)
   transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
   [ -f "$transcript" ] || exit 0
   find "$state" -type f -mtime +2 -delete 2>/dev/null
+  goal_active "$transcript" && exit 0
 
   # Skip when the latest cache write used the 5-minute TTL; a ping would only rewrite it.
   ttl_1h=$(tail -n 300 "$transcript" | jq -R -r 'fromjson?
