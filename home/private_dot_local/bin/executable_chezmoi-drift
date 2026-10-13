@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""List chezmoi-managed targets edited live since the last apply.
+
+Read-only. Run before `chezmoi apply` or /dotfiles-sync to spot live edits
+that apply would overwrite. Optional target paths limit the output to them; unmanaged ones are skipped.
+Skips modify_ targets. Exit 1: live-edited rows listed (--mtime-only hints alone exit 0); 2: chezmoi error.
+
+Default: one `chezmoi status` call; lists targets whose first column has a
+marker, meaning the live file changed after chezmoi last wrote it. This holds
+whatever the source mtime is, so a source edited later still shows. Exit 1
+only when such rows exist.
+
+--mtime-only: hints only, for plain files whose live mtime is newer than the
+source. Never inferred for .tmpl or modify_ sources (their mtime says nothing).
+Inspect hints; do not copy a hinted file over a source without checking.
+"""
+import argparse
+import json
+import os
+import shlex
+import subprocess
+import sys
+
+
+def chezmoi(*args):
+    # CHEZMOI_DRIFT_FLAGS: extra chezmoi flags (--source, --destination, ...), for tests.
+    extra = shlex.split(os.environ.get("CHEZMOI_DRIFT_FLAGS", ""))
+    out = subprocess.run(
+        ["chezmoi", "--no-pager", *extra, *args], capture_output=True, text=True, check=False
+    )
+    if out.returncode != 0:
+        print(f"chezmoi-drift: chezmoi {' '.join(args)} failed: {out.stderr.strip()}", file=sys.stderr)
+        sys.exit(2)
+    return out.stdout
+
+
+def is_modify(source_rel):
+    """modify_ targets: apps rewrite them and apply keeps those writes."""
+    return any(part.startswith("modify_") for part in source_rel.split("/"))
+
+
+def is_derived(source_rel):
+    """True for sources whose content is generated: templates and modify_ scripts."""
+    return is_modify(source_rel) or any(part.endswith(".tmpl") for part in source_rel.split("/"))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("targets", nargs="*", help="limit output to these target paths")
+    ap.add_argument(
+        "--mtime-only",
+        action="store_true",
+        help="hints: plain files with live mtime > source mtime (no .tmpl/modify_)",
+    )
+    args = ap.parse_args()
+
+    targets = [os.path.abspath(os.path.expanduser(t)) for t in args.targets]
+
+    def wanted(path):
+        return not targets or any(path == t or path.startswith(t.rstrip("/") + "/") for t in targets)
+
+    managed = json.loads(chezmoi("managed", "--include=files", "--path-style=all"))
+    # Status per target: chezmoi errors on targets it does not manage yet; skip those.
+    status_out = []
+    for t in targets or [None]:
+        if t is not None and not any(
+            p["absolute"] == t or p["absolute"].startswith(t.rstrip("/") + "/")
+            for p in managed.values()
+        ):
+            continue
+        status_out += chezmoi("status", *([t] if t else [])).splitlines()
+    status = {line[3:].rstrip("/"): line[0] for line in status_out if len(line) > 3}
+
+    rows = []  # (sort key, live, source, marker, note)
+    for rel, paths in managed.items():
+        live, src = paths["absolute"], paths["sourceAbsolute"]
+        if not wanted(live) or is_modify(paths["sourceRelative"]):
+            continue
+        marker = status.get(rel, " ")
+        if not args.mtime_only:
+            if marker != " ":
+                note = "edited since last apply"
+                if is_derived(paths["sourceRelative"]):
+                    note += "; template source: edit it by hand"
+                rows.append((0, live, paths["sourceRelative"], marker, note))
+            continue
+        if is_derived(paths["sourceRelative"]):
+            continue
+        try:
+            delta = os.stat(live).st_mtime - os.stat(src).st_mtime
+        except OSError:
+            continue
+        if delta > 0:
+            note = f"live newer by {int(delta)}s"
+            if marker != " ":
+                note += "; edited since last apply"
+            rows.append((delta, live, paths["sourceRelative"], marker, note))
+
+    for _, live, src, _, note in sorted(rows, reverse=True):
+        print(f"{live}\t{src}\t{note}")
+    sys.exit(1 if any(r[3] != " " for r in rows) else 0)
+
+
+if __name__ == "__main__":
+    main()

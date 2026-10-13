@@ -25,7 +25,13 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
    and users, and the repo is public.
    Report each excluded path by name only. Never print its contents. Never
    restore a path that a source commit removed.
-2. **Status.** Run `chezmoi status <targets>`. Report listed targets that this
+2. **Status.** Run `chezmoi-drift <targets>` first (`~/.local/bin`). It lists plain and `.tmpl` targets edited live since the last apply (it skips `modify_` targets, which apps rewrite; apply keeps only their pass-through keys,
+   so check `chezmoi diff <target>` for live changes to managed keys),
+   so an apply would overwrite them. Copy to source (step 3) only the rows it lists,
+   before step 7; never apply over one. `--mtime-only` rows are hints to inspect,
+   never to copy over `.tmpl` or `modify_` sources.
+   Edit the source, never the live file, for later changes.
+   Then run `chezmoi status <targets>`. Report listed targets that this
    session did not edit. Do not include them unless the user names them.
    Agent config directories are exact: applying removes files absent from their sources.
    For requested deletions, remove the source entry; deleting only the target restores it.
@@ -42,7 +48,7 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
      the prefixes its siblings use, such as `private_` or `executable_`.
      Prefix every new owned skill source directory with `exact_`, including nested directories.
    - Never run `chezmoi add`, `re-add`, `edit`, `merge`, or `update`. With
-     `autoCommit` or `autoPush` on, they commit or push on their own.
+     `autoCommit` or `autoPush` on, they commit or push on their own; both are off now.
 4. **Scan.** Stage only those source paths: `git add <paths>`.
    Run the repo's secret scanner when it has one. Always run this scan too:
    `git grep --cached -nEi 'token|secret|passw|api[_-]?key|PRIVATE KEY|glpat-|ghp_|github_pat_|xox[bp]-|AKIA' -- <paths>`
@@ -50,12 +56,16 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
    On a real secret, stop. Print the file, line, and match with the value
    replaced by `<redacted>`. Unstage the path and remove the secret from the source.
 5. **Commit.** Load [commit](../commit/SKILL.md). Make one commit per concern.
-6. **Pull and push.** Run `git pull` with no strategy flags, so the
-   repo's configured strategy applies. Resolve clear conflicts. Stop and ask
+6. **Pull and push.** Run `git pull --autostash`, with no strategy flag, so the
+   repo's configured strategy applies and unstaged edits survive. Check the
+   pull's exit code; never pipe it to `tail` before `&&`. Resolve clear conflicts. Stop and ask
    when the intended result is not clear. Then run `git push`.
 7. **Apply.** Run `chezmoi apply <targets>`, so the pushed sources take effect.
    Apply only the scoped targets; a wider apply overwrites unsynced target edits.
    When the sandbox reports `operation not permitted`, rerun it outside the sandbox.
+   When the harness blocks a settings or rule file, do not retry the edit.
+   Write one apply script to the scratch directory, print its path and what it
+   changes, and hand it over once.
 8. **Check.** `chezmoi status <targets>` must print nothing, and
    `git status -sb` must show no ahead count.
    Report the pushed SHAs, the targets you left out, and why.
