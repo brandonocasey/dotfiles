@@ -56,7 +56,10 @@ managed=$(
     ],
     "ask": [],
     "deny": [
-      "Bash(gh pr merge*--admin*)"
+      "Bash(gh pr merge*--admin*)",
+      "Agent(Explore)",
+      "Agent(Plan)",
+      "Agent(statusline-setup)"
     ],
     "additionalDirectories": ["~/.cache/agents"],
     "defaultMode": "auto"
@@ -145,9 +148,9 @@ managed=$(
     "anthropic-skills:skill-creator": "name-only",
     "anthropic-skills:morning": "user-invocable-only",
     "anthropic-skills:import-memory": "user-invocable-only",
-    "keybindings-help": "name-only",
-    "fewer-permission-prompts": "name-only",
-    "simplify": "name-only",
+    "keybindings-help": "user-invocable-only",
+    "fewer-permission-prompts": "user-invocable-only",
+    "simplify": "user-invocable-only",
     "workflow-authoring": "name-only",
     "loop": "name-only",
     "schedule": "name-only",
@@ -158,9 +161,12 @@ managed=$(
     "anthropic-skills:built-in-browser": "name-only",
     "anthropic-skills:chrome-browser": "name-only",
     "anthropic-skills:computer-use": "name-only",
-    "artifact-design": "name-only",
-    "artifact-diagramming": "name-only",
-    "artifact-capabilities": "name-only"
+    "artifact-design": "user-invocable-only",
+    "artifact-diagramming": "user-invocable-only",
+    "artifact-capabilities": "user-invocable-only",
+    "update-config": "name-only",
+    "init": "user-invocable-only",
+    "security-review": "user-invocable-only"
   },
   "hooks": {
     "UserPromptSubmit": [
