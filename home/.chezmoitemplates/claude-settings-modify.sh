@@ -56,8 +56,6 @@ managed=$(
     ],
     "ask": [],
     "deny": [
-      "Skill(frontend-design:frontend-design)",
-      "Skill(frontend-design:frontend-design *)",
       "Bash(gh pr merge*--admin*)"
     ],
     "additionalDirectories": ["~/.cache/agents"],
