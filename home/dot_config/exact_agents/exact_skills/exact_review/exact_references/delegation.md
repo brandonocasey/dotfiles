@@ -1,14 +1,12 @@
 ## Delegation
 
-Always delegate the review to the `deep-review` sub-agent, whatever the target:
+Always delegate the review to the `reviewer` sub-agent, whatever the target:
 own work, a colleague's MR/PR, an arbitrary commit, or a follow-up delta.
 Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
-`--deep` and `--loop` pick the roles and `--agents` picks the models; they combine.
-- Default: one `deep-review`. In a side-by-side trial, adding `reviewer` or a
-  low-effort Opus beside `deep-review` found nothing extra.
-- `--deep` or `--loop`: `reviewer` and `deep-review` in parallel on the same target.
+- Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
+  beside it found nothing extra.
 - `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
-  model and effort. With `--deep` or `--loop`, each entry runs both roles.
+  model and effort.
 Without `--agents`, the `sub-agents` skill owns model and effort selection.
 With several targets, start one reviewer set per target.
 
@@ -21,7 +19,7 @@ in the task scratch directory, ending with an `exit N` line. Pass the log paths 
 commands to every reviewer and start the reviewers without waiting, so parallel
 reviewers do not repeat the checks. A failing check is evidence: reviewers decide
 whether the change caused it. Run the checks again for each new pinned target,
-including each `--loop` pass.
+including each fix-loop pass.
 Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
 file). Do not commit, amend, or rebase the target while a reviewer runs.
 Give every reviewer the same prompt, built only from this template. Fill the fields
@@ -43,7 +41,7 @@ description the way a human reviewer does. Never write your own summary of the
 change, what to focus on, what to skip, what already passed, or where code came
 from ("copied unchanged", "already in use"). That framing steers the reviewer away
 from the code that needs review. Do not pass earlier findings or conversation
-history. Exception: a `--loop` fix check
+history. Exception: a fix-loop fix check
 passes the inputs [loop.md](loop.md) lists, to continued or fresh reviewers. Tell reviewers not to
 rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
 runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,

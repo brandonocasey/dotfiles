@@ -1,7 +1,7 @@
 # When to run a review automatically
 
-Run an independent `review` on this session's own change
-once the work is complete. Review when requested or when material uncertainty
+Run `review-fix` (`review --fix`, which fixes and loops) on this session's own
+change once the work is complete. Review when requested or when material uncertainty
 remains. Otherwise apply the triggers and narrow exceptions below.
 
 ## Timing
@@ -58,22 +58,11 @@ remains. Otherwise apply the triggers and narrow exceptions below.
   with surrounding context when they change logic beyond a one-line local edit
   or a one-line edit that introduces new behavior or risk. This replaces the
   once-per-hand-off rule for repairs after a review.
-- When **Second reviewer** requires two reviewers, run the review with `--loop`
-  unless the user set `--no-loop`; [loop.md](loop.md) then owns the follow-ups.
-- Otherwise run one follow-up review for the repair delta; verify and test
-  its fixes without an automatic convergence loop. Separate later behavior or risk
-  changes start a new delta review. Report unresolved findings explicitly.
+- The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
+  Separate later behavior or risk changes start a new delta review. Report
+  unresolved findings explicitly.
 - Cosmetic CSS or prose-only follow-ups use the skip exceptions above. Do not rerun
-  a full review merely to obtain a clean report after repairs. Explicit `--loop`
-  requests retain their workflow.
-
-## Second reviewer
-
-- Every review runs `deep-review` ([delegation.md](delegation.md)). Add `reviewer`
-  as a second reviewer (`--loop` runs both) when changing access controls, exposing
-  additional services, or weakening security checks.
-- If `deep-review` is unavailable, use the available independent reviewer and
-  disclose the coverage limit; never bypass tool restrictions to satisfy the role.
+  a full review merely to obtain a clean report after repairs.
 
 ## What review cannot replace
 

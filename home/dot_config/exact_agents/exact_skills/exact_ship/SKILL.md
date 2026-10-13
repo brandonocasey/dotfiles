@@ -7,7 +7,7 @@ Ship the current branch: push it, open or update the MR/PR, and report. When
 the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. Other argument text is a
 task to finish first.
-Parse `--merge` as an option, not a branch or task name.
+Parse `--approve` and `--merge` as options, not branch or task names.
 With several branch names or `all`, ship each branch in turn, a parent before
 its dependent children. For `all`, list the branches that have a `.worktrees/`
 worktree with a clean tree and commits ahead of `TARGET`, excluding worktrees
@@ -15,8 +15,9 @@ another task uses. Show each with its ahead count and ask once before the first
 push. For branches that depend on each other, follow **Chains of dependent
 MRs/PRs** in [dependent-branches.md](../shared/dependent-branches.md).
 Ordinary shipping ends after the push, MR/PR update, and any triggered review with its fix push.
-With `--merge`, read [merge.md](references/merge.md) before mutations to check
-platform support and scope. Continue that workflow after shipping.
+With `--approve` or `--merge`, read [merge.md](references/merge.md) before
+mutations to check platform support and scope. The post-push review then runs as
+`review-auto` with only those flags (step 4).
 
 When a `session-resume` record exists for the task, read it before the context
 check and apply `session-resume`'s reuse rules.

@@ -9,9 +9,8 @@ Own work skips the `--fix` gate, whether auto-triggered or user-requested:
 - an MR/PR whose author is the authenticated user (`gh api user --jq .login` or
   `GITLAB_HOST=<host> glab api user`'s `username`, compared with the MR/PR author).
 
-For own work, apply verified fixes at once per step 4. Re-run tests/lint; follow
-[when-to-run.md](when-to-run.md) for follow-up reviews, or step 5 when
-`--loop` is set. An own MR/PR gets the full MR/PR flow of step 4, including the push
+For own work, apply verified fixes at once per step 4. Re-run tests/lint; step 5's
+fix loop owns follow-up reviews. An own MR/PR gets the full MR/PR flow of step 4, including the push
 ([git-policy.md](../../shared/git-policy.md)).
 For any other target, print the comments and wait for `--fix`. End with:
 `Reply fix to apply N findings.`

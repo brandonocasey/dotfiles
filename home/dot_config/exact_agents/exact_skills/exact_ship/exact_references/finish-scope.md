@@ -1,7 +1,9 @@
 ## 4. Finish the requested scope
 
 - When [when-to-run.md](../../review/references/when-to-run.md) triggers a review
-  after the push, start it at once, pinned to `<COMMIT_BASE>..<HEAD_SHA>`.
+  after the push, start it at once as `review-fix`, pinned to
+  `<COMMIT_BASE>..<HEAD_SHA>`. With `--approve` or `--merge`, always run it, as
+  `review-auto` with only the flags given; review step 7 then approves or merges.
 - Start the CI watch at the same time, per [ci-repair.md](ci-repair.md) **Watch
   CI after shipping**, and report without waiting for it. Honor an explicit
   monitoring or repair request in the current turn, and keep the worktree until
@@ -16,10 +18,8 @@
   `shared/git-flow.md`. Push once per `ship` step 2; ship's push authorization
   covers it. Restart the CI watch at the new head. Count that push toward
   ci-repair.md's fix-push cap only when it carries a CI repair.
-- Run any follow-up delta review from when-to-run.md **Follow-ups** after that push,
-  while the new CI runs. Its fixes get one more push; no further review loop, unless
-  the review runs `--loop`, whose passes then own the pushes.
+- The review's fix loop ([loop.md](../../review/references/loop.md)) owns later
+  re-checks and their pushes, while the new CI runs.
 - After every review and fix push ends, restore any paused auto-merge per
   [auto-merge-pause.md](../../shared/auto-merge-pause.md).
-- With `--merge`, after that point and with no blocking finding left, read
-  [merge.md](merge.md) and finish that workflow before cleanup.
+- With `--approve` or `--merge`, finish review step 7 before cleanup.
