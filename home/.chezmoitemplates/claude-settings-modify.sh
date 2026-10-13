@@ -127,7 +127,8 @@ managed=$(
   },
   "model": "opus",
   "env": {
-    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5"
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
+    "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp"
   },
   "skillOverrides": {
     "frontend-design": "user-invocable-only",

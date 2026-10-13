@@ -16,16 +16,20 @@ for dir in "$CACHE/scratch"; do
   "$FIND" "$dir" -mindepth 1 -type d -empty -delete
 done
 
-# Harness layout: /tmp/claude-<uid>/<cwd-slug>/<session-id>/{scratchpad,tasks}.
+# Harness layout: <tmp-root>/claude-<uid>/<cwd-slug>/<session-id>/{scratchpad,tasks}.
+# Settings set CLAUDE_CODE_TMPDIR to ~/.cache/claude-tmp; older sessions used /tmp.
+# Fixed roots: inside a session, Claude rewrites CLAUDE_CODE_TMPDIR to the per-uid dir.
 # A session dir stays while any entry in it changed within DAYS.
-ROOT="/tmp/claude-$(id -u)"
-[ -d "$ROOT" ] || exit 0
-for session in "$ROOT"/*/*/; do
-  [ -d "$session" ] || continue
-  if [ -z "$("$FIND" "$session" -mtime -"$DAYS" -print -quit)" ]; then
-    rm -rf "$session"
-  fi
+for base in "$HOME/.cache/claude-tmp" /tmp; do
+  ROOT="$base/claude-$(id -u)"
+  [ -d "$ROOT" ] || continue
+  for session in "$ROOT"/*/*/; do
+    [ -d "$session" ] || continue
+    if [ -z "$("$FIND" "$session" -mtime -"$DAYS" -print -quit)" ]; then
+      rm -rf "$session"
+    fi
+  done
+  "$FIND" "$ROOT" -mindepth 1 -maxdepth 1 -type d -empty -delete
+  [ -d "$ROOT/bash-edit-diff" ] && "$FIND" "$ROOT/bash-edit-diff" -mindepth 1 -maxdepth 1 -mtime +"$DAYS" -exec rm -rf {} +
 done
-"$FIND" "$ROOT" -mindepth 1 -maxdepth 1 -type d -empty -delete
-[ -d "$ROOT/bash-edit-diff" ] && "$FIND" "$ROOT/bash-edit-diff" -mindepth 1 -maxdepth 1 -mtime +"$DAYS" -exec rm -rf {} +
 exit 0
