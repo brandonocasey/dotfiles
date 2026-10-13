@@ -79,7 +79,9 @@ class SkillSyncTests(unittest.TestCase):
             untracked.write_text("stale\n")
             probes = []
             for path in (skills_source, *skills_source.rglob("*")):
-                if not path.is_dir() or "frontend-design" in path.relative_to(skills_source).parts:
+                parts = path.relative_to(skills_source).parts
+                # chezmoi ignores dot-prefixed source entries, such as harness .claude dirs.
+                if not path.is_dir() or "frontend-design" in parts or any(p.startswith(".") for p in parts):
                     continue
                 installed = skills.joinpath(
                     *(part.removeprefix("exact_") for part in path.relative_to(skills_source).parts)
@@ -99,7 +101,7 @@ class SkillSyncTests(unittest.TestCase):
             self.assertEqual(upstream_extra.read_text(), "GitHub CLI owns this\n")
             self.assertTrue(neighbor.exists())
             apply()
-            for name in ("llm-tools", "pr-fix", "ship"):
+            for name in ("llm-setup-audit", "pr-fix", "ship"):
                 self.assertTrue((skills / name / "SKILL.md").exists(), f"Preserve {name}")
 
 

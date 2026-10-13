@@ -9,6 +9,19 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[2]
 PRUNE = REPO / "home/dot_claude/hooks/executable_prune-agent-dirs.sh"
+CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
+
+
+def render_codex_modifier(directory):
+    """Render the Codex modify template into a runnable script."""
+    script = Path(directory) / "modify_private_config.toml"
+    config = Path(directory) / "chezmoi.toml"
+    config.write_text("")
+    script.write_text(subprocess.run(
+        ["chezmoi", "--source", str(REPO), "--config", str(config), "execute-template"],
+        stdin=CODEX_MODIFIER.open(), text=True, capture_output=True,
+        check=True, timeout=10).stdout)
+    return script
 
 
 class AgentConfigurationTests(unittest.TestCase):
@@ -57,12 +70,11 @@ class AgentConfigurationTests(unittest.TestCase):
                     path = home / ".config/agents/skills/synced" / account / name / "SKILL.md"
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text("fixture")
-                    if name != "unrelated":
-                        expected.add(str(path))
+                    expected.add(str(path))
             live = ('model = "test-model"\nmodel_reasoning_effort = "medium"\n'
                     '[projects."/example"]\ntrust_level = "trusted"\n'
                     '[hooks.state.example]\nenabled = true\n')
-            modifier = REPO / "home/dot_codex/modify_private_config.toml"
+            modifier = render_codex_modifier(directory)
             env = dict(os.environ, HOME=str(home), XDG_CONFIG_HOME=str(home / ".config"),
                        XDG_CACHE_HOME=str(home / ".cache"), XDG_STATE_HOME=str(home / ".local/state"))
             def render(value):
@@ -84,7 +96,7 @@ class AgentConfigurationTests(unittest.TestCase):
         scratch.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=scratch) as directory:
             result = subprocess.run(
-                ["bash", str(REPO / "home/dot_codex/modify_private_config.toml")],
+                ["bash", str(render_codex_modifier(directory))],
                 input="", text=True, capture_output=True, check=True, timeout=10,
                 env=dict(os.environ, HOME=directory, XDG_CONFIG_HOME=directory,
                          XDG_CACHE_HOME=directory, XDG_STATE_HOME=directory))
