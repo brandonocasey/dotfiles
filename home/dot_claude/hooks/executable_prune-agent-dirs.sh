@@ -1,5 +1,5 @@
 #!/bin/bash
-# Manual run only; unhooked in 53f5a01. Removes agent scratch files and harness scratchpad
+# Manual run only. Removes agent scratch files and harness scratchpad
 # sessions, that nothing touched for DAYS days. Backups under
 # $XDG_STATE_HOME/agents/backups are never touched. Absolute find path: the
 # user's shell aliases `find` to bfs, which rejects BSD find flags.
