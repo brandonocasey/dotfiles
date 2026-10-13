@@ -5,6 +5,7 @@
       "command": "npx",
       "args": [
         "chrome-devtools-mcp@1.10.1",
+        "--isolated",
         "--chromeArg=--mute-audio",
         "--acceptInsecureCerts"
       ],
