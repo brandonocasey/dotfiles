@@ -1,1 +1,5 @@
-{ "name": "context-lean", "version": "0.2.1", "description": "Keeps rarely used built-in tools and claude.ai connectors out of the prompt, and adds /context-lean" }
+{
+  "name": "context-lean",
+  "version": "0.5.3",
+  "description": "Keeps rarely used built-in tools and MCP tool names out of the prompt, and corrects /context"
+}

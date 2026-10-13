@@ -1,6 +1,15 @@
 import { expect, test } from 'claude-code/testing'
 
 const ENGINE = { plugin: 'engine', tier: 'core' } as const
+
+// The text a row draws: a Box's children one per line, a Text's runs joined.
+type Drawn = string | { type?: string; children?: Drawn[] } | null | undefined
+const textOf = (node: Drawn): string =>
+  typeof node === 'string' ? node : (node?.children ?? []).map(textOf).join(node?.type === 'Box' && (node as { props?: { flexDirection?: string } }).props?.flexDirection === 'column' ? '\n' : '')
+// Stands in for the engine's row: it draws the text it is handed.
+const engineRow = (on: Parameters<Parameters<typeof test>[1]>[1]) => on('ui.render', ($, e) => ({ type: 'Text', children: [(e.props as { text: string }).text] }) as never)
+const drawnRow = async ($: Parameters<Parameters<typeof test>[1]>[0], command: string, text: string) =>
+  textOf((await $.ui.render({ component: 'CommandOutput', surface: 'terminal', props: { command, args: '', text, isErrored: false } } as never)) as Drawn)
 const HEADER = 'The following deferred tools are now available via ToolSearch.'
 
 test('defers the Artifact tools with a note', async ($, on) => {
@@ -55,6 +64,16 @@ test('replaces the Artifact entry and drops rare and connector names', async ($,
   expect(result.text).toContain('Monitor')
   expect(result.text).not.toContain('mcp__claude_ai_')
   expect(result.text).toContain('tools from Datadog, Slack.')
+})
+
+test('drops local MCP tool names and names their server', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = [HEADER, 'Monitor', 'mcp__chrome-devtools__click', 'mcp__openaiDeveloperDocs__search_openai_docs'].join('\n')
+  const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text })
+  expect(result.text).toContain('Monitor')
+  expect(result.text).not.toContain('mcp__')
+  expect(result.text).toContain('tools from chrome-devtools, openaiDeveloperDocs.')
 })
 
 test('keeps removal notices whole', async ($, on) => {
@@ -171,4 +190,296 @@ test('names a hidden connector as the keyword example', async ($, on) => {
   const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text })
   expect(result.text).toContain('(e.g. "google"): tools from Google_Calendar, Slack.')
   expect(result.text).not.toContain('datadog')
+})
+
+test('sends notes for a connector whose name has punctuation', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Google Calendar (Beta)\nUse UTC.' })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Google_Calendar_Beta__list_events', input: {}, tool_use_id: 'f' })
+  expect((result.context ?? []).join('\n')).toContain('Use UTC.')
+})
+
+test('keeps headings inside a connector notes with that connector', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch first.\n## Usage\nPage IDs are UUIDs.\n## claude.ai Slack\nBe brief.'
+  const hiddenText = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(hiddenText.text).toBeNull()
+
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Notion__search', input: {}, tool_use_id: 'g' })
+  const context = (result.context ?? []).join('\n')
+  expect(context).toContain('Search first.')
+  expect(context).toContain('Page IDs are UUIDs.')
+})
+
+test('keeps the last connector whole when a heading follows it, since it may be a local server', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Notion\nSearch first.\n## Search tips\nQuote titles.\n## claude.ai Slack\nBe brief.\n## My Pages\nList first.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toContain('## claude.ai Slack\nBe brief.\n## My Pages\nList first.')
+  expect(result.text).not.toContain('Quote titles.')
+})
+
+test('keeps a later single-connector update whole when its notes have a heading', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\nIntro:\n## claude.ai Datadog\nUse log queries.' })
+  const text = '# MCP Server Instructions\nIntro:\n## claude.ai Atlassian MCP\nGet the site ID.\n## Jira\nUse JQL.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toContain('## claude.ai Atlassian MCP\nGet the site ID.\n## Jira\nUse JQL.')
+
+  const call = await $.tool.call({ tool: 'mcp__claude_ai_Atlassian_MCP__getJiraIssue', input: {}, tool_use_id: 's' })
+  expect(call.context ?? []).toEqual([])
+})
+
+test('keeps the notice that tools are available again', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = 'The following tools are available again in this session. The earlier instruction to disregard their definitions and not call them no longer applies:\nmcp__claude_ai_Notion__search'
+  const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text })
+  expect(result.text).toBe(text)
+})
+
+test('leaves out a deferred list left empty', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const result = await $.prompt.attachment({ type: 'deferred_tools_delta', text: `${HEADER}\nAskUserQuestion` })
+  expect(result.text).toBeNull()
+})
+
+test('sends notes again after the session is compacted', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+  on('session.compact', ($, e) => ({ messages: e.messages, tokensBefore: 100, tokensAfter: 10 }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.' })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'h' })
+  await $.session.compact({ trigger: 'manual', messages: [{ role: 'user', text: 'hi', toolUses: [] }] })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'i' })
+  expect((result.context ?? []).join('\n')).toContain('Use log queries.')
+
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'm', agentId: 'sub' })
+  await $.session.compact({ trigger: 'manual', agentId: 'other', messages: [{ role: 'user', text: 'hi', toolUses: [] }] })
+  const sub = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'n', agentId: 'sub' })
+  expect(sub.context ?? []).toEqual([])
+})
+
+test('keeps notes sent after a precomputed compaction that is not applied yet', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+  on('session.compact', ($, e) => ({ messages: e.messages, tokensBefore: 100, tokensAfter: 10 }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.' })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'o' })
+  await $.session.compact({ trigger: 'precompute', messages: [{ role: 'user', text: 'hi', toolUses: [] }] })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'p' })
+  expect(result.context ?? []).toEqual([])
+})
+
+test('sends notes again after a connector reconnects', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  const notes = '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.'
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: notes })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'j' })
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: 'The following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog\nThis is ambient context.' })
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: notes })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'k' })
+  expect((result.context ?? []).join('\n')).toContain('Use log queries.')
+})
+
+test('does not send notes for a connector named inside another connector result', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: 'log line: mcp__claude_ai_Notion__search failed' }))
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: NOTES_TEXT })
+  const result = await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'l' })
+  expect((result.context ?? []).join('\n')).not.toContain('Search first.')
+})
+
+test('shortens built-in agent descriptions and keeps custom ones', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = [
+    'Available agent types for the Agent tool:',
+    '- cheap: Mechanical work. (Tools: Bash, Read)',
+    '- claude-code-guide: Use this agent when the user asks questions about Claude Code and much more. (Tools: Bash, Read, WebFetch, WebSearch)',
+    '- general-purpose: General-purpose agent for researching complex questions. (Tools: *)',
+  ].join('\n')
+  const result = await $.prompt.attachment({ type: 'agent_listing_delta', text })
+  expect(result.text).toContain('- cheap: Mechanical work. (Tools: Bash, Read)')
+  expect(result.text).toContain('- claude-code-guide: Questions about Claude Code, the Agent SDK, the Claude API, or Claude in Slack. Continue a running one with SendMessage. (Tools: Bash, Read, WebFetch, WebSearch)')
+  expect(result.text).toContain('- general-purpose: Generic research and multi-step tasks. Use only when no named role fits. (Tools: *)')
+  expect(result.text).not.toContain('much more')
+})
+
+test('defers the Skill tool and says how to load it in the skill listing', async ($, on) => {
+  on('tool.describe', ($, e) => ({ description: e.description }))
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const skill = await $.tool.describe({ tool: 'Skill', description: 'invoke skills', provider: ENGINE })
+  expect(skill.isDeferred).toBe(true)
+  const search = await $.tool.describe({ tool: 'ToolSearch', description: 'find tools', provider: ENGINE })
+  expect(search.description).toMatch(/\bSkill\b/)
+  const listing = await $.prompt.attachment({ type: 'skill_listing', text: '- commit: Create commits.' })
+  expect(listing.text).toBe('The Skill tool is deferred: load it with ToolSearch select:Skill before invoking a skill.\n\n- commit: Create commits.')
+})
+
+test('reports only notes kept in the prompt on the MCP row, until their server disconnects', async ($, on) => {
+  const local = '## chrome-devtools\nUse it.\n## Usage\nTips.'
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('session.usage', () => ({
+    value: {
+      startedAt: 0,
+      rateLimits: [],
+      context: { tokens: 5000, window: 1000000, breakdown: { totalTokens: 5000, categories: [{ name: 'MCP server instructions', tokens: 3000, kind: 'used' }, { name: 'Messages', tokens: 2000, kind: 'used' }] } },
+    },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  // Each character counts as one token, so a row's tokens are its text's length.
+  on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
+
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  engineRow(on)
+  const run = async () => drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: `# MCP Server Instructions\n\n${local}\n## claude.ai Notion\nSearch.` })
+  const shown = await run()
+  expect(shown).toContain(`MCP server instructions: ${local.length} tokens`)
+  expect(shown).toContain(`└ chrome-devtools · 1 server · ${local.length} tokens`)
+  expect(shown).not.toContain('└ Usage')
+
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: 'The following MCP servers have disconnected. Their instructions above no longer apply:\nchrome-devtools\nThis is ambient context.' })
+  const after = await run()
+  expect(after).toContain('MCP server instructions: 0 tokens')
+})
+
+// Answers /context's built-in run, usage and token counts the way a session would.
+const contextSession = (on: Parameters<Parameters<typeof test>[1]>[1], size: number | (() => number)) => {
+  const tokens = () => (typeof size === 'number' ? size : size())
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({
+    value: { startedAt: 0, rateLimits: [], context: { tokens: tokens(), window: 1000000, breakdown: { totalTokens: tokens(), categories: [{ name: 'Messages', tokens: tokens(), kind: 'used' }] } } },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
+}
+
+test('/context answers with one summary line and draws the corrected report in its row', async ($, on) => {
+  contextSession(on, 5000)
+  engineRow(on)
+  const result = await $.command.run({ command: 'context' })
+  expect(result.text).toMatch(/^Context: 5k real tokens; context-lean hid 0\. \[context-lean report [a-z0-9]+\]$/)
+  const row = await drawnRow($, 'context', result.text ?? '')
+  expect(row).toContain('Context Usage (context-lean)')
+  expect(row.replace(/\u001b\[[0-9;]*m/g, '')).toContain('⛁ Messages: 5k tokens (0.5%)')
+  // Another command's row that names the report is drawn as it is.
+  expect(await drawnRow($, 'echo', result.text ?? '')).toBe(result.text ?? '')
+})
+
+test('a row whose report this process does not hold draws as the engine would', async ($, on) => {
+  on('ui.render', ($, e) => ({ type: 'Text', children: ['ENGINE'] }) as never)
+  expect(await drawnRow($, 'context', 'Context: 5k real tokens; context-lean hid 0. [context-lean report zzz]')).toBe('ENGINE')
+})
+
+test('/context all runs the built-in command', async ($, on) => {
+  contextSession(on, 5000)
+  const result = await $.command.run({ command: 'context', args: 'all' })
+  expect(result.text).toBe('BUILT-IN')
+})
+
+test('/context before anything was sent shows the last saved report, marked as such', async ($, on) => {
+  // The test kit keeps no store of its own, so the saved report needs one.
+  const memory = new Map<string, unknown>()
+  on('store.set', ($, e) => {
+    memory.set(e.key, e.value)
+    return { value: undefined }
+  })
+  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
+  let sent = 5000
+  contextSession(on, () => sent)
+  engineRow(on)
+  await $.command.run({ command: 'context' })
+  sent = 0
+  const result = await $.command.run({ command: 'context' })
+  expect(result.text).toMatch(/^Last saved report\. Context: 5k real tokens/)
+  expect(await drawnRow($, 'context', result.text ?? '')).toContain('No message sent in this session yet, so these numbers are from your last report')
+})
+
+test('/context before anything was sent, with no saved report, runs the built-in command', async ($, on) => {
+  contextSession(on, 0)
+  const result = await $.command.run({ command: 'context' })
+  expect(result.text).toBe('BUILT-IN')
+})
+
+test('/context runs the built-in command when the report cannot be built', async ($, on) => {
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({ value: { startedAt: 0, rateLimits: [], context: { tokens: 5000, window: 1000000 } } }))
+  const result = await $.command.run({ command: 'context' })
+  expect(result.text).toBe('BUILT-IN')
+})
+
+test('keeps notes in the prompt when they arrive after the connector was used', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => searchResult(['mcp__claude_ai_Notion__search']))
+
+  const first = await $.tool.call({ tool: 'ToolSearch', input: { query: 'notion' }, tool_use_id: 'q' })
+  expect(first.context ?? []).toEqual([])
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Notion\nSearch first.' })
+  expect(result.text).toContain('Search first.')
+
+  const again = await $.tool.call({ tool: 'ToolSearch', input: { query: 'notion' }, tool_use_id: 'r' })
+  expect(again.context ?? []).toEqual([])
+})
+
+test('keeps hiding notes when the engine asks again after the connector was used', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  const text = '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.'
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 't' })
+  const again = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(again.text).toBeNull()
+})
+
+test('keeps a local server shown that sorts between ASCII and non-ASCII connectors', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\n\n## claude.ai Atlassian MCP\nGet the site ID.\n\n## playwright\nOpen a page first.\n\n## claude.ai Jira – Prod\nUse JQL.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toContain('## playwright\nOpen a page first.')
+  expect(result.text).not.toContain('Use JQL.')
+})
+
+test('keeps old notes hidden when asked again after a reconnect changed them', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  const first = '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.'
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: first })
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: 'The following MCP servers have disconnected. Their instructions above no longer apply:\nclaude.ai Datadog\nThis is ambient context.' })
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries with service filters.' })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 'u' })
+  const again = await $.prompt.attachment({ type: 'mcp_instructions_delta', text: first })
+  expect(again.text).toBeNull()
+})
+
+test('keeps notes kept for one agent when a subagent hides the same notes', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+
+  const text = '# MCP Server Instructions\n\n## claude.ai Notion\nSearch first.'
+  await $.tool.call({ tool: 'mcp__claude_ai_Notion__search', input: {}, tool_use_id: 'v' })
+  const kept = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(kept.text).toContain('Search first.')
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text, agentId: 'sub' })
+  const again = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(again.text).toContain('Search first.')
 })

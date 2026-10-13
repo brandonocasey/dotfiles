@@ -16,6 +16,9 @@ export type Report = {
 
 // Marks notes that were hidden from the prompt and later sent with a tool result.
 export const SENT = ' (sent on first use)'
+// The row of built-in agent descriptions replaced with one-line summaries.
+export const AGENTS = 'Built-in agent descriptions (shortened)'
+const MCP_NOTES = 'MCP server instructions'
 
 // /context's number styles: 10, 1.5k, 566.7k, 1m; 0.2%; 1%.
 const short = (n: number) => {
@@ -38,8 +41,11 @@ const isConnectorDescriptions = (label: string) => label.endsWith(' tool descrip
 const isBuiltInDescription = (label: string) => label.endsWith(' description')
 
 // /context's own estimates, plus the gap to the real total. Interactive and headless sessions estimate
-// deferred tools differently, so individual categories are left as /context reports them.
-const categoriesOf = ({ real, window, categories }: Report) => {
+// deferred tools differently, so individual categories are left as /context reports them, except one:
+// /context counts every connected server's notes, sent or not, so that row shows the notes kept in the prompt.
+const categoriesOf = ({ real, window, categories: reported, kept }: Report) => {
+  const inPrompt = sum(kept.filter(row => isNotes(row.label)))
+  const categories = reported.map(row => (row.name === MCP_NOTES ? { ...row, tokens: inPrompt } : row))
   const total = (kind: string) => categories.filter(row => row.kind === kind).reduce((all, row) => all + row.tokens, 0)
   const gap: Category = { name: 'Difference from the real total', tokens: real - total('used'), kind: 'used' }
   const free: Category = { name: 'Free space', tokens: Math.max(0, window - real - total('buffer')), kind: 'free' }
@@ -117,6 +123,10 @@ const section = (title: string, rows: Counted[], name: (label: string) => string
 }
 const without = (suffix: string) => (label: string) => label.slice(0, label.length - suffix.length)
 
+// One line for the model in place of the report, which only the person sees.
+export const summary = ({ real, hidden, note }: Report) =>
+  `${note === undefined ? '' : 'Last saved report. '}Context: ${short(real)} real tokens; context-lean hid ${short(sum(hidden))}.`
+
 export const report = (measured: Report) => {
   const { real, window, estimate, model, hidden, kept, note } = measured
   const saved = sum(hidden)
@@ -152,10 +162,11 @@ export const report = (measured: Report) => {
     ...section('Hidden tool names', hidden.filter(row => row.label.endsWith(' tool names')), without(' tool names'), 'name'),
     ...section('Hidden tool descriptions', hidden.filter(row => isBuiltInDescription(row.label) || isConnectorDescriptions(row.label)), label => label.replace(/ tool descriptions$| description$/, ''), 'tool'),
     ...section('Hidden server notes', hidden.filter(row => isNotes(row.label)), without(NOTES), 'server'),
+    ...section('Shortened agent descriptions', hidden.filter(row => row.label === AGENTS), () => 'Built-in agents', 'agent'),
     ...section('Server notes sent on first use', kept.filter(row => isSentNotes(row.label)), without(`${NOTES}${SENT}`), 'server'),
     ...section('Server notes kept in the prompt', kept.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     '',
-    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates.`),
+    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates. ${MCP_NOTES} counts only notes still sent in the prompt; the rest of /context's count lands in the difference row.`),
   ]
 
   return lines.join('\n')

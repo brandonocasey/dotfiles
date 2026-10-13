@@ -19,9 +19,9 @@ const BASE = { real: 19943, window: 1000000, estimate: 17265, model: 'claude-opu
 test('draws the /context grid beside the header and categories', () => {
   const lines = report({ ...BASE, hidden: [], kept: [] }).split('\n')
   expect(lines[0]).toBe('Context Usage (context-lean)')
-  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, server instructions ⛀, Messages ⛀,
-  // and the 5.9k difference ⛁. The 33k buffer is 7 squares.
-  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛀ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
+  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, Messages ⛀, and the 8.2k difference ⛁ ⛁.
+  // No server notes are kept, so server instructions has no square. The 33k buffer is 7 squares.
+  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
   expect(lines[2]).toContain('   19.9k/1m tokens (2%), real')
   expect(lines[10]).toMatch(/^(⛶ ){13}⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝/)
   expect(lines.some(line => line.endsWith('⛶ Free space: 947.1k (94.7%)'))).toBe(true)
@@ -67,9 +67,10 @@ test('lists /context categories as estimated, plus the difference from the real 
   const text = report({ ...BASE, hidden: [{ label: 'Workflow description', items: 1, tokens: 1295 }], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 793 }] })
   expect(text).toContain('Estimated usage by category')
   expect(text).toContain('⛁ System tools: 9.3k tokens (0.9%)')
-  expect(text).toContain('⛁ MCP server instructions: 2.3k tokens (0.2%)')
-  // 19,943 real minus 14,015 estimated.
-  expect(text).toContain('⛁ Difference from the real total: 5.9k tokens (0.6%)')
+  // Only the 793 kept tokens of /context's 2,304 stay on the server instructions row.
+  expect(text).toContain('⛁ MCP server instructions: 793 tokens (0.1%)')
+  // 19,943 real minus 12,504 estimated.
+  expect(text).toContain('⛁ Difference from the real total: 7.4k tokens (0.7%)')
   expect(text.indexOf('Difference')).toBeLessThan(text.indexOf('Free space'))
   expect(text.indexOf('Free space')).toBeLessThan(text.indexOf('Autocompact buffer'))
   expect(text).toContain('Server notes kept in the prompt · 793 tokens\n└ Atlassian MCP · 1 server · 793 tokens')
@@ -96,7 +97,7 @@ test('fills the grid when the real total is over the window or the window is unk
 test('shades hidden tokens as boxes after the used squares, with a legend line', () => {
   const lines = report({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 415, tokens: 11133 }, { label: 'Workflow description', items: 1, tokens: 7300 }], kept: [] }).split('\n')
   // 7 used squares as above; 18,433 hidden is 4 more.
-  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛀ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
+  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
   const legend = lines.findIndex(line => line.endsWith('⛋ Hidden by context-lean: 18.4k tokens (1.8%)'))
   const free = lines.findIndex(line => line.includes('⛶ Free space'))
   expect(legend).toBeGreaterThan(0)
@@ -113,6 +114,19 @@ test("colors squares and legend symbols with /context's colors, and hidden token
 })
 
 test('leaves out the difference row when the estimate matches the real total', () => {
-  const text = report({ ...BASE, real: 14015, hidden: [], kept: [] })
+  const text = report({ ...BASE, real: 14015, hidden: [], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 2304 }] })
   expect(text).not.toContain('Difference from the real total')
+})
+
+test('shows only notes kept in the prompt on the MCP server instructions row', () => {
+  const text = report({ ...BASE, real: 14015, estimate: 14015, hidden: [{ label: 'Notion server notes', items: 1, tokens: 1304 }], kept: [{ label: 'chrome-devtools server notes', items: 1, tokens: 120 }] })
+  expect(text).toContain('⛁ MCP server instructions: 120 tokens (0.0%)')
+  // 2,304 counted by /context minus the 120 kept.
+  expect(text).toContain('⛁ Difference from the real total: 2.2k tokens (0.2%)')
+})
+
+test('reports shortened agent descriptions in their own section', () => {
+  const text = report({ ...BASE, hidden: [{ label: 'Built-in agent descriptions (shortened)', items: 3, tokens: 420 }], kept: [] })
+  expect(text).toContain('Shortened agent descriptions · 420 tokens\n└ Built-in agents · 3 agents · 420 tokens')
+  expect(text).not.toContain('Hidden tool descriptions')
 })
