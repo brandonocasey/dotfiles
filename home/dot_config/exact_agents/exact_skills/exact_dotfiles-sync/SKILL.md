@@ -1,6 +1,6 @@
 ---
 name: dotfiles-sync
-description: "Sync changed chezmoi targets to sources, scan for secrets, commit, and push. Use when the user asks to commit or push chezmoi or dotfiles changes."
+description: "Sync changed chezmoi targets to sources, scan for secrets, commit, push, and apply. Use when the user asks to commit or push chezmoi or dotfiles changes."
 ---
 
 Optional argument: target paths. Without one, use the targets this session changed.
@@ -33,7 +33,8 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
    Keep `synced/` ignored and never add `frontend-design/` to the source;
    `gh skill` installs it.
 3. **Copy.** For each managed target, show `diff -u "$(chezmoi source-path <target>)" <target>`.
-   For a new target, show `diff -u /dev/null <target>`.
+   For a new target, show `diff -u /dev/null <target>`. Skip the copy for a target
+   whose source this session edited directly; step 7 applies it.
    - Plain source: copy the target to that source path.
    - Source name starts with `symlink_`, `modify_`, `run_`, `create_`, or
      `encrypted_`, or ends in `.tmpl`: do not copy. Edit the source by hand
@@ -53,6 +54,9 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
 6. **Pull and push.** Run `git pull` with no strategy flags, so the
    repo's configured strategy applies. Resolve clear conflicts. Stop and ask
    when the intended result is not clear. Then run `git push`.
-7. **Check.** `chezmoi status <targets>` must print nothing, and
+7. **Apply.** Run `chezmoi apply <targets>`, so the pushed sources take effect.
+   Apply only the scoped targets; a wider apply overwrites unsynced target edits.
+   When the sandbox reports `operation not permitted`, rerun it outside the sandbox.
+8. **Check.** `chezmoi status <targets>` must print nothing, and
    `git status -sb` must show no ahead count.
    Report the pushed SHAs, the targets you left out, and why.
