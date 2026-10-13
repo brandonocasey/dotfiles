@@ -12,6 +12,7 @@
 - Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
 - Read only what you need, once. Find tight ranges first: LSP symbols, else `ast-grep`, else `rg -n`. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
+- In Claude Code, view a file you will edit with the Read tool, using `offset`/`limit` for a range. Edit and Write reject files seen only through Bash.
 - Never run `cat` bare; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 
