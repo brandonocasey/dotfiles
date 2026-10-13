@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Runs before the tmux reload so a running server picks up new plugins.
+# tmux.conf hash: {{ include "dot_config/tmux/tmux.conf" | sha256sum }}
+
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin"
+OUTPUT=/dev/stdout
+if [ -n "$RUNNING_IN_DOCKER" ]; then
+  OUTPUT=/dev/null
+fi
+
+TPM_BIN="$HOME/.config/tmux/plugins/tpm/bin"
+if command -v tmux 1>/dev/null 2>&1 && [ -x "$TPM_BIN/install_plugins" ]; then
+  echo "Installing and updating tmux plugins"
+  "$TPM_BIN/install_plugins" 1>$OUTPUT
+  "$TPM_BIN/update_plugins" all 1>$OUTPUT
+fi
+
+exit 0

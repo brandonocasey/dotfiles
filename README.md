@@ -15,6 +15,9 @@ managed configuration changes. Reloading reapplies bindings, plugins, and agent
 session naming hooks. If no server is running, the script exits without starting
 one. An unchanged configuration does not trigger another reload.
 
+Before that reload, the same configuration change runs tpm to install missing
+plugins and update all plugins.
+
 ## Agent skills
 
 Chezmoi manages `~/.config/agents/` and every owned folder under it as
