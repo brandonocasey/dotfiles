@@ -14,9 +14,14 @@ Shell variables do not persist between tool calls, so write that literal path
 wherever `<src>` appears below.
 
 1. **Scope.** Use the named targets, or the targets this session changed.
-   Never include `~/.ssh`, `*credentials*`, `*.pem`, `*.key`, token files, or
-   paths in `.chezmoiignore`. Report each excluded path by name only. Never
-   print its contents. Never restore a path that a source commit removed.
+   Never include `*credentials*`, `*.pem`, `*.key`, token files, or paths in
+   `.chezmoiignore`. Never include any `~/.ssh` path except `~/.ssh/config`.
+   Include that file only when the user names it exactly; `~/.ssh`, a glob, or
+   "ssh stuff" does not name it. After step 3 shows its diff, stop until the user
+   says yes; show it again if it changes before staging. Step 4 misses hosts
+   and users, and the repo is public.
+   Report each excluded path by name only. Never print its contents. Never
+   restore a path that a source commit removed.
 2. **Status.** Run `chezmoi status <targets>`. Report listed targets that this
    session did not edit. Do not include them unless the user names them.
    Agent config directories are exact: applying removes files absent from their sources.
