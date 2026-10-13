@@ -12,7 +12,8 @@ With several branch names or `all`, ship each branch in turn, a parent before
 its dependent children. For `all`, list the branches that have a `.worktrees/`
 worktree with a clean tree and commits ahead of `TARGET`, excluding worktrees
 another task uses. Show each with its ahead count and ask once before the first
-push.
+push. For branches that depend on each other, follow **Chains of dependent
+MRs/PRs** in [dependent-branches.md](../shared/dependent-branches.md).
 Ordinary shipping ends after the push, MR/PR update, and any triggered review with its fix push.
 With `--merge`, read [merge.md](references/merge.md) before mutations to check
 platform support and scope. Continue that workflow after shipping.
