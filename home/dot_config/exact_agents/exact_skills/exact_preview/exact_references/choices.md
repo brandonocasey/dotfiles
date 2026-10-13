@@ -5,7 +5,7 @@ Return to preview for live previews and requested screenshots.
 
 ## Ask one decision per question
 
-Split the choices into separate questions, one decision each. The gallery shows one section per question on a single page. A sticky bar jumps between sections and marks answered ones, and one Submit button sends every answer. Do not ask the user to type option codes into notes.
+Split the choices into separate questions, one decision each. Do not ask the user to type option codes into notes.
 
 - Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
 - Give each question a `prompt` that says what to decide.
@@ -75,7 +75,7 @@ poll a model or ask the user to type that they submitted.
 
 Each event carries `answers`, keyed by question ID, with the chosen option `ids` and that question's `notes`. The top-level `notes` holds the general notes from the Submit section. An event's `action` is `select` for submitted answers, or `more` when the user asks for more options.
 
-For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. The open gallery shows a button that loads the new options and keeps picks whose IDs remain. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
+For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. Picks whose IDs remain are kept. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
 
 Apply selections, notes, and requests for more options to the active task. When the choice must survive a resumed session, use `agent-task update --correction` to record the option IDs, feedback, and resulting correction. Continue the requested work after each response.
 

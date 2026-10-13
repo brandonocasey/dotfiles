@@ -26,11 +26,14 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
 
 ## 1. Run a round
 
-1. Spawn one agent per angle, in one message. Use `explorer` for read-only
-   search and `worker` when items need judgement or research. Give every agent
-   the same prefix: task, scope, end check, ledger path, and repository
-   constraints. Then add its angle. Tell it to:
+1. Write the shared prompt once to `<ledger-dir>/brief.md`: task, scope, end
+   check, ledger path, repository constraints, and the instructions below.
+   Spawn one agent per angle, in one message, with "read brief.md; your angle:
+   X". Use `explorer` for read-only search and `worker` when items need
+   judgement or research. Tell each agent to:
    - read the ledger first;
+   - write its result to `round-<k>/<angle>.md` and return the path and item
+     count;
    - return only items absent from **Found** and **Rejected**, each with source
      (`file:line` or URL), evidence, and the reason it is new;
    - re-raise a rejected item only with new evidence;
@@ -38,7 +41,8 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
    - not edit, commit, or spawn agents.
 2. From round 2, replace each angle that returned nothing with a new angle aimed
    at scope not yet in **Checked**.
-3. Verify each item yourself against the cited code or data. Move duplicates and
+3. Spot-check high-risk items yourself against the cited code or data. Give the
+   rest to a fresh verifier agent that writes a verdict file. Move duplicates and
    unproven items to **Rejected** with a one-line reason.
 4. Append verified items to **Found** with the round number. Append the areas to
    **Checked**.

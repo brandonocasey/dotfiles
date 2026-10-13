@@ -23,12 +23,10 @@ git cat-file -e <pr-head-sha>^{commit}
 ## Closed without merge
 
 Classify a PR as closed-without-merge only when its state is closed and it has no merged
-timestamp; open PRs and merged PRs never fall in this category. These branches are never part of
-ordinary merged cleanup and are never removed in step 6 without the confirmation collected in
-step 5. Record every local branch whose name matches such a PR's source branch, and every branch
+timestamp; open PRs and merged PRs never fall in this category. Record every local branch whose name matches such a PR's source branch, and every branch
 or worktree whose tip exactly equals such a PR's head, with the PR number, title, URL, head SHA,
 close date, and closing comment when the CLI exposes one. Step 5 assesses them with the other
-retained candidates and asks one question for all of them.
+retained candidates.
 
 ## Remote-PR review worktrees
 

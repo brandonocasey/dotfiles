@@ -47,7 +47,7 @@ Output ends with `HTTP <code>`. `201` means created, `200` means ok.
    `gh pr view <n> --json title,headRefName,body`.
 2. Make sure the target version exists (`GET /project/<KEY>/versions`).
    If not, create it first.
-3. Read the ticket's `fixVersions`. Remove only the unreleased source version
+3. Read the ticket's `fixVersions`. Remove only the unreleased source version.
    Add the target and keep all other versions. To take a ticket out of the
    release, remove only the named version and add none.
 4. Write the new list with the Atlassian MCP `editJiraIssue`

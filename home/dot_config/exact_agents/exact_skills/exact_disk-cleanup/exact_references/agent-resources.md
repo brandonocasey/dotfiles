@@ -8,8 +8,7 @@ Do not limit discovery to the current repository or one `.worktrees` directory.
 
 1. Locate the standard `~/.claude` and `~/.codex` roots, alternate profiles such
    as `~/.claude-*` and `~/.codex-*`, and explicit `CLAUDE_CONFIG_DIR` and
-   `CODEX_HOME` overrides. Inspect only these named path variables, never dump
-   the environment or credentials. Include roots referenced by agent launchers
+   `CODEX_HOME` overrides. Include roots referenced by agent launchers
    and safe configuration path fields. Resolve aliases and deduplicate roots.
 2. Read session metadata, project registries, history working-directory fields,
    and durable task records to discover project paths, including paths outside
@@ -42,17 +41,14 @@ remove; it removes nothing. Analysis-only runs skip it unless the user asks. Rea
 `~/.config/agents/skills/worktree-cleanup/SKILL.md` directly. It is explicit-only,
 so the Skill tool cannot load it. The user's `disk-cleanup` request is the explicit batch-cleanup request. Follow its
 merge-evidence procedure for each repository, narrowed to merged/landed
-worktrees. Retain local branches. Skip its relevance, closed-PR, and open-review
+worktrees. Skip its relevance, closed-PR, and open-review
 removal paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
 Show its step 4 table in the disk-cleanup preview. disk-cleanup's batch approval
 replaces its step 4 prompt only when that batch covers these worktrees;
 otherwise ask its step 4 question.
 
 - Qualification, idleness, preservation, and HEAD-reachability checks come from
-  `worktree-cleanup` and the `worktree` preservation rules; do not restate or loosen them. Prove
-  local landing with HEAD ancestry in the verified local target; for remote merge claims,
-  refresh forge state first. Retain newer/diverged tips and branches with live open PRs. A
-  closed PR, old timestamp, or branch name is not merge evidence.
+  `worktree-cleanup` and the `worktree` preservation rules; do not restate or loosen them.
 - Check nested worktrees before deleting an ancestor; process eligible children first and
   retain a parent containing any protected child.
 - Do not delete branch refs in this workflow, and never force-delete one to make cleanup
@@ -112,4 +108,4 @@ wipe entire profile or shared cache roots. Age alone does not prove a cache file
   entries until every consumer is accounted for. After approved worktree removal, recheck
   and clean its approved scratch; on failure or new activity, retain it and report why.
 - Remove worktrees sequentially with Git from a surviving checkout; use `worktree` for
-  blockers and submodules. Preserve branch refs.
+  blockers and submodules.

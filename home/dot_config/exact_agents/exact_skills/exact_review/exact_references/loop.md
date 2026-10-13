@@ -34,9 +34,11 @@ severity, as defined in [output.md](output.md).
    cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed.
 
+After each pass, record the loop state (cycle, pass number, reviewer IDs, last-reviewed SHA, held `question` items) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
+
 Kill a finding that an earlier pass killed, unless its code changed since that pass.
 Rebuild and rerun the shared checks per [delegation.md](delegation.md) before each pass.
-For an MR/PR, push after each pass per [remote-fixes.md](remote-fixes.md) items 1–6, but
+For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
 passes target it. Run once, after step 5: step 4's per-run report, `Ship:` line, and
 worktree removal; the auto-merge restore; and step 7. Step 5's ask replaces step 4's

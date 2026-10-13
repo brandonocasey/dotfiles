@@ -43,6 +43,7 @@ Immediately before any push, refresh `BRANCH` and resolve the live
 Pause auto-merge on `EXISTING` and any submodule MR/PR per
 [auto-merge-pause.md](../shared/auto-merge-pause.md). If `EXISTING` is queued,
 follow its **Queued MR/PR** rule, then rerun step 0 on the new branch.
+If auto-merge cannot be disabled and the user agrees to push, review before the push; that is the hand-off review, so skip the after-push review.
 
 - First push, or new commits on an already-pushed branch: `git push -u origin <BRANCH>`.
 - Branch exists on the remote but histories diverged (rebase/amend since last push):
@@ -53,8 +54,7 @@ follow its **Queued MR/PR** rule, then rerun step 0 on the new branch.
 - With a changed owned submodule, follow **Ship** in
   [submodules.md](../shared/submodules.md) first; it owns the submodule push and
   the superproject's `--recurse-submodules=check` push.
-- Check that the push landed (`git status -sb` shows no ahead-count) and say so — the user
-  should never have to ask "did you push?".
+- Check that the push landed (`git status -sb` shows no ahead-count) and say so.
 - Record `HEAD_SHA` from `git ls-remote origin refs/heads/<BRANCH>`. Record it
   again after each later push. Step 6 and `merge.md` use it.
 
@@ -69,8 +69,14 @@ follow its **Queued MR/PR** rule, then rerun step 0 on the new branch.
   - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
   - Otherwise ask once, with the options: create a ticket, no ticket, or use a key.
-- **Description**: read [writing.md](references/writing.md) and follow the repository template
-  or its default description format.
+- **Description**: follow the repository template when present. Otherwise:
+  - Use 1–4 sentences on what changed and why, then 1–10 bullets, as few as
+    possible, for behavior changes, risks, and validation.
+  - Attach UI evidence for UI changes unless text or the diff suffices.
+  - No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
+  - Lead with the concrete problem and resulting behavior. Describe the final
+    change for someone who has not read the conversation.
+  - Reread before posting; drop sentences repeating another sentence, the title, or the diff.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 - When `TICKET` is set, move it to the open-MR/PR status per [mr-ticket](../mr-ticket/SKILL.md) step 6.
 

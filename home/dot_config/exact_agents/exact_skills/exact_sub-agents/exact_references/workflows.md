@@ -6,7 +6,7 @@ These rules keep a Workflow run's raw output out of the main session.
 
 - Workflow `agent()` calls skip `CLAUDE_CODE_SUBAGENT_MODEL` and inherit the session model. Pass the role as `agentType` and its Claude Code model from [roles.md](roles.md) as `model`, such as `claude-sonnet-5-5`.
 - Check `cheap` and `explorer` first; without a fitting role, use `explorer` for read-only work and `worker` otherwise.
-- Never omit `agentType`: the default agent loads every tool plus CLAUDE.md, about 40k tokens per spawn. Never use `consult` in a workflow.
+- Never omit `agentType`: the default agent loads every tool plus CLAUDE.md. Never use `consult` in a workflow.
 
 ## Setup
 
@@ -27,11 +27,11 @@ These rules keep a Workflow run's raw output out of the main session.
 - Wait for the completion notice. Never read the journal, agent transcripts, or the task output file by hand while the run is live.
 - For "status?", run `agent-wf-status <transcript-dir>` once and relay its lines. The launch output gives the transcript dir.
 - For a run with 2 or more phases or an ETA over 10 minutes, start one Monitor on `agent-wf-status <transcript-dir> --follow`.
-  Relay each line to the user as one sentence. Set the Monitor timeout to the ETA plus 10 minutes, at most 1 hour; re-arm while the run is still going.
+  Relay only phase, failure, and done lines, each as one sentence. Avoid idle wake-ups (scheduled checks, pings) during long runs. Set the Monitor timeout to the ETA plus 10 minutes, at most 1 hour; re-arm while the run is still going.
 - When the user asks for updates every N minutes, add `--every <N>`. Keep that interval for the rest of the session.
 - Follow mode exits only if the journal disappears. Stop its Monitor when the completion notice arrives.
 
 ## Between workflows
 
-When a workflow with 10 or more agents finishes and the next step starts another workflow, record the task with `session-resume`.
-Then offer a fresh session that resumes from that record. Continue in this session if the user declines.
+At each phase boundary of a multi-agent run, record a checkpoint with `agent-task` or the ledger: phase, scratch dir, result paths, and verified status.
+When a workflow with 10 or more agents finishes and the next step starts another workflow, also offer a fresh session that resumes from that record. Continue in this session if the user declines.

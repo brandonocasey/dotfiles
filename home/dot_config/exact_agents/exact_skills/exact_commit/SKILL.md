@@ -34,7 +34,6 @@ Optional argument: a target file or chunk. Commit only that target.
   every default here: types, scope, ticket suffix, header length, breaking-change
   format
 - Do not use `chore` or `style` unless those conventions require them.
-  Release and CLA bots may still write `chore`
 - If the repo's `type-enum` lacks a type, map it:
   `ux` → `feat`; `a11y` and `i18n` → `fix` for a repair, else `feat`;
   `security` → `fix`; `deps` → `build(deps)`; `dx` → `build`; `refactor` →
@@ -67,5 +66,4 @@ when a tie remains; routine commits do not need either reference.
 - Do not use `git rebase -i`, `git add -i`, or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
 - Write temporary files in the scratch directory (AGENTS.md, **Directories**):
-  a multi-line message, used with `git commit -F <file>`, and the
-  hunk patch from [partial-staging.md](references/partial-staging.md). Remove them after the commit succeeds.
+  a multi-line message, used with `git commit -F <file>`. Remove it after the commit succeeds.

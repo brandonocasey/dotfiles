@@ -41,6 +41,6 @@ From a watch failure, delegate the diagnosis:
 - For this ship's change, it runs step 1, fixes the error, makes one commit through the `commit` skill, and stops.
 - The main session checks that `<watched head>..HEAD` holds only that commit, runs step 3's Manual check, and pushes. If either check fails, do not push; report it and leave the commit for the user.
 - For a runner or service failure, the main session retries the job.
-- Per MR/PR per ship, allow at most 1 retry and 2 fix pushes.
+- Per MR/PR per ship, allow at most 1 retry and 2 fix pushes. Record the retry and fix-push counters and the watched SHA in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
 - Report without repairing when the cause is other, when the fix would weaken, skip, or remove a test or add a suppression, or when a cap is reached.
 - After each fix push or retry, start a new watch with that target at its new head and every target still pending. List each fix commit in the report.

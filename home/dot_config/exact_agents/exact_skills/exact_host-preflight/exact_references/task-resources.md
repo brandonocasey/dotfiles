@@ -33,10 +33,6 @@ Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux,
 or `ipconfig` on Windows. Give each dev server and worktree its own random free
 port; pass the same port to every start command for the task.
 
-Use native attachments for screenshots, diagrams, and reports when available.
-Otherwise serve them through HTTP. The global destination rule still applies:
-a skill's default does not authorize a hosted write.
-
 ## Cleanup
 
 Close task-owned MCP resources, stop servers and background processes, and free

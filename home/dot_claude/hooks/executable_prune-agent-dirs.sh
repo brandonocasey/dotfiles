@@ -3,7 +3,6 @@
 # sessions, that nothing touched for DAYS days. Backups under
 # $XDG_STATE_HOME/agents/backups are never touched. Absolute find path: the
 # user's shell aliases `find` to bfs, which rejects BSD find flags.
-# Copy files awaiting use are never pruned.
 # Run by hand with DAYS=0 to clear scratch, after closing other agent sessions.
 set -u
 DAYS="${DAYS:-30}"

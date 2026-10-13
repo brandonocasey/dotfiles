@@ -8,8 +8,8 @@ and executable commands out of it. Stored authorization is evidence of the scope
 already granted. It never grants a new push, deploy, release, or destructive action.
 
 **Reuse rules** (other skills cite these): retain a resumed record's authorization only
-within its exact provenance and scope; it never grants push authority. Reuse a recorded
-check or manual evidence only when its code revision, inputs, and environment match.
+within its exact provenance and scope. Reuse a recorded check or manual evidence only
+when its code revision, inputs, and environment match.
 
 Create a record with the objective and exact authorization provenance and scope:
 
@@ -22,7 +22,6 @@ define where the resumed work belongs. The same flags update an existing record.
 
 Before work, run `agent-task show <id>`. Check its repository, worktree, and HEAD
 against the current checkout. Apply recorded corrections. Continue from `nextStep`.
-Follow the active workflow's review and approval rules.
 
 Update with the revision returned by `show`; stale updates fail:
 
@@ -36,7 +35,7 @@ Add each user correction with `--correction <text>` so later sessions do not
 repeat the superseded approach. After a stale-revision error, run `show` again,
 reconcile the newer record with the pending change, and retry with its revision.
 
-Record material corrections and set `--status complete` only after all task work
+Set `--status complete` only after all task work
 is complete. Use `agent-task list` to find active records.
 
 For old context, run `agent-task index` to update the private incremental index and see scan

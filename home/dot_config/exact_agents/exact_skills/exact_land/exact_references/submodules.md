@@ -38,13 +38,8 @@ there loses it.
    git -C <MAIN_WT>/<SUB_PATH> branch -d <SUB_BRANCH>
    ```
    Recheck the clean-tree and checkout requirements from step 1 immediately
-   before the switch and merge. Unset the landed branch's upstream before
-   deleting it so `branch -d` checks against `SUB_TARGET`, as `land` cleanup
-   requires. A non-fast-forward means step 1 did not take: stop and report.
+   before the switch and merge. A non-fast-forward means step 1 did not take: stop and report.
 4. Fast-forward the superproject (`land` step 4). Afterwards
    `git -C <MAIN_WT> submodule status` must show no `+` for `SUB_PATH`; the
    submodule HEAD equals the new gitlink.
-5. Cleanup follows `land` step 5. The worktree's submodule clone is deleted
-   with the worktree; that is safe because step 3 made the commits reachable
-   from `SUB_TARGET` in the main clone, which the `worktree` skill's
-   **Submodules** rule accepts as proof.
+5. Cleanup follows `land` step 5.

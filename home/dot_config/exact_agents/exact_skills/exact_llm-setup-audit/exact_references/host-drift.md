@@ -13,11 +13,6 @@ directories to narrow the scope. The default covers managed `.config/agents`,
 App-owned synced skills are excluded. Unmanaged files need a separate explicit
 comparison; their absence from a managed inventory does not prove agreement.
 
-The JSON reports host coverage, source or installed drift, missing sources,
-unreadable files, and broken relative Markdown links. `--details` adds resolved
-paths and SHA-256 hashes. Exit 1 means drift or incomplete coverage; exit 2
-means invalid arguments. No files change and no scripts or hooks run.
-
 The comparison checks installed content against `chezmoi cat`, including
 host-rendered templates. Identical templates may produce different content
 on each host. Other intentional differences need a reason and exact installed
@@ -32,10 +27,6 @@ hashes in an exceptions file passed with `--exceptions`:
   }
 ]
 ```
-
-An exception applies only when every named hash still matches and each file
-matches its own source. It cannot suppress a stale installation or broken link.
-Inspect each mismatch before treating one host as authoritative.
 
 For authorized synchronization, follow `dotfiles-sync`. Run this comparison
 after installation on every named host. Report every unresolved mismatch and

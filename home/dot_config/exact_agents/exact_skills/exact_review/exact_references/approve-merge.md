@@ -1,8 +1,7 @@
 ## 7. Optional: --approve, --auto-merge, --merge
 
 Each flag is the user's request to approve or merge the reviewed MR/PR
-([git-policy.md](../../shared/git-policy.md)), for MRs/PRs the user names or
-authored only. Local targets: report `Merge: not run (local target)`.
+([git-policy.md](../../shared/git-policy.md)). Local targets: report `Merge: not run (local target)`.
 
 - `--approve`: approve the MR/PR at its reviewed head.
 - `--auto-merge`: enable auto-merge, read the state back, and stop.
@@ -20,7 +19,6 @@ Run this step last: after step 4's push when `--fix` applies, otherwise after st
    Use only that verified SHA as `HEAD_SHA`.
 3. **Approve** (`--approve`): follow the `ship` skill's
    [merge.md](../../ship/references/merge.md#approve) **Approve** section with `HEAD_SHA`.
-   On GitHub, report your own PR as a blocker instead of approving it.
 4. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
    **Enable auto-merge** with `HEAD_SHA`.
 5. **Watch** (`--merge` only): follow merge.md **Watch**. Move the ticket only when

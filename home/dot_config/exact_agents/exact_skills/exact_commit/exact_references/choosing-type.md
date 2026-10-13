@@ -1,12 +1,6 @@
 # Detailed commit type selection
 
-Read when the compact rules in [SKILL.md](../SKILL.md) leave the type unclear.
-
-The type says what the change does, not how important it is. Changelogs and
-version tools read it: a wrong `feat` inflates versions, and a wrong internal
-type hides a real change from users.
-
-Follow these steps for each commit. For a PR title, use the whole diff.
+Follow these steps for each commit.
 
 1. **Classify each changed file** from `git diff --stat`. Generated files
    (typegen output, snapshots) take the area of the file that caused them.
@@ -33,8 +27,7 @@ Follow these steps for each commit. For a PR title, use the whole diff.
 
 3. **Main purpose is not Product:** use the area type, even for a fix in
    that area. Docs → `docs`, Tests → `test`, CI → `ci`, Build → `build`,
-   Deps → `deps`, Tooling → `dx`. A docs typo fix is `docs`. A flaky test fix
-   is `test`. A broken workflow fix is `ci`. A faster CI job is `ci` and a
+   Deps → `deps`, Tooling → `dx`. A faster CI job is `ci` and a
    faster build is `build`; `perf` is only for the product. A `.gitignore`
    or license-year change is `dx`.
    - Exception: a dependency bump that fixes a published advisory is

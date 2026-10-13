@@ -12,10 +12,9 @@ constraint before creating a child MR/PR; do not silently target the default.
 
 Save the parent MR/PR URL, target branch, and task boundary in `agent-task`
 with `--parent-pr`, `--target-branch`, and `--task-boundary` on create or update.
-The boundary describes which requested change belongs in the child.
 Reread that record when resuming, then check the parent state again.
 An existing child's target remains authoritative unless the user requests
-retargeting. Do not fold a separate task into the parent's MR/PR.
+retargeting.
 
 ## Chains of dependent MRs/PRs
 

@@ -15,6 +15,9 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 - For roles with `omitClaudeMd: true`, include applicable repository constraints, required checks, allowed output paths, and any relevant global consent, destination, resource, or test protections absent from the role. Pass only what the assignment needs; do not paste the global rules or transcript.
 - Paste inputs under about 2k tokens (8k characters). Pass larger ones (diffs, logs, data, file contents) as file paths, and tell the agent to search or read only the parts it needs. Workflow scripts write large computed inputs under the task's scratch directory and pass the path.
 - Request raw results: data, findings, and paths, not prose for the user.
+- Name a result path, `<scratch>/<task>/<role>-<n>.md`. Tell agents: if the result exceeds ~40 lines, write it there and return at most 5 lines: path, counts, status. Read-only Codex roles cannot write; ask them for at most 40 lines. Read only the parts of a result file you need.
+- Fetch diffs, logs, and browser evidence through `cheap` agents first; they write raw output under the task's scratch directory and pass paths on.
+- Delegate web page and doc reads (WebFetch) to an agent; return only the needed excerpt.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
 
 ## Prompt caching
@@ -30,8 +33,6 @@ Continue an existing agent for related follow-up work when the harness supports 
 
 ## After they return
 
-- Re-validate every result before declaring done.
+- Check high-risk claims inline. Give bulk checking to a fresh agent that writes a verdict file; read only its failed or unverified lines.
 - Fix or redo failed results inline. Do not respawn for the same part more than once.
-- Stop task-owned servers and processes agents left. Remove disposable artifacts.
-  Follow `worktree` for retained open-PR worktrees and preservation checks; keep
-  requested deliverables and evidence awaiting re-verification.
+- Clean up per [task-resources.md](../host-preflight/references/task-resources.md). Keep evidence awaiting re-verification.

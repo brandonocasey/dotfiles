@@ -31,29 +31,15 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
 - Run `df -h` first. It is the ground truth for used and free space per filesystem.
   Report each APFS container once, because its volumes share free space. Report macOS
   auxiliary volumes (VM, Preboot, Update) for capacity only.
-- Full-disk scan roots. Never cross into other mounts unless the user asks to include them:
-  - Linux: scan `/` on one filesystem, which skips `/proc`, `/sys`, `/dev`, and `/run`.
-    Scan separately mounted `/home`, `/var`, or `/data` as their own roots.
-  - macOS: scan `/System/Volumes/Data`, not the sealed read-only system volume at `/`,
-    which firmlinks to it.
-  - WSL: scan the Linux filesystem. Windows drives under `/mnt/<letter>` are a separate
-    scan; mention them and scan them only on request.
-- Cover home, platform/XDG cache and data locations, discovered project roots,
-  downloads, system caches and logs, and these:
-  - Temp: `/tmp`, `/var/tmp`, `$TMPDIR` when set, and on macOS `/private/var/folders`.
-    On macOS these overlap: `/tmp` and `/var/tmp` link into `/private`, and
-    `$TMPDIR` sits inside `/private/var/folders`. Count each once.
-  - Current user's trash only: `~/.Trash` and `/Volumes/<name>/.Trashes/<uid>` on
-    macOS; `${XDG_DATA_HOME:-~/.local/share}/Trash`, `<mount>/.Trash/<uid>`, and
-    `<mount>/.Trash-<uid>` on Linux.
-  - macOS local snapshots: `tmutil listlocalsnapshots <mount>` for each APFS volume.
+- Scan one filesystem per root and never cross into other mounts unless the user asks.
+  Cover home, platform/XDG cache and data locations, discovered project roots,
+  downloads, system caches and logs, temp roots, the current user's trash, and macOS
+  local snapshots. Per-OS roots, temp/trash paths, and Full Disk Access:
+  [tools.md](references/tools.md) **Scan roots and coverage**.
 - Resolve aliases, avoid symlink loops, and deduplicate overlapping entries and
   hard-linked files. Do not use `sudo` unless the user asks. Without it, unreadable
   directories are skipped, so say totals may be undercounted. Report every root that
   could not be read, such as other users' files.
-- Many permission errors under `~/Library`, `~/.Trash`, or other protected macOS folders
-  mean the terminal app lacks Full Disk Access. Tell the user to grant it in System
-  Settings > Privacy & Security > Full Disk Access. Do not work around it.
 - Scan once. A full-disk scan can take minutes, so run it in the background or with a
   generous timeout. Save its output, as a JSON export when the tool supports one, and
   query that file with `jq` instead of rescanning.
@@ -64,14 +50,8 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
 - Redirect scan errors to a file in the task scratch directory, not the terminal.
   Never discard them, because an unreadable root otherwise looks like a complete
   scan. Count them for the coverage report.
-- Reconcile the scan total with `df` used space. When the scan accounts for much
-  less, report the gap and its likely causes; never guess silently. Check:
-  - unreadable directories;
-  - deleted files still held open (Linux: `lsof +L1`);
-  - macOS local snapshots, and APFS purgeable space, which scanners cannot see;
-  - other mounts skipped by the one-filesystem limit;
-  - ext4 root-reserved blocks;
-  - Linux journals (`journalctl --disk-usage`).
+- Reconcile the scan total with `df` used space. Report any large gap and its likely
+  causes, never a silent guess; checklist in [tools.md](references/tools.md).
 - Drill into large entries before prioritizing small logs. Common candidates include
   compiler caches (sccache, ccache, Go), package download caches (npm, yarn, pip, uv,
   pnpm, Cargo, Homebrew; Gradle's `caches/` and downloaded Maven artifacts only, never
@@ -113,13 +93,10 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
   their contents/purpose and restoration limits for specific approval. A request that names
   that set, such as "empty my trash", approves it after the preview; a broader category
   such as "clean caches" does not. Emptying trash cannot be undone.
-- Temp directories hold live sockets, locks, and running apps' and agents' working
-  files. A temp entry qualifies only if the current user owns it, no process has it
+- A temp entry qualifies only if the current user owns it, no process has it
   open, and its producer is known. Never clear a temp root wholesale. Measure swap
-  and sleep images (`/private/var/vm` on macOS) and system-volume contents, but never
-  propose or delete them.
-- Report local snapshots as needing review, with size unknown; `tmutil` lists no sizes.
-  Deleting one removes that restore point. Its command is `tmutil deletelocalsnapshots`.
+  and sleep images and system-volume contents, but never propose or delete them.
+  Report local snapshots as needing review; details in [tools.md](references/tools.md).
 - A cleanup that needs root, such as `apt clean`, `journalctl --vacuum-size`, or
   snapshot deletion, still goes in the preview with its exact `sudo` command. Unless
   the user asked you to use `sudo`, give them that command to run themselves.
@@ -134,12 +111,10 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
   retained checkouts, independently qualify inactive build outputs and linked scratch (see
   the dependencies bullet above); classify them under `worktree` preservation/removal checks.
   Unknown files and requested deliverables still protect the checkout.
-- For every discovered worktree, inventory build targets and task scratch separately from the
-  checkout; an unmerged or dirty checkout need not be deleted to reclaim regenerable outputs. A
-  process using any descendant protects the whole worktree from build cleanup (recheck
-  immediately before removal); unfinished durable tasks protect outputs they still need.
-  [agent-resources.md](references/agent-resources.md) **Build outputs and linked scratch**
-  owns provenance, ownership linking, and batch rules.
+- Inventory each worktree's build targets and task scratch separately from the checkout.
+  A process using any descendant protects the whole worktree from build cleanup; unfinished
+  durable tasks protect outputs they still need. Rules:
+  [agent-resources.md](references/agent-resources.md) **Build outputs and linked scratch**.
 - Automatically clean this task's known disposable resources as authorized by
   `host-preflight/references/task-resources.md`. Other tasks' shared scratch requires its own
   ownership/disposal evidence and authorization. Keep a batch moving when individual entries

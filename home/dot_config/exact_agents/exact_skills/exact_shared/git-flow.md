@@ -11,7 +11,6 @@ git rev-parse --abbrev-ref HEAD                         # current branch
 git rev-parse --path-format=absolute --git-dir --git-common-dir  # the two differ → linked worktree
 git worktree list --porcelain                           # paths + which branch is where
 git status --short --ignore-submodules=none             # dirty? (flag defeats diff.ignoreSubmodules)
-git log --oneline -8
 ```
 
 - `BRANCH` — current branch. `HEAD` here means a detached checkout (for example a review

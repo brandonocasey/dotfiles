@@ -92,7 +92,7 @@ One harness's setting does not control another.
   Skills name that owner and keep their own stop points.
 - **Ineffective text:** remove general knowledge, repeated rules/headings, history, and examples only when no reader would act differently.
   Preserve every fact, number, condition, scope qualifier, and reason that changes behavior.
-  List retained clauses under **Left alone**, including tool-specific exceptions such as ignored `PORT` values or protection against `.gitignore` edits.
+  List retained clauses under **Left alone**.
   Keep restated defaults in files shared across harnesses. For a single-harness file, ask once about removing them unless already answered.
   Never remove a check or authorization boundary merely because it restates a default.
 - **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
@@ -132,7 +132,6 @@ For a Claude sub-agent needing no rules, propose `omitClaudeMd: true`; do not ap
 ## Additional skill checks
 
 - **Commands:** trace each command from the skill's actual preconditions.
-  Detached review worktrees need `git push origin HEAD:<branch>`, not `git push`.
 - **Portability:** literal `.git/` paths fail in linked worktrees.
   Use `git rev-parse --git-common-dir` for shared metadata and `git rev-parse --git-path <name>` for per-worktree metadata.
   Check OS and shell assumptions too.
@@ -157,8 +156,7 @@ Never add tool-specific commands there.
 - **Coverage:** each file that a hook or `statusLine` command names must appear in `chezmoi managed`.
 - **Empty hooks:** report hook events with no commands, such as `"PreToolUse": []`.
 - **Parity:** list each Claude hook with no Codex equivalent in `~/.codex/hooks.json`, and the reverse.
-- **Secrets:** search the chezmoi source for tokens and keys. Report each match as `path:line` with the value replaced by [redacted].
-  Propose a move to the secret store for each.
+- **Secrets:** run the `dotfiles-sync` secret scan on the chezmoi source; report per AGENTS.md. Propose a move to the secret store for each.
 
 ## Skills flow
 

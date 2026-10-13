@@ -73,7 +73,7 @@ authorization before rebasing or force-pushing. Report the blocker if unavailabl
 Before pushing, make sure the destination source branch still matches the
 observed SHA. If it moved, reconcile its new commits and rerun affected checks.
 Never force-push to overcome a non-fast-forward rejection.
-Push to a fork per [remote-fixes.md](remote-fixes.md) step 5; do not change remotes or Git settings.
+Push to a fork per [fix.md](fix.md) step 5; do not change remotes or Git settings.
 This authorization does not include merging the MR/PR, approving reviews, bypassing
 branch policy, publishing releases, or writing to production.
 
@@ -82,12 +82,10 @@ branch policy, publishing releases, or writing to production.
 After each repair push or CI retry, refresh the source SHA and status once.
 Earlier check results do not establish success for a new source revision.
 Continue fixing completed failures when the cause is actionable and authorized.
-Stop retrying the same external failure after its one eligible retry.
 Report unresolved permissions, ambiguous conflicts, and other external blockers
 with the exact evidence and next action.
 
-Do not wait for pending CI unless the user asks to watch or wait.
-For requested monitoring, follow `sub-agents`; a watcher observes status only.
+Do not wait for pending CI unless the user asks. For requested monitoring, follow `sub-agents`; a watcher observes status only.
 The main session owns fixes and checks new failures against the tracked SHA.
 Report repairs, remaining blockers, pending checks, source SHA, and MR/PR or job links.
 Finish worktree cleanup through the review skill.

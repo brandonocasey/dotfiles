@@ -40,7 +40,6 @@ originals and report them. Ship the new branch as a new MR/PR. This covers
 3. Read the state back and confirm auto-merge is off.
 
 If it cannot be disabled, report why and push only after the user agrees.
-Then review before the push; that review is the hand-off review, and `ship` skips its after-push review.
 
 ## Restore
 

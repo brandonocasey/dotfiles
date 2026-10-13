@@ -6,9 +6,7 @@ read-only preflight: open, not a draft, mergeable, approved, and passing every
 required check at the recorded head SHA. Then use the configured merge method
 or the repository default, passed as its flag:
 `gh pr merge N --<METHOD> --match-head-commit HEAD_SHA`, where `METHOD` is
-`merge`, `squash`, or `rebase` (a repository merge method, not a local rebase).
-Outside a merge queue, `gh` refuses a non-interactive merge without a method
-flag. Never use `--admin` or `--delete-branch`. Do not merge a pull request
+`merge`, `squash`, or `rebase`. Never use `--admin` or `--delete-branch`. Do not merge a pull request
 that still has a review, required check, conflict, queue, policy, or
 permission blocker.
 

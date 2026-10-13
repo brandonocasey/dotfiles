@@ -236,11 +236,7 @@ git -C <target-worktree-path> branch -d -- <branch>   # local ancestry proves th
 git -C <target-worktree-path> branch -D -- <branch>   # exact-head or contained-history exception
 ```
 
-Before any `-D`, recheck the matching exception's exact-tip and state conditions (including
-the ancestry check for contained-history cleanup) and report which exception backed it: exact
-squash-merged PR head, merged-PR-contained history, user-confirmed closed-without-merge head, or
-user-confirmed relevance removal (named-branch confirmation and recorded recovery tip from
-step 5). If the target branch is not checked out anywhere, retain candidates requiring `-d`
+Before any `-D`, recheck that exception's conditions and name it in the report. If the target branch is not checked out anywhere, retain candidates requiring `-d`
 rather than switching a user's checkout; a `-D` exception may use the current checkout instead.
 
 After each successful mutation, refresh and show:

@@ -11,11 +11,8 @@ original commits were merged.
   PR's source repository, state, merged timestamp, and base/target branch.
 - `git merge-base --is-ancestor` returns 0 for ancestry and 1 for no ancestry.
   Other exit codes are errors, not divergence. Resolve missing objects first.
-- Check `git cat-file -e <pr-head>^{commit}`. A normal branch fetch can miss
-  a merged PR head after its source branch was deleted. Fetch that exact PR
-  head through the forge's PR ref, then verify it matches the recorded live SHA.
-  GitHub: `git fetch origin refs/pull/<number>/head`; GitLab: `git fetch origin refs/merge-requests/<iid>/head`. Do not create or
-  overwrite a local branch merely to fetch evidence.
+- Check `git cat-file -e <pr-head>^{commit}`. If the PR head is missing, fetch it
+  per [forge-edge-cases.md](forge-edge-cases.md) **PR head missing locally**.
 - Check `git rev-parse --is-shallow-repository`. If shallow boundaries prevent
   checking the relevant history, deepen or unshallow that history before
   concluding there is no ancestry. An unresolved fetch or history error means
@@ -65,7 +62,5 @@ history, how many are superseded through patch or tree evidence, and how many
 remain dirty, active, or unverified. Do not describe rebased merged work as
 outstanding merely because its original SHA differs.
 
-Patch equivalence and equal virtual-merge trees authorize no deletion by
-themselves. Superseded branches still require the named-branch confirmation
-and recorded recovery tip from `assess-retained.md`. Recheck tips, cleanliness,
-process use, and open-PR protection immediately before removal.
+Patch equivalence and equal virtual-merge trees authorize no deletion; removal
+rules are in [assess-retained.md](assess-retained.md).

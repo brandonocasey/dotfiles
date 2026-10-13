@@ -16,8 +16,7 @@ For every entry in `.gitmodules`, establish:
   has authorized uncommitted work. Check the committed diff with
   `git diff --submodule=short COMMIT_BASE HEAD -- <SUB_PATH>`, staged and
   unstaged diffs for `SUB_PATH`, and the submodule's
-  `git status --porcelain --ignore-submodules=none`. Do not ignore dirty
-  submodule work merely because the committed gitlink is unchanged. Refresh
+  `git status --porcelain --ignore-submodules=none`. Refresh
   these facts after the commit gate. Submodules with `SUB_CHANGED` false are
   ignored by both skills.
 - `SUB_OWNED` — true when the submodule URL
@@ -73,11 +72,9 @@ Ship submodules first so the superproject never points at a missing commit.
 4. After `ship` step 3 creates or updates the superproject MR/PR, add each
    submodule MR/PR link to its description and the superproject link to each
    submodule description. Report both. State the merge order: merge the
-   submodule MR/PR first. When the
-   submodule project squash-merges, the gitlink then points at a commit that
-   is no longer on `SUB_TARGET`; the superproject needs a bump commit to the
-   squashed commit before its own merge. Say so in the report when the
-   intended merge method is squash. Read the repository's merge policy and
-   the forge's project or repository settings; PR/MR detail alone does not
-   establish the intended method. If the method is unknown, report the
-   conditional squash warning.
+   submodule MR/PR first. A squash merge leaves the gitlink on a commit no
+   longer on `SUB_TARGET`; the superproject needs a bump commit to the squashed
+   commit before its own merge. Warn about the squash bump when the method is
+   squash or unknown. Read the repository's merge policy and the forge's
+   project or repository settings for the method; PR/MR detail alone does not
+   establish it.

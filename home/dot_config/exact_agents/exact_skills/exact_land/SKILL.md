@@ -75,7 +75,7 @@ git rebase <TARGET>
 
 ## 4. Fast-forward the target to the branch
 
-The merge must fast-forward. If it cannot, stop and investigate the rebase.
+The merge must fast-forward.
 
 **If `TARGET_DIRTY`**: stash the target's local work first and restore it after the
 fast-forward, per [dirty-target.md](references/dirty-target.md).
@@ -103,10 +103,6 @@ task-owned servers, processes, browser resources, and disposable files
 server, files, or a worktree, keep them, report the exception and its URL, and
 defer worktree removal until the preview ends.
 
-A branch may track a remote upstream. `git branch -d` checks against that upstream,
-not HEAD, so it can refuse a branch that was only landed locally. The delete below unsets the
-upstream first, so `-d` checks against `TARGET` instead.
-
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
   owns that rule (`git -C <MAIN_WT>` does not move your cwd):
@@ -119,8 +115,6 @@ upstream first, so `-d` checks against `TARGET` instead.
   owns the classification, the backup, and the single `--force`; ask only when it says
   to. A worktree with initialized submodules always refuses plain removal; the same
   skill's **Submodules** section decides whether `--force` is allowed.
-  The step 6 report names the removed path and the deleted branch, or the exact
-  blocker (path, class, evidence) that kept them.
 - Then delete the landed branch, from a checkout that is not on `BRANCH` (it is now an ancestor
   of `TARGET`, so `-d` is safe and refuses if it somehow is not):
   ```sh

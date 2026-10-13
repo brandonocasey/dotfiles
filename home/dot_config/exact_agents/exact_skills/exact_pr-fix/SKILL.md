@@ -108,15 +108,14 @@ to a stale branch wastes a run.
 - Required checks are pending, or the pull request is in a merge queue: read
   [watch.md](references/watch.md). Do not change code or rerun a running check.
 - A check failed: open the linked run and read the failure, not only its
-  summary: `gh run view RUN_ID --log-failed`. Treat a reproducible code
+  summary: `gh run view RUN_ID --log-failed`, fetched by a `cheap` agent that
+  returns the first error and up to 20 log lines. Treat a reproducible code
   failure as a fix and a proven service or runner failure as an eligible
   one-time rerun. Read [check-repair.md](references/check-repair.md). A second
   failure is a real failure.
-- Review is required or changes were requested: report the missing reviewer or
-  requested change. A review blocker does not stop branch and check work.
-- The pull request is a draft: report that the author must mark it ready.
-- Permissions, policy, missing secrets, or an unknown merge state block it:
-  report the exact API or check message and the owner who must act.
+- Review required, draft, permission, policy, or unknown state: report the exact
+  message and owner (**Authorization**). A review blocker does not stop branch
+  and check work.
 
 ## Approve and merge
 

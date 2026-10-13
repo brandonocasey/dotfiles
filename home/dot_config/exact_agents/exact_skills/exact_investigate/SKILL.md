@@ -49,9 +49,6 @@ attachments, linked issues, and linked commits or merge requests.
 | Error text, stack trace, or log | Search the code and history for the exact message. |
 | Plain description | Ask one question only when reproduction is impossible without the answer. |
 
-If a tool for the source is not connected or fails to authenticate, tell the
-user which one and continue with what is available.
-
 List these facts. Mark each fact as missing or unverified:
 
 - Environment: version or commit, OS, browser or runtime, device, configuration.
@@ -83,6 +80,9 @@ errors are recorded. Collect:
 - Network requests: status, headers, bodies, CORS, redirects, mixed content.
 - The page's own debug switches and state, through `evaluate_script`.
 - Screenshots at the failure point, and a performance trace for slowness.
+
+Delegate browser-evidence gathering to an agent that returns only the needed
+excerpt.
 
 On a live third-party page, never submit forms, sign in, buy, or click ads.
 A click on an ad can bill the advertiser.
@@ -176,7 +176,6 @@ opening the pull request, or posting on the issue.
 Clean up per
 [task-resources.md](../host-preflight/references/task-resources.md). Also:
 
-- Stop playback.
 - Remove temporary logging, debug flags, and test data. Keep screenshots only
   when they are in the report.
 - Remove bisect and repro worktrees you created. Keep the fix branch's.

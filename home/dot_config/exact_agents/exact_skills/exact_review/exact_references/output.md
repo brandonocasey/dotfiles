@@ -20,7 +20,7 @@ breaks, when, and the fix. Apply repository templates when present.
    - **Why it matters**: plain language, jargon spelled out.
    - **Comment to post** (MR/PR) — ready-to-paste, may be technical; state the
      failure scenario concretely. Where a small code change fixes it, include a
-     suggestion block (syntax in `remote-comments.md`).
+     suggestion block.
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
 4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
    did not survive verification and why each was killed. This is the proof the review was real.

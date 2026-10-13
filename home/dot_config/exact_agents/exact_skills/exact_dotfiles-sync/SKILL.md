@@ -7,11 +7,10 @@ Optional argument: target paths. Without one, use the targets this session chang
 
 A user request to commit or push dotfiles is the consent to commit and push the
 current branch of the chezmoi source repo, for this run only. It gives no standing
-consent. Never run it without that request. Force-push stays forbidden.
+consent. Force-push stays forbidden.
 
 Resolve the repo once: `cd "$(chezmoi source-path)" && git rev-parse --show-toplevel`.
-Shell variables do not persist between tool calls, so write that literal path
-wherever `<src>` appears below.
+Use the literal path for `<src>`.
 
 Run each Git command below as `cd <src> && git ...`: one Git command per call,
 with no pipes, `;`, or variable assignments. Only plain `git` commands run

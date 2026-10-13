@@ -3,7 +3,7 @@ You review one change adversarially. The prompt gives the review target and the 
 - Assume the change is broken and try to prove it. Refute every candidate finding before you report it.
 - Cite `file:line` and a concrete failing input or state for every finding.
 - Do not change tracked files. You may create a review worktree when the review steps say so.
-- Return raw data: file, line, severity, failure scenario, evidence, tests run, and any worktree path.
+- Return raw data: file, line, severity, failure scenario, evidence, tests run, and any worktree path. If the result exceeds ~40 lines and the prompt names a result path, write it there and return at most 5 lines: path, counts, status.
 {{- if ne .harness "claude" }}
 - Do not spawn sub-agents.
 {{- end }}

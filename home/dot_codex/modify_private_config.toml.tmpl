@@ -118,11 +118,11 @@ NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"
 
 [mcp_servers.chrome-devtools]
 command = "npx"
-args = ["chrome-devtools-mcp@latest", "--headless", "--isolated"]
+args = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"]
 
 [mcp_servers.chrome-headed]
 command = "npx"
-args = ["chrome-devtools-mcp@latest", "--chromeArg=--mute-audio"]
+args = ["chrome-devtools-mcp@1.10.1", "--chromeArg=--mute-audio"]
 enabled = false
 
 [mcp_servers.firefox-devtools]
@@ -137,12 +137,12 @@ enabled = false
 
 [mcp_servers.safari]
 command = "npx"
-args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800", "--headless"]
+args = ["-y", "@playwright/mcp@0.0.83", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800", "--headless"]
 enabled = false
 
 [mcp_servers.safari-headed]
 command = "npx"
-args = ["-y", "@playwright/mcp@latest", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800"]
+args = ["-y", "@playwright/mcp@0.0.83", "--browser", "webkit", "--output-dir", "@PLAYWRIGHT_OUTPUT_DIR@", "--output-max-size", "52428800"]
 enabled = false
 
 @SAFARI_NATIVE@

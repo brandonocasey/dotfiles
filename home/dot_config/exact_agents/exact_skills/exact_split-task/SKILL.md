@@ -4,8 +4,7 @@ description: "Assess independent implementation parts before multi-file work or 
 ---
 
 Split a task across sub-agents only when it saves cost or keeps the main session
-free. Every spawn follows the `sub-agents` skill: prompts, roles, the user's
-model or tool override, cache reuse, and result checks.
+free. Spawn per `sub-agents`.
 
 ## When to split
 

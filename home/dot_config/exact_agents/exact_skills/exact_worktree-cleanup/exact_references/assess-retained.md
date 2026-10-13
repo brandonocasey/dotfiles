@@ -34,8 +34,6 @@ Read the evidence as follows:
 - `git cherry` omits merge commits. Patch equivalence alone is insufficient
   when `git rev-list --merges <target>..<branch>` reports local-only merges.
   Those merges can contain unique conflict-resolution edits.
-- An empty three-dot diff means the branch tree matches the merge base.
-  It does not compare the branch directly with the current target tree.
 - `git merge-tree` reports conflicts when the same lines changed in the target since the merge
   base. Conflicts plus later target commits in the same files suggest the work was redone.
   A successful, conflict-free merge whose output tree equals the target tree
@@ -92,7 +90,7 @@ each verdict. Then ask:
 
 > These retained branches look superseded or no longer useful, including branches whose PR was
 > closed without merging. Name any you want removed with `git branch -D`; I will record each tip
-> SHA for recovery first. Anything you do not name stays. This does not remove remote branches or
+> SHA for recovery first. This does not remove remote branches or
 > discard dirty or active work.
 
 Wait for the answer. Only branches the user names may be removed, one at a time, after a fresh

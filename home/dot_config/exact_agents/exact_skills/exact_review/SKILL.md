@@ -9,11 +9,10 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-Arguments: the target (step 0), `--test` and `--no-test` (**Manual testing**),
-`--deep` and `--agents <model>[:<effort>][,…]` (**Delegation**), `--fix` (step 4),
-`--loop [N]` and `--no-loop` (step 5), `--threads` (step 6), and `--approve`, `--auto-merge`, and
-`--merge` (step 7). A request in words to approve or merge, for a deep or hard
-review, or that names reviewer models counts as the matching flag.
+Arguments: `--test` and `--no-test` (**Manual testing**), `--deep` and
+`--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to approve
+or merge, for a deep or hard review, or that names reviewer models counts as the
+matching flag.
 
 ## Automatic completion review
 
@@ -30,7 +29,7 @@ Manually test the changed behavior by default; `--no-test` skips it. Read
 
 ## Fix authorization
 
-Before deciding whether review findings may be fixed, read [fix-authorization.md](references/fix-authorization.md).
+Before deciding whether review findings may be fixed, read **Fix authorization** in [fix.md](references/fix.md).
 
 ## 0–2. Target, review, verify
 

@@ -1,9 +1,6 @@
 # Default branch identity and base selection
 
-Use this file when a workflow needs a default branch name or a starting commit.
-These decisions are separate. Base selection must not change a checkout's
-branch, merge histories, or push. It moves a local branch only through the
-fast-forward in [ff-local-target.md](ff-local-target.md).
+Use when a workflow needs a default branch name or starting commit.
 
 ## Local target name
 
@@ -13,8 +10,6 @@ local branch in this order: the branch named by `refs/remotes/origin/HEAD`,
 Otherwise, check the default names of other remotes from their available
 `refs/remotes/<remote>/HEAD` refs. Use a matching local branch only if the name
 is unambiguous; otherwise ask which local target to use. Do not invent `master`.
-
-This lookup is local and performs no fetch.
 
 ## Remote default name
 

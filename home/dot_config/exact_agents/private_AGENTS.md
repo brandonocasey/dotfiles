@@ -8,7 +8,7 @@
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Run waits over one minute in background, never foreground sleep/until loops.
-- Each tool call re-sends all context, so use few calls and small outputs. Combine independent commands; search the whole scope in one call, never file by file.
+- Each tool call re-sends all context, so use few calls. Combine independent commands; search the whole scope in one call, never file by file.
 - Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
 - Read only what you need, once. Find tight ranges first: LSP symbols, else `ast-grep`, else `rg -n`. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
@@ -21,7 +21,7 @@ Prefer XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`
 
 - Scratch: `<worktree>/.cache/agents/scratch/<task>/`; outside worktrees, `$TMPDIR` or the harness scratchpad when under the cache root, else `~/.cache/agents/scratch/<task>/`.
 - Backups before overwrite, force-removal, or migration: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`; preserve relative paths, never auto-prune, report the path.
-- Create missing parents; retain fixed paths required by tools.
+- Retain fixed paths required by tools.
 
 ## Skills own the detail
 
