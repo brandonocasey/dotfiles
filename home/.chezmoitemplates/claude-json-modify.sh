@@ -26,12 +26,13 @@ const hasBrowser = Object.values(servers).some((server) => {
   return `${command} ${args}`.includes("chrome-devtools-mcp");
 });
 
+const chromeArgs = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"];
+const oldChromeArgs = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"].join(" ");
+const chrome = servers["chrome-devtools"];
 if (!hasBrowser && !("chrome-devtools" in servers)) {
-  servers["chrome-devtools"] = {
-    type: "stdio",
-    command: "npx",
-    args: ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"],
-  };
+  servers["chrome-devtools"] = { type: "stdio", command: "npx", args: chromeArgs };
+} else if (chrome && Array.isArray(chrome.args) && chrome.args.join(" ") === oldChromeArgs) {
+  chrome.args = chromeArgs;
 }
 if (!("openaiDeveloperDocs" in servers)) {
   servers.openaiDeveloperDocs = {

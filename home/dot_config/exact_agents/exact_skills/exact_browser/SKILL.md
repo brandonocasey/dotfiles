@@ -52,6 +52,7 @@ below are `chrome-devtools`; use the matching tool on other engines.
 - Check text, state, and layout with `take_snapshot` or `evaluate_script` first.
 - Take a screenshot only for a visual judgment the DOM cannot give, or for evidence the user or an MR/PR needs.
 - Save evidence screenshots with `filePath`. Do not `Read` them back unless you must judge them by eye.
+- Browser MCPs write only inside allowed roots. In Claude Code, that is the session's project root: in a repo, save under `<worktree>/.cache/agents/scratch/<task>/`, never `~/.cache`. Codex offers no roots: save `chrome-devtools` and Firefox screenshots under `$TMPDIR`, and `safari` or `safari-headed` ones under `~/.cache/agents/playwright-mcp`.
 - Capture an element by `uid` or the viewport. Use `fullPage`, without `uid`, only when the check needs the whole page.
 - In the main session, delegate more than three visual checks to the `manual-tester` sub-agent. It returns findings and file paths, not images.
 
