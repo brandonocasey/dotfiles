@@ -7,14 +7,19 @@
 - Put output where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use. A skill's default is not permission. Otherwise, use chat or the local file I asked for.
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
-- Run waits over one minute in background, never foreground sleep/until loops.
+- Never `sleep` 20s or more in the foreground, or use foreground until loops. Run commands likely to take over ~20s (test suites, builds, browser runs) in the background with a log file and poll it; short commands stay foreground.
 - Each tool call re-sends all context, so use few calls. Combine independent commands; search the whole scope in one call, never file by file.
 - Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
-- Read only what you need, once. Find tight ranges first: LSP symbols, else `ast-grep`, else `rg -n`. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
+- Read only what you need, once. Find tight ranges first: `rg -n` for ranges, `ast-grep` for structure. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
 - In Claude Code, view a file you will edit with the Read tool, using `offset`/`limit` for a range. Edit and Write reject files seen only through Bash.
-- Never run `cat` bare; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
+- Read one known file with the file-read tool; `cat` only to load several skill files at once. Heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
+
+- zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
+- Leave scratch cleanup to `prune-agent-dirs.sh`, or use `find <dir> -delete`. Do not append `; echo rc=$?` to commands.
+- To find a past session, run `agent-task search` first.
+- If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.
 
 ## Directories
 
