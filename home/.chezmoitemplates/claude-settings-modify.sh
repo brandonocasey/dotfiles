@@ -179,6 +179,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/cache-keepalive.sh prompt",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/auto-title.sh",
+            "timeout": 20
           }
         ]
       }
