@@ -1,7 +1,11 @@
 {
-  "spinnerTipsEnabled": false,
-  "outputStyle": "main",
   "env": {
     "JIRA_EMAIL": "bcasey@jwplayer.com"
+  },
+  "outputStyle": "main",
+  "spinnerTipsEnabled": false,
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": false
   }
 }
