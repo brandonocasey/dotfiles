@@ -33,8 +33,8 @@ question. Never invent a key, project, status, or version.
   `fj` or the Forgejo REST API for Forgejo. Other platforms: unsupported; stop
   before any write.
 - Jira: the Atlassian MCP. If it fails, use `jira-api` per the Setup in
-  [jira-versions](../jira-versions/SKILL.md); take the email from
-  `atlassianUserInfo` if `git config user.email` lacks it, never hard-code it.
+  [jira-versions](../jira-versions/SKILL.md); `JIRA_EMAIL` comes from the
+  environment, as that Setup says.
 - Jira fix versions: use [jira-versions](../jira-versions/SKILL.md) when the
   project matches it. The Atlassian MCP cannot create versions.
 

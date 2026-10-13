@@ -33,6 +33,11 @@ reduced motion when their styling or transitions changed.
 Load the `browser` skill before browser MCP calls. Use a repository run/test skill when
 available to start the app with its required headers and assets. Stop servers you start per [task-resources.md](../host-preflight/references/task-resources.md).
 
+Name the observable that proves each claim: rendered frames, pixels, or a DOM
+measure, not a proxy such as `currentTime`. Assert the preconditions first, such
+as the state, viewport, and build. Run one control that must fail, such as the
+old build or the unset flag, to show the check can detect the defect.
+
 Inspect the rendered DOM before choosing selectors. Prefer roles and accessible
 names. Wait for the state under test, such as a visible result or completed
 download; do not use arbitrary sleeps or network-idle as proof that a page is

@@ -27,6 +27,8 @@ Folders nest as `/job/<folder>/job/<name>`. URL-encode job names
 
 Output ends with `HTTP <code>`. `201` means queued, `200` means ok.
 
+Releasing a hive package: read [release.md](references/release.md).
+
 ## Rules
 
 - Read calls need no approval.

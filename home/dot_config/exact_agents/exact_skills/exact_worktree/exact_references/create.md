@@ -28,6 +28,10 @@ git -C <main-checkout> worktree add .worktrees/<branch> -b <branch> <base-commit
   a branch there: `git -C <sub-path> switch -c <branch>`. This gives the commit
   a pushable ref and prevents the next update from orphaning it.
 
+In zsh, `$B:refs/...` applies the `:r` modifier and mangles the refspec. Write
+`${B}` and quote refspecs, for example
+`git fetch origin "+refs/heads/${B}:refs/remotes/origin/${B}"`.
+
 Repository `worktree add` examples do not override this location or base.
 Follow a repository location only when it is stated as a requirement.
 

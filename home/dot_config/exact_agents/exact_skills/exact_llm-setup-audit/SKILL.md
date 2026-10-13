@@ -1,7 +1,6 @@
 ---
-disable-model-invocation: true
 name: llm-setup-audit
-description: "Audit global skills, roles, rules, and config for defects and token waste; rules/config edits require approval."
+description: "Audit global skills, roles, rules, and config for defects and token waste; rules/config edits need a request to change or approval."
 ---
 
 Give each reader every needed rule once, in plain words and few tokens.
@@ -9,18 +8,18 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 
 ## Scope and authority
 
-- **Skills:** audit whole `SKILL.md` files, linked shared instructions, and agent definitions. Fix directly, then report.
+- **Skills:** audit whole `SKILL.md` files, linked shared instructions, and agent definitions. Fix directly, then report; on talk-first or a run you started without the user asking, propose instead.
   Defaults: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and `~/.codex/agents/`.
   Both harnesses' role bodies render from chezmoi's `.chezmoitemplates/agents/`; edit those templates.
   Role frontmatter lives in `dot_config/exact_agents/exact_agents/*.md.tmpl` and `dot_codex/agents/*.toml.tmpl`.
-- **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Propose edits; apply only approved proposals.
+- **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Tag each proposal (see **Safe and gating**); ask only about gating ones.
   Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
-  Propose edits; apply only approved proposals.
+  Tag each proposal (see **Safe and gating**); ask only about gating ones.
 - Use the invocation's scope; without one, audit every target above.
-  “Talk before making changes” applies the rules flow to every target.
+  “Talk before making changes” applies the rules flow to every target and follows the talk-first path of **Safe and gating**.
 - A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
   **Left alone** includes every unedited target and unresolved finding, with reasons.
 
@@ -33,7 +32,8 @@ State that shared impact before proposing a move.
 Read every target whole and record before/after tokens.
 Run `claude -p /context` in the project directory for reported rules, skill-listing, and agent counts.
 Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
-Do not back up or copy targets before editing; the user keeps backups.
+Before applying a safe rules or config item, copy the target to `~/.local/state/agents/backups/<name>/<stamp>/`.
+Skill edits need no backup.
 
 Find each target's source before editing: chezmoi or another repository. Update that source too.
 Before any sync, check hooks and automatic Git settings.
@@ -46,7 +46,7 @@ sync, check hashes and linked references again; report every remaining mismatch.
 
 ### Chezmoi
 
-It manages `~/.config/agents/`, `~/.codex/`, `~/.claude/`, `~/.claude-two/`, and the Gemini, opencode, and pi rules files with automatic commits and pushes enabled.
+It manages `~/.config/agents/`, `~/.codex/`, `~/.claude/`, `~/.claude-two/`, and the Gemini, opencode, and pi rules files with `autoCommit` and `autoPush` off.
 Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, not plain files.
 
 1. Run `chezmoi status ~/.config/agents ~/.codex ~/.claude ~/.claude-two ~/.gemini/GEMINI.md ~/.config/opencode/AGENTS.md ~/.pi/agent/AGENTS.md` first.
@@ -55,15 +55,25 @@ Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, no
    Recommend one action for each: copy the target to its source (step 3), or `chezmoi apply <target>`.
    Ask once for all of them. Apply only the approved actions.
    If a listed source has no target, audit and edit the source itself.
-2. Never run source-writing commands (`add`, `re-add`, `edit`); they commit and push.
+2. Never run source-writing commands (`add`, `re-add`, `edit`); they can write source files outside the audit.
    Never run `chezmoi apply` without a target.
 3. Before any copy, review the changes with `diff -u "$(chezmoi source-path <target>)" <target>`.
    After the review fixes, copy each changed or new target to its source.
    Copy only plain sources. For a `modify_`, `.tmpl`, or `symlink_` source, edit that script or template instead.
-   Any later source-writing command, from any session, commits and pushes pending source copies.
    Find the path with `chezmoi source-path <target-or-directory>`; new names can require prefixes such as `private_`.
    Require empty `chezmoi status <target>` output for every changed target.
 4. If `source-path` fails, edit the unmanaged target in place and report that it has no source copy.
+
+### Safe and gating
+
+Tag each rules or config proposal **safe** or **gating**.
+Safe: a wording, dedupe, path, or typo fix that keeps every rule's behavior and touches no veto item, stop point, or authorization boundary.
+Gating: everything else.
+- Talk-first, or a run you started without the user asking: apply nothing; list every item with its tag and exact wording.
+- Otherwise, including a bare invocation by the user: apply safe items after the backup and report each with a revert instruction; ask only about gating items.
+
+When a settings or rule file is harness-blocked, do not retry the edit.
+Write one apply script (`sh`, with the backup step) to the scratch directory, print its path and what it changes, and hand it over once.
 
 ### Ownership and invocation
 
@@ -100,6 +110,7 @@ One harness's setting does not control another.
 - **Language:** apply the main-session Writing rules.
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
+- **Setup claims:** for a Claude Code or setup question, read the current setting first and test it. Otherwise mark the answer unverified.
 - **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.
   Do not leave it as an open question.
 
@@ -160,7 +171,7 @@ Never add tool-specific commands there.
 
 ## Skills flow
 
-1. Complete setup, apply fixes, and record veto items.
+1. Complete setup, apply fixes (or propose them, per **Skills** above), and record veto items.
 2. Check edited frontmatter with `head`, compare token counts, and re-derive algorithms or calculations changed or retained.
    After workflow edits, replay relevant failures with
    [workflow-replays.md](references/workflow-replays.md). Record expected and
@@ -172,9 +183,9 @@ Never add tool-specific commands there.
 
 1. Complete setup. Present the full analysis under **Combine / Simplify / Remove / Session evidence / Left alone**, numbered within each group.
 2. Show every proposal's exact final wording.
-3. Ask unresolved gating questions first. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
+3. Apply safe proposals first, unless the user asked to talk first or you started the run without the user asking; then apply none. Ask unresolved gating questions next. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
    Free text overrides offered choices.
-4. Apply only approved numbers, groups, or “do all.” Reread first; use targeted edits that preserve the user's intervening changes.
+4. Apply approved items (gating, or safe ones held back by talk-first): numbers, groups, or “do all.” Reread first; use targeted edits that preserve the user's intervening changes.
 5. Report changes. List each unapplied item with its before/after text so skipped work is explicit.
 
 ## Every report

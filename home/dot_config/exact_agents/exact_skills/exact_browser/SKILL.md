@@ -44,6 +44,11 @@ For real Safari or Safari-only bugs, follow `real-safari` for driver selection a
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
 For audio issues, where sound is allowed, read [audible-playback.md](references/audible-playback.md).
 
+## Proof
+
+Check the observable that proves the claim: frames, pixels, or DOM state, not `currentTime`.
+Assert preconditions, and run a control that must fail. See `ui-verify`.
+
 ## Screenshots
 
 Every image stays in context and is re-read on each later turn. Tool names

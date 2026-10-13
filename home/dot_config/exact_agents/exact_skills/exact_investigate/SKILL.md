@@ -1,7 +1,6 @@
 ---
-disable-model-invocation: true
 name: investigate
-description: "User-invoked only: reproduce and fix reported bugs; isolate unresolved causes into actionable blockers."
+description: "Reproduce and fix reported bugs; isolate unresolved causes into actionable blockers."
 ---
 
 The goal is a verified fix. When a fix is not possible, the goal is a narrowed

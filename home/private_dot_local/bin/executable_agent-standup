@@ -4,7 +4,7 @@
 # Usage: agent-standup [--print]   (--print writes the standup to stdout instead)
 
 SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
-MODEL=${AGENT_STANDUP_MODEL:-sonnet}
+MODEL=${AGENT_STANDUP_MODEL:-opus}
 
 STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/agents/standup
 # Claude runs from here so its own sessions are easy to exclude from the digest.
@@ -23,7 +23,7 @@ midnight() {
 
 ask_claude() {
     local tools=$1 prompt=$2
-    (cd "$RUN_DIR" && claude -p "$prompt" --model "$MODEL" --effort low \
+    (cd "$RUN_DIR" && claude -p "$prompt" --model "$MODEL" --effort medium \
         --allowedTools "$tools" 2>>"$LOG")
 }
 
@@ -42,7 +42,7 @@ session_digest() {
             | if type == "string" then . else (.[]? | select(.type == "text") | .text) end
             | .[0:300] | gsub("\n"; " ")' "$f" 2>/dev/null |
             grep -v -e '<command-' -e '<local-command' -e 'system-reminder' -e 'task-notification' |
-            head -12)
+            head -40)
         # Sessions with no prompts today did no work today.
         [ -z "$prompts" ] && continue
         echo "=== $(basename "$(dirname "$f")")"
@@ -50,7 +50,7 @@ session_digest() {
         # Final replies get truncated, so collect every link the session mentioned.
         echo "LINKS: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null |
             grep -oE 'https://(gitlab\.com|jwplayer\.atlassian\.net|github\.com)/[^] )>|"`*,]+' | sed 's/[.:;]*$//' | sort -u | tr '\n' ' ')"
-        echo "LAST: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null | tail -c 700 | tr '\n' ' ')"
+        echo "LAST: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null | tail -c 1500 | tr '\n' ' ')"
     done
 }
 
@@ -91,7 +91,7 @@ sources="The digest's GitLab sections list the merge requests the user acted on 
 - Slack: slack_search_public_and_private with filters 'from:<@$SLACK_USER> on:$TODAY'. Ignore the user's DM with themself, including standups and morning briefs. Use only messages that show work: answers, decisions, help given, reviews, announcements. When a message asks Claude to do something (Claude Tag), read that thread with slack_read_thread and use Claude's outcome.
 - Jira: getAccessibleAtlassianResources for the cloudId, then searchJiraIssuesUsingJql with jql 'status CHANGED BY currentUser() AFTER startOfDay() OR fixVersion CHANGED BY currentUser() AFTER startOfDay() OR (reporter = currentUser() AND created >= startOfDay()) OR (assignee = currentUser() AND (status CHANGED AFTER startOfDay() OR assignee CHANGED AFTER startOfDay() OR created >= startOfDay()))'. Ticket creation, status moves, new assignments, and release assignments count as work; assigned tickets still open belong in Next.
 If a tool fails, continue with the other sources."
-read_tools="mcp__claude_ai_Slack__slack_search_public_and_private mcp__claude_ai_Slack__slack_read_thread mcp__claude_ai_Atlassian__getAccessibleAtlassianResources mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql"
+read_tools="mcp__claude_ai_Slack__slack_search_public_and_private mcp__claude_ai_Slack__slack_read_thread mcp__claude_ai_Atlassian__getAccessibleAtlassianResources mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql mcp__claude_ai_Atlassian_MCP__getAccessibleAtlassianResources mcp__claude_ai_Atlassian_MCP__searchJiraIssuesUsingJql"
 
 digest="$(session_digest)
 $(gitlab_digest)"
@@ -101,7 +101,7 @@ if [ -z "$(printf %s "$digest" | tr -d '[:space:]')" ]; then
     exit 0
 fi
 
-format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-8 bullets total, each bullet under 10 words. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
+format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-12 bullets total, each bullet under 20 words. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
 intro="The input is a digest of today's work: the user's prompts and final replies from Claude Code sessions, plus GitLab activity. Write a standup"
 
 if [ "$1" = --print ]; then

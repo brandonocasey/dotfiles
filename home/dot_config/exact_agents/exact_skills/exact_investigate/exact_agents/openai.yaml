@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $investigate to reproduce, find the root cause of, and fix this issue: "
 
 policy:
-  allow_implicit_invocation: false
+  allow_implicit_invocation: true
