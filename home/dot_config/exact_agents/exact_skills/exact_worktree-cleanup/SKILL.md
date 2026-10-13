@@ -37,8 +37,8 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   the step 5 confirmation, the exact local tip equals the closed PR head, and any attached
   worktree is clean and idle. A confirmation never authorizes force-removing a worktree with Unknown blockers.
 - **Review-worktree confirmation**: may remove every clean, idle worktree whose HEAD exactly
-  matches a remote PR head, including detached worktrees and multiple worktrees for one PR. It
-  never authorizes deleting local branch refs unless those branches separately qualify.
+  matches a remote PR head, or is contained in a merged PR's head under the matching rules in
+  step 3, including detached worktrees and multiple worktrees for one PR. It never authorizes deleting local branch refs unless those branches separately qualify.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
   stale local ref. Use `-D` only under the exceptions above.
 - Retain a branch used by an open PR even if an older PR for that branch was merged.
@@ -108,7 +108,7 @@ merged-PR state as the authority for squash-merged branches:
 ```sh
 # GitHub
 gh pr list --state all --limit 1000 \
-  --json number,title,headRefName,headRefOid,state,mergedAt,baseRefName,url
+  --json number,title,headRefName,headRefOid,headRepositoryOwner,isCrossRepository,state,mergedAt,baseRefName,url
 
 # GitLab (any host; prefix with GITLAB_HOST=<host> when self-hosted)
 glab api --paginate "projects/<url-encoded-project-path>/merge_requests?state=all&per_page=100"
@@ -116,12 +116,36 @@ glab api --paginate "projects/<url-encoded-project-path>/merge_requests?state=al
 
 GitLab fields map onto the same checks: `source_branch` → `headRefName`, `sha` → `headRefOid`
 (the MR head), `state` (`merged`/`closed`/`opened`) with `merged_at` → `state`/`mergedAt`,
-`target_branch` → `baseRefName`, `web_url` → `url`.
+`target_branch` → `baseRefName`, `web_url` → `url`. A same-repository MR has
+`source_project_id` equal to `target_project_id`; for a fork MR, match `source_project_id`
+to the local branch's upstream project.
 
 If the GitHub list reaches its limit, increase it until the result is complete.
+Never narrow the list by date (`updated_after`, `created_after`, `--search "updated:>…"`) or any
+other window; old merged PRs are the evidence for long-lived worktrees.
 Check live open-PR state for each candidate before deletion; a truncated history
-cannot prove that a branch has no open PR. Match source repository as well as branch
-name when forks make the identity ambiguous; fetch PR detail when needed.
+cannot prove that a branch has no open PR. A branch-name match counts only for a
+same-repository PR (`isCrossRepository` false) or when the head owner matches the local branch's
+upstream; fetch PR detail when needed.
+
+Then look up every candidate the list did not match, so a missed page cannot hide a merged PR.
+Look up branches by source branch, and detached or alias worktrees by HEAD commit:
+
+```sh
+# GitHub
+gh pr list --state all --limit 1000 --head <branch> \
+  --json number,headRefName,headRefOid,headRepositoryOwner,isCrossRepository,state,mergedAt,baseRefName,url
+gh api --paginate "repos/<owner>/<repo>/commits/<sha>/pulls?per_page=100"
+
+# GitLab
+glab api --paginate "projects/<url-encoded-project-path>/merge_requests?source_branch=<url-encoded-branch>&state=all&per_page=100"
+glab api --paginate "projects/<url-encoded-project-path>/repository/commits/<sha>/merge_requests?per_page=100"
+```
+
+`gh pr list --head` takes a bare branch name, so apply the same-repository rule to its results.
+The commit lookups only suggest PRs. GitHub's may omit a squash-merged PR whose head never
+reached the default branch. Confirm every suggestion against that PR's `headRefOid` with the
+checks below; a missing suggestion proves nothing.
 
 For a local branch to qualify from PR evidence, all of these must be true:
 
@@ -133,9 +157,27 @@ For a local branch to qualify from PR evidence, all of these must be true:
 - the local branch tip either exactly equals the PR head SHA or is an ancestor of it, verified with:
   `git merge-base --is-ancestor <local-tip> <pr-head>`.
 
+A deleted source branch often leaves the PR head missing after `git fetch origin`. Fetch it
+through the PR ref from the remote that hosts the PR's base repository. Confirm that
+`git rev-parse FETCH_HEAD` equals the head SHA from this run's PR data, then pass that SHA,
+not a ref name, to later checks; the fetch creates no ref:
+
+```sh
+git fetch <base-remote> refs/pull/<number>/head            # GitHub
+git fetch <base-remote> refs/merge-requests/<iid>/head     # GitLab
+git cat-file -e <pr-head-sha>^{commit}
+```
+
+`git merge-base --is-ancestor` exits 0 for a match and 1 for no match. A failed fetch, a SHA
+mismatch, a shallow-history boundary, or any other exit code makes the evidence unknown:
+retain the candidate.
+
 If the local tip is an ancestor of the PR head, report that the merged PR contains the complete
 local commit history. If the ancestry check fails, retain it and explain that the local history
-is newer or diverged from the merged PR.
+is newer or diverged from the merged PR. List it as `keep` with reason `diverged from merged
+PR #<n>`, not as unmerged work: step 5 runs
+[rebased-history.md](references/rebased-history.md) on it, which separates a rebased copy of the
+squash-merged PR from commits the PR never had.
 
 #### Closed without merge
 
@@ -151,17 +193,20 @@ retained candidates and asks one question for all of them.
 
 A worktree used to review a remote PR may be detached or may use a local branch name different
 from the PR's source branch. Match it by exact HEAD equality with any PR's head SHA, regardless of
-PR state or base branch. Group matches by PR number, but evaluate every filesystem path
-independently — do not deduplicate multiple worktrees for the same PR.
+PR state or base branch. A HEAD that is an ancestor of a PR head also matches when the PR is
+merged, its base is the selected target, and the HEAD is not already an ancestor of that target,
+because a review often stops before the PR's last push. Check it with the fetch and
+`--is-ancestor` rules above. A HEAD contained in more than one such PR is an ambiguous mapping.
+Group matches by PR number, but evaluate every filesystem path independently — do not deduplicate multiple worktrees for the same PR.
 
 For every matching worktree, show the PR number, title, URL, state, head SHA, worktree path,
 branch or detached state, and clean/active status, then ask:
 
 > Do you also want to remove clean, idle review worktrees whose HEAD matches a remote pull-request
-> head, including multiple local worktrees for the same PR? This removes only local worktrees. It
-> does not delete remote branches or local branch refs unless they are separately eligible.
+> head or is contained in a merged one, including multiple local worktrees for the same PR? This
+> removes only local worktrees. It does not delete remote branches or local branch refs unless they are separately eligible.
 
-Wait for the answer before removing review worktrees. A `yes` authorizes each exact, clean, idle
+Wait for the answer before removing review worktrees. A `yes` authorizes each clean, idle
 match per the review-worktree safety rule — never the current checkout or the target worktree.
 Anything else — `no`, no answer, changed HEAD, dirty worktree, active process, missing PR
 evidence, ambiguous mapping — means keep the worktree and report why.
