@@ -30,8 +30,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    from the first cycle. Skip it when the first full review found no major finding that
    survived verification.
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
-   major findings still open, other findings left unfixed, and fixes from the final
-   cycle's last pass that no reviewer checked. When the list is not empty, ask the user
+   major findings still open, other findings left unfixed, and fixes of major findings
+   from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed.
 
 After each pass, record the loop state (cycle, pass number, reviewer IDs, last-reviewed SHA, held `question` items) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).

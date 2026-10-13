@@ -1,8 +1,9 @@
 # Ship through merge
 
 `ship --merge` authorizes shipping, enabling auto-merge, and watching this
-task's MRs/PRs until merged or blocked. It does not authorize approval,
-marking drafts ready, policy changes, or deployment. It supports GitHub and
+task's MRs/PRs until merged or blocked. `ship --approve` authorizes approval at
+the reviewed head. Neither authorizes marking drafts ready, policy changes, or
+deployment. It supports GitHub and
 GitLab. For another platform, report that `--merge` is unsupported there
 before any mutation. Ordinary `ship` still supports that platform.
 

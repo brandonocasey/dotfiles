@@ -63,8 +63,8 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
      leaves the git config unchanged.
   6. Sync the title and description to the final diff, per `ship` step 3, and read them
      back. Then refresh the source SHA, CI, and mergeability once, per [ci-and-conflicts.md](ci-and-conflicts.md).
-  7. Clean up per step 3. Then run step 7 ([approve-merge.md](approve-merge.md)) when
-     `--approve`, `--auto-merge`, or `--merge` is set.
+  7. Continue into step 5's fix loop. [loop.md](loop.md) runs cleanup and step 7
+     ([approve-merge.md](approve-merge.md)) once, after the loop ends.
 - **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
   tests/lint, record the `Checked:` line, and commit per the `commit` skill. For a commit
   or the default branch, first create a fix branch per the `worktree` skill. Do not push.

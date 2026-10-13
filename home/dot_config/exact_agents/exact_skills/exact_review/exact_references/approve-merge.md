@@ -9,7 +9,7 @@ Each flag is the user's request to approve or merge the reviewed MR/PR
 
 `--auto-merge` and `--merge` never imply approval. Combine them with `--approve` for that.
 
-Run this step last: after step 4's push when `--fix` applies, otherwise after step 3.
+Run this step last: after step 5's fix loop when `--fix` applies, otherwise after step 3.
 
 1. **Gate**: run only when no `bug`, `requirement`, or `question` finding remains
    unfixed. Otherwise skip every flag and name the blocking findings.

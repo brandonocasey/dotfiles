@@ -18,8 +18,8 @@ Ordinary shipping ends after the push, MR/PR update, and any triggered review wi
 When a rebase of more than about 5 commits conflicts on a lockfile, read
 [lockfile-rebase.md](references/lockfile-rebase.md).
 With `--approve` or `--merge`, read [merge.md](references/merge.md) before
-mutations to check platform support and scope. The post-push review then runs as
-`review-auto` with only those flags (step 4).
+mutations to check platform support and scope. Approval and merge run after the
+review's fix loop (step 4).
 
 When a `session-resume` record exists for the task, read it before the context
 check and apply `session-resume`'s reuse rules.
