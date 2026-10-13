@@ -21,6 +21,8 @@ export const AGENTS = 'Built-in agent descriptions (shortened)'
 // Rows of attachment text kept out of every request: the agent listing, email context, auto mode note, and environment lines.
 export const TRIMMED = new Set(['Agent listing (moved to the Agent tool)', 'Email context', 'Auto mode note', 'Environment lines'])
 const MCP_NOTES = 'MCP server instructions'
+const MESSAGES = 'Messages'
+const PENDING = 'Messages since the last request (estimated)'
 
 // /context's number styles: 10, 1.5k, 566.7k, 1m; 0.2%; 1%.
 const short = (n: number) => {
@@ -43,13 +45,31 @@ const isConnectorDescriptions = (label: string) => label.endsWith(' tool descrip
 const isBuiltInDescription = (label: string) => label.endsWith(' description')
 
 // /context's own estimates, plus the gap to the real total. Interactive and headless sessions estimate
-// deferred tools differently, so individual categories are left as /context reports them, except one:
+// deferred tools differently, so individual categories are left as /context reports them, except two:
 // /context counts every connected server's notes, sent or not, so that row shows the notes kept in the prompt.
+// /context computes Messages as max(0, real total minus the other rows) plus messages sent since the last request,
+// and leaves the row out at 0, so Messages is recomputed without the unsent notes. The estimated part since the last
+// request gets its own row and stays out of the gap, since the real total does not include it yet.
 const categoriesOf = ({ real, window, categories: reported, kept }: Report) => {
   const inPrompt = sum(kept.filter(row => isNotes(row.label)))
-  const categories = reported.map(row => (row.name === MCP_NOTES ? { ...row, tokens: inPrompt } : row))
+  const unsent = (reported.find(row => row.name === MCP_NOTES)?.tokens ?? inPrompt) - inPrompt
+  const others = reported.filter(row => row.kind === 'used' && row.name !== MESSAGES).reduce((all, row) => all + row.tokens, 0)
+  const messages = reported.find(row => row.name === MESSAGES)
+  const pending = Math.max(0, (messages?.tokens ?? 0) - Math.max(0, real - others))
+  const sent = Math.max(0, (messages?.tokens ?? 0) - pending - Math.max(0, real - others) + Math.max(0, real - others + unsent))
+  const pendingRow: Category = { name: PENDING, tokens: pending, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' }
+  const added: Category[] = messages === undefined && sent > 0 ? [{ name: MESSAGES, tokens: sent, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' }] : []
+  const categories = [
+    ...reported.flatMap(row => {
+      if (row.name === MCP_NOTES) return [{ ...row, tokens: inPrompt }]
+      if (row.name === MESSAGES) return [{ ...row, tokens: sent }, ...(pending > 0 ? [pendingRow] : [])]
+
+      return [row]
+    }),
+    ...added,
+  ]
   const total = (kind: string) => categories.filter(row => row.kind === kind).reduce((all, row) => all + row.tokens, 0)
-  const gap: Category = { name: 'Difference from the real total', tokens: real - total('used'), kind: 'used' }
+  const gap: Category = { name: 'Difference from the real total', tokens: real - (total('used') - pending), kind: 'used' }
   const free: Category = { name: 'Free space', tokens: Math.max(0, window - real - total('buffer')), kind: 'free' }
 
   // In /context's order: what is used, then free space, then the autocompact buffer.
@@ -169,7 +189,7 @@ export const report = (measured: Report) => {
     ...section('Server notes sent on first use', kept.filter(row => isSentNotes(row.label)), without(`${NOTES}${SENT}`), 'server'),
     ...section('Server notes kept in the prompt', kept.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     '',
-    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates. ${MCP_NOTES} counts only notes still sent in the prompt; the rest of /context's count lands in the difference row.`),
+    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates. ${MCP_NOTES} counts only notes still sent in the prompt; the rest of /context's count moves to ${MESSAGES}.`),
   ]
 
   return lines.join('\n')

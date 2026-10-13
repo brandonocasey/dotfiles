@@ -19,9 +19,9 @@ const BASE = { real: 19943, window: 1000000, estimate: 17265, model: 'claude-opu
 test('draws the /context grid beside the header and categories', () => {
   const lines = report({ ...BASE, hidden: [], kept: [] }).split('\n')
   expect(lines[0]).toBe('Context Usage (context-lean)')
-  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, Messages ⛀, and the 8.2k difference ⛁ ⛁.
+  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, Messages with the unsent notes ⛀, and the 5.9k difference ⛁.
   // No server notes are kept, so server instructions has no square. The 33k buffer is 7 squares.
-  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
+  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
   expect(lines[2]).toContain('   19.9k/1m tokens (2%), real')
   expect(lines[10]).toMatch(/^(⛶ ){13}⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝/)
   expect(lines.some(line => line.endsWith('⛶ Free space: 947.1k (94.7%)'))).toBe(true)
@@ -67,10 +67,11 @@ test('lists /context categories as estimated, plus the difference from the real 
   const text = report({ ...BASE, hidden: [{ label: 'Workflow description', items: 1, tokens: 1295 }], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 793 }] })
   expect(text).toContain('Estimated usage by category')
   expect(text).toContain('⛁ System tools: 9.3k tokens (0.9%)')
-  // Only the 793 kept tokens of /context's 2,304 stay on the server instructions row.
+  // Only the 793 kept tokens of /context's 2,304 stay on the server instructions row; the other 1,511 move to Messages.
   expect(text).toContain('⛁ MCP server instructions: 793 tokens (0.1%)')
-  // 19,943 real minus 12,504 estimated.
-  expect(text).toContain('⛁ Difference from the real total: 7.4k tokens (0.7%)')
+  expect(text).toContain('⛁ Messages: 1.8k tokens (0.2%)')
+  // 19,943 real minus 14,015 estimated.
+  expect(text).toContain('⛁ Difference from the real total: 5.9k tokens (0.6%)')
   expect(text.indexOf('Difference')).toBeLessThan(text.indexOf('Free space'))
   expect(text.indexOf('Free space')).toBeLessThan(text.indexOf('Autocompact buffer'))
   expect(text).toContain('Server notes kept in the prompt · 793 tokens\n└ Atlassian MCP · 1 server · 793 tokens')
@@ -96,8 +97,8 @@ test('fills the grid when the real total is over the window or the window is unk
 
 test('shades hidden tokens as boxes after the used squares, with a legend line', () => {
   const lines = report({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 415, tokens: 11133 }, { label: 'Workflow description', items: 1, tokens: 7300 }], kept: [] }).split('\n')
-  // 7 used squares as above; 18,433 hidden is 4 more.
-  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
+  // 6 used squares as above; 18,433 hidden is 4 more.
+  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
   const legend = lines.findIndex(line => line.endsWith('⛋ Hidden by context-lean: 18.4k tokens (1.8%)'))
   const free = lines.findIndex(line => line.includes('⛶ Free space'))
   expect(legend).toBeGreaterThan(0)
@@ -118,11 +119,41 @@ test('leaves out the difference row when the estimate matches the real total', (
   expect(text).not.toContain('Difference from the real total')
 })
 
-test('shows only notes kept in the prompt on the MCP server instructions row', () => {
+test('shows only notes kept in the prompt on the MCP server instructions row, and moves the rest to Messages', () => {
   const text = report({ ...BASE, real: 14015, estimate: 14015, hidden: [{ label: 'Notion server notes', items: 1, tokens: 1304 }], kept: [{ label: 'chrome-devtools server notes', items: 1, tokens: 120 }] })
   expect(text).toContain('⛁ MCP server instructions: 120 tokens (0.0%)')
-  // 2,304 counted by /context minus the 120 kept.
-  expect(text).toContain('⛁ Difference from the real total: 2.2k tokens (0.2%)')
+  // 296 plus the 2,184 of /context's 2,304 not kept.
+  expect(text).toContain('⛁ Messages: 2.5k tokens (0.2%)')
+  expect(text).not.toContain('Difference from the real total')
+})
+
+test('recomputes Messages when /context cut it to the messages since the last request', () => {
+  // The other rows (13,719) exceed the 12,000 real, so /context shows only the 296 since the last request.
+  const text = report({ ...BASE, real: 12000, hidden: [], kept: [] })
+  // 12,000 real minus 11,415 other rows without the notes.
+  expect(text).toContain('⛁ Messages: 585 tokens (0.1%)')
+  expect(text).toContain('⛁ Messages since the last request (estimated): 296 tokens (0.0%)')
+  expect(text).not.toContain('Difference from the real total')
+})
+
+test('lists messages since the last request apart, outside the difference from the real total', () => {
+  // /context's Messages is 12,000 real minus 11,700 other rows, plus 400 since the last request.
+  const categories = [
+    { name: 'System prompt', tokens: 1700, kind: 'used', color: 'promptBorder' },
+    { name: 'System tools', tokens: 10000, kind: 'used', color: 'inactive' },
+    { name: 'Messages', tokens: 700, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' },
+  ]
+  const text = report({ ...BASE, real: 12000, categories, hidden: [], kept: [] })
+  expect(text).toContain('⛁ Messages: 300 tokens (0.0%)')
+  expect(text).toContain('⛁ Messages since the last request (estimated): 400 tokens (0.0%)')
+  expect(text).not.toContain('Difference from the real total')
+})
+
+test('adds a Messages row when /context left it out at 0', () => {
+  const categories = CATEGORIES.filter(row => row.name !== 'Messages')
+  const text = report({ ...BASE, real: 12000, categories, hidden: [], kept: [] })
+  expect(text).toContain('⛁ Messages: 585 tokens (0.1%)')
+  expect(text).not.toContain('Difference from the real total')
 })
 
 test('reports shortened agent descriptions in their own section', () => {

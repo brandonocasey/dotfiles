@@ -45,7 +45,7 @@ Loading a hidden tool costs one ToolSearch call. In tests, Claude found Datadog 
 `/context` shows the mod's report in place of the built-in one. The report looks like `/context`, with the real numbers on top and a savings section at the bottom:
 
 - a grid of the context window in `/context`'s colors, with hidden tokens shaded as orange ⛋ boxes after the used squares;
-- `/context`'s estimated categories, plus a "Difference from the real total" row when the real size from the API differs. "MCP server instructions" counts only notes still sent in the prompt: `/context` counts every connected server's notes, sent or not, so the rest lands in the difference row;
+- `/context`'s estimated categories, plus a "Difference from the real total" row when the real size from the API differs. "MCP server instructions" counts only notes still sent in the prompt: `/context` counts every connected server's notes, sent or not, so the rest moves to "Messages", which `/context` computes as the real total minus the other rows. `/context`'s estimate for messages sent since the last request gets its own row, "Messages since the last request (estimated)", and stays out of the difference row, since the real total does not include those messages yet;
 - how many tokens the mod saved, and the size without it;
 - one section each for hidden tool names, hidden tool descriptions, hidden server notes, and notes sent on first use. A section with more than 8 rows shows the 7 largest and folds the rest into one "more" line.
 
