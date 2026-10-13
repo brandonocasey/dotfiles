@@ -68,6 +68,6 @@ when a tie remains; routine commits do not need either reference.
 
 - Do not use `git rebase -i`, `git add -i`, or `git add -p`: they are interactive and cannot run here
 - Do not create an empty commit
-- Write temporary files in the scratch directory (AGENTS.md, **Directories**),
-  never `/tmp`: a multi-line message, used with `git commit -F <file>`, and the
+- Write temporary files in the scratch directory (AGENTS.md, **Directories**):
+  a multi-line message, used with `git commit -F <file>`, and the
   hunk patch from [partial-staging.md](references/partial-staging.md). Remove them after the commit succeeds.

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Open-ended task"
+  short_description: "Run a task in rounds of fresh agents until nothing new turns up"
+  default_prompt: "Use $open-ended to run this task until rounds stop finding anything new: "
+
+policy:
+  allow_implicit_invocation: false

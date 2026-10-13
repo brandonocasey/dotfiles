@@ -1,1 +1,1 @@
-- Search with `rg`, including on piped output; use `grep` only where `rg` is not installed. In `rg`, `-r` means replace; add `--hidden` for dotfiles. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`; heredocs are fine.
+- Search code structure (calls, definitions, imports) with `ast-grep` and text with `rg -n`, also on piped output; use `grep` only where `rg` is missing. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`. Heredocs are fine.

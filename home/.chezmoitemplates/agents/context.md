@@ -1,1 +1,1 @@
-- Keep your context small. Every token you read is re-read on each later turn. Locate code with `rg -n` first, then read only the needed range. Never fully read a file over about 200 lines unless you need most of it. Trim long command output with quiet flags, `head`, `tail`, or `rg`.
+- Keep your context small; every token you read is re-read each turn. Locate code first, then read only the needed range. Read a file over about 200 lines whole only when you need most of it. Trim long output with quiet flags, `head`, `tail`, or `rg`.

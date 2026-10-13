@@ -1,1 +1,1 @@
-- Put scratch files only in `~/.cache/agents/scratch/<task>/`, never in `$TMPDIR`, the harness scratchpad, or OS temporary directories.
+- Put scratch files in `<worktree>/.cache/agents/scratch/<task>/`, or `~/.cache/agents/scratch/<task>/` outside worktrees. `/tmp` is fine when a tool needs it.
