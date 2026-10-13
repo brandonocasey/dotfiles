@@ -5,16 +5,14 @@ Exception: remove a review worktree this review created when the review ends,
 even for an open MR/PR, unless the review installed dependencies in it. Its
 HEAD counts as preserved when `git -C <wt> rev-parse HEAD` equals the source SHA
 the review recorded at creation (no local commits). Otherwise fetch inside the
-worktree, because FETCH_HEAD is per worktree and `HEAD` under `-C <main-checkout>`
-is the wrong commit: `git -C <wt> fetch origin <source-branch-or-head-ref>`, then
-`git -C <wt> merge-base --is-ancestor HEAD FETCH_HEAD` must exit 0. For a review
-worktree, this proof replaces the HEAD proof below; the state checks still apply.
-Stop task-owned servers and background processes when finished; worktree retention
-is separate from process cleanup. Remove a task worktree after merge or closure,
-or on explicit cleanup, only after the preservation checks below. A temporary
-local-review worktree may be removed when the review ends and its commits remain
-on a named branch. Never remove the main checkout, a locked worktree, or one
-another task uses. Report retained paths and reasons or the removed path.
+worktree (FETCH_HEAD is per worktree): `git -C <wt> fetch origin
+<source-branch-or-head-ref>`, then `git -C <wt> merge-base --is-ancestor HEAD
+FETCH_HEAD` must exit 0. This proof replaces the HEAD proof below; the state
+checks still apply.
+
+Remove a task worktree after merge or closure, or on explicit cleanup, only after
+the preservation checks below. Never remove the main checkout, a locked worktree,
+or one another task uses. Report retained paths and reasons or the removed path.
 
 Before removal, check tracked, untracked, ignored, and submodule state. Preserve
 unknown files and requested deliverables; use **Blocked removal** (`removal-checks.md`) for classification
@@ -32,13 +30,9 @@ branch; a clean worktree can still be removed when that retained branch preserve
 its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
 
 Follow [task-resources.md](../../host-preflight/references/task-resources.md) for
-task scratch locations and cleanup, including `.cache/agents/scratch/<task>/`. Clean disposable
-resources even when retaining an open-PR worktree. Stop task-owned processes
-before removing their files; retain a worktree while a requested live preview
-needs it.
-
-Run cleanup separately from approve, merge, ticket, or other outward steps, so a
-blocked outward step cannot prevent cleanup of task-owned processes and scratch.
+task processes, scratch, and preview retention, even when retaining an open-PR
+worktree. Run that cleanup separately from approve, merge, ticket, or other outward
+steps, so a blocked outward step cannot prevent it.
 
 Take `<worktree-path>` from `git worktree list --porcelain`, because older
 worktrees can live elsewhere:
@@ -64,8 +58,7 @@ git -C <main-checkout> rev-parse <branch>                     # local tip; must 
 Pass the full ref: a bare `<branch>` pattern also matches
 `refs/heads/<prefix>/<branch>` and can print a second ID.
 If the IDs differ, `ls-remote` prints nothing, or the command fails, keep the
-worktree and the branch and report both IDs. Otherwise, with your shell in
-`<main-checkout>`:
+worktree and the branch and report both IDs. Otherwise:
 
 ```sh
 git -C <main-checkout> worktree remove <worktree-path>
@@ -74,7 +67,7 @@ git -C <main-checkout> worktree prune
 ```
 
 `branch -d` checks the branch against its upstream and refuses a tip the
-upstream lacks. Never answer that refusal with `-D`; report it. The upstream
+upstream lacks; report the refusal, never answer it with `-D`. The upstream
 must be set (`git push -u` sets it). Without one, `-d` checks against HEAD and
 refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
 `-d` once. Report the removed path and the branch's last commit ID; the remote

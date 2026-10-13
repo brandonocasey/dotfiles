@@ -17,9 +17,3 @@ non-overlapping file ownership.
 Run inline when the parts share most of their context, or the task is small or
 sequential. Each spawned agent re-pays the shared context, so splitting a
 medium-sized task costs more than doing it inline.
-
-## Not this skill
-
-- Watching CI, logs, builds: `sub-agents/references/monitoring.md`.
-- Handing a hard sub-problem or the whole task to `consult`:
-  `sub-agents/references/escalation.md`.

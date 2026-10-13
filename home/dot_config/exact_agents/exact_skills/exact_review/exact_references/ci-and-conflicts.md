@@ -37,8 +37,6 @@ Retry or fix only `new in this change` failures. Report the others as target-bra
 `--fix` includes the target's CI failures, even when no code-review finding survives.
 Reproduce code failures locally when possible and fix their root cause.
 Run affected checks and every repository-required check for the changed paths.
-Do not skip or weaken tests, lint, type checks, or required CI checks.
-Do not change check configuration merely to make a failure disappear.
 
 A proven runner or service failure permits one retry of the failed jobs per run.
 Record the failure evidence and run URL before retrying.
@@ -68,7 +66,7 @@ unless manual testing was skipped.
 
 For an existing merge or rebase, resolve clear conflicts and continue that operation.
 For local reviews, do not start a branch update without an explicit target or request.
-If the intended result is ambiguous, name the conflicting paths and ask one diagnostic question.
+If the intended result is ambiguous, name the conflicting paths and ask one question.
 If repository rules require a rebase that rewrites published commits, get
 authorization before rebasing or force-pushing. Report the blocker if unavailable.
 

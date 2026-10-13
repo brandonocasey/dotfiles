@@ -21,33 +21,22 @@ not replace ownership, active-process, content, merge, or approval checks.
     browser, interactive `gdu`, `dua`, `diskonaut`); they need a human at the keyboard.
 - **Docker:** use `docker system df` to read usage. Before proposing a prune, explain
   exactly what it removes. Never include volumes; the main skill's container rules apply.
-- **Worktrees:** use `git worktree list --porcelain -z` for discovery, the existing
-  `worktree-cleanup` skill for live merge qualification, and `worktree` for
-  preservation/removal. Use a documented repository removal helper only after
-  inspecting it and completing those checks. `git worktree prune` removes stale
-  administrative records, not existing checkout contents; dry-run and verify missing
-  mounts first. Third-party worktree managers are optional, not a substitute for
-  forge evidence, process ownership, retained branches and ignored-file classification.
+- **Worktrees:** use `git worktree list --porcelain -z` for discovery and follow
+  [agent-resources.md](agent-resources.md) for qualification and removal. `git worktree
+  prune` removes stale administrative records, not checkout contents; dry-run and verify
+  missing mounts first. Third-party worktree managers do not replace forge evidence, process
+  ownership, retained branches, or ignored-file classification.
 - **Rust build outputs:** installed `cargo clean` supports `--dry-run` and explicit
-  `--manifest-path`/`--target-dir`. Resolve the effective target directory, including
-  configuration/environment overrides and custom hook targets. Preview each exact
-  inactive target independently. The default clean deletes the whole target directory,
-  including executable and report files placed there; use it only when that entire
-  scope qualifies. For a partial-intermediates approval, retain that scope instead of
-  substituting a full clean. Use offline/locked operation where supported, and check
-  the whole owning worktree for active consumers before both preview and removal.
-- **Optional Rust batch tool:** [cargo-clean-all](https://github.com/dnlmlr/cargo-clean-all)
-  supports dry-run, size/age filters and executable preservation. If installed, it can
-  assist discovery over bounded roots. Its filters do not establish idleness or
-  ownership, and it deletes target directories directly; inspect the exact output and
-  apply only independently qualified targets. Do not run a blanket recursive `--yes`.
-  [cargo-sweep](https://github.com/holmgr/cargo-sweep) supports selective artifact cleanup
-  but currently declares itself unmaintained; verify current status before adopting it.
+  `--manifest-path`/`--target-dir`. Resolve the effective target directory (configuration,
+  environment, hook overrides) and preview each inactive target independently. The default
+  clean deletes the whole target directory, including executables and reports placed there;
+  use it only when that entire scope qualifies, and never substitute it for a
+  partial-intermediates approval. Check the whole owning worktree for active consumers before
+  preview and removal.
 - **Caches and sessions:** prefer each producer’s supported operations, such as
   `ccache --clear` and `codex delete --force <UUID>`, only within verified approved scope.
   Inspect installed help rather than assuming every compiler cache supports clearing.
   Session deletion still follows retention, pinning, sidecar and task checks.
 
 No third-party CLI accounts for this host’s durable task records and external shared
-scratch automatically. Pair those resources through the ownership evidence in the
-main skill, then include them in the same audited cleanup batch.
+scratch automatically. Pair those resources per agent-resources.md **Build outputs and linked scratch**, then include them in the same audited cleanup batch.

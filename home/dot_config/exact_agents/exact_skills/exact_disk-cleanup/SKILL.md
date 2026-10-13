@@ -15,8 +15,8 @@ Scan the full disk when the user says "my disk" or "the whole drive", or gives n
 path. Announce the full-disk scan before starting it. Honor narrower scope, such as a
 path the user names. Ask when the path is ambiguous in any other way.
 
-**Preview, approve, remove, verify** owns authorization and
-automatic execution; every removal keeps its audit preview and pre-deletion rechecks.
+Authorization and execution follow **Preview, approve, remove, verify**; every removal keeps
+its audit preview and pre-deletion rechecks.
 
 Read `host-preflight` and its `references/task-resources.md`, then run
 `agent-preflight`. Do not install tools merely to expand cleanup coverage. For agent
@@ -107,13 +107,12 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
   contain durable data; do not include them in generic prune operations. Inspect exact
   image/build-cache identities and references before proposing removal.
 - Preserve source, Git refs, settings, authentication, databases, memory, task/recovery
-  records, backups, requested deliverables, unused copy files, and unknown content.
-  Do not remove downloads, trash contents, temp files, or system logs merely because
-  they are old; show their contents/purpose and restoration limits for specific approval.
-  A request that names that set, such as "empty my trash", approves it after the
-  preview. A broader category authorization, such as "clean caches", does not.
-  Emptying trash cannot be undone. Do not delete shared history or edit application
-  databases/indexes by hand.
+  records, backups, requested deliverables, unused copy files, and unknown content. Do not
+  delete shared history or edit application databases/indexes by hand. Do not remove
+  downloads, trash contents, temp files, or system logs merely because they are old; show
+  their contents/purpose and restoration limits for specific approval. A request that names
+  that set, such as "empty my trash", approves it after the preview; a broader category
+  such as "clean caches" does not. Emptying trash cannot be undone.
 - Temp directories hold live sockets, locks, and running apps' and agents' working
   files. A temp entry qualifies only if the current user owns it, no process has it
   open, and its producer is known. Never clear a temp root wholesale. Measure swap
@@ -124,52 +123,28 @@ agent-resources.md; it owns the `worktree-cleanup` component and its limits. Rea
 - A cleanup that needs root, such as `apt clean`, `journalctl --vacuum-size`, or
   snapshot deletion, still goes in the preview with its exact `sudo` command. Unless
   the user asked you to use `sudo`, give them that command to run themselves.
-- Mark VM images, databases, photo/video libraries, device (iOS) backups, other
-  backups, and files under `/var/lib` or other system paths as needing user review,
-  never as cleanup candidates. Never delete files there directly or propose deleting
-  system directories. The owning tool's supported cleanup, such as `docker`, `apt`, or
-  `journalctl`, is the only exception.
+- Mark VM images, databases, photo/video libraries, device (iOS) backups, other backups, and
+  files under `/var/lib` or other system paths as needing user review, never as cleanup
+  candidates; delete there only through the owning tool's supported cleanup (`docker`,
+  `apt`, `journalctl`).
 
-## Worktree priority and task resources
+## Worktrees, build outputs, and task resources
 
-- First run the required `worktree-cleanup` step to qualify whole merged/landed worktrees. For retained
-  checkouts, independently qualify inactive build outputs and linked scratch. Do not
-  keep a merged worktree solely because it contains proven regenerable files; classify
-  those files under `worktree` preservation/removal checks. Unknown files and requested
-  deliverables still protect the checkout.
-- Automatically clean this task’s known disposable resources as authorized by
-  `host-preflight/references/task-resources.md`. Other tasks’ shared scratch requires
-  its own ownership/disposal evidence and authorization. Keep a batch moving when
-  individual entries are protected, changed, or fail.
+- First run the required `worktree-cleanup` step to qualify whole merged/landed worktrees. For
+  retained checkouts, independently qualify inactive build outputs and linked scratch (see
+  the dependencies bullet above); classify them under `worktree` preservation/removal checks.
+  Unknown files and requested deliverables still protect the checkout.
+- For every discovered worktree, inventory build targets and task scratch separately from the
+  checkout; an unmerged or dirty checkout need not be deleted to reclaim regenerable outputs. A
+  process using any descendant protects the whole worktree from build cleanup (recheck
+  immediately before removal); unfinished durable tasks protect outputs they still need.
+  [agent-resources.md](references/agent-resources.md) **Build outputs and linked scratch**
+  owns provenance, ownership linking, and batch rules.
+- Automatically clean this task's known disposable resources as authorized by
+  `host-preflight/references/task-resources.md`. Other tasks' shared scratch requires its own
+  ownership/disposal evidence and authorization. Keep a batch moving when individual entries
+  are protected, changed, or fail.
 - Do not add cron jobs or timers unless recurring cleanup is explicitly requested.
-
-## Pair worktrees with their build outputs and shared scratch
-
-- For every discovered worktree, inventory build targets and task scratch separately
-  from the checkout. An unmerged or dirty checkout need not be deleted to reclaim its
-  regenerable build outputs. A process using any descendant protects the whole
-  worktree from build cleanup; recheck immediately before removal. Unfinished durable
-  tasks protect outputs they still need, even when no process is running.
-- Establish build-output provenance from the project's build configuration and actual
-  contents (for example Cargo target fingerprints), and verify no tracked files or
-  manual artifacts would be removed. Do not apply a recursive directory-name match to
-  arbitrary projects. Keep installed tools and requested executables/artifacts.
-- Link external scratch to a worktree/task using durable records, session metadata,
-  inspected producer scripts/logs, or an explicit resource manifest. A similar directory
-  name is only a discovery hint, never ownership proof. For future task resources,
-  record canonical worktree, task/session ID, producer, purpose, and resource paths in
-  the existing durable task record or a private resource manifest. Do not move older
-  scratch directories or introduce a new registry when existing records suffice.
-- Preview linked scratch entries alongside each worktree/build candidate. Classify
-  each entry independently: regenerable test data, compiler caches, logs and helpers
-  may qualify; screenshots/reports, databases, source, credentials, recovery data and
-  unknown files remain protected unless their disposal is separately established.
-  A mixed scratch directory can have eligible children without deleting the parent.
-- Include eligible external scratch in the same approval batch, even if the checkout
-  remains. Removing a worktree does not authorize deleting external scratch. Never
-  remove shared entries until every consumer is accounted for. After approved worktree
-  removal, recheck and clean its approved scratch paths; on failure or new activity,
-  retain dependent scratch and report why. Verify both paths and retained artifacts.
 
 ## Report
 
@@ -189,22 +164,15 @@ An analysis-only request stops here.
   count overlaps once, and distinguish apparent size from estimated disk recovery.
   State what cannot be restored and what must be downloaded or rebuilt. Retained Git refs
   allow worktree recreation; deleted transcripts and unbacked cache contents are not restorable.
-- Obtain approval for the exact deletion set unless the current request or recorded
-  approval explicitly authorizes removal of specified categories within specified
-  roots. With that authorization, show the read-only deletion preview, record the
-  authorization and its scope with it, and execute qualifying entries without another
-  confirmation; do not repeat unchanged authorization requests. If authorization is
-  missing, ask once for the concrete combined batch, not once per worktree or cache.
-  Expanded sets need new approval. Approval for one category does not authorize the
-  rest. A preference for automation alone is not permission to delete unknown content
-  or broaden scope. Tool flags that suppress prompts implement existing approval; they
-  never supply it.
+- Obtain approval for the exact deletion set, or for specified categories within specified
+  roots when the current request or a recorded approval names them. With that authorization,
+  show the read-only deletion preview, record the authorization and scope with it, and execute
+  qualifying entries without re-asking. Otherwise ask once for the concrete combined batch.
+  Expanded sets and other categories need new approval. A preference for automation, or tool
+  flags that suppress prompts, never supply approval or broaden scope.
 - Recheck identity, contents, activity and ownership before each operation. Skip changed
   entries. Never follow replacement symlinks or delete an ancestor of protected data.
   Use literal resolved paths or structured tool IDs, never broad deletion globs.
-- Remove worktrees sequentially with Git from a surviving checkout; use `worktree` for
-  blockers and submodules. Preserve branch refs. Prune administrative records only
-  after a dry run proves they are stale, not inaccessible or unmounted.
 - Use verified supported session deletion and refresh derived indexes per
   `session-resume`. Isolate failures. Stop only cleanup-owned processes, and remove
   only this run's disposable scratch.

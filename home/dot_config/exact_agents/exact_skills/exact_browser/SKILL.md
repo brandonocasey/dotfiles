@@ -42,6 +42,7 @@ Never enable `safari-native` off macOS or when `safaridriver --help` lacks `--mc
 For real Safari or Safari-only bugs, follow `real-safari` for driver selection and approval before starting the visible browser.
 
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
+For audio issues, where sound is allowed, read [audible-playback.md](references/audible-playback.md).
 
 ## Screenshots
 

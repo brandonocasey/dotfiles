@@ -4,11 +4,12 @@ description: "Show live previews; screenshots only on request. Offer requested o
 ---
 
 Default to a live preview of the actual app or page. A request to preview or
-show the work does not by itself request alternatives or screenshots.
+show the work does not by itself request alternatives, screenshots, or prototype
+development.
 
 Read [task-resources.md](../host-preflight/references/task-resources.md) before
-creating resources or starting a server. It owns locations, ports, and cleanup.
-Previewing existing work does not request prototype development.
+creating resources or starting a server. It owns locations, ports, retention,
+and cleanup.
 
 ## Live preview
 
@@ -21,17 +22,15 @@ If the app cannot run here, use a faithful local HTML preview when practical
 and label its limitations. If neither is possible, explain the blocker;
 do not substitute unsolicited screenshots or a choice gallery.
 
-Keep the server and its files running while the user needs the preview URL,
-including after the response; `task-resources.md` owns shutdown and cleanup.
-Never stop servers owned by other tasks.
+Keep the server running after the response while the user needs the URL.
 
 ## Requested screenshots
 
-For preview delivery, capture screenshots only when the user requests them.
+Capture preview screenshots only when the user requests them.
+
 This does not change screenshot evidence required by `ui-verify` for UI fixes.
 Use the actual app at the requested viewport and state. Attach them natively when available;
-otherwise serve them through HTTP. Screenshots are not a prerequisite for
-sharing a live preview.
+otherwise serve them through HTTP.
 
 ## Choices
 
@@ -52,4 +51,4 @@ such as a new look, layout, icon, or slide style.
 Use `agent-preview` when those choices benefit from a browser gallery. Read
 [choices.md](references/choices.md) for that gallery workflow. Prefer live
 variants when interaction matters; the gallery's sandboxed HTML cannot run
-the app. Use screenshots as gallery assets only when requested.
+the app.

@@ -2,6 +2,12 @@
 
 These rules keep a Workflow run's raw output out of the main session.
 
+## Agents
+
+- Workflow `agent()` calls skip `CLAUDE_CODE_SUBAGENT_MODEL` and inherit the session model. Pass the role as `agentType` and its Claude Code model from [roles.md](roles.md) as `model`, such as `claude-sonnet-5-5`.
+- Check `cheap` and `explorer` first; without a fitting role, use `explorer` for read-only work and `worker` otherwise.
+- Never omit `agentType`: the default agent loads every tool plus CLAUDE.md, about 40k tokens per spawn. Never use `consult` in a workflow.
+
 ## Setup
 
 - Fetch diffs, MR/PR details, logs, and test output inside the workflow, as its first step, through `cheap` agents.

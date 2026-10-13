@@ -10,8 +10,8 @@ Classify the argument:
 
 - **GitLab, GitHub, or Forgejo URL** → remote review. Parse host, project path, and MR/PR number.
   GitLab (any host) → `glab`, prefixed with `GITLAB_HOST=<host>` when self-hosted;
-  GitHub → `gh`; Forgejo → `fj -H <host>` (read-only review only; check
-  `fj pr view --help` for the ID format).
+  GitHub → `gh`; Forgejo → `fj -H <host>` (see [remote-target.md](remote-target.md);
+  check `fj pr view --help` for the ID format).
 - **Branch name** → local branch review against **Newest default base** in
   [default-branch.md](../../shared/default-branch.md), unless the user supplied a base.
   Use `git log <base-commit>..<branch>` for commits and
@@ -30,10 +30,9 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
 - After you create a review worktree, follow the `worktree` skill's **Prepare** section
-  before tests or a `--fix` commit; it installs only when a step needs it.
-- When `.gitmodules` exists and the review runs tests, initialize submodules per the
-  `worktree` skill's **Create**. An initialized submodule later blocks plain removal; the
-  same skill's **Submodules** section owns the `--force` decision.
+  before tests or a `--fix` commit.
+- With `.gitmodules`, the `worktree` skill's **Create** and **Submodules** sections
+  own submodule init and removal.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
 
 Read the surrounding code of every changed hunk you intend to comment on.

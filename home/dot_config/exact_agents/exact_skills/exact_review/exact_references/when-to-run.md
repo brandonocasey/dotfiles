@@ -8,15 +8,18 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 
 - Complete means implementation, relevant checks, and the manual check are done.
   Never run an automatic review mid-task: not per edit, todo, or intermediate commit.
-- Review once per hand-off. A task that ends in `ship` reviews only there.
-- During `ship`, start the review right after the push and MR/PR update, so CI runs
-  while the review does. `ship`'s finish-scope.md owns that flow. When the MR/PR
-  has auto-merge on, pause it per `shared/auto-merge-pause.md` and still push first;
-  a queued one gets a new MR/PR.
-  If the pause fails, that file moves the review before the push.
+- Review the combined task diff once per hand-off, committed and uncommitted
+  changes alike (a clean tree does not mean nothing to review), from the task's
+  recorded starting revision. A task that ends in `ship` reviews only there.
+- During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
 - Otherwise, review just before the hand-off: a push outside `ship`, or the final
   report to the user.
+- Wait for the independent result, verify findings, apply confirmed in-scope fixes,
+  and rerun affected checks before reporting completion. Pushes and changes outside
+  the intended behavior keep their existing authorization rules. Report the
+  verified outcome, including defects fixed, never relabeling it clean after repairs.
+  Disclose any inline fallback ([delegation.md](delegation.md)).
 
 ## Triggers
 
@@ -42,26 +45,27 @@ remains. Otherwise apply the triggers and narrow exceptions below.
   that code moves into a change that will ship.
 - Otherwise, skip only when the user did not request review, no material uncertainty remains,
   and every change is a prose-only correction, cosmetic styling that preserves
-  interaction, or a narrow mechanical edit with verified equivalence.
-- No decisions, state transitions, accepted inputs, error behavior, or integration
-  assumptions may change. Passing tests alone does not justify skipping.
+  interaction, or a narrow mechanical edit with verified equivalence: no decisions,
+  state transitions, accepted inputs, error behavior, or integration assumptions
+  change. Passing tests alone does not justify skipping.
 - A dependency bump, config value, or test-only change is not automatically
   exempt. Broad refactors still require review. Inspect the diff and run relevant
-  checks; visible behavior changes still need the manual check in AGENTS.md.
+  checks.
 
 ## Follow-ups
 
 - Review fixes and follow-up commits as a delta (`<last-reviewed-sha>..<new-head-sha>`)
-  with surrounding context when they change logic beyond a one-line local edit.
-  A one-line edit still requires review if it introduces new behavior or risk.
+  with surrounding context when they change logic beyond a one-line local edit
+  or a one-line edit that introduces new behavior or risk. This replaces the
+  once-per-hand-off rule for repairs after a review.
 - When **Second reviewer** requires two reviewers, run the review with `--loop`
   unless the user set `--no-loop`; [loop.md](loop.md) then owns the follow-ups.
 - Otherwise run one follow-up review for the repair delta; verify and test
   its fixes without an automatic convergence loop. Separate later behavior or risk
   changes start a new delta review. Report unresolved findings explicitly.
-- Cosmetic CSS or prose-only follow-ups use the skip exceptions above; visible
-  changes still need the rendered check. Do not rerun a full review merely to obtain
-  a clean report after repairs. Explicit `--loop` requests retain their workflow.
+- Cosmetic CSS or prose-only follow-ups use the skip exceptions above. Do not rerun
+  a full review merely to obtain a clean report after repairs. Explicit `--loop`
+  requests retain their workflow.
 
 ## Second reviewer
 
@@ -75,6 +79,7 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 
 ## What review cannot replace
 
-- A clean review never substitutes for manual verification or required repository
-  checks. Layout, device behavior, runtime limits, real-data parsing, external
-  services, and CI-only budgets may require evidence beyond reading the diff.
+- A clean review never substitutes for manual verification (visible behavior still
+  needs the manual check in AGENTS.md) or required repository checks. Layout, device
+  behavior, runtime limits, real-data parsing, external services, and CI-only
+  budgets may require evidence beyond reading the diff.

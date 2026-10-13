@@ -5,12 +5,12 @@ description: "Select, prompt, monitor, and verify sub-agents across Claude and C
 
 When the assignment includes Git work, read the global [Git policy](../shared/git-policy.md) before spawning. Every spawn follows these rules. The spawning session owns verification and cleanup.
 
-Before choosing a role, model, or effort, read [roles.md](references/roles.md). It owns overrides, role pins, routing, compatibility checks, and escalation between roles.
+Before choosing a role, model, or effort, read [roles.md](references/roles.md). It owns overrides, role pins, routing, and compatibility checks; [escalation.md](references/escalation.md) owns escalation.
 
 ## Prompts
 
 - Include the task, owned files or targets, acceptance criteria, necessary evidence, and required checks. Do not rely on unpassed context.
-- Spawn independent tasks without conversation history. In Codex, explicitly set `fork_turns="none"`; its omission can inherit the full conversation. Use a Claude named role rather than a conversation fork. Inherit history only when the assignment requires it.
+- Spawn independent tasks without conversation history. In Codex, explicitly set `fork_turns="none"`; its omission can inherit the full conversation. Use a Claude named role rather than a conversation fork (forks inherit the parent model); fork only when a skill requests inherited context.
 - Give independent reviewers only the context permitted by the `review` skill.
 - For roles with `omitClaudeMd: true`, include applicable repository constraints, required checks, allowed output paths, and any relevant global consent, destination, resource, or test protections absent from the role. Pass only what the assignment needs; do not paste the global rules or transcript.
 - Paste inputs under about 2k tokens (8k characters). Pass larger ones (diffs, logs, data, file contents) as file paths, and tell the agent to search or read only the parts it needs. Workflow scripts write large computed inputs under the task's scratch directory and pass the path.

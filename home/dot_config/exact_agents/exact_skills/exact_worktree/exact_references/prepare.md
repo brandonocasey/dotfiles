@@ -2,8 +2,7 @@
 
 A new worktree has no ignored files: no dependencies, builds, or generated git
 hooks. Install dependencies and build only when a step you will actually run
-needs them: affected checks, commit hooks, or review evidence. Never install at
-creation, by default, or in case a later step might need it. A commit alone does
+needs them: affected checks, commit hooks, or review evidence. A commit alone does
 not require installation; check the repository's setup instructions and hooks
 first. Preserve all required checks and hooks. Once setup is needed, start it in
 the background and read code while it runs; dependent checks or commits wait for it.
@@ -14,12 +13,11 @@ the background and read code while it runs; dependent checks or commits wait for
   worktree root, with its frozen-lockfile option when it has one.
 - Never symlink dependency directories from another checkout. Workspace links
   then resolve into that checkout.
-- Only when the install fails for lack of network, clone dependencies
-  copy-on-write from the source checkout:
-  `cp -cR` on macOS, `cp --reflink=auto -R` on Linux. Do this only when both
-  lockfiles are identical (`cmp`). Clone every dependency directory, nested
-  ones included. Then run the lifecycle step that installs git hooks, for npm
-  `npm run prepare --if-present`. Report that dependencies came from a clone.
+- Only when the install fails for lack of network, and both lockfiles are identical
+  (`cmp`), clone every dependency directory (nested ones included) copy-on-write from the
+  source checkout (`cp -cR` on macOS, `cp --reflink=auto -R` on Linux). Then run the
+  lifecycle step that installs git hooks (npm: `npm run prepare --if-present`). Report that
+  dependencies came from a clone.
 - A setup step that changes a repo git setting needs consent under
   [git-policy.md](../../shared/git-policy.md).
 - If a commit hook fails for missing files, finish Prepare and commit again;

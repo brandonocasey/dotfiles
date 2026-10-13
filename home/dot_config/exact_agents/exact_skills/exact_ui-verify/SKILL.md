@@ -30,8 +30,7 @@ reduced motion when their styling or transitions changed.
 
 ## Exercise the UI
 
-Load the `browser` skill before browser MCP calls. It owns engine selection,
-focus, audio, and browser cleanup. Use a repository run/test skill when
+Load the `browser` skill before browser MCP calls. Use a repository run/test skill when
 available to start the app with its required headers and assets. Stop servers you start per [task-resources.md](../host-preflight/references/task-resources.md).
 
 Inspect the rendered DOM before choosing selectors. Prefer roles and accessible
@@ -64,11 +63,10 @@ site data.
 
 Report the checked journey and states, concrete failures, screenshots,
 measurements, and untested device or engine coverage. For a reported defect,
-include before and after screenshots at the same viewport. Do not say "fixed"
-without this evidence. Fix in-scope defects and rerun the affected checks.
+include before and after screenshots at the same viewport. Fix in-scope
+defects and rerun the affected checks.
 Reuse results for unchanged code and inputs.
 
-Return evidence to the requesting task or `review`; do not start another review
-or shipping cycle from this skill. `frontend-design` owns a requested design
-direction, and [preview](../preview/SKILL.md) owns galleries of visual options.
-This skill checks the implemented result.
+Return evidence to the requesting task or `review`. This skill checks the
+implemented result; design direction and option galleries belong to
+`frontend-design` and [preview](../preview/SKILL.md).

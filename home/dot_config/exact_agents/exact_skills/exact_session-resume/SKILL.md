@@ -7,6 +7,10 @@ Use `agent-task` as the durable task record. Keep credentials, full transcripts,
 and executable commands out of it. Stored authorization is evidence of the scope
 already granted. It never grants a new push, deploy, release, or destructive action.
 
+**Reuse rules** (other skills cite these): retain a resumed record's authorization only
+within its exact provenance and scope; it never grants push authority. Reuse a recorded
+check or manual evidence only when its code revision, inputs, and environment match.
+
 Create a record with the objective and exact authorization provenance and scope:
 
 ```sh
@@ -18,8 +22,7 @@ define where the resumed work belongs. The same flags update an existing record.
 
 Before work, run `agent-task show <id>`. Check its repository, worktree, and HEAD
 against the current checkout. Apply recorded corrections. Continue from `nextStep`.
-Use a completed check only when its code revision, inputs, and environment still
-match. Follow the active workflow's review and approval rules.
+Follow the active workflow's review and approval rules.
 
 Update with the revision returned by `show`; stale updates fail:
 
@@ -36,16 +39,10 @@ reconcile the newer record with the pending change, and retry with its revision.
 Record material corrections and set `--status complete` only after all task work
 is complete. Use `agent-task list` to find active records.
 
-For old context, run `agent-task index` to update the private incremental index
-and see scan coverage. It covers Codex and Claude history, active transcripts,
-archives, and alternate Claude profiles. The coverage reports unreadable files,
-malformed or oversized lines, removals, and optional scan limits. The default
-indexes all discovered files. Use `--max-files` or `--byte-limit` only when a
-bounded partial update is required. Omit those limits for a complete update.
-The index assumes append-only session logs. It detects replacement, truncation,
-same-size edits, and changes to the saved prefix or last 64 KiB during growth.
-For a deliberate rewrite deeper inside a growing log, rebuild with
-`agent-task index --rebuild`.
+For old context, run `agent-task index` to update the private incremental index and see scan
+coverage (Codex and Claude history, transcripts, archives, alternate profiles, plus unreadable
+or malformed files). Omit `--max-files` and `--byte-limit` unless a bounded partial update is
+required. After a deliberate rewrite deep inside a growing log, run `agent-task index --rebuild`.
 
 Use `agent-task resolve --session <id>` to find an exact session. Use
 `agent-task search --query <text> [--session <id>]` to search human turns. Each

@@ -13,13 +13,12 @@ For the user's own branch:
    Without a local branch, use the two `git` commands in [restore.md](../../worktree/references/restore.md); they fetch the branch first.
 2. Fetch the head branch and verify that its fetched SHA and the worktree
    HEAD equal the observed SHA. If either differs, preserve local work,
-   refresh the inventory, and reconcile it before proceeding. Fetch the base
-   explicitly with `git fetch origin refs/heads/BASE`, then immediately record
-   `git rev-parse FETCH_HEAD` as `BASE_SHA`; a restricted fetch refspec may
-   leave `origin/BASE` absent or stale.
-3. Run `git rebase BASE_SHA`. Resolve conflicts when the combined result is
-   clear; keep both sides' intent. Stop and report the conflicting files when
-   the intended result is ambiguous.
+   refresh the inventory, and reconcile it before proceeding. Fetch and pin
+   `BASE` per [default-branch.md](../../shared/default-branch.md) **Fetch and
+   pin**, and record the pinned commit as `BASE_SHA`.
+3. Run `git rebase BASE_SHA`. Resolve conflicts per
+   [git-policy.md](../../shared/git-policy.md); report the conflicting files
+   when the intended result is ambiguous.
 4. Run the repository's targeted checks for the touched paths.
 5. Push with `git push --force-with-lease=BRANCH:OBSERVED_SHA origin HEAD:BRANCH`.
    A rejected lease means someone else pushed; refresh and start over.

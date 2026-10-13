@@ -10,17 +10,15 @@ Split the choices into separate questions, one decision each. The gallery shows 
 - Use `select: "one"` when only one answer can win, and `select: "many"` when several can.
 - Give each question a `prompt` that says what to decide.
 - Keep each option's `description` to what differs from the other options.
-- Show faithful HTML or existing visual assets; when screenshots are requested,
-  capture the real app at the size the user cares about.
+- Show faithful HTML or existing visual assets. Use screenshots only when requested,
+  captured from the real app at the size the user cares about.
 - Show 3–4 options per question, as `preview` requires. Offer more through a later round.
 
-Read [task-resources.md](../../host-preflight/references/task-resources.md).
-Put the config and disposable visual assets in the selected task scratch
-directory. Keep private gallery state under the external XDG cache scratch
-directory in a separate `preview-state/` directory: it contains the access
-token and feedback. Never serve that state directory as static files. Choose
-one available random port and reuse it for this gallery. Write a JSON config
-with stable question and option IDs:
+Per [task-resources.md](../../host-preflight/references/task-resources.md), put the
+config and disposable visual assets in the task scratch directory. Keep private gallery
+state (access token and feedback) under the external XDG cache scratch directory in a
+separate `preview-state/` directory, and never serve it as static files. Reuse one random
+port for this gallery. Write a JSON config with stable question and option IDs:
 
 ```json
 {
@@ -56,11 +54,12 @@ The command prints JSON with `url`, `token`, and `pid`, then returns. Share only
 
 ## Wait in the background
 
-Text written before a blocking tool call can stay hidden until the turn ends. So the user never sees a URL that is followed by a foreground wait. Show the URL first:
-
-1. Put the full gallery URL on its own line in a chat message. Repeat it in every later message about the gallery.
-2. Always run the wait in the background; never run it in the foreground. In Claude Code, use `run_in_background`. Then end the turn with the URL on the line before `Next:`. The exit notification starts your next turn.
-3. If the harness gives no exit notification, still start the wait in the background. Read its output at the start of each later turn.
+Text written before a blocking tool call can stay hidden until the turn ends, so never run the
+wait in the foreground. Put the full gallery URL on its own line in a chat message (repeat it
+in every later message about the gallery), start the wait in the background (Claude Code:
+`run_in_background`), and end the turn with the URL on the line before `Next:`. The exit
+notification starts your next turn; if the harness gives none, read the wait's output at the
+start of each later turn.
 
 Start with cursor `0`, then pass the returned `cursor` as `--after`:
 
@@ -68,7 +67,9 @@ Start with cursor `0`, then pass the returned `cursor` as `--after`:
 agent-preview wait --state-dir <state-dir> --after 0 --timeout-seconds 3600
 ```
 
-The timeout only limits one wait call. The call returns as soon as a submission arrives. A timeout prints nothing and does not discard feedback. Run it again with the same cursor, in the same way, and show the URL again. Do not poll a model or ask the user to type that they submitted.
+The call returns as soon as a submission arrives. A timeout prints nothing and does not discard
+feedback: run it again with the same cursor, in the background, and show the URL again. Do not
+poll a model or ask the user to type that they submitted.
 
 ## Read the answers
 
@@ -80,8 +81,7 @@ Apply selections, notes, and requests for more options to the active task. When 
 
 ## Stop
 
-Stop the gallery server when the user finishes using it or requests shutdown.
-Keep it running if the requested deliverable still depends on its URL:
+Stop the gallery server per `task-resources.md` retention rules:
 
 ```sh
 agent-preview stop --state-dir <state-dir>

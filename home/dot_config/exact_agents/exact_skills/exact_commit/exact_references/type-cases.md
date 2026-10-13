@@ -45,34 +45,15 @@ Use when step 4 of [choosing-type.md](choosing-type.md) leaves a tie.
 
 ## Examples
 
+Only cases that add a rule beyond the tie-breakers and step 4.
+
 | Diff | Type | Why |
 | --- | --- | --- |
 | New how-to pages plus their nav and sitemap entries | `docs` | All files are in the Docs area |
 | Docs page plus a 2-line route entry so the page loads | `docs` | The route only supports the docs change |
 | New UI page with its docs page | `feat` | The docs support the product change |
 | New reading layout for the docs viewer | `ux(docs)` | Viewer code is Product; same capability |
-| Move brand assets into one module, same output | `refactor` | Behavior and output are identical |
-| Redesign the home page layout | `ux` | Same capabilities, changed look |
-| Merge card drawers into the card | `ux` | Same capabilities, changed layout |
-| Add a file checksum page | `feat` | Users can do something new |
-| Button overlaps text on phones | `fix` | Layout went against the design |
-| Add labels so screen readers name the buttons | `a11y` | Main purpose is assistive access |
-| Add a Spanish translation | `i18n` | Locale files only |
-| Escape file names before HTML output | `security` | Closes an XSS path |
-| Rename CLI flag `--out` to `--output`, old flag removed | `ux!` | Users must change their scripts |
-| Routine crate bump | `deps` | Only dependency versions changed |
-| Bump a shipped crate for a reachable CVE | `security(deps)` | Fixes an advisory in the product |
-| Repair a failing release workflow | `ci` | Only CI files changed |
-| Raise a CI bundle-size budget | `ci` | The budget runs only in CI |
 | Add a lint rule and fix its findings, same behavior | `dx` | Tooling change; the code edits support it |
-| Run the formatter over the repo | `refactor` | Same behavior, formatting only |
 | Remove a trace that logged every keystroke by mistake | `fix` | It was never meant to log there |
-| Shorten a download button label | `ux` | The old label worked as intended |
-| Restore the desktop layout a redesign broke | `fix` | Repairs a regression |
-| Localize settings labels that showed in English | `i18n` | Translation work, precedence over `fix` |
-| Bound allocations from untrusted ROM headers | `security` | Closes a denial-of-service path |
-| Release the Identify tool from beta to everyone | `feat` | Everyone gets a new capability |
 | Trim entries from the shipped identify catalogs | `ux` | Shipped data is Product; results change on purpose |
 | Add hand-written highlights to release notes | `ci` | Release tooling |
-| Cache compiler output to speed up CI | `ci` | CI speed is not `perf` |
-| Faster checksum, byte-identical output | `perf` | Only speed changed |

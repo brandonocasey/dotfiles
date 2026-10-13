@@ -41,8 +41,8 @@ keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR
 passes target it. Run once, after step 5: step 4's per-run report, `Ship:` line, and
 worktree removal; the auto-merge restore; and step 7. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's
-answer resolves or accepts every item; otherwise keep auto-merge off per
-`shared/auto-merge-pause.md`. Keep the review worktree until then. If no sub-agent is available, stop after the first
+answer resolves or accepts every item; otherwise leave auto-merge off. Keep the
+review worktree until then. If no sub-agent is available, stop after the first
 full review and say that the next reviewer is not independent. Run the full manual pass
 in each full review. In fix checks, rerun only manual cases whose behavior the fixes
 under check changed.

@@ -8,12 +8,12 @@
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Run waits over one minute in background, never foreground sleep/until loops.
-- Each tool call re-sends all context, so use few calls and small outputs. Combine independent commands.
-- Search the whole scope in one call, never file by file. Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
+- Each tool call re-sends all context, so use few calls and small outputs. Combine independent commands; search the whole scope in one call, never file by file.
+- Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
 - Read only what you need, once. Find tight ranges first: LSP symbols, else `ast-grep`, else `rg -n`. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
-- Never run `cat` bare; heredocs are fine. Read a file over about 200 lines whole only when you need most of it.
-- Change existing files with Edit. Use Write only for new files or near-total rewrites.
+- Never run `cat` bare; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
+- Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 
 ## Directories
 
@@ -25,10 +25,9 @@ Prefer XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`
 
 ## Skills own the detail
 
-Load relevant skills and rule files whole, once; line ranges and the 200-line limit apply to code only. Read each action's rule files in one parallel batch, only when the task reaches that action. Reread only after changes, lost context, or a specific detail check.
+Load relevant skills and rule files whole, once. Read each action's rule files in one parallel batch, only when the task reaches that action. Reread only after changes, lost context, or a specific detail check.
 
 - Skill paths in global rules, and unlisted `<name>/SKILL.md` skills, are under `~/.config/agents/skills/`.
 - Skill commands use POSIX sh; on Windows use Git Bash, else PowerShell. Run skill Git commands with every flag shown.
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`.
-- Before branch work, including sequential tasks, read `worktree/SKILL.md`, `worktree/references/create.md`, `shared/default-branch.md`, and `shared/git-policy.md`; add `worktree/references/prepare.md` before checks or commits. Never switch branches in the main checkout.
-- Before Git work: `shared/git-policy.md`. It owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates.
+- Before Git work: `shared/git-policy.md`; it owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates. Before branch work, including sequential tasks, also read `worktree/SKILL.md`, `worktree/references/create.md`, and `shared/default-branch.md`; add `worktree/references/prepare.md` before checks or commits. Never switch branches in the main checkout.

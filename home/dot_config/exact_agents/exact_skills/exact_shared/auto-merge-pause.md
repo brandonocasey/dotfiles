@@ -19,13 +19,12 @@ First, check whether the MR/PR is in a merge queue or merge train:
 - GitLab: `glab api "projects/:id/merge_trains/merge_requests/<iid>"`; a 404
   means it is not on a train.
 
-If it is queued, skip the steps below and leave it untouched; never push to its
-branch. Fetch its source branch and start a new branch from that commit with the
-`worktree` skill, per [dependent-branches.md](dependent-branches.md). Keep the
-ticket key in the branch name. Cherry-pick any task commits already made on the
-queued branch; leave the originals and report them. Ship the new branch as a new
-MR/PR. This covers `ship`, review `--fix`, and CI repairs; `pr-fix` keeps its own
-rule to wait on a queued PR.
+If it is queued, skip the steps below, leave it untouched, and never push to its
+branch. Start a new branch from its source head per
+[dependent-branches.md](dependent-branches.md), keeping the ticket key in the
+name. Cherry-pick any task commits already made on the queued branch; leave the
+originals and report them. Ship the new branch as a new MR/PR. This covers
+`ship`, review `--fix`, and CI repairs; `pr-fix` waits on a queued PR.
 
 ## Pause steps
 

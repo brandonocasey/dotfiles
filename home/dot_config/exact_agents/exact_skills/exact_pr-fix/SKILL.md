@@ -64,8 +64,8 @@ needed rebase. `--approve`, `--merge`, and enabled auto-merge add only what
   [auto-merge-pause.md](../shared/auto-merge-pause.md)), change branch protection, bypass
   required checks, or push to a fork-owned branch. Report those blockers with
   the exact owner and next action.
-- Do not edit tests, lint configuration, or CI configuration only to make a
-  check pass. Fix the cause, or report the check as blocked.
+- Never edit tests, lint, or CI configuration only to make a check pass; fix
+  the cause or report the check as blocked.
 
 ## Inventory
 
@@ -83,10 +83,9 @@ Replace `--author @me` with the parsed selection. If the list reaches its
 limit, raise the limit until the inventory is complete. If the selection is
 empty, report that and stop.
 
-For each pull request record the number, URL, author, head branch, head SHA,
-base branch, draft state, fork state, auto-merge method, merge state, review
-decision, and required-check state. Refresh this record after every mutation:
-a new head SHA makes earlier check results stale.
+For each pull request record the fields above plus its required-check state.
+Refresh this record after every mutation: a new head SHA makes earlier check
+results stale.
 
 ## Diagnose and repair
 
@@ -119,32 +118,23 @@ to a stale branch wastes a run.
 - Permissions, policy, missing secrets, or an unknown merge state block it:
   report the exact API or check message and the owner who must act.
 
-Do not call a pull request passing only because its visible checks are green.
-Required checks, mergeability, draft state, and queue state control that.
-
 ## Approve and merge
 
-Before starting a fix that will be pushed, pause auto-merge; restore it after the push, per
+Before a fix that will be pushed, pause and later restore auto-merge per
 [auto-merge-pause.md](../shared/auto-merge-pause.md). Otherwise let an enabled
 auto-merge finish. Before any approval or manual merge, read
-[merge.md](references/merge.md). Preserve its preflight and head-SHA checks.
-Never use `--admin` or `--delete-branch`. Without `--merge` or auto-merge, a
-passing pull request is complete; report it as ready.
+[merge.md](references/merge.md). Without `--merge` or auto-merge, a passing
+pull request is complete; report it as ready.
 
 ## Clean up task resources
 
-Record which worktrees this invocation created; never remove a pre-existing
-worktree. On every exit path (completed, closed, or blocked), stop
-task-created watchers and servers, free their ports, and close task-created
-browser pages. Keep a repository watcher running while other selected pull
-requests in that repository still need it.
-Keep task-created worktrees while their pull requests remain open, including
-review or policy blockers. After merge or closure, or on explicit cleanup, move
-to a surviving checkout and follow the `worktree` skill's **Remove**
-preservation checks. A merge alone does not prove a changed local tip is
-preserved. Retain dirty, unpushed, active, locked, or recovery worktrees and
-report their paths and exact blockers. Do not delete a branch or recovery state
-merely to finish cleanup.
+On every exit path, follow
+[task-resources.md](../host-preflight/references/task-resources.md). Remove only
+worktrees this invocation created, never a pre-existing one. Keep a repository
+watcher running while other selected pull requests in that repository still need
+it. Keep task-created worktrees while their pull requests remain open, including
+review or policy blockers; after merge or closure, or on explicit cleanup, use
+the `worktree` skill's **Remove** section and report retained paths and blockers.
 
 ## Report
 

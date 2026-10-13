@@ -45,30 +45,18 @@ patches are represented in the merged PR head. A successful empty result means
 no local-only non-merge commits remain; recheck ancestry before claiming
 contained history.
 
-The `rev-list --merges` check must also succeed with empty output before patch
-equivalence alone supports a superseded verdict. Local-only merge commits can
-contain unique conflict-resolution edits that both comparison tools miss.
-If any are present, retain as unknown unless separate evidence, such as the
-conflict-free target-tree check below, proves there is no net content to keep.
-Mark the branch superseded only with a verified association and complete,
-available history. Record the PR URL, both tips, commands, exit codes, and output.
+The `rev-list --merges` check must also succeed with empty output before patch equivalence
+supports a superseded verdict (see [assess-retained.md](assess-retained.md)); otherwise retain
+as unknown. Mark the branch superseded only with a verified association and complete, available
+history. Record the PR URL, both tips, commands, exit codes, and output.
 
 A `+` entry means equivalence was not proved. It can reflect additional work,
 conflict-resolution edits, or a squash of several local commits. `range-diff`
 helps explain the difference; an approximate match does not authorize removal.
 Absent stronger evidence, retain as still relevant or unknown.
 
-For another check against the selected target:
-
-```sh
-git merge-tree --write-tree --messages <target-tip> <local-tip>
-git rev-parse <target-tip>^{tree}
-```
-
-If the merge succeeds without conflicts and its output tree equals the target
-tree, the branch adds no net content to that target. This supports a superseded
-verdict. Conflicts are not proof of replacement, and a different output tree
-does not prove that the remaining differences are still wanted.
+For the virtual-merge tree check against the selected target, follow
+[assess-retained.md](assess-retained.md).
 
 ## Keep the deletion rules
 

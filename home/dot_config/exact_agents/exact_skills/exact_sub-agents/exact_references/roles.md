@@ -18,7 +18,7 @@ If the role is unavailable or incompatible, work inline and report the limitatio
 Unless an override applies, keep the role's model and effort pins.
 Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
 Omitting the role bypasses its pin: Claude Code uses `CLAUDE_CODE_SUBAGENT_MODEL` (Sonnet), or inherits the parent model when that is unset; Codex uses `default_subagent_model`.
-Workflow `agent()` calls skip that variable and inherit the session model. Pass the role as `agentType` and its Claude Code model below as `model`, such as `claude-sonnet-5-5`. Check `cheap` and `explorer` first; without a fitting role, use `explorer` for read-only work and `worker` otherwise. Never omit `agentType`: the default agent loads every tool plus CLAUDE.md, about 40k tokens per spawn. Never use `consult` in a workflow.
+Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
@@ -31,20 +31,12 @@ Workflow `agent()` calls skip that variable and inherit the session model. Pass 
 | `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `deep-review` | Deep independent review, paired with `reviewer` by review `--deep` and `--loop`; read-only | claude-opus-5-5, high | gpt-6.1-sol, high |
 
-Claude Code forks (`subagent_type: "fork"`) inherit the parent model.
-Use them only when a skill explicitly requests an inherited-context fork.
-Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
-Use `cheap` to find one named file, definition, string, or config value; tell it not to edit.
-Use `explorer` to list usages, trace calls, or map affected files.
-Verify the key claims of any `haiku` run before acting on them.
-Without a sub-agent tool, work inline and identify any review that is not independent.
+Routing:
 
-For delegated named commands with explicit pass/fail criteria, use `cheap` and
-request the exit status and bounded output. This includes executing a named test,
-lint, or build command. Use `tester` when choosing checks or interpreting failures
-requires judgment; use `worker` for diagnosis and fixes. Independent review keeps
-its reviewer role. An explicit user role/model still wins. Do trivial commands
-inline when spawning costs more; this routing does not require extra agents.
-
-Compare total expected context, cache, output, and retry costs.
-Do not retain an expensive role solely for its cache.
+- Use `cheap` for named commands with explicit pass/fail criteria (a named test, lint, or build run; request exit status and bounded output) and to find one named file, definition, string, or config value; tell it not to edit.
+- Use `explorer` to list usages, trace calls, or map affected files.
+- Use `tester` when choosing checks or interpreting failures needs judgment; `worker` for diagnosis and fixes. Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
+- Independent review keeps its reviewer role. Do trivial commands inline when spawning costs more.
+- Verify the key claims of any `haiku` run before acting on them.
+- Without a sub-agent tool, work inline and identify any review that is not independent.
+- Choose by total expected context, output, and retry cost, not cache reuse alone.

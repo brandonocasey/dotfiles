@@ -40,6 +40,3 @@ For each verified finding, record:
 Rank avoidable turns, repeated work, and observed delay. Separate requests
 that grant new authority from needless reconfirmation. Preserve decisions
 such as “land, no deploy”; frequency never grants deployment authority.
-
-Load only the relevant skill and reference for each finding. Keep broad rules
-out of always-loaded instructions when a narrow skill or helper owns the fix.

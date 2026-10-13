@@ -3,7 +3,7 @@
 Use this file when a workflow needs a default branch name or a starting commit.
 These decisions are separate. Base selection must not change a checkout's
 branch, merge histories, or push. It moves a local branch only through the
-fast-forward in **Newest default base** step 5.
+fast-forward in [ff-local-target.md](ff-local-target.md).
 
 ## Local target name
 
@@ -24,17 +24,22 @@ symbolic HEAD, use its forge's default-branch metadata or ask. A cached
 `refs/remotes/<remote>/HEAD` or the newest feature branch is not a live default
 lookup. Report lookup failures and ask before using stale data.
 
+## Fetch and pin
+
+Fetch `refs/heads/<branch>` from the remote (`git fetch <remote>
+refs/heads/<branch>`), then immediately record `git rev-parse FETCH_HEAD` with
+the remote and branch name, before another fetch overwrites `FETCH_HEAD`. Use
+the recorded ID, not a ref name: a restricted fetch refspec may leave
+`origin/<branch>` absent.
+
 ## Newest default base
 
 Use this for new branches and default-based review comparisons unless the user
 supplied a base. Do not recreate or rebase existing branches or PR/MR heads.
 
 1. List every configured remote with `git remote`. For each remote, use
-   **Remote default name** above to resolve its live default. Fetch that
-   branch with `git fetch <remote> refs/heads/<default>`, then immediately
-   record `git rev-parse FETCH_HEAD`, the remote, and the branch name before
-   another fetch overwrites `FETCH_HEAD`. This also works with restricted fetch
-   refspecs.
+   **Remote default name** above to resolve its live default. Fetch and
+   record it per **Fetch and pin**.
 2. Add the local target, if one resolves, and existing local branches with the
    verified remote-default names. A missing local target is not a blocker when
    remote candidates exist; do not prompt just for this optional lookup.
@@ -55,27 +60,9 @@ supplied a base. Do not recreate or rebase existing branches or PR/MR heads.
    establish that one history contains another. An ancestry command error is
    not proof of divergence: resolve missing or shallow history first, or report
    that it could not be checked.
-5. Fast-forward the local target after step 3 or 4 selects a base. All of these
-   conditions must be true, or skip this step:
-   - The base is the commit fetched from the target's upstream remote
-     (`git config branch.<target>.remote`). A commit from another remote,
-     such as `upstream` in a fork, would make the target look ahead of its
-     upstream.
-   - The local target is a strict ancestor of the base.
-   - `git diff --raw <target> <base-commit>` shows no `160000` mode. A merge
-     does not update submodule checkouts, so a changed gitlink leaves the
-     checkout dirty.
 
-   Never create a merge commit, rebase, or reset:
-   - Target checked out in a worktree (see `git worktree list --porcelain`)
-     with an empty
-     `git -C <that-worktree> status --porcelain --ignore-submodules=none`:
-     run `git -C <that-worktree> merge --ff-only <base-commit>`.
-   - Target checked out nowhere: run
-     `git fetch . <base-commit>:refs/heads/<target>` from any checkout of the
-     repository. Without `+`, Git refuses a non-fast-forward update.
-   - Target checked out in a dirty worktree, or the command fails: skip the
-     fast-forward and report why. The base choice does not change.
+After step 3 or 4 selects a base, fast-forward the local target as
+[ff-local-target.md](ff-local-target.md) allows; otherwise skip and report.
 
 Report the selected base ref and commit, and any fast-forward or skip. Do not
 claim that a cached remote ref is current. If the user requires offline or

@@ -37,7 +37,6 @@ An exception applies only when every named hash still matches and each file
 matches its own source. It cannot suppress a stale installation or broken link.
 Inspect each mismatch before treating one host as authoritative.
 
-For authorized synchronization, preserve unrelated work and required backups,
-update the owning source, then apply only the approved paths. Check automatic
-Git settings and hooks first. Run this comparison after installation on every
-named host. Report every unresolved mismatch and intentional difference.
+For authorized synchronization, follow `dotfiles-sync`. Run this comparison
+after installation on every named host. Report every unresolved mismatch and
+intentional difference.

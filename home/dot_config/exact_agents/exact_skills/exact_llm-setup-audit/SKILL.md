@@ -93,12 +93,11 @@ One harness's setting does not control another.
 - **Ineffective text:** remove general knowledge, repeated rules/headings, history, and examples only when no reader would act differently.
   Preserve every fact, number, condition, scope qualifier, and reason that changes behavior.
   List retained clauses under **Left alone**, including tool-specific exceptions such as ignored `PORT` values or protection against `.gitignore` edits.
-- **Defaults:** keep restated defaults in files shared across harnesses.
-  For a single-harness file, ask once about removing this category unless already answered.
+  Keep restated defaults in files shared across harnesses. For a single-harness file, ask once about removing them unless already answered.
   Never remove a check or authorization boundary merely because it restates a default.
 - **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
   Narrow or remove other stop points; agents follow them literally.
-- **Language:** apply the main-session Writing rules, including sentence limits.
+- **Language:** apply the main-session Writing rules.
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
 - **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.
@@ -149,8 +148,7 @@ For a Claude sub-agent needing no rules, propose `omitClaudeMd: true`; do not ap
 
 ## Additional rules checks
 
-Combine general rules with their specific cases.
-Move misplaced rules to their owning section; remove single-bullet section headings.
+Combine general rules with their specific cases. Remove single-bullet section headings.
 Generalize ecosystem-specific details in global rules, such as “Follow semver and use the project's release tooling.”
 Never add tool-specific commands there.
 
@@ -169,7 +167,7 @@ Never add tool-specific commands there.
    After workflow edits, replay relevant failures with
    [workflow-replays.md](references/workflow-replays.md). Record expected and
    observed behavior without external writes. Do not infer savings from counts.
-3. Report **Bugs fixed / Deduped / Improved / Session evidence / Veto items / Left alone**.
+3. Report under **Bugs fixed / Deduped / Improved / Session evidence / Veto items / Left alone**.
    For each finding, state the defect, its workflow effect, and the fix.
 
 ## Rules flow
@@ -179,7 +177,7 @@ Never add tool-specific commands there.
 3. Ask unresolved gating questions first. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
    Free text overrides offered choices.
 4. Apply only approved numbers, groups, or “do all.” Reread first; use targeted edits that preserve the user's intervening changes.
-5. Report changes and token deltas. List each unapplied item with its before/after text so skipped work is explicit.
+5. Report changes. List each unapplied item with its before/after text so skipped work is explicit.
 
 ## Every report
 

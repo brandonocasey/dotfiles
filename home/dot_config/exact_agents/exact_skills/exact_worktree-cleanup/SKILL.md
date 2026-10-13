@@ -6,8 +6,8 @@ name: worktree-cleanup
 description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation."
 ---
 
-`disk-cleanup` also runs this skill as a required step, under the limits in its
-`references/agent-resources.md`.
+`disk-cleanup` also runs this skill as a required step, under the limits in
+[agent-resources.md](../disk-cleanup/references/agent-resources.md).
 
 Clean only local state proven safe to remove. Use live PR state for GitHub or
 GitLab repositories because squash merges break ancestry evidence. Report why
@@ -40,7 +40,7 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   matches a remote PR head, or is contained in a merged PR's head under the matching rules in
   step 3, including detached worktrees and multiple worktrees for one PR. It never authorizes deleting local branch refs unless those branches separately qualify.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
-  stale local ref. Use `-D` only under the exceptions above.
+  stale local ref.
 - Retain a branch used by an open PR even if an older PR for that branch was merged.
 - **Relevance findings are advice, not evidence.** A verdict of superseded or no longer useful
   from step 5 never authorizes deletion by itself. Such a branch may be removed only with
@@ -117,8 +117,8 @@ glab api --paginate "projects/<url-encoded-project-path>/merge_requests?state=al
 GitLab fields map onto the same checks: `source_branch` → `headRefName`, `sha` → `headRefOid`
 (the MR head), `state` (`merged`/`closed`/`opened`) with `merged_at` → `state`/`mergedAt`,
 `target_branch` → `baseRefName`, `web_url` → `url`. A same-repository MR has
-`source_project_id` equal to `target_project_id`; for a fork MR, match `source_project_id`
-to the local branch's upstream project.
+`source_project_id` equal to `target_project_id`; for fork MRs read
+[forge-edge-cases.md](references/forge-edge-cases.md).
 
 If the GitHub list reaches its limit, increase it until the result is complete.
 Never narrow the list by date (`updated_after`, `created_after`, `--search "updated:>…"`) or any
@@ -157,16 +157,8 @@ For a local branch to qualify from PR evidence, all of these must be true:
 - the local branch tip either exactly equals the PR head SHA or is an ancestor of it, verified with:
   `git merge-base --is-ancestor <local-tip> <pr-head>`.
 
-A deleted source branch often leaves the PR head missing after `git fetch origin`. Fetch it
-through the PR ref from the remote that hosts the PR's base repository. Confirm that
-`git rev-parse FETCH_HEAD` equals the head SHA from this run's PR data, then pass that SHA,
-not a ref name, to later checks; the fetch creates no ref:
-
-```sh
-git fetch <base-remote> refs/pull/<number>/head            # GitHub
-git fetch <base-remote> refs/merge-requests/<iid>/head     # GitLab
-git cat-file -e <pr-head-sha>^{commit}
-```
+If the PR head is missing locally after `git fetch origin` (deleted source branch), fetch it
+as [forge-edge-cases.md](references/forge-edge-cases.md) describes.
 
 `git merge-base --is-ancestor` exits 0 for a match and 1 for no match. A failed fetch, a SHA
 mismatch, a shallow-history boundary, or any other exit code makes the evidence unknown:
@@ -179,37 +171,11 @@ PR #<n>`, not as unmerged work: step 5 runs
 [rebased-history.md](references/rebased-history.md) on it, which separates a rebased copy of the
 squash-merged PR from commits the PR never had.
 
-#### Closed without merge
+#### Closed without merge and review worktrees
 
-Classify a PR as closed-without-merge only when its state is closed and it has no merged
-timestamp; open PRs and merged PRs never fall in this category. These branches are never part of
-ordinary merged cleanup and are never removed in step 6 without the confirmation collected in
-step 5. Record every local branch whose name matches such a PR's source branch, and every branch
-or worktree whose tip exactly equals such a PR's head, with the PR number, title, URL, head SHA,
-close date, and closing comment when the CLI exposes one. Step 5 assesses them with the other
-retained candidates and asks one question for all of them.
-
-#### Remote-PR review worktrees
-
-A worktree used to review a remote PR may be detached or may use a local branch name different
-from the PR's source branch. Match it by exact HEAD equality with any PR's head SHA, regardless of
-PR state or base branch. A HEAD that is an ancestor of a PR head also matches when the PR is
-merged, its base is the selected target, and the HEAD is not already an ancestor of that target,
-because a review often stops before the PR's last push. Check it with the fetch and
-`--is-ancestor` rules above. A HEAD contained in more than one such PR is an ambiguous mapping.
-Group matches by PR number, but evaluate every filesystem path independently — do not deduplicate multiple worktrees for the same PR.
-
-For every matching worktree, show the PR number, title, URL, state, head SHA, worktree path,
-branch or detached state, and clean/active status, then ask:
-
-> Do you also want to remove clean, idle review worktrees whose HEAD matches a remote pull-request
-> head or is contained in a merged one, including multiple local worktrees for the same PR? This
-> removes only local worktrees. It does not delete remote branches or local branch refs unless they are separately eligible.
-
-Wait for the answer before removing review worktrees. A `yes` authorizes each clean, idle
-match per the review-worktree safety rule — never the current checkout or the target worktree.
-Anything else — `no`, no answer, changed HEAD, dirty worktree, active process, missing PR
-evidence, ambiguous mapping — means keep the worktree and report why.
+Read [forge-edge-cases.md](references/forge-edge-cases.md) when a PR is closed without merge or
+a worktree may be a remote-PR review checkout (detached, or on a branch whose name differs from the
+PR's source branch). It covers recording those candidates and the review-worktree question.
 
 #### No usable PR evidence
 
@@ -270,14 +236,12 @@ git -C <target-worktree-path> branch -d -- <branch>   # local ancestry proves th
 git -C <target-worktree-path> branch -D -- <branch>   # exact-head or contained-history exception
 ```
 
-Before any `-D`, re-verify the matching exception's exact-tip and state conditions immediately
-before the command, including the ancestry check for contained-history cleanup, and report which
-exception backed the forced local ref deletion: exact squash-merged PR head,
-merged-PR-contained history, user-confirmed closed-without-merge head, or user-confirmed
-relevance removal. Relevance removal requires the named-branch confirmation and recorded recovery tip
-from step 5; it is not merge evidence. If the target branch is not checked out anywhere, retain
-candidates requiring `-d` rather than switching a user's checkout; an eligible
-PR-head exception or relevance deletion may use `-D` from the current checkout instead.
+Before any `-D`, recheck the matching exception's exact-tip and state conditions (including
+the ancestry check for contained-history cleanup) and report which exception backed it: exact
+squash-merged PR head, merged-PR-contained history, user-confirmed closed-without-merge head, or
+user-confirmed relevance removal (named-branch confirmation and recorded recovery tip from
+step 5). If the target branch is not checked out anywhere, retain candidates requiring `-d`
+rather than switching a user's checkout; a `-D` exception may use the current checkout instead.
 
 After each successful mutation, refresh and show:
 
@@ -304,4 +268,4 @@ End with:
 - any inconclusive checks, such as unavailable forge or process evidence.
 
 Do not claim that all merged work is clean if any candidate was retained or any check was
-inconclusive. Do not present a relevance verdict as proof of a merge.
+inconclusive.

@@ -17,11 +17,11 @@ review, or that names reviewer models counts as the matching flag.
 
 ## Automatic completion review
 
-For automatic completion reviews, read [completion.md](references/completion.md).
+For automatic reviews of this session's work, read [when-to-run.md](references/when-to-run.md).
 
 ## Delegation
 
-Before delegating a review of your own work, --loop, --deep, --agents, or an explicitly requested independent review, read [delegation.md](references/delegation.md).
+When spawning a reviewer (own work, --loop, --deep, --agents, or a requested independent review), read [delegation.md](references/delegation.md).
 
 ## Manual testing
 

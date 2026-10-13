@@ -1,1 +1,1 @@
-- Search code structure (calls, definitions, imports) with `ast-grep` and text with `rg -n`, also on piped output; use `grep` only where `rg` is missing. Never run `cat` bare: narrow it with `rg`, `head`, `tail`, or `sed -n`. Heredocs are fine.
+- Search code structure with `ast-grep` and text with `rg -n` (`grep` only where `rg` is missing). Never run `cat` bare; use `rg`, `head`, `tail`, `sed -n`, or heredocs.

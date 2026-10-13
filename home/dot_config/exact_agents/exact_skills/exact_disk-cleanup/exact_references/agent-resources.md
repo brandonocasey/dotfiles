@@ -48,23 +48,15 @@ Show its step 4 table in the disk-cleanup preview. disk-cleanup's batch approval
 replaces its step 4 prompt only when that batch covers these worktrees;
 otherwise ask its step 4 question.
 
-- Prove local landing with HEAD ancestry in the verified local target. For
-  remote merge claims, fetch the relevant remote and refresh forge state;
-  verify source repository, branch, target, and exact or contained PR-head
-  history. Retain newer/diverged tips and branches with live open PRs. A closed
-  PR, old timestamp, or branch name is not merge evidence.
-- Preserve the main checkout, current checkout, locked worktrees, and worktrees
-  used by any active process or unfinished durable task. Check process working
-  directories, open files, agent session ownership, and descendant paths. If
-  idleness cannot be established, retain the candidate.
-- Inspect tracked, untracked, ignored, and recursive submodule state. Preserve
-  unknown files, requested deliverables, and unfinished changes. Check nested
-  worktrees before deleting an ancestor; process eligible children first and
+- Qualification, idleness, preservation, and HEAD-reachability checks come from
+  `worktree-cleanup` and the `worktree` preservation rules; do not restate or loosen them. Prove
+  local landing with HEAD ancestry in the verified local target; for remote merge claims,
+  refresh forge state first. Retain newer/diverged tips and branches with live open PRs. A
+  closed PR, old timestamp, or branch name is not merge evidence.
+- Check nested worktrees before deleting an ancestor; process eligible children first and
   retain a parent containing any protected child.
-- Prove HEAD remains reachable from a named branch that will be retained or a
-  fetched merge target. A squash merge alone does not preserve original commits.
-  Retain detached worktrees without that proof. Do not delete branch refs in
-  this workflow, and never force-delete one to make cleanup succeed.
+- Do not delete branch refs in this workflow, and never force-delete one to make cleanup
+  succeed.
 
 ### Sessions inactive for at least 30 days
 
@@ -95,9 +87,29 @@ regenerable caches, abandoned disposable scratch, and debug logs can qualify
 when no active process/task uses them. Inspect contents and ownership first.
 Shared stores require evidence that no active consumer depends on the entry.
 
-Preserve authentication, settings, skills, plugins and installed runtimes,
-databases that hold durable state, memory, task records, backups, requested
-deliverables, unused copy files, and unknown content. Do not classify session
-transcripts as cache to bypass retention. Do not wipe entire profile or shared
-cache roots. Age alone does not prove a cache file is disposable.
+Apply the main skill's preserve list (plus authentication, settings, skills, plugins and
+installed runtimes). Do not classify session transcripts as cache to bypass retention. Do not
+wipe entire profile or shared cache roots. Age alone does not prove a cache file is disposable.
 
+## Build outputs and linked scratch
+
+- Establish build-output provenance from the project's build configuration and actual
+  contents (for example Cargo target fingerprints). Verify no tracked files or manual
+  artifacts would be removed. Never apply a recursive directory-name match to arbitrary
+  projects. Keep installed tools and requested executables/artifacts.
+- Link external scratch to a worktree/task only through durable records, session metadata,
+  inspected producer scripts/logs, or an explicit resource manifest. A similar directory
+  name is a discovery hint, never ownership proof. For future task resources, record
+  canonical worktree, task/session ID, producer, purpose, and paths in the existing task
+  record or a private manifest. Do not move older scratch or add a new registry.
+- Preview linked scratch beside each worktree/build candidate and classify each entry
+  independently: regenerable test data, compiler caches, logs and helpers may qualify;
+  screenshots/reports, databases, source, credentials, recovery data and unknown files stay
+  protected unless their disposal is separately established. A mixed directory can have
+  eligible children without deleting the parent.
+- Include eligible external scratch in the same approval batch, even if the checkout
+  remains. Removing a worktree does not authorize deleting its scratch. Never remove shared
+  entries until every consumer is accounted for. After approved worktree removal, recheck
+  and clean its approved scratch; on failure or new activity, retain it and report why.
+- Remove worktrees sequentially with Git from a surviving checkout; use `worktree` for
+  blockers and submodules. Preserve branch refs.

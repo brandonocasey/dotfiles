@@ -9,25 +9,19 @@ Put new disposable resources in the Scratch path from AGENTS.md
 **Directories**, where `<task>` is a unique task name. Keep logs, temporary
 helpers, generated preview assets, and intermediate results there.
 
-Before using `.cache/agents/scratch/`, verify that the candidate path is ignored with
-`git check-ignore -v <candidate-path>` and that no files under `.cache/agents/scratch/` are
-tracked. The managed global ignore file supplies `/.cache/agents/scratch/`; repository rules
-can override it. If it is not effective, use the XDG cache scratch directory
-and report why; do not change repository Git settings. Do not reuse or
-overwrite an existing task directory or follow a symlink at `.cache/agents/scratch/` or the
-task path. Use the XDG cache scratch directory when the root conflicts with
-existing project files.
+Before using `.cache/agents/scratch/`, verify that the candidate path is ignored
+(`git check-ignore -v <candidate-path>`) and that no files under it are tracked. The
+managed global ignore file supplies `/.cache/agents/scratch/`; repository rules can override
+it. If it is not effective, or the root conflicts with existing project files, use the XDG
+cache scratch directory and report why; do not change repository Git settings. Never reuse
+or overwrite an existing task directory or follow a symlink at the scratch root or task path.
 
-Keep credentials, preview access tokens, and private gallery state outside the
-repository in private external storage. Backups, cross-session recovery records,
-copy files awaiting use, and requested deliverables keep their established
-locations; never place them in disposable `.cache/agents/scratch/` storage. A temporary preview
-may use scratch assets while its URL is in use, but retain those assets for the
-entire preview lifetime. Promote a file to the requested destination if the
-user asks to keep it.
-
-Do not migrate existing scratch directories or running previews. Tools with
-explicit output paths keep them.
+Keep credentials, preview access tokens, and private gallery state outside the repository
+in private external storage. Backups, cross-session recovery records, copy files awaiting
+use, and requested deliverables keep their established locations; never place them in
+disposable scratch. A temporary preview may use scratch assets, but retain them for the
+entire preview lifetime. Promote a file to the requested destination if the user asks to
+keep it. Tools with explicit output paths keep them.
 
 ## Servers and artifacts
 
@@ -60,7 +54,8 @@ Keep requested files and copy files awaiting use. If a helper could serve a
 teammate or later task, propose a project path and let the user decide; never
 leave it in the repository without consent.
 
-Keep a server running when a requested deliverable depends on its URL. Report
-its address and purpose; stop it after the user finishes using it or requests
-shutdown. Follow `worktree` for branch/worktree retention and preservation checks;
-open-PR worktrees remain available for follow-up work.
+Keep a server running, and retain the worktree it needs, while a requested deliverable or
+live preview depends on its URL. Report its address and purpose; stop it after the user
+finishes using it or requests shutdown. Never stop servers owned by other tasks. Follow
+`worktree` for branch/worktree retention and preservation checks; open-PR worktrees remain
+available for follow-up work.

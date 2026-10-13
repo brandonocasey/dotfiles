@@ -1,1 +1,1 @@
-- Keep your context small; every token you read is re-read each turn. Locate code first, then read only the needed range. Read a file over about 200 lines whole only when you need most of it. Trim long output with quiet flags, `head`, `tail`, or `rg`.
+- Keep context small: locate code first, read only needed ranges (a file over ~200 lines whole only if you need most of it), trim output with quiet flags, `head`, `tail`, or `rg`.

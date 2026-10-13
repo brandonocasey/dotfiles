@@ -10,11 +10,9 @@ Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
 Exception: review inline a follow-up delta (`<last-reviewed-sha>..<new-head-sha>`)
 on a self-written change that a reviewer already passed, when the delta changes
 fewer than 20 lines of logic and touches nothing listed under when-to-run.md
-Triggers' risk bullets. It never applies when `--loop`, `--deep`, or `--agents` is set, or
-when the user asks for a sub-agent or independent review. Report that the
+Triggers' risk bullets; never with `--loop`, `--deep`, `--agents`, or a user request
+for an independent review. Report that the
 follow-up review was not independent.
-Inline self-reviews missed about 40% of
-the defects found later, against about 18% for independent reviewers.
 
 Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
 `--deep` and `--loop` pick the roles and `--agents` picks the models; they combine.

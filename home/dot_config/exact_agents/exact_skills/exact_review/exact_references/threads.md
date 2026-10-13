@@ -1,7 +1,7 @@
 # MR/PR threads
 
-GitLab and GitHub only. For another
-platform, report that `--threads` is unsupported and stop before any reply or resolve.
+GitLab and GitHub only. On any other platform, including Forgejo, report that
+`--threads` is unsupported and stop before any reply or resolve.
 
 ## Procedure
 

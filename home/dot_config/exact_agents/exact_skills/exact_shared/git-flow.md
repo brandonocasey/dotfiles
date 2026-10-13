@@ -42,7 +42,7 @@ Skip committing when the tree is clean.
   new, and hook failures. Defer to a project-level `commit` skill/command if one exists.
 - Repeat for the authorized chunks, then check the gate below.
 
-**Gate — the tree must be fully committed before anything moves.** Re-run
+**Gate — the tree must be fully committed before anything moves (rebase, merge, push, worktree removal).** Re-run
 `git status --short --ignore-submodules=none`. If it prints anything, stop and
 ask what to do.
 
@@ -60,8 +60,7 @@ is missing.
 
 ## Shared rules
 
-- Never rebase, merge, push, or remove a worktree while the tree is dirty.
-- Resolve rebase and merge conflicts per [git-policy.md](git-policy.md); never guess
-  or pick a side. Never `rebase --skip` past a conflict.
+- Resolve rebase and merge conflicts per [git-policy.md](git-policy.md). Never
+  `rebase --skip` past a conflict.
 - Stop and ask on any unexpected worktree state or other ambiguity; never hide a problem to
   keep the workflow moving.

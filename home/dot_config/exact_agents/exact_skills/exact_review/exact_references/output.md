@@ -1,7 +1,7 @@
 # Review output and cleanup
 
-Review and MR/PR comments cover one issue in at most three sentences:
-what breaks, when, and the fix. Apply repository templates when present.
+Each finding or comment covers one issue in at most three sentences: what
+breaks, when, and the fix. Apply repository templates when present.
 
 1. **TLDR line** — one sentence: how many findings survived, and whether any are real bugs
    vs. minor notes.
@@ -17,11 +17,10 @@ what breaks, when, and the fix. Apply repository templates when present.
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
-   - **Why it matters**: 1–3 plain-language sentences — what goes wrong, when, and why it
-     matters. Jargon spelled out.
-   - **Comment to post** (MR/PR) — ready-to-paste text (this one can be technical): factual,
-     no hedging, no AI-flavored preamble, at most 3 sentences; state the failure scenario concretely. Where a
-     small code change fixes it, include a suggestion block (syntax in `remote-comments.md`).
+   - **Why it matters**: plain language, jargon spelled out.
+   - **Comment to post** (MR/PR) — ready-to-paste, may be technical; state the
+     failure scenario concretely. Where a small code change fixes it, include a
+     suggestion block (syntax in `remote-comments.md`).
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
 4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
    did not survive verification and why each was killed. This is the proof the review was real.
@@ -33,16 +32,15 @@ one fenced block per comment, numbered by finding. Report CI and
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.
 
-Stop this review's servers, browser pages, and background processes when it ends.
-When the review ends, remove the worktree this review created, following the
-`worktree` skill's **Remove** section. This includes open MRs/PRs. Exception:
-keep an open MR/PR's worktree when this review installed dependencies in it, so
-follow-up repairs can reuse them. Never remove a pre-existing worktree, except
-under `--merge` step 7 cleanup. Keep a worktree while repairs or
-re-verification in this run remain pending.
-Run resource cleanup separately from outward steps so a blocked approval or
+When the review ends, clean up per `host-preflight/references/task-resources.md`
+and remove the worktree this review created, following the `worktree` skill's
+**Remove** section, including for open MRs/PRs. Exception: keep an open MR/PR's
+worktree when this review installed dependencies in it, so follow-up repairs can
+reuse them. Never remove a pre-existing worktree, except under `--merge` step 7
+cleanup. Keep a worktree while repairs or re-verification in this run remain
+pending. Run cleanup separately from outward steps so a blocked approval or
 merge cannot prevent it. Report retained paths and reasons, or the removed path
-and any blocker. Explicit cleanup requests still require preservation checks.
+and any blocker.
 
 For MR/PR comment links and suggestion syntax, read
 [remote-comments.md](remote-comments.md). Local reviews do not need it.

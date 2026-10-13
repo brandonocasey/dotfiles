@@ -9,15 +9,14 @@ these repairs. Step numbers below refer to the review skill.
      or style cleanup unless requested.
   3. Resolve clear conflicts with the target branch and fix `new in this change` CI
      failures, per [ci-and-conflicts.md](ci-and-conflicts.md).
-  4. Run the repo's tests/lint. Check the fixed HEAD by hand (AGENTS.md manual-check rule;
-     methods in [manual-testing.md](manual-testing.md) **Exercise the actual behavior**). Record one line:
-     `Checked: <steps, page or command, config> -> <result>`. Text-only fixes record
-     `Checked: diff only`; test-only fixes run the changed tests; classify config by effect.
+  4. Run the repo's tests/lint. Check the fixed HEAD per `shared/git-flow.md`
+     **Manual check** (methods in [manual-testing.md](manual-testing.md)
+     **Exercise the actual behavior**). Record `Checked: <steps, page or command, config> -> <result>`;
+     text-only fixes record `Checked: diff only`.
   5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take
      the type from its **Choosing the type** procedure; carry any issue-tracker reference
-     from the MR/PR title. Pause auto-merge per `shared/auto-merge-pause.md` when work
-     starts, and restore it after the push. A queued MR/PR gets a new MR/PR instead,
-     per that file's **Queued MR/PR**. Push to the source branch — the review
+     from the MR/PR title. Handle auto-merge per `shared/auto-merge-pause.md`
+     (pause at start, restore after the push, new MR/PR when queued). Push to the source branch — the review
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead
      (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and

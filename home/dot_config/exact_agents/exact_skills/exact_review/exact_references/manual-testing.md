@@ -6,10 +6,7 @@ whose automated tests pass. State the skip reason in the report. `--test` forces
 the manual pass even then.
 
 Keep the review worktree until manual checks and authorized repairs are complete.
-When resuming from a `session-resume` record, retain its exact authorization
-scope. Reuse manual evidence only when the recorded revision, inputs, and
-environment match. Never treat the record as authorization to push or bypass
-the required review.
+When resuming from a `session-resume` record, apply `session-resume`'s reuse rules.
 
 ### Choose manual cases
 
@@ -40,8 +37,8 @@ Automated tests, static inspection, and screenshots alone do not replace manual 
   invocation with representative inputs. For instructions, walk through a realistic
   request and check each decision, reference, and authorization boundary.
 
-Record the actions, inputs, expected result, observed result, and pass/fail evidence.
-For browser checks, include engine, viewport, theme, and state where relevant.
+Record per case: actions, inputs, expected and observed result, pass/fail evidence;
+for browser checks also engine, viewport, theme, and state.
 State missing credentials, unavailable devices, or unsafe operations as coverage blockers.
 Complete reachable checks; do not claim blocked paths passed.
 Follow repository rules for server binding, artifact storage, and cleanup.
@@ -52,8 +49,6 @@ Without `--fix`, report verified manual failures alongside code-review findings.
 With `--fix`, the rerun manual cases give step 4's `Checked:` line.
 Rerun affected automated and manual checks after repairs, before committing and pushing.
 Repeat affected manual cases if a later CI fix or conflict resolution changes their behavior.
-Reuse evidence only when the code and inputs for that case are unchanged.
 
 Add manual coverage to the report: journeys or commands, revision, results,
 evidence, and untested paths. Distinguish manual results from automated checks and pending CI.
-Stop task-owned servers and browser resources before worktree cleanup.

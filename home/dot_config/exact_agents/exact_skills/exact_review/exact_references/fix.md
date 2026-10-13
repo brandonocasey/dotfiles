@@ -21,11 +21,9 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   repair, verification, commit, push, metadata, and any requested merge.
 - **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
   tests/lint, record the `Checked:` line, and commit per the `commit` skill. For a commit
-  or the default branch, first create a fix branch per the `worktree` skill; never commit
-  in the main checkout. Do not push. Then remove the worktree if this review created it —
-  the commits stay on the branch.
+  or the default branch, first create a fix branch per the `worktree` skill. Do not push.
 - **Working diff**: apply the fixes in place, record the `Checked:` line, and leave them
   uncommitted unless the user asks to commit.
 
-Report the commits, the `Checked:` line, and the MR/PR link. Remove the worktree per step 3.
+Report the commits, the `Checked:` line, and the MR/PR link. Clean up per step 3.
 End the report with one line: `Ship: pushed <sha> to <branch>` or `Ship: not run (<reason>)`.

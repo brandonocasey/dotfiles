@@ -24,25 +24,23 @@ Optional argument: a target file or chunk. Commit only that target.
    Fix the cause of any hook error and commit again. Never `--no-verify` a failing hook
    unless the user has said the failure is irrelevant to the change.
 
-Keep one logical change together, including supporting tests and docs.
-Split unrelated changes.
-
 ## Format
 
 `<type>(<scope>): <description>` — lowercase, imperative, no period, under 50 characters.
 
 - Types: a11y, build, ci, deps, docs, dx, feat, fix, i18n, perf, refactor,
   revert, security, test, ux
-- Do not use `chore` or `style` unless the repo's conventions require them.
+- Repository conventions (commitlint config, AGENTS.md, CONTRIBUTING) override
+  every default here: types, scope, ticket suffix, header length, breaking-change
+  format
+- Do not use `chore` or `style` unless those conventions require them.
   Release and CLA bots may still write `chore`
-- If the repo's commitlint `type-enum` or AGENTS.md lacks a type, map it:
+- If the repo's `type-enum` lacks a type, map it:
   `ux` → `feat`; `a11y` and `i18n` → `fix` for a repair, else `feat`;
   `security` → `fix`; `deps` → `build(deps)`; `dx` → `build`; `refactor` →
   `chore`. Map before writing, so commitlint does not reject the message
 - Choose the type per **Choosing the type** below
-- The scope is optional. Include one when the repo's commitlint config requires it
-- Repository conventions override these defaults: commitlint config, AGENTS.md,
-  or CONTRIBUTING. They can require a ticket suffix or a longer header limit
+- The scope is optional; include one when required
 - Keep the description minimal, with no filler, and make it say why the change happened
 - Add a body only when it gives context the description cannot hold
 
@@ -58,7 +56,7 @@ stay with that change and take its type. For a squash PR, consider the full diff
 - Other areas: `docs`, `test`, `ci`, `build`, `deps`, or `dx` for developer
   tooling, including agent rules and skills. A docs-only PR is `docs`.
 - Mark a breaking change with `!` (`feat!:`, `fix(api)!:`) and a `BREAKING CHANGE:` footer
-  describing the required migration. Repository conventions take precedence.
+  describing the required migration.
 
 When two types fit or the main purpose is unclear, read
 [choosing-type.md](references/choosing-type.md). Read its linked examples only

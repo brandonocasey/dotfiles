@@ -62,10 +62,8 @@ Follow these steps for each commit. For a PR title, use the whole diff.
    formatting, moved code, search metadata, or machine-readable output.
    It holds the tie-breakers and worked examples.
 
-5. **Breaking change:** add `!` after the type or scope, on any type, when a
-   user must change something to keep working: a removed or renamed flag,
-   command, option, API, route, config key, file path, output format, or exit
-   code. Add a `BREAKING CHANGE: <what to change>` footer.
+5. **Breaking change:** mark it per [SKILL.md](../SKILL.md) **Choosing the type**
+   (`!` and the footer), on any type.
 
 6. **Check the result.** Answer each question; on a no, start again at step 1.
    - Would a user who reads the header in the release notes agree with it?
