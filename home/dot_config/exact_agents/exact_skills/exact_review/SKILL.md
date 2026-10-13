@@ -24,7 +24,7 @@ For automatic reviews of this session's work, read [when-to-run.md](references/w
 
 ## Delegation
 
-When spawning a reviewer (own work, --loop, --deep, --agents, or a requested independent review), read [delegation.md](references/delegation.md).
+Every review runs through the `deep-review` sub-agent. Before spawning, read [delegation.md](references/delegation.md).
 
 ## Manual testing
 
@@ -37,8 +37,8 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Read [reviewer-steps.md](references/reviewer-steps.md) and run steps 0–2, inline or
-through **Delegation**.
+Read [reviewer-steps.md](references/reviewer-steps.md) and run steps 0–2 through
+**Delegation**.
 
 ## 3. Output
 

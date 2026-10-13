@@ -29,7 +29,7 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, max |
 | `reviewer` | Independent review of a change; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
-| `deep-review` | Deep independent review; default for logic changes, paired with `reviewer` by review `--deep` and `--loop`; read-only | claude-opus-5-5, xhigh | gpt-6.1-sol, high |
+| `deep-review` | Deep independent review; default for every review, paired with `reviewer` by review `--deep` and `--loop`; read-only | claude-opus-5-5, xhigh | gpt-6.1-sol, high |
 
 Routing:
 

@@ -1,25 +1,11 @@
 ## Delegation
 
-Delegate the review to sub-agents, so that the reviewer is independent, when:
-
-- this session or its sub-agents wrote the change;
-- `--loop`, `--deep`, or `--agents` is set;
-- the user asks for a sub-agent or independent review.
-
-Otherwise review inline (an MR/PR from a colleague, an arbitrary commit).
-Exception: review inline a follow-up delta (`<last-reviewed-sha>..<new-head-sha>`)
-on a self-written change that a reviewer already passed, when the delta changes
-fewer than 20 lines of logic and touches nothing listed under when-to-run.md
-Triggers' risk bullets; never with `--loop`, `--deep`, `--agents`, or a user request
-for an independent review. Report that the
-follow-up review was not independent.
-
-Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
+Always delegate the review to the `deep-review` sub-agent, whatever the target:
+own work, a colleague's MR/PR, an arbitrary commit, or a follow-up delta.
+Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
 `--deep` and `--loop` pick the roles and `--agents` picks the models; they combine.
-- Default: one `deep-review` when the change touches logic (any when-to-run.md
-  **Triggers** item). One `reviewer` for prose, cosmetic styling, config values,
-  and test-only changes. In a side-by-side trial, adding `reviewer` or a low-effort
-  Opus beside `deep-review` found nothing extra.
+- Default: one `deep-review`. In a side-by-side trial, adding `reviewer` or a
+  low-effort Opus beside `deep-review` found nothing extra.
 - `--deep` or `--loop`: `reviewer` and `deep-review` in parallel on the same target.
 - `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
   model and effort. With `--deep` or `--loop`, each entry runs both roles.
