@@ -117,8 +117,15 @@ NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbf
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"
 
 [mcp_servers.chrome-devtools]
+default_tools_approval_mode = "approve"
 command = "npx"
 args = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"]
+
+[mcp_servers.chrome-devtools.tools.new_page]
+approval_mode = "approve"
+
+[mcp_servers.chrome-devtools.tools.evaluate_script]
+approval_mode = "approve"
 
 [mcp_servers.chrome-headed]
 command = "npx"
