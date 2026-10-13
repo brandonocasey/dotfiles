@@ -8,6 +8,7 @@ acct_cfg="$HOME/.claude.json"
 [ -n "$CLAUDE_CONFIG_DIR" ] && acct_cfg="$CLAUDE_CONFIG_DIR/.claude.json"
 account=$(grep -oE '"emailAddress"[[:space:]]*:[[:space:]]*"[^"]*"' "$acct_cfg" 2>/dev/null | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)".*/\1/')
 account_name="${account%%@*}"
+account_name="${account_name:0:3}"
 
 # --- PORT (optional, only when set in the environment) ---
 port_display=""
@@ -39,6 +40,48 @@ if cd "$cwd" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
       # Bare repo: the gitdir itself is the project (e.g. "web-player.git").
       git_root_name=$(basename "$common_dir" .git)
     fi
+  fi
+
+  # Claude often works in a linked worktree by absolute path while the session
+  # stays in the main checkout. From the main checkout, show the branch of the
+  # worktree its tool calls named most recently instead.
+  transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+  if [ -f "$transcript" ] &&
+    [ "$(git --no-optional-locks rev-parse --git-dir 2>/dev/null)" = "$(git --no-optional-locks rev-parse --git-common-dir 2>/dev/null)" ]; then
+    wt_list=$(git --no-optional-locks worktree list --porcelain 2>/dev/null | awk '
+      /^worktree / { if (n++) path = substr($0, 10); else path = "" }
+      /^branch / && path != "" { sub("refs/heads/", "", $2); print path "\t" $2 }
+      /^detached/ && path != "" { print path "\tdetached" }
+    ')
+    if [ -n "$wt_list" ]; then
+      wt_branch=$(tail -n 2000 "$transcript" | rg -F '"tool_use"' | jq -rR '
+        fromjson? | select(.type == "assistant") | .message.content[]?
+        | select(.type == "tool_use") | .input | tostring | gsub("[\t\n]"; " ")
+      ' 2>/dev/null | WT_LIST="$wt_list" awk -F '\t' '
+        BEGIN { n = split(ENVIRON["WT_LIST"], rows, "\n"); for (i = 1; i <= n; i++) { split(rows[i], f, "\t"); p[i] = f[1]; b[i] = f[2] } }
+        {
+          # Longest path wins, so ".worktrees/a" never matches inside ".worktrees/ab".
+          best = 0
+          for (i = 1; i <= n; i++) {
+            j = index($0, p[i])
+            if (j && substr($0, j + length(p[i]), 1) !~ /[A-Za-z0-9._-]/ && (!best || length(p[i]) > length(p[best]))) best = i
+          }
+          if (best) last = b[best]
+        }
+        END { if (last != "") print last }
+      ')
+      [ -n "$wt_branch" ] && git_info="$wt_branch"
+    fi
+  fi
+
+  # Hide the default branch; a bare project name means "on the default branch".
+  # Without a remote HEAD, fall back to the common default names.
+  default_branch=$(git --no-optional-locks symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
+  default_branch="${default_branch#origin/}"
+  if [ -n "$default_branch" ]; then
+    [ "$git_info" = "$default_branch" ] && git_info=""
+  else
+    case "$git_info" in master | main | develop | dev) git_info="" ;; esac
   fi
 fi
 
@@ -335,9 +378,26 @@ fi
 # fields apart, which keeps the line short on narrow terminals.
 sep=$(printf '\033[38;5;245m|\033[0m')
 
-# Account name (default/white), leads the line when known
+# Local time of the newest assistant message. Idle, that is when the last turn
+# ended. Only the transcript tail is read, and fromjson? skips a line still
+# being written.
+last_msg=""
+transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
+if [ -f "$transcript" ]; then
+  last_msg=$(tail -n 200 "$transcript" | jq -rRn '
+    [inputs | fromjson? | select(.type == "assistant") | .timestamp] | last // empty
+    | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 | strflocaltime("%I:%M") | sub("^0"; "")
+  ' 2>/dev/null)
+fi
+
+# Account name (grey) then the last-message time (tan), joined by a dim
+# middle dot, lead the line
 parts=""
 [ -n "$account_name" ] && parts=$(printf '\033[38;5;247m%s\033[0m' "$account_name")
+if [ -n "$last_msg" ]; then
+  [ -n "$parts" ] && parts=$(printf '%s\033[38;5;245m·\033[0m' "$parts")
+  parts=$(printf '%s\033[38;5;180m%s\033[0m' "$parts" "$last_msg")
+fi
 
 # Model + effort (blue then magenta, no joiner — the colour change separates
 # them). The context-window size is not repeated here; the context segment
@@ -368,12 +428,17 @@ if [ -n "$ctx_used_pct" ]; then
   parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m%s' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct" "$hint")
 fi
 
-# Project name (green): the git repository root, falling back to the cwd
+# Project and branch as "project#branch": the project (green) is the git
+# repository root, falling back to the cwd; the branch is bright white because
+# yellow and red are reserved for usage warnings.
 dir_base="$git_root_name"
 [ -z "$dir_base" ] && dir_base=$(basename "$cwd" 2>/dev/null)
-if [ -n "$dir_base" ]; then
-  parts=$(printf '%s%s\033[32m%s\033[0m' "$parts" "$sep" "$dir_base")
+loc_seg=""
+[ -n "$dir_base" ] && loc_seg=$(printf '\033[32m%s\033[0m' "$dir_base")
+if [ -n "$git_info" ]; then
+  loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033[97m%s\033[0m' "$loc_seg" "$git_info")
 fi
+[ -n "$loc_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$loc_seg")
 
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels
 rl_dim=$five_hour_dim
@@ -402,11 +467,6 @@ fi
 # PORT (magenta, only when set)
 if [ -n "$port_display" ]; then
   parts=$(printf '%s%s\033[35m%s\033[0m' "$parts" "$sep" "$port_display")
-fi
-
-# Git branch (bright white) — yellow and red are reserved for usage warnings
-if [ -n "$git_info" ]; then
-  parts=$(printf '%s%s\033[97m%s\033[0m' "$parts" "$sep" "$git_info")
 fi
 
 printf '%b' "$parts"
