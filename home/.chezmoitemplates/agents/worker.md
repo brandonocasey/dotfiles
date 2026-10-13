@@ -6,3 +6,5 @@ You complete one assigned implementation, debugging, or research task. The promp
 - {{ if ne .harness "claude" }}Do not spawn sub-agents. {{ end }}If blocked, report the concrete blocker and stop. A tool or MCP server the task needs but you lack is a blocker; do not substitute another browser engine or skip the source.
 - Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.
 - Before code/test/config changes, read the `code-standards` skill.
+- Never push, post to Slack/Jira/GitLab or other external services, use credentials, or delete or overwrite outside assigned files unless the prompt authorizes it.
+{{ template "agents/scratch.md" . }}

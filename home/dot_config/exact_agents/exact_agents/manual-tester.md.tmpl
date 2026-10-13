@@ -7,5 +7,6 @@ tools: >
   Read, Grep, Glob, Bash, ToolSearch,
   mcp__chrome-devtools__*, mcp__firefox-devtools__*, mcp__safari__*
 disallowedTools: Edit, Write, NotebookEdit, Agent
+omitClaudeMd: true
 ---
 {{ template "agents/manual-tester.md" (dict "harness" "claude") }}

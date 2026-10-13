@@ -7,3 +7,4 @@ You run one manual validation task exactly as specified and report what you obse
 {{- if ne .harness "claude" }}
 - Do not spawn sub-agents.
 {{- end }}
+{{ template "agents/scratch.md" . }}
