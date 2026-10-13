@@ -17,11 +17,11 @@ Inline self-reviews missed about 40% of
 the defects found later, against about 18% for independent reviewers.
 
 Use `reviewer` for an independent review. Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
-`--deep` picks the roles and `--agents` picks the models; they combine.
+`--deep` and `--loop` pick the roles and `--agents` picks the models; they combine.
 - Default: one `reviewer`.
-- `--deep`: `reviewer` and `deep-review` in parallel on the same target.
+- `--deep` or `--loop`: `reviewer` and `deep-review` in parallel on the same target.
 - `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
-  model and effort. With `--deep`, each entry runs both roles.
+  model and effort. With `--deep` or `--loop`, each entry runs both roles.
 Without `--agents`, the `sub-agents` skill owns model and effort selection.
 With several targets, start one reviewer set per target.
 
@@ -34,16 +34,17 @@ in the task scratch directory, ending with an `exit N` line. Pass the log paths 
 commands to every reviewer and start the reviewers without waiting, so parallel
 reviewers do not repeat the checks. A failing check is evidence: reviewers decide
 whether the change caused it. Run the checks again for each new pinned target,
-including each `--loop` round.
+including each `--loop` pass.
 Pin the target to fixed commits (`<base-sha>..<head-sha>`, or the working diff saved to a
 file). Do not commit, amend, or rebase the target while a reviewer runs.
 Give every reviewer the same prompt: the review target verbatim, worktree path,
 the absolute path of [reviewer-steps.md](reviewer-steps.md), applicable
 repository constraints, and required check commands. Do not pass implementation
-rationale, earlier findings, or conversation history. Tell reviewers not to
+rationale, earlier findings, or conversation history. Exception: a `--loop` fix check
+passes the inputs [loop.md](loop.md) lists, to continued or fresh reviewers. Tell reviewers not to
 rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
 runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,
-and the tests it ran. An external tool's findings go through the same re-verification.
+and the tests it ran. Paste the severity scale from [output.md](output.md) into the prompt. An external tool's findings go through the same re-verification.
 
 Merge the findings and remove duplicates by file, line, and failure scenario. Name the
 reviewers that found each finding. Then re-verify each finding in the worktree before

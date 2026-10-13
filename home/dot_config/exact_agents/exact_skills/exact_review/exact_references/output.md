@@ -10,7 +10,10 @@ what breaks, when, and the fix. Apply repository templates when present.
 3. **One block per surviving finding**, most-severe first, each led by a severity label:
    `bug` (wrong behavior reachable in production), `question` (design choice worth confirming
    with the author), `requirement` (an explicit repository rule violation), or
-   `nit` (optional style feedback, only when requested). Per block:
+   `nit` (optional style feedback, only when requested).
+   Give each `bug` a severity: `high` (data loss, security hole, crash, or a broken main
+   path), `medium` (wrong result on a common path), or `low` (rare edge case or minor
+   effect). Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
