@@ -75,3 +75,8 @@ fi
 
 alias docker-compose-update='docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 alias cdroot='cd "$(find-root)"'
+
+# Claude launch presets (claude-two config dir)
+alias claude-two='CLAUDE_CONFIG_DIR=~/.claude-two claude'
+alias cl-deep='claude-two --model opus --effort high'
+alias cl-cheap='claude-two --model sonnet --effort low'

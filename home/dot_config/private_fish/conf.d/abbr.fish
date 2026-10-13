@@ -20,6 +20,8 @@ abbr --add gl git log
 abbr --add l ls
 abbr --add g git
 abbr --add cc claude-two
+abbr --add cl-deep claude-two --model opus --effort high
+abbr --add cl-cheap claude-two --model sonnet --effort low
 abbr --add cx codex
 
 # Vim misspellings
