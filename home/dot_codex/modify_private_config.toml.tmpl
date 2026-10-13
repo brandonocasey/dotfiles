@@ -48,7 +48,7 @@ approvals_reviewer = "user"
 plan_mode_reasoning_effort = "high"
 service_tier = "default"
 @NOTIFY@
-approval_policy = "never"
+approval_policy = "on-request"
 sandbox_mode    = "danger-full-access"
 allow_login_shell = true
 developer_instructions = """
@@ -127,12 +127,12 @@ enabled = false
 
 [mcp_servers.firefox-devtools]
 command = "npx"
-args = ["-y", "@mozilla/firefox-devtools-mcp@0.9.5", "--headless"]
+args = ["-y", "@mozilla/firefox-devtools-mcp@0.10.1", "--headless"]
 enabled = false
 
 [mcp_servers.firefox-headed]
 command = "npx"
-args = ["-y", "@mozilla/firefox-devtools-mcp@0.9.5"]
+args = ["-y", "@mozilla/firefox-devtools-mcp@0.10.1"]
 enabled = false
 
 [mcp_servers.safari]
@@ -192,6 +192,7 @@ enabled = true
 enabled = true
 
 [shell_environment_policy.set]
+JIRA_EMAIL = "bcasey@jwplayer.com"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e13fd947e846d3d306e9249dd3c73d14931b6494803dbafb16cef85e6add9506"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/bcasey/.codex"
