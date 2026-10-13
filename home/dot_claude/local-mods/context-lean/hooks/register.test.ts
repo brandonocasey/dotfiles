@@ -338,24 +338,107 @@ test('moves the main agent listing into the Agent tool description', async ($, o
     [
       'Launch an agent.',
       '',
-      'Available agent types are listed below.',
+      "The main session's agent types are listed below. In a subagent, use only the types in its own agent listing.",
       '',
-      'Available agent types (pass one as subagent_type):',
+      'Available agent types for the Agent tool:',
       '- cheap: Mechanical work. (Tools: Bash, Read)',
       '- general-purpose: Generic research and multi-step tasks. Use only when no named role fits. (Tools: *)',
+      '',
+      'When you launch multiple agents for independent work, send them in a single message with multiple tool uses so they run concurrently.',
     ].join('\n'),
   )
 })
 
-test('drops agent types the engine says are gone', async ($, on) => {
+test('repeats removal notices after the listings they follow', async ($, on) => {
   on('prompt.attachment', ($, e) => ({ text: e.text }))
   on('tool.describe', ($, e) => ({ description: e.description }))
 
   await $.prompt.attachment({ type: 'agent_listing_delta', text: 'Available agent types for the Agent tool:\n- cheap: Mechanical work.\n- tester: Runs checks.' })
   await $.prompt.attachment({ type: 'agent_listing_delta', text: 'The following agent types are no longer available:\n- tester' })
   const agent = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.', provider: ENGINE })
-  expect(agent.description).toContain('- cheap: Mechanical work.')
-  expect(agent.description).not.toContain('tester')
+  expect(agent.description).toContain('- cheap: Mechanical work.\n- tester: Runs checks.\n\nThe following agent types are no longer available:\n- tester')
+  expect(agent.description?.match(/no longer available/g)).toHaveLength(1)
+})
+
+test('keeps a listing that repeats an earlier one, so the latest change wins', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.describe', ($, e) => ({ description: e.description }))
+
+  const added = 'New agent types are now available for the Agent tool:\n- x-agent: Does x.'
+  const removed = 'The following agent types are no longer available:\n- x-agent'
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: 'Available agent types for the Agent tool:\n- cheap: Mechanical work.' })
+  for (const text of [added, removed, added]) await $.prompt.attachment({ type: 'agent_listing_delta', text })
+  const agent = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.', provider: ENGINE })
+  expect(agent.description?.endsWith(added)).toBe(true)
+})
+
+test('restores agent listings once on resume, and reads a 0.6.0 session without failing', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.describe', ($, e) => ({ description: e.description }))
+  let id = 'first'
+  on('session.id', () => ({ value: id }))
+  const memory = new Map<string, unknown>([['session:old', { at: 1, hidden: { 'Agent listing (moved to the Agent tool)': { cheap: 'x' } }, kept: {}, agents: { cheap: '- cheap: x' } }]])
+  on('store.set', ($, e) => {
+    memory.set(e.key, e.value)
+    return { value: undefined }
+  })
+  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
+  on('store.keys', () => ({ value: [...memory.keys()] }))
+  const listing = 'Available agent types for the Agent tool:\n- cheap: Mechanical work.'
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: listing })
+  await new Promise(resolve => setTimeout(resolve, 10))
+  memory.set('session:resumed', memory.get('session:first'))
+  id = 'resumed'
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: listing })
+  const resumed = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.', provider: ENGINE })
+  expect(resumed.description?.match(/- cheap:/g)).toHaveLength(1)
+  id = 'old'
+  await $.prompt.attachment({ type: 'agent_listing_delta', text: listing })
+  await new Promise(resolve => setTimeout(resolve, 10))
+  const old = memory.get('session:old') as { agents: string[]; hidden: Record<string, Record<string, string>> }
+  expect(old.agents).toEqual([listing])
+  expect(Object.keys(old.hidden['Agent listing (moved to the Agent tool)'])).toHaveLength(1)
+})
+
+test('keeps plugin agents and multi-line agent descriptions whole', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.describe', ($, e) => ({ description: e.description }))
+
+  const text = [
+    'Available agent types for the Agent tool:',
+    '- codex:codex-rescue: Use when stuck. (Tools: Bash)',
+    '- reviewer: Reviews code.',
+    'Use after edits.',
+    '- Input: a diff (Tools: Read)',
+  ].join('\n')
+  await $.prompt.attachment({ type: 'agent_listing_delta', text })
+  const agent = await $.tool.describe({ tool: 'Agent', description: 'Launch an agent.', provider: ENGINE })
+  expect(agent.description).toContain(text)
+})
+
+test('keeps notes hidden on resume for a session saved with bare note hashes', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: undefined }))
+  let id = 'bare-hashes'
+  on('session.id', () => ({ value: id }))
+  const text = '# MCP Server Instructions\n\n## claude.ai Datadog\nUse log queries.'
+  // Records what the current version saves for these notes, then offers it as an older session's bare hashes.
+  const memory = new Map<string, unknown>()
+  on('store.set', ($, e) => {
+    memory.set(e.key, e.value)
+    return { value: undefined }
+  })
+  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  await $.tool.call({ tool: 'mcp__claude_ai_Datadog__search_logs', input: {}, tool_use_id: 't' })
+  await new Promise(resolve => setTimeout(resolve, 10))
+  const saved = memory.get('session:bare-hashes') as { seen: string[] }
+  expect(saved.seen.length).toBeGreaterThan(0)
+  expect(saved.seen.every(entry => entry.startsWith('main:'))).toBe(true)
+  memory.set('session:resumed', { ...saved, seen: saved.seen.map(entry => entry.slice('main:'.length)) })
+  id = 'resumed'
+  const again = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(again.text).toBeNull()
 })
 
 test('drops the email context and keeps other context blocks', async ($, on) => {

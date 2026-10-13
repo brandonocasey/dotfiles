@@ -24,7 +24,7 @@ That is about 24,300 fewer tokens on every request once all connectors have load
 
 The `Skill` tool is deferred too; the skill listing gains one line saying to load it with `ToolSearch select:Skill`. In the agent listing, long descriptions of built-in agents (`claude-code-guide`, `general-purpose`, `claude`, `Explore`, `Plan`, `statusline-setup`) become one-line summaries; custom agents are unchanged.
 
-In the main session, the agent listing leaves the prompt and joins the deferred `Agent` tool's description, so Claude reads it only after loading that tool. Subagents keep their listing, with built-in descriptions shortened.
+In the main session, each agent listing leaves the prompt and is repeated whole, in order, in the deferred `Agent` tool's description, so Claude reads it only after loading that tool. Subagents share that description but keep their own listing, with built-in descriptions shortened; the description tells a subagent to use only its own listing's types.
 
 Three attachments are trimmed on every request:
 

@@ -16,10 +16,11 @@ const AGENT_SUMMARIES: Record<string, string> = {
   Plan: 'Read-only implementation planning.',
   'statusline-setup': 'Configures the status line.',
 }
-const AGENT_LINE = /^- ([\w-]+): (.*?)( \(Tools: [^)]*\))?$/
-const AGENTS_GONE = 'The following agent types are no longer available:'
+// Plugin agents carry their plugin in the name, as in `codex:codex-rescue`.
+const AGENT_LINE = /^- (\S+?): (.*?)( \(Tools: [^)]*\))?$/
 const AGENTS_POINTER = 'Available agent types are listed in <system-reminder> messages in the conversation.'
-const AGENTS_HEADER = 'Available agent types (pass one as subagent_type):'
+// Subagents share this description but keep their own listing, which can allow fewer types.
+const AGENTS_HERE = "The main session's agent types are listed below. In a subagent, use only the types in its own agent listing."
 // The main session's agent listing moves into the deferred Agent tool's description, so it is read only when Claude
 // loads that tool. Subagents keep their listing, with built-in descriptions shortened.
 const AGENT_LISTING = [...TRIMMED][0]
@@ -99,7 +100,7 @@ type Host = {
   session: { id(): Promise<string> }
   store: { get(key: string): Promise<unknown>; set(key: string, value: unknown): Promise<void>; delete(key: string): Promise<void>; keys(): Promise<string[]> }
 }
-type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[]; agents?: Record<string, string> }
+type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[]; agents?: string[] }
 // Token counts by row, reused across sessions while the row's text and the model stay the same.
 type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
 
@@ -118,8 +119,12 @@ const seen = new Set<string>()
 // Local MCP servers seen in tool names, to group a local server's "## " sub-headings with it in the report.
 // Kept across sessions, since notes can arrive before this process has seen the server's tools.
 const localServers = new Set<string>()
-// The main session's agent types, by name, as the Agent tool's description lists them.
-const agents = new Map<string, string>()
+// The main session's agent listings, in order, as the Agent tool's description repeats them. Kept whole, since an
+// agent's description can span lines.
+const agents: string[] = []
+// Listings restored from the store. After a resume or reload the engine asks again about each old listing once; each
+// such ask uses up one match here, and any other listing is new, even when its text repeats an earlier one.
+const restoredAgents: string[] = []
 let agentDescribed = false
 let saving: Promise<void> | undefined
 let dirty = false
@@ -158,8 +163,13 @@ const restore = async ($: Host, key: string) => {
   fromObject(kept, saved?.kept)
   for (const entry of saved?.sent ?? []) sent.add(entry)
   for (const entry of saved?.used ?? []) used.add(entry)
-  for (const entry of saved?.seen ?? []) seen.add(entry)
-  for (const [name, line] of Object.entries(saved?.agents ?? {})) if (!agents.has(name)) agents.set(name, line)
+  // Sessions saved before notes were tracked per agent hold bare hashes, all from the main session.
+  for (const entry of saved?.seen ?? []) seen.add(entry.includes(':') ? entry : `main:${entry}`)
+  // Sessions saved by 0.6.0 kept agents by name; their rows are dropped and rebuilt when the engine asks again.
+  if (Array.isArray(saved?.agents)) {
+    agents.push(...saved.agents)
+    restoredAgents.push(...saved.agents)
+  } else hidden.delete(AGENT_LISTING)
   const others = (await $.store.keys()).filter(other => other.startsWith('session:') && other !== key)
   if (others.length < SESSIONS_KEPT) return
   const dated = await Promise.all(others.map(async other => ({ other, at: ((await $.store.get(other)) as Saved | undefined)?.at ?? 0 })))
@@ -184,7 +194,8 @@ const load = async ($: Host) => {
       sent.clear()
       used.clear()
       seen.clear()
-      agents.clear()
+      agents.length = 0
+      restoredAgents.length = 0
       agentDescribed = false
       const next = { key, ready: Promise.resolve(), loaded: false }
       next.ready = restore($, key)
@@ -202,7 +213,7 @@ const load = async ($: Host) => {
   }
 }
 
-const snapshot = (): Saved => ({ at: Date.now(), hidden: toObject(hidden), kept: toObject(kept), sent: [...sent], used: [...used], seen: [...seen], agents: Object.fromEntries(agents) })
+const snapshot = (): Saved => ({ at: Date.now(), hidden: toObject(hidden), kept: toObject(kept), sent: [...sent], used: [...used], seen: [...seen], agents: [...agents] })
 
 const write = async ($: Host) => {
   const key = await load($)
@@ -237,33 +248,22 @@ const shortenAgents = (text: string, track = true) =>
     })
     .join('\n')
 
-// Takes the main session's agent listing in, as added and removed types, and says whether the list changed.
+// Takes one of the main session's agent listings in and says whether it is new. A restored listing asked about again
+// changes nothing.
 const takeAgents = (text: string) => {
-  let changed = false
-  for (const paragraph of text.split('\n\n')) {
-    const [first, ...rest] = paragraph.split('\n')
-    if (first === AGENTS_GONE) {
-      for (const line of rest) {
-        const name = line.replace(/^- /, '').trim()
-        if (agents.delete(name)) changed = true
-      }
-      continue
-    }
-    for (const line of [first, ...rest]) {
-      const name = AGENT_LINE.exec(line)?.[1]
-      if (name === undefined) continue
-      record(hidden, AGENT_LISTING, name, line)
-      const short = shortenAgents(line, false)
-      if (agents.get(name) !== short) changed = true
-      agents.set(name, short)
-    }
+  const short = shortenAgents(text, false)
+  const restored = restoredAgents.indexOf(short)
+  if (restored !== -1) {
+    restoredAgents.splice(restored, 1)
+    return false
   }
+  record(hidden, AGENT_LISTING, `${agents.length}:${hashOf(text)}`, text)
+  agents.push(short)
 
-  return changed
+  return true
 }
 
-const agentListing = () => (agents.size === 0 ? '' : `\n\n${AGENTS_HEADER}\n${[...agents.keys()].sort().map(name => agents.get(name)).join('\n')}`)
-
+const agentListing = () => (agents.length === 0 ? '' : `\n\n${agents.join('\n\n')}`)
 const hideNames = (text: string) => {
   const servers = new Set<string>()
   const paragraphs = text.split('\n\n').flatMap(paragraph => {
@@ -563,7 +563,7 @@ export const register: Register = on => {
       agentDescribed = true
       const listing = agentListing()
       // The engine's text points at the reminder this mod leaves out, so it points at the list below instead.
-      if (listing !== '') description = description.replace(AGENTS_POINTER, 'Available agent types are listed below.') + listing
+      if (listing !== '') description = description.replace(AGENTS_POINTER, AGENTS_HERE) + listing
     }
 
     return { description, isDeferred: true }
