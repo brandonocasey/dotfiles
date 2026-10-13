@@ -2,3 +2,7 @@
 .config/fish/functions/codex-tmux-session.fish
 .claude/local-mods/defer-tools
 .claude/local-mods/hide-connectors
+.gemini/antigravity/rules/lean-ctx.md
+.gemini/config/plugins/lean-ctx
+.gemini/hooks/lean-ctx-redirect-gemini.sh
+.gemini/hooks/lean-ctx-rewrite-gemini.sh

@@ -1,5 +1,0 @@
-{
-  "description": "lean-ctx context engineering — session telemetry hooks; token compression is provided by the lean-ctx MCP tools (ctx_*).",
-  "name": "lean-ctx",
-  "version": "3.8.17"
-}

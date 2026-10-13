@@ -5,7 +5,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "PATH=/Users/bcasey/.local/share/mise/installs/node/22.21.1/bin:$PATH npm_config_prefer_offline=false exec npx -y @mozilla/firefox-devtools-mcp@0.9.5 --headless"
+        "PATH=/Users/bcasey/.local/share/mise/installs/node/22.21.1/bin:$PATH npm_config_prefer_offline=false exec npx -y @mozilla/firefox-devtools-mcp@0.10.1 --headless"
       ],
       "env": {}
     }

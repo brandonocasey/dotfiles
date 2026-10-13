@@ -1,7 +1,0 @@
-{
-  "mcpServers": {
-    "lean-ctx": {
-      "command": "/Users/bcasey/.local/share/npm/lib/node_modules/lean-ctx-bin/bin/lean-ctx"
-    }
-  }
-}
