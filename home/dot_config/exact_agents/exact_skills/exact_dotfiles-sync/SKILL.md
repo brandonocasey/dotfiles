@@ -9,9 +9,13 @@ A user request to commit or push dotfiles is the consent to commit and push the
 current branch of the chezmoi source repo, for this run only. It gives no standing
 consent. Never run it without that request. Force-push stays forbidden.
 
-Resolve the repo once: `git -C "$(chezmoi source-path)" rev-parse --show-toplevel`.
+Resolve the repo once: `cd "$(chezmoi source-path)" && git rev-parse --show-toplevel`.
 Shell variables do not persist between tool calls, so write that literal path
 wherever `<src>` appears below.
+
+Run each Git command below as `cd <src> && git ...`: one Git command per call,
+with no pipes, `;`, or variable assignments. Only plain `git` commands run
+outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
 
 1. **Scope.** Use the named targets, or the targets this session changed.
    Never include `*credentials*`, `*.pem`, `*.key`, token files, or paths in
@@ -39,16 +43,16 @@ wherever `<src>` appears below.
      Prefix every new owned skill source directory with `exact_`, including nested directories.
    - Never run `chezmoi add`, `re-add`, `edit`, `merge`, or `update`. With
      `autoCommit` or `autoPush` on, they commit or push on their own.
-4. **Scan.** Stage only those source paths: `git -C <src> add <paths>`.
+4. **Scan.** Stage only those source paths: `git add <paths>`.
    Run the repo's secret scanner when it has one. Always run this scan too:
-   `git -C <src> grep --cached -nEi 'token|secret|passw|api[_-]?key|PRIVATE KEY|glpat-|ghp_|github_pat_|xox[bp]-|AKIA' -- <paths>`
+   `git grep --cached -nEi 'token|secret|passw|api[_-]?key|PRIVATE KEY|glpat-|ghp_|github_pat_|xox[bp]-|AKIA' -- <paths>`
    Judge each match. Ignore plain prose, such as token counts.
    On a real secret, stop. Print the file, line, and match with the value
    replaced by `<redacted>`. Unstage the path and remove the secret from the source.
 5. **Commit.** Load [commit](../commit/SKILL.md). Make one commit per concern.
-6. **Pull and push.** Run `git -C <src> pull` with no strategy flags, so the
+6. **Pull and push.** Run `git pull` with no strategy flags, so the
    repo's configured strategy applies. Resolve clear conflicts. Stop and ask
-   when the intended result is not clear. Then run `git -C <src> push`.
+   when the intended result is not clear. Then run `git push`.
 7. **Check.** `chezmoi status <targets>` must print nothing, and
-   `git -C <src> status -sb` must show no ahead count.
+   `git status -sb` must show no ahead count.
    Report the pushed SHAs, the targets you left out, and why.
