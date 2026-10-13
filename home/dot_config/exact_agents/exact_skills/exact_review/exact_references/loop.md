@@ -1,8 +1,10 @@
 ## 5. Optional: --loop [N]
 
-`--loop` implies `--fix`. It runs up to two cycles. Each cycle has one full review and up
-to N fix checks. N defaults to 3. A pass is a full review or a fix check. A "major"
-finding is a `bug` of `high` or `medium` severity, as defined in [output.md](output.md).
+`--loop` implies `--fix`. [when-to-run.md](when-to-run.md) **Follow-ups** adds it to
+automatic reviews that need two reviewers; `--no-loop` turns that off. It runs up to two
+cycles. Each cycle has one full review and up to N fix checks. N defaults to 3. A pass
+is a full review or a fix check. A "major" finding is a `bug` of `high` or `medium`
+severity, as defined in [output.md](output.md).
 
 1. **Full review.** Start a fresh `reviewer` and `deep-review` pair per
    [delegation.md](delegation.md) on the whole current target. Re-verify, report, and

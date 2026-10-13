@@ -11,7 +11,7 @@ requirement violations. Include optional style suggestions only when requested.
 
 Arguments: the target (step 0), `--test` and `--no-test` (**Manual testing**),
 `--deep` and `--agents <model>[:<effort>][,…]` (**Delegation**), `--fix` (step 4),
-`--loop [N]` (step 5), `--threads` (step 6), and `--approve`, `--auto-merge`, and
+`--loop [N]` and `--no-loop` (step 5), `--threads` (step 6), and `--approve`, `--auto-merge`, and
 `--merge` (step 7). A request in words to approve or merge, for a deep or hard
 review, or that names reviewer models counts as the matching flag.
 

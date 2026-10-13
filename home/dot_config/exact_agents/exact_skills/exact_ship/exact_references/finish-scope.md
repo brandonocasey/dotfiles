@@ -12,7 +12,8 @@
   covers it. Restart the CI watch at the new head.
   Count that push toward monitoring.md's fix-push cap only when it carries a CI repair.
 - Run any follow-up delta review from when-to-run.md **Follow-ups** after that push,
-  while the new CI runs. Its fixes get one more push; no further review loop.
+  while the new CI runs. Its fixes get one more push; no further review loop, unless
+  the review runs `--loop`, whose passes then own the pushes.
 - After every review and fix push ends, restore any paused auto-merge per
   [auto-merge-pause.md](../../shared/auto-merge-pause.md) **Restore**. It stays off
   while a blocking finding or failed repair remains.

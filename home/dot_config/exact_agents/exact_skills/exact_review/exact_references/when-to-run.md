@@ -54,7 +54,9 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 - Review fixes and follow-up commits as a delta (`<last-reviewed-sha>..<new-head-sha>`)
   with surrounding context when they change logic beyond a one-line local edit.
   A one-line edit still requires review if it introduces new behavior or risk.
-- Without `--loop`, run one follow-up review for the repair delta; verify and test
+- When **Second reviewer** requires two reviewers, run the review with `--loop`
+  unless the user set `--no-loop`; [loop.md](loop.md) then owns the follow-ups.
+- Otherwise run one follow-up review for the repair delta; verify and test
   its fixes without an automatic convergence loop. Separate later behavior or risk
   changes start a new delta review. Report unresolved findings explicitly.
 - Cosmetic CSS or prose-only follow-ups use the skip exceptions above; visible
@@ -64,9 +66,9 @@ remains. Otherwise apply the triggers and narrow exceptions below.
 ## Second reviewer
 
 - Use one reviewer for narrow configuration fixes to already exposed services.
-  Require two (`--deep`) when changing access controls, exposing additional
-  services, or weakening security checks.
-- For other changes, run `--deep` when touching a trust boundary, concurrency,
+  Require two (`--loop` runs both) when changing access controls, exposing
+  additional services, or weakening security checks.
+- For other changes, require two when touching a trust boundary, concurrency,
   or persistence, or exceeding about 400 changed lines of hand-written logic.
 - If `deep-review` is unavailable, use the available independent reviewer and
   disclose the coverage limit; never bypass tool restrictions to satisfy the count.
