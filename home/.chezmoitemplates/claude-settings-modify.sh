@@ -59,7 +59,8 @@ managed=$(
       "Bash(gh pr merge*--admin*)",
       "Agent(Explore)",
       "Agent(Plan)",
-      "Agent(statusline-setup)"
+      "Agent(statusline-setup)",
+      "mcp__claude_ai_Claude_Docs"
     ],
     "additionalDirectories": ["~/.cache/agents"],
     "defaultMode": "auto"
