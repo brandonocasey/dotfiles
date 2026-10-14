@@ -47,11 +47,12 @@ class Transcript:
                     continue
                 yield rec
 
-    def api_calls(self, since=''):
+    def api_calls(self, since='', seen=None):
         """One (record, usage, model, tool calls) per API response.
 
         Transcripts write one record per content block, so tool_use blocks are counted across all
-        records that share the response id.
+        records that share the response id. A shared `seen` set skips responses that an earlier
+        transcript already returned, such as those copied into a resumed session's file.
         """
         calls, tools = {}, {}
         for rec in self.records(since):
@@ -62,6 +63,9 @@ class Transcript:
             calls[key] = (rec, msg['usage'], msg.get('model', '?'))
             tools.setdefault(key, set()).update(
                 b.get('id') for b in msg.get('content') or [] if isinstance(b, dict) and b.get('type') == 'tool_use')
+        if seen is not None:
+            calls = {k: v for k, v in calls.items() if not (isinstance(k, str) and k in seen)}
+            seen.update(k for k in calls if isinstance(k, str))
         return [(*calls[k], len(tools[k])) for k in calls]
 
 
@@ -162,9 +166,9 @@ def cmd_cost(args):
     prices = load_prices()
     keys = args.by.split(',')
     groups = collections.defaultdict(collections.Counter)
-    unpriced, fast = collections.Counter(), 0
+    unpriced, fast, seen = collections.Counter(), 0, set()
     for t in transcripts(args):
-        for _, u, model, ntools in t.api_calls(args.since_iso):
+        for _, u, model, ntools in t.api_calls(args.since_iso, seen):
             fields = {'agent': t.agent, 'model': model, 'project': short_project(t.project), 'session': t.session, 'file': str(t.path)}
             g = groups[tuple(fields[k] for k in keys)]
             g['calls'] += 1
@@ -207,9 +211,9 @@ def cmd_cost(args):
 
 def cmd_agents(args):
     prices = load_prices()
-    by = collections.defaultdict(list)
+    by, seen = collections.defaultdict(list), set()
     for t in transcripts(args):
-        calls = t.api_calls(args.since_iso)
+        calls = t.api_calls(args.since_iso, seen)
         if not calls:
             continue
         ctx = [sum(u.get(k) or 0 for k in USAGE_KEYS[:3]) for _, u, _, _ in calls]
