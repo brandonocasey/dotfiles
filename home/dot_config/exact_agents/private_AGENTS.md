@@ -8,6 +8,7 @@
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Never `sleep` 20s or more in the foreground, or use foreground until loops. Run commands likely to take over ~20s (test suites, builds, browser runs) in the background with a log file and poll it; short commands stay foreground.
+- Use `agent-probe` for headless usage or A/B probes. In other `claude -p` runs, keep `ToolSearch` in any `--tools` list. When tool search is off (`ENABLE_TOOL_SEARCH=false` in env or settings, a custom `ANTHROPIC_BASE_URL`, or ToolSearch denied), add `--strict-mcp-config`. Without these, every connector tool is sent in full: about 600k tokens per call.
 - Each tool call re-sends all context, so use few calls. Combine independent commands; search the whole scope in one call, never file by file.
 - Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.

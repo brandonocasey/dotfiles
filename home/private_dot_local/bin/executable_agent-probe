@@ -12,6 +12,16 @@ files are made absolute first. A run whose MCP servers are still
 pending or failed at start is retried. USD comes from agent-sessions and the
 shared price file. Working directories are deleted afterwards; logs stay in
 --out. Runs use `claude` with the caller's CLAUDE_CONFIG_DIR.
+
+Without tool search, Claude Code sends every MCP tool schema in full: about
+600k tokens per call with the claude.ai connectors. So a `--tools` list that
+can see MCP servers gains ToolSearch, and a run with tool search off through
+the environment or flags (ENABLE_TOOL_SEARCH=false, a custom
+ANTHROPIC_BASE_URL, or ToolSearch disallowed) gains --strict-mcp-config. Then
+each variant starts once against an invalid model, which prints the tool list
+and makes no billed call. If MCP servers are present but ToolSearch is not
+(for example, turned off in a --settings file), nothing runs. A run that still
+starts that way is marked failed. --allow-inline-tools turns all of this off.
 """
 import argparse
 import json
@@ -28,6 +38,13 @@ from pathlib import Path
 
 SCRATCH = Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'agents/scratch/agent-probe'
 RETRY_STATUSES = {'pending', 'failed'}
+TOOL_SEARCH = 'ToolSearch'
+TOOLS_FLAGS = ('--tools',)
+DISALLOWED_FLAGS = ('--disallowedTools', '--disallowed-tools')
+OFF_VALUES = {'0', 'false', 'no', 'off'}
+# The API rejects this model unbilled, after Claude Code has printed its init event.
+CHECK_MODEL = 'claude-agent-probe-startup-check'
+LIVE_MCP_STATUSES = {'connected', 'pending'}
 
 
 def sessions_tool():
@@ -48,6 +65,94 @@ def absolute_if_file(arg):
     if value and not os.path.isabs(value) and os.path.exists(value):
         return flag + sep + os.path.abspath(value)
     return arg
+
+
+def split_flag(flags, i):
+    """Return (flag name, values, next index) for the variadic flag at flags[i]."""
+    name, sep, value = flags[i].partition('=')
+    if sep:
+        return name, [value], i + 1
+    end = i + 1
+    while end < len(flags) and not flags[end].startswith('-'):
+        end += 1
+    return name, flags[i + 1:end], end
+
+
+def tool_names(values):
+    return [n for v in values for n in v.replace(',', ' ').split()]
+
+
+def guard_tool_search(flags):
+    """Keep ToolSearch in --tools; skip MCP servers when tool search is off anyway. Returns (flags, notes)."""
+    out, notes, search_off, i = [], [], False, 0
+    # --strict-mcp-config without --mcp-config loads no MCP servers, so ToolSearch would only skew the run.
+    no_mcp = '--strict-mcp-config' in flags and not any(f.split('=')[0] == '--mcp-config' for f in flags)
+    while i < len(flags):
+        name, values, end = split_flag(flags, i)
+        names = tool_names(values)
+        if name in TOOLS_FLAGS and not no_mcp and 'default' not in names and TOOL_SEARCH not in names:
+            out += [name, ','.join(names + [TOOL_SEARCH])]
+            notes.append(f'added {TOOL_SEARCH} to {name}')
+        else:
+            out += flags[i:end]
+            search_off |= name in DISALLOWED_FLAGS and TOOL_SEARCH in names
+        i = end
+    if os.environ.get('ENABLE_TOOL_SEARCH', '').strip().lower() in OFF_VALUES:
+        search_off = True
+    if os.environ.get('ANTHROPIC_BASE_URL') and not os.environ.get('ENABLE_TOOL_SEARCH'):
+        search_off = True
+    if search_off and '--strict-mcp-config' not in out:
+        out.append('--strict-mcp-config')
+        notes.append('tool search is off, so added --strict-mcp-config')
+    return out, notes
+
+
+def inline_mcp_tools(events):
+    """Count MCP servers whose tools go out in full: live servers in a session without ToolSearch."""
+    init = next((e for e in events if e.get('type') == 'system' and e.get('subtype') == 'init'), {})
+    if TOOL_SEARCH in (init.get('tools') or []):
+        return 0
+    return sum(s.get('status') in LIVE_MCP_STATUSES for s in init.get('mcp_servers') or [])
+
+
+def without_flag(flags, flag):
+    out, i = [], 0
+    while i < len(flags):
+        name, _, end = split_flag(flags, i)
+        if name != flag:
+            out += flags[i:end]
+        i = end
+    return out
+
+
+def text_of(stream):
+    return stream.decode(errors='replace') if isinstance(stream, bytes) else stream or ''
+
+
+def startup_check(args, flags):
+    """Start a variant against CHECK_MODEL. Returns (inline_mcp_tools count, None), or (None, reason) without init."""
+    cwd = Path(tempfile.mkdtemp(prefix='check-', dir=args.out))
+    # A fallback model would turn the rejected CHECK_MODEL call into a billed one.
+    cmd = ['claude', '-p', 'ok', '--output-format', 'stream-json', '--verbose', '--no-session-persistence',
+           '--max-turns', '1', *without_flag(flags, '--fallback-model'), '--model', CHECK_MODEL]
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                              timeout=args.timeout)
+        out, err = proc.stdout, proc.stderr
+    except subprocess.TimeoutExpired as e:
+        out, err = text_of(e.stdout), f'timed out after {args.timeout}s'
+    finally:
+        shutil.rmtree(cwd, ignore_errors=True)
+    events = []
+    for line in out.splitlines():
+        try:
+            events.append(json.loads(line))
+        except ValueError:
+            continue
+    if not any(e.get('type') == 'system' and e.get('subtype') == 'init' for e in events):
+        reason = next((line.strip() for line in err.splitlines() if line.strip()), 'no reason given')
+        return None, reason[:200]
+    return inline_mcp_tools(events), None
 
 
 def read_events(path):
@@ -97,7 +202,10 @@ def run(args, prompt, name, flags, index):
         print(f'{name} #{index}: MCP not ready ({", ".join(waiting)}); retry {attempt}/{args.retries}', file=sys.stderr)
     result = next((e for e in reversed(events) if e.get('type') == 'result'), {})
     status = 'ok' if code == 0 and not result.get('is_error') else f"{result.get('subtype') or 'exit'} {code}"
-    if status != 'ok':
+    inline = 0 if args.allow_inline_tools else inline_mcp_tools(events)
+    if inline:
+        status = f'tools of {inline} MCP servers sent in full (no {TOOL_SEARCH})'
+    elif status != 'ok':
         reason = next((line.strip() for line in err.read_text(errors='replace').splitlines() if line.strip()), '')
         status += f': {reason[:80]}' if reason else ''
     return dict(variant=name, run=index, attempts=attempt, log=str(log), status=status, secs=secs,
@@ -163,6 +271,8 @@ def main():
     p.add_argument('--timeout', type=int, default=600, help='seconds per run (default 600)')
     p.add_argument('--out', type=Path, help=f'log directory (default {SCRATCH}/<time>)')
     p.add_argument('--keep', action='store_true', help='keep the working directories')
+    p.add_argument('--allow-inline-tools', action='store_true',
+                   help='leave --tools and MCP servers as given, even if MCP tools would be sent in full')
     p.add_argument('--json', action='store_true', help='print rows as JSON')
     args = p.parse_args()
     if args.runs < 1:
@@ -175,6 +285,27 @@ def main():
     variants = args.variant or [('base', [])]
     if len({n for n, _ in variants}) != len(variants):
         p.error('variant names must be unique')
+    if not args.allow_inline_tools:
+        guarded = []
+        for name, flags in variants:
+            flags, notes = guard_tool_search(flags)
+            for note in notes:
+                print(f'{name}: {note}', file=sys.stderr)
+            guarded.append((name, flags))
+        variants = guarded
+        failed = []
+        for name, flags in variants:
+            print(f'checking {name} at startup', file=sys.stderr)
+            inline, reason = startup_check(args, flags)
+            if inline is None:
+                failed.append(f'{name}: claude printed no tool list: {reason}')
+            elif inline:
+                fix = ('turn tool search on or drop --mcp-config' if '--strict-mcp-config' in flags
+                       else 'add --strict-mcp-config')
+                failed.append(f'{name}: no {TOOL_SEARCH}, so tools of {inline} MCP servers would be sent in full;'
+                              f' {fix}, or pass --allow-inline-tools')
+        if failed:
+            sys.exit('agent-probe: nothing ran.\n  ' + '\n  '.join(failed))
     rows = []
     # Interleave variants so drift over time (cache warmth, load) spreads evenly across them.
     for index in range(1, args.runs + 1):
