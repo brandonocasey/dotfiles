@@ -101,6 +101,8 @@ end
 
 # Pin Claude Code: from 2.1.299 the managed security plugin bypasses context-lean's attachment edits.
 set -gx DISABLE_AUTOUPDATER 1
+# DISABLE_AUTOUPDATER also stops plugin updates; keep those on.
+set -gx FORCE_AUTOUPDATE_PLUGINS 1
 
 # ~/.local/bin must resolve before Homebrew — its `brew` wrapper (and other
 # shims) live there and need to shadow the real binaries. Prepend + move so it

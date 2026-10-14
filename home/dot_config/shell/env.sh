@@ -114,6 +114,8 @@ fi
 
 # Pin Claude Code: from 2.1.299 the managed security plugin bypasses context-lean's attachment edits.
 export DISABLE_AUTOUPDATER=1
+# DISABLE_AUTOUPDATER also stops plugin updates; keep those on.
+export FORCE_AUTOUPDATE_PLUGINS=1
 
 export PAGER="${PAGER:-less}"
 export GIT_PAGER="${GIT_PAGER:-less}"
