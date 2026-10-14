@@ -18,14 +18,12 @@ managed=$(
   },
   "permissions": {
     "allow": [
-      "Bash",
       "Edit",
       "Glob",
       "Grep",
       "NotebookEdit",
       "Read",
       "Skill",
-      "Task",
       "TodoWrite",
       "WebFetch",
       "WebSearch",
@@ -54,7 +52,12 @@ managed=$(
       "Agent(Explore)",
       "Agent(Plan)",
       "Agent(statusline-setup)",
-      "mcp__claude_ai_Claude_Docs"
+      "mcp__claude_ai_Claude_Docs",
+      "Read(~/.netrc)",
+      "Read(~/.ssh/**)",
+      "Read(~/.config/glab-cli/**)",
+      "Read(~/.config/gh/hosts.yml)",
+      "Read(~/.aws/**)"
     ],
     "additionalDirectories": ["~/.cache/agents"],
     "defaultMode": "auto"
@@ -65,7 +68,10 @@ managed=$(
   "autoMode": {
     "environment": [
       "$defaults",
-      "Trusted source control: gitlab.com/jwpconnatix/* and forgejo.koof.win/bcasey/*. Trusted Jira: jwplayer.atlassian.net."
+      "Trusted source control: gitlab.com/jwpconnatix/* and forgejo.koof.win/bcasey/*. Trusted Jira: jwplayer.atlassian.net.",
+      "Organization: JW Player / Connatix.",
+      "Trusted internal domains: jwplayer.atlassian.net.",
+      "Key internal services: Jira (jwplayer.atlassian.net), GitLab group gitlab.com/jwpconnatix, personal Forgejo repos forgejo.koof.win/bcasey/*."
     ],
     "allow": [
       "$defaults",
@@ -78,6 +84,7 @@ managed=$(
     ]
   },
   "model": "opus",
+  "promptCacheTtl": "1h",
   "env": {
     "CLAUDE_CODE_DISABLE_FILE_MENTIONS": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
@@ -140,6 +147,18 @@ managed=$(
           {
             "type": "command",
             "command": "echo 'Be concise: lead with the result, skip preamble and narration, keep only what the user needs.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "resume|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/cold-cache-warn.sh",
             "timeout": 5
           }
         ]
