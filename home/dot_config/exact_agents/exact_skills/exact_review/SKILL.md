@@ -9,8 +9,8 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-For an MR/PR, first read in one parallel batch: `reviewer-steps.md`,
-`remote-target.md`, `ci-and-conflicts.md`, `output.md`, and `remote-comments.md`,
+For an MR/PR, first read in one parallel batch: steps 0 and 2 of `reviewer-steps.md`
+(skip its `## 1.` section), `remote-target.md`, `ci-and-conflicts.md`, `output.md`, and `remote-comments.md`,
 all in `references/`.
 
 Arguments: `--test` and `--no-test` (**Manual testing**), `--fix` (steps 4–5), and
@@ -36,8 +36,9 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Read [reviewer-steps.md](references/reviewer-steps.md) and run steps 0–2 through
-**Delegation**.
+Read steps 0 and 2 of [reviewer-steps.md](references/reviewer-steps.md), skipping
+its `## 1.` section. Run step 0; use step 2 to re-verify findings. Reviewers run
+steps 0–2 through **Delegation**. Read the whole file only for an inline fallback.
 
 ## 3. Output
 

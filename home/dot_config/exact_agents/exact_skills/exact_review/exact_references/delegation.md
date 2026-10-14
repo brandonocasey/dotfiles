@@ -33,7 +33,11 @@ Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md that apply>
 Checks: <commands, or log paths with their commands>
-Severity scale: <pasted from output.md>
+Severity scale: `bug` (wrong behavior reachable in production), `question` (design
+choice worth confirming with the author), `requirement` (an explicit repository
+rule violation), or `nit` (optional style feedback, only when requested). Give each
+`bug` a severity: `high` (data loss, security hole, crash, or a broken main path),
+`medium` (wrong result on a common path), or `low` (rare edge case or minor effect).
 Return raw data: file, line, severity, failure scenario, evidence, tests run.
 ```
 
@@ -46,7 +50,7 @@ history. Exception: a fix-loop fix check
 passes the inputs [loop.md](loop.md) lists, to continued or fresh reviewers. Tell reviewers not to
 rebuild shared output; a reviewer that starts a server uses its own port. Each reviewer
 runs steps 0–2 and returns raw data: file, line, severity, failure scenario, evidence,
-and the tests it ran. Paste the severity scale from [output.md](output.md) into the prompt. An external tool's findings go through the same re-verification.
+and the tests it ran. Keep the template's severity scale in sync with [output.md](output.md). An external tool's findings go through the same re-verification.
 
 Merge the findings and remove duplicates by file, line, and failure scenario. Name the
 reviewers that found each finding. Then re-verify each finding in the worktree before
