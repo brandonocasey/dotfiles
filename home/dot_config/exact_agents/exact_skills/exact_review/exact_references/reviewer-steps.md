@@ -32,7 +32,8 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
   otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
 - After you create a review worktree, follow the `worktree` skill's **Prepare** section
-  before tests or a `--fix` commit.
+  before tests or a `--fix` commit. Never install in a worktree you were given; report
+  missing dependencies instead. A server you start uses its own free port.
 - With `.gitmodules`, the `worktree` skill's **Create** and **Submodules** sections
   own submodule init and removal.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
@@ -135,8 +136,11 @@ Cut both without skipping any step above:
 
 - Batch independent reads, searches, and commands into one call. Search the whole
   scope with one `rg`, not file by file.
-- Read line ranges that cover the whole function under review. Read whole config
-  files, small modules, and files you need most of.
+- Read partials. Locate code with LSP when available, `ast-grep` for structure, or
+  `rg -n`, then read only those ranges (file-read `offset`/`limit` or `sed -n`).
+  Still read all needed context: the whole changed function, its callers, and the
+  contracts a finding depends on. Read whole config files, small modules, and files
+  you need most of.
 - Write test, lint, and build output to a scratch log. Search the whole log for
   failures, errors, and warnings, and match the failure count to the summary line.
   Do not judge a log from its tail alone.

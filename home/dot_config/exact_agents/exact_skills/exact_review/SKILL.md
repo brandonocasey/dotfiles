@@ -9,10 +9,6 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-For an MR/PR, first read in one parallel batch: steps 0 and 2 of `reviewer-steps.md`
-(skip its `## 1.` section), `remote-target.md`, `ci-and-conflicts.md`, `output.md`, and `remote-comments.md`,
-all in `references/`.
-
 Arguments: `--test` and `--no-test` (**Manual testing**), `--fix` (steps 4–5), and
 `--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to fix,
 approve, or merge, or that names reviewer models counts as the matching flag.
@@ -23,7 +19,7 @@ For automatic reviews of this session's work, read [when-to-run.md](references/w
 
 ## Delegation
 
-Every review runs through the `reviewer` sub-agent. Before spawning, read [delegation.md](references/delegation.md).
+Every review runs through the `reviewer` sub-agent. After the reviewers return, read [delegation.md](references/delegation.md).
 
 ## Manual testing
 
@@ -36,9 +32,32 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Read steps 0 and 2 of [reviewer-steps.md](references/reviewer-steps.md), skipping
-its `## 1.` section. Run step 0; use step 2 to re-verify findings. Reviewers run
-steps 0–2 through **Delegation**. Read the whole file only for an inline fallback.
+Before the spawn, the main session reads no review references, and it never reviews
+the code itself. Start one `cheap` sub-agent with exactly this prompt:
+
+```text
+Set up a review pass per <absolute path of references/setup.md>.
+Target: <the user's target verbatim; a range or MR/PR the calling skill or loop names; or none>.
+Scratch: <task scratch directory>. Earlier worktree: <path or none>.
+```
+
+- Run setups one at a time, never in parallel.
+- On `empty`, say there is nothing to review and stop. On `checks: unclear` or a
+  blocker, rerun the prompt with the `worker` role, adding `Judgement: allowed`, any
+  reported worktree, and started checks. If the worker is still blocked, report the
+  blocker to the user and stop.
+- Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
+  `<model>[:<effort>]` entry on that model and effort; with several targets, one set
+  per target. Otherwise the `sub-agents` skill sets model and effort.
+- Use the returned worktree; the manual pass uses it too.
+- On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
+- Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,
+  approval, and merge only to MRs/PRs that the user named or authored.
+- Use the reported CI facts in the step 3 report.
+
+After the reviewers return, re-verify per **Delegation**, reading only the code each
+finding depends on: the cited lines, their callers, and any guard that could refute it.
+Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallback.
 
 ## 3. Output
 

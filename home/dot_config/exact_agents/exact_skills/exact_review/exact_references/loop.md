@@ -6,7 +6,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 "major" finding is a `bug` of `high` or `medium` severity, as defined in
 [output.md](output.md).
 
-1. **Full review.** Start fresh reviewers per [delegation.md](delegation.md) on the
+1. **Full review.** Start fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the
    whole current target. Re-verify, report, and fix as in steps 2–4. Hold
    behavior-change `question` items for the user.
 2. **Fix check.** Run only when the previous pass fixed a major finding. Continue the same
@@ -37,7 +37,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 After each pass, record the loop state (cycle, pass number, reviewer IDs, last-reviewed SHA, held `question` items) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
 
 Kill a finding that an earlier pass killed, unless its code changed since that pass.
-Rebuild and rerun the shared checks per [delegation.md](delegation.md) before each pass.
+Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
 For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
 passes target it. Run once, after step 5: step 4's per-run report, `Ship:` line, and

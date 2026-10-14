@@ -19,6 +19,8 @@ Record the checkout and revision used for each pass.
 Complete the manual pass before steps 2 and 3 verify and report findings.
 With delegated reviewers, the main session runs the manual pass and verifies
 its findings alongside the reviewers' candidates.
+It reads code only to choose and run manual cases, never to review the diff itself.
+When the manual pass is skipped, wait for the reviewers.
 Feed observed failures into the same verification pass; do not start another review cycle.
 
 ### Exercise the actual behavior
