@@ -492,6 +492,20 @@ const segmentsOf = (line: string) => {
   return segments
 }
 
+// Without ToolSearch nothing can load a deferred tool, so the engine sends every tool in full, and notes that point at
+// ToolSearch mislead. Then nothing is deferred, the main agent listing stays in the prompt (shortened), the skill note
+// is left out, and server notes stay in the prompt. The Artifact rule stays.
+// When the tool list fails (the test kit has none, or no session is bound yet), ToolSearch counts as present for that
+// call only, so a later call can still find it missing.
+let toolSearch: Promise<boolean> | undefined
+const hasToolSearch = ($: EngineInterface) =>
+  (toolSearch ??= Promise.resolve()
+    .then(() => $.tool.list())
+    .then(tools => tools.some(tool => tool.name === 'ToolSearch'), () => {
+      toolSearch = undefined
+      return true
+    }))
+
 export const register: Register = on => {
   // /context shows the corrected report; before the first request, the last saved one. With arguments (such as "all"),
   // or when no report can be built, the built-in /context runs.
@@ -521,6 +535,8 @@ export const register: Register = on => {
   // Sends a hidden connector's server notes with the first ToolSearch result or tool call that uses it.
   on('tool.call', async ($, e, next) => {
     if (e.tool !== 'ToolSearch' && connectorOf(e.tool) === undefined) return next(e)
+    // Without ToolSearch the notes were never hidden, so sending them here would repeat them.
+    if (!(await hasToolSearch($))) return next(e)
     const ran = await next(e)
     if (!('result' in ran)) return ran
     await load($)
@@ -552,6 +568,12 @@ export const register: Register = on => {
     noteLocalServer(e.tool)
     const server = connectorOf(e.tool)
     if (!ARTIFACT_TOOLS.has(e.tool) && !RARE_TOOLS.has(e.tool) && server === undefined) return next(e)
+    if (!(await hasToolSearch($))) {
+      if (!ARTIFACT_TOOLS.has(e.tool)) return next(e)
+      const described = await next(e)
+
+      return { ...described, description: NOTE + described.description }
+    }
     const described = await next(e)
     if (e.isDeferred !== true) {
       await load($)
@@ -584,7 +606,9 @@ export const register: Register = on => {
     const { text } = await next(e)
     if (text === null) return { text }
     await load($)
-    if (e.agentId !== undefined) {
+    // The Agent tool carries the main listing only while this mod defers it, which needs ToolSearch. Without it, the
+    // main listing stays in the prompt, shortened like a subagent's.
+    if (e.agentId !== undefined || !(await hasToolSearch($))) {
       const left = shortenAgents(text)
       save($)
 
@@ -638,13 +662,15 @@ export const register: Register = on => {
 
   on('prompt.attachment', { type: 'skill_listing' }, async ($, e, next) => {
     const { text } = await next(e)
+    if (text === null || text.startsWith(SKILL_NOTE) || !(await hasToolSearch($))) return { text }
 
-    return { text: text === null || text.startsWith(SKILL_NOTE) ? text : SKILL_NOTE + text }
+    return { text: SKILL_NOTE + text }
   })
 
   on('prompt.attachment', { type: 'mcp_instructions_delta' }, async ($, e, next) => {
     const { text } = await next(e)
-    if (text === null) return { text }
+    // Hidden notes go out with the first ToolSearch result or connector call; with every tool already in full, keep them.
+    if (text === null || !(await hasToolSearch($))) return { text }
     await load($)
     const left = hideInstructions(text, e.agentId ?? 'main')
     save($)

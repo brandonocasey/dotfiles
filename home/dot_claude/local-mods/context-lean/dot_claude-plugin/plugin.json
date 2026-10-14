@@ -1,5 +1,5 @@
 {
   "name": "context-lean",
-  "version": "0.6.3",
+  "version": "0.7.1",
   "description": "Keeps rarely used built-in tools and MCP tool names out of the prompt, and corrects /context"
 }
