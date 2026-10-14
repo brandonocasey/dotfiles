@@ -199,7 +199,8 @@ managed=$(
     "pyright-lsp@claude-plugins-official": false,
     "rust-analyzer-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
-    "context-lean@local-mods": true
+    "context-lean@local-mods": true,
+    "cc-plugin-sec-default@builtin": false
   },
   "extraKnownMarketplaces": {
     "local-mods": {
