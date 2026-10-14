@@ -99,7 +99,8 @@ if type -q fd
     set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
 end
 
-# Pin Claude Code: from 2.1.299 the managed security plugin bypasses context-lean's attachment edits.
+# Keep Claude Code on 2.1.296, which the native CLI install script pins: from 2.1.299 the
+# managed security plugin bypasses context-lean's attachment edits.
 set -gx DISABLE_AUTOUPDATER 1
 # DISABLE_AUTOUPDATER also stops plugin updates; keep those on.
 set -gx FORCE_AUTOUPDATE_PLUGINS 1
