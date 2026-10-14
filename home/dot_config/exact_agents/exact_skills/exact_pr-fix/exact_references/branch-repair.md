@@ -17,7 +17,8 @@ For the user's own branch:
    [git-policy.md](../../shared/git-policy.md); report the conflicting files
    when the intended result is ambiguous.
 4. Run the repository's targeted checks for the touched paths.
-5. Push with `git push --force-with-lease=BRANCH:OBSERVED_SHA origin HEAD:BRANCH`.
+5. Push with `git push --force-if-includes --force-with-lease=BRANCH:OBSERVED_SHA origin HEAD:BRANCH`,
+   as one command by itself. Codex prompts only for a force flag right after `git push`.
    A rejected lease means someone else pushed; refresh and start over.
 6. Refresh the inventory and record the new head SHA.
 
