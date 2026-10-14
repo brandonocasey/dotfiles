@@ -1,0 +1,6 @@
+name = "hard-review"
+description = "Independent adversarial review of a change when the user asks for a hard review. Read-only; returns verified candidate findings."
+model = "gpt-6-astra"
+model_reasoning_effort = "xhigh"
+developer_instructions = """
+{{ template "agents/hard-review.md" (dict "harness" "codex") }}"""
