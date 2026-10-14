@@ -23,7 +23,7 @@ plugins and update all plugins.
 Chezmoi manages `~/.config/agents/` and every owned folder under it as
 [exact directories](https://www.chezmoi.io/reference/source-state-attributes/).
 Applying removes files and folders absent from the source, including nested references.
-Claude's ignored `synced/` tree and GitHub CLI's `frontend-design/` contents retain their existing ownership.
+Claude's ignored `synced/` tree retains its existing ownership.
 
 Delete owned skills or files from `home/dot_config/exact_agents/exact_skills/` in this repository.
 Commit and sync those source deletions, then apply on each machine.
@@ -35,11 +35,12 @@ Preview with `chezmoi diff ~/.config/agents/skills`, then apply only the skills:
 chezmoi apply --exclude=scripts ~/.config/agents/skills
 ```
 
-On Linux and macOS, `chezmoi apply` installs `frontend-design` for Codex through
-GitHub CLI when the skill is missing. GitHub CLI manages the upstream skill
-files and source metadata. After installation, chezmoi sets the Codex invocation
-policy so `frontend-design` needs an explicit invocation. The managed Claude
-settings apply the same restriction to the installed skill and to its plugin.
+Chezmoi manages `frontend-design`, copied from
+[anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
+with local changes: a shorter description, a `Scope:` line, and an explicit-only
+rule that hands verification to `ui-verify`. Its `agents/openai.yaml` makes Codex require an
+explicit invocation. The managed Claude settings apply the same restriction to
+the skill and to its plugin.
 
 Chezmoi also manages `ui-verify` in the shared skills directory. Codex and
 Claude can select it automatically.
@@ -73,21 +74,10 @@ the main skill.
 The session-start cleanup hook expires scratch files after 30 days. It preserves
 copy files awaiting use regardless of age.
 
-Check for upstream updates:
-
-```bash
-gh skill update frontend-design --dry-run
-```
-
-Apply an update:
-
-```bash
-gh skill update frontend-design
-```
-
-The GitHub CLI skill commands are in preview. See the
-[installation](https://cli.github.com/manual/gh_skill_install) and
-[update](https://cli.github.com/manual/gh_skill_update) documentation.
+To update `frontend-design`, copy the upstream files into
+`home/dot_config/exact_agents/exact_skills/exact_frontend-design/`. Keep the
+local `description` and `disable-model-invocation` frontmatter, the `Scope:`
+line, and the explicit-only paragraph under the title.
 
 ## Docker
 

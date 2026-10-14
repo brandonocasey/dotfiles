@@ -73,15 +73,14 @@ class SkillSyncTests(unittest.TestCase):
             ignored = skills / "synced/account/example/SKILL.md"
             ignored.parent.mkdir(parents=True)
             ignored.write_text("Claude owns this\n")
-            upstream_extra = skills / "frontend-design/upstream-resource.txt"
-            upstream_extra.write_text("GitHub CLI owns this\n")
             untracked = installed_reference.parent / "untracked-reference.md"
             untracked.write_text("stale\n")
             probes = []
             for path in (skills_source, *skills_source.rglob("*")):
                 parts = path.relative_to(skills_source).parts
-                # chezmoi ignores dot-prefixed source entries, such as harness .claude dirs.
-                if not path.is_dir() or "frontend-design" in parts or any(p.startswith(".") for p in parts):
+                # chezmoi ignores dot-prefixed source entries, such as harness .claude dirs,
+                # and .chezmoiignore skips Python bytecode.
+                if not path.is_dir() or "__pycache__" in parts or any(p.startswith(".") for p in parts):
                     continue
                 installed = skills.joinpath(
                     *(part.removeprefix("exact_") for part in path.relative_to(skills_source).parts)
@@ -98,7 +97,6 @@ class SkillSyncTests(unittest.TestCase):
             for probe in probes:
                 self.assertFalse(probe.exists(), f"Remove stale files from {probe.parent}")
             self.assertEqual(ignored.read_text(), "Claude owns this\n")
-            self.assertEqual(upstream_extra.read_text(), "GitHub CLI owns this\n")
             self.assertTrue(neighbor.exists())
             apply()
             for name in ("llm-setup-audit", "pr-fix", "ship"):

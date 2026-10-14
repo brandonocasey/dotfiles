@@ -35,8 +35,7 @@ outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
    session did not edit. Do not include them unless the user names them.
    Agent config directories are exact: applying removes files absent from their sources.
    For requested deletions, remove the source entry; deleting only the target restores it.
-   Keep `synced/` ignored and never add `frontend-design/` to the source;
-   `gh skill` installs it.
+   Keep `synced/` ignored.
 3. **Copy.** For each managed target, show `diff -u "$(chezmoi source-path <target>)" <target>`.
    For a new target, show `diff -u /dev/null <target>`. Skip the copy for a target
    whose source this session edited directly; step 7 applies it.

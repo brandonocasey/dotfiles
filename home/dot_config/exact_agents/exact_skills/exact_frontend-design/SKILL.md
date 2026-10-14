@@ -1,11 +1,6 @@
 ---
 description: "Design new or reshaped UI with intentional visual direction and typography."
 license: Complete terms in LICENSE.txt
-metadata:
-    github-path: skills/frontend-design
-    github-ref: refs/heads/main
-    github-repo: https://github.com/anthropics/skills
-    github-tree-sha: d79e2a5bb4df4a386c2adcdd9ab8709bba28c3f6
 name: frontend-design
 disable-model-invocation: true
 ---
