@@ -11,7 +11,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 - **Skills:** audit whole `SKILL.md` files, linked shared instructions, and agent definitions. Fix directly, then report; on talk-first or a run you started without the user asking, propose instead.
   Defaults: `~/.config/agents/skills/`, `~/.config/agents/agents/`, and `~/.codex/agents/`.
   Both harnesses' role bodies render from chezmoi's `.chezmoitemplates/agents/`; edit those templates.
-  Role frontmatter lives in `dot_config/exact_agents/exact_agents/*.md.tmpl` and `dot_codex/agents/*.toml.tmpl`.
+  Role frontmatter lives in `dot_config/exact_agents/exact_agents/*.md.tmpl` and `dot_codex/exact_agents/*.toml.tmpl`.
 - **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Tag each proposal (see **Safe and gating**); ask only about gating ones.
   Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.

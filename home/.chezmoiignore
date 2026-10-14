@@ -60,6 +60,7 @@ Library/
 
 # Write markers Claude Code drops where it edits.
 .config/agents/**/.claude
+.codex/agents/**/.claude
 
 # Agent tool credentials and state: manage config files one by one, never these.
 .gemini/oauth_creds.json
