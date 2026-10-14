@@ -378,25 +378,25 @@ fi
 # fields apart, which keeps the line short on narrow terminals.
 sep=$(printf '\033[38;5;245m|\033[0m')
 
-# Local time of the newest assistant message. Idle, that is when the last turn
-# ended. Only the transcript tail is read, and fromjson? skips a line still
-# being written.
-last_msg=""
-transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
-if [ -f "$transcript" ]; then
-  last_msg=$(tail -n 200 "$transcript" | jq -rRn '
-    [inputs | fromjson? | select(.type == "assistant") | .timestamp] | last // empty
-    | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601 | strflocaltime("%I:%M") | sub("^0"; "")
-  ' 2>/dev/null)
-fi
-
-# Account name (grey) then the last-message time (tan), joined by a dim
-# middle dot, lead the line
+# Account name (grey) leads the line
 parts=""
 [ -n "$account_name" ] && parts=$(printf '\033[38;5;247m%s\033[0m' "$account_name")
-if [ -n "$last_msg" ]; then
-  [ -n "$parts" ] && parts=$(printf '%s\033[38;5;245m·\033[0m' "$parts")
-  parts=$(printf '%s\033[38;5;180m%s\033[0m' "$parts" "$last_msg")
+
+# Prompt cache: minutes until the main cache expires, or a cyan "cold" once it
+# has. Shown only after caching was observed, so a fresh session stays quiet.
+# Cyan, because yellow and red are reserved for usage warnings.
+pc_seg=$(echo "$input" | jq -r --argjson now "$(date +%s)" '
+  .prompt_cache // empty | select(.caching_observed == true)
+  | if .warm == true and .expires_at != null
+    then "\u001b[38;5;245mc:\u001b[0m\(((.expires_at - $now) / 60) | if . < 0 then 0 else floor end)m"
+    else "\u001b[36mcold\u001b[0m" end
+' 2>/dev/null)
+if [ -n "$pc_seg" ]; then
+  if [ -n "$parts" ]; then
+    parts=$(printf '%s%s%s' "$parts" "$sep" "$pc_seg")
+  else
+    parts="$pc_seg"
+  fi
 fi
 
 # Model + effort (blue then magenta, no joiner — the colour change separates
