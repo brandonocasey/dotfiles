@@ -1,5 +1,5 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
-import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary } from './report'
+import { AGENTS, TRIMMED, type Category, type Counted, type Inventory, type Report, type Row, report, SENT, summary } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
@@ -54,13 +54,24 @@ const SERVER_NOTES = ' server notes'
 const NAMES = ' names'
 const COUNT_SYSTEM = 'Reply with only: ok'
 const BASE = '(base)'
-// Counts and the last report are stored per model, as `counts:<model>` and `last-report:<model>`. Stores written
-// before 0.8.0 hold one of each under the bare key, for whichever model ran last. Old counts are still reused for
-// that model; an old report is not, since it was drawn over the whole model window.
+// Counts are stored per model, as `counts:<model>`. Stores written before 0.8.0 hold them under the bare key, for
+// whichever model ran last; they are still reused for that model. Saved reports, which versions before 0.11.0 kept
+// under `last-report` keys, are no longer used and are deleted.
 const COUNTS = 'counts'
 const LAST_REPORT = 'last-report'
+// Sent when /context runs before anything was sent in the session, so it can measure the real size.
+const PING = 'ping'
+// How long, in milliseconds, /context waits after the ping for the session's usage to count it, and how often it looks.
+const USAGE_WAIT = 3000
+const USAGE_POLL = 250
+// How long, in milliseconds, after /context returns the ping is sent.
+const PING_DELAY = 300
 const perModel = (key: string, model: string) => `${key}:${model}`
 const LOCAL_SERVERS = 'local-servers'
+// The tool names and server notes last hidden, kept across sessions. The ping's turn sends neither, so the report after
+// it shows these as estimates of what the next message will hide.
+const UPCOMING = 'upcoming'
+const isUpcoming = (label: string) => label.endsWith(NAMES) || label.endsWith(SERVER_NOTES)
 // MCP config keys are usually one lowercase word, unlike the subheadings inside a connector's notes.
 const SERVER_NAME = /^[a-z0-9][a-z0-9_.-]*$/
 
@@ -107,7 +118,6 @@ type Host = {
 type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[]; agents?: string[] }
 // Token counts by row for one model, reused across sessions while the row's text stays the same.
 type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
-type LastReport = Report & { at: number }
 
 // What the current session hid or kept, for the /context report. Saved per session so a resumed session still reports it.
 const SESSIONS_KEPT = 10
@@ -224,7 +234,12 @@ const write = async ($: Host) => {
   const key = await load($)
   // Another session loaded meanwhile and cleared the rows; the switch already wrote the old session's rows.
   if (key === undefined || session?.key !== key) return
-  await Promise.all([$.store.set(key, snapshot()), $.store.set(LOCAL_SERVERS, [...localServers])]).catch(() => undefined)
+  const upcoming = new Map([...hidden].filter(([label]) => isUpcoming(label)))
+  await Promise.all([
+    $.store.set(key, snapshot()),
+    $.store.set(LOCAL_SERVERS, [...localServers]),
+    ...(upcoming.size > 0 ? [$.store.set(UPCOMING, toObject(upcoming))] : []),
+  ]).catch(() => undefined)
 }
 
 // One write at a time, without blocking the caller. A save asked for during a write runs once after it, so the
@@ -386,24 +401,18 @@ const hideInstructions = (text: string, agent: string) => {
   return parts.length === 0 ? null : parts.join('\n')
 }
 
-// The report with /context's categories, the MCP row corrected and what context-lean hides. Throws when it cannot be built.
-const reportText = async ($: EngineInterface): Promise<{ text: string; line: string }> => {
-  await load($)
+// The report with /context's categories, the MCP row corrected and what context-lean hides. Undefined when nothing was
+// sent yet, since then there is no real size and the tools the mod defers are still counted. Throws when it cannot be
+// built.
+const measure = async ($: EngineInterface): Promise<Report | undefined> => {
+  const key = (await load($)) ?? ''
   const usage = await $.session.usage({ breakdown: 'full' })
   const model = await $.session.model()
   // A setting such as autoCompactWindow can make the usable window smaller than the model's. The report draws the
   // usable one, as the built-in /context does.
   const window = usage.context.breakdown?.maxTokens || usage.context.window
   const stored = async <T>(key: string) => (await $.store.get(key).catch(() => undefined)) as T | undefined
-  if (!usage.context.tokens) {
-    // Nothing was sent yet, so there is no real size, and the tools the mod defers are still counted. This model's
-    // last report stands in, with when it was measured; without one, /context runs the built-in command.
-    const last = await stored<LastReport>(perModel(LAST_REPORT, model))
-    if (typeof last?.real !== 'number') throw new Error('nothing sent yet')
-    const saved: Report = { ...last, window, modelWindow: usage.context.window, categories: last.categories ?? [], note: `No message sent in this session yet, so these numbers are from your last ${model} report (${new Date(last.at).toLocaleString()}).` }
-
-    return { text: report(saved), line: summary(saved) }
-  }
+  if (!usage.context.tokens) return undefined
   const legacy = await stored<Counts>(COUNTS)
   const known = (await stored<Counts>(perModel(COUNTS, model)))?.rows ?? (legacy?.model === model ? legacy.rows : {})
   const fresh: Counts['rows'] = {}
@@ -437,37 +446,63 @@ const reportText = async ($: EngineInterface): Promise<{ text: string; line: str
   const isSent = (row: Row) => row.label.endsWith(' server notes') && [...row.texts.keys()].every(server => sent.has(`main:${server}`))
   const sentRows = new Map([...hidden].filter(([, row]) => isSent(row)).map(([label, row]) => [label, { ...row, label: `${row.label}${SENT}` }]))
   const stillHidden = new Map([...hidden].filter(([label]) => !sentRows.has(label)))
-  const [counted, keptRows] = await Promise.all([rows(stillHidden), rows(new Map([...kept, ...sentRows]))])
+  // After the ping, until a message sends the tool list, the last session's names and notes stand in for it. Their
+  // counts are usually cached, since the texts rarely change.
+  const upcoming = new Map<string, Row>()
+  if (pinged.has(key) && ![...hidden.keys()].some(isUpcoming) && (await hasToolSearch($))) fromObject(upcoming, await stored<Saved['hidden']>(UPCOMING))
+  const [counted, keptRows, estimated] = await Promise.all([rows(stillHidden), rows(new Map([...kept, ...sentRows])), rows(upcoming)])
   // Shortened agent descriptions still send their one-line summaries, so only the difference is saved.
   const agents = stillHidden.get(AGENTS)
   const summaries = agents === undefined ? undefined : await count(`${AGENTS} summaries`, [...agents.texts.keys()].map(name => AGENT_SUMMARIES[name] ?? '').join('\n'))
-  const hiddenRows = counted.map(row =>
-    row.label !== AGENTS || row.tokens === undefined ? row : { ...row, tokens: summaries === undefined || base === undefined ? undefined : Math.max(0, row.tokens - (summaries - base)) },
-  )
+  const hiddenRows = [
+    ...counted.map(row =>
+      row.label !== AGENTS || row.tokens === undefined ? row : { ...row, tokens: summaries === undefined || base === undefined ? undefined : Math.max(0, row.tokens - (summaries - base)) },
+    ),
+    ...estimated.map(row => ({ ...row, isEstimate: true })),
+  ]
   const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
-  const measured: Report = { real: usage.context.tokens, window, modelWindow: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
-  // The last report is stored as plain JSON, without fields left undefined.
-  await Promise.all([
-    $.store.set(perModel(COUNTS, model), { model, rows: { ...known, ...fresh } }),
-    $.store.set(perModel(LAST_REPORT, model), JSON.parse(JSON.stringify({ ...measured, at: Date.now() }))),
-  ]).catch(() => undefined)
+  const measured: Report = {
+    real: usage.context.tokens,
+    window,
+    modelWindow: usage.context.window,
+    estimate: usage.context.breakdown?.totalTokens,
+    model,
+    categories,
+    hidden: hiddenRows,
+    kept: keptRows,
+    // The breakdown's lists of MCP tools, agents, memory files and skills, for the built-in /context's sections.
+    inventory: { ...(usage.context.breakdown as Inventory | undefined), systemToolNames: [...builtInTools].filter(([, deferred]) => !deferred).map(([name]) => name) },
+  }
+  const old = (await $.store.keys().catch(() => [])).filter(key => key === LAST_REPORT || key.startsWith(`${LAST_REPORT}:`))
+  await Promise.all([$.store.set(perModel(COUNTS, model), { model, rows: { ...known, ...fresh } }), ...old.map(key => $.store.delete(key))]).catch(() => undefined)
 
-  return { text: report(measured), line: summary(measured) }
+  return measured
 }
 
-// Reports are drawn in the row of the command that made them. The row's text, all the model reads, is one summary
-// line naming the report, so a report costs about 25 tokens of context instead of about 2k.
+// Built-in tools by name, and whether each is deferred, as last described.
+const builtInTools = new Map<string, boolean>()
+
+// Sessions in which /context already sent the ping.
+const pinged = new Set<string>()
+
+// Reports are drawn in the row of the command that made them, at the row's width. The row's text, all the model reads,
+// is one summary line naming the report, so a report costs about 25 tokens of context instead of about 2k.
 const REPORT_ID = /\[context-lean report ([a-z0-9]+)\]/
 const REPORTS_KEPT = 20
-const reports = new Map<string, string>()
+// The width of the row's "  ⎿  " bracket.
+const ROW_INDENT = 5
+// A row sent before anything else in its session holds no report until the ping's reply makes one, which is then drawn
+// under the reply whose text is `under`.
+const reports = new Map<string, { measured?: Report; detail: boolean; under?: string }>()
 let reportCount = 0
-const keep = ({ text, line }: { text: string; line: string }) => {
+const hold = (entry: { measured?: Report; detail: boolean }) => {
   const id = `${Date.now().toString(36)}${(reportCount++).toString(36)}`
-  reports.set(id, text)
+  reports.set(id, entry)
   for (const old of reports.keys()) if (reports.size > REPORTS_KEPT) reports.delete(old)
 
-  return `${line} [context-lean report ${id}]`
+  return id
 }
+const keep = (measured: Report, detail: boolean) => `${summary(measured)} [context-lean report ${hold({ measured, detail })}]`
 
 
 // The report's 256-color codes as hex, for the row's text elements.
@@ -481,24 +516,34 @@ const hexOf = (code: number) => {
 
   return `#${[Math.floor(cube / 36), Math.floor(cube / 6) % 6, cube % 6].map(level => hex(CUBE[level] ?? 0)).join('')}`
 }
-type Segment = { text: string; color?: string; italic?: true }
+type Segment = { text: string; color?: string; italic?: true; bold?: true }
 const ANSI = /\u001b\[([0-9;]*)m/
 // Splits one line of the report at its color codes into styled runs.
 const segmentsOf = (line: string) => {
   const segments: Segment[] = []
   let color: string | undefined
   let italic = false
+  let bold = false
   const parts = line.split(ANSI)
   parts.forEach((part, i) => {
     if (i % 2 === 0) {
-      if (part !== '') segments.push({ text: part, ...(color === undefined ? {} : { color }), ...(italic ? { italic: true as const } : {}) })
+      if (part !== '') segments.push({ text: part, ...(color === undefined ? {} : { color }), ...(italic ? { italic: true as const } : {}), ...(bold ? { bold: true as const } : {}) })
       return
     }
     const code = part.split(';')
+    // 256-color codes come from the report; 24-bit ones from the built-in /context's text.
     if (code[0] === '38' && code[1] === '5') color = hexOf(Number(code[2]))
+    else if (code[0] === '38' && code[1] === '2') color = `#${code.slice(2, 5).map(level => hex(Number(level))).join('')}`
     else if (part === '39') color = undefined
     else if (part === '3') italic = true
     else if (part === '23') italic = false
+    else if (part === '1') bold = true
+    else if (part === '22') bold = false
+    else if (part === '' || part === '0') {
+      color = undefined
+      italic = false
+      bold = false
+    }
   })
 
   return segments
@@ -518,30 +563,89 @@ const hasToolSearch = ($: EngineInterface) =>
       return true
     }))
 
+// The ping's reply, as last drawn while the ping's turn ran: the report is drawn below that row. Rows a mod adds to the
+// transcript are info notices, which the terminal hides, so the report rides on the reply's row instead.
+let pingReply: { id: string; text?: string } | undefined
+
+// Measures the report for a row that waited on the ping and draws it below the ping's reply, or in the waiting row when
+// no reply was drawn. The session's usage can lag the ping's request, so this waits briefly for it.
+const fill = async ($: EngineInterface, id: string) => {
+  const entry = reports.get(id)
+  if (entry === undefined) return
+  for (let waited = 0; waited <= USAGE_WAIT; waited += USAGE_POLL) {
+    const measured = await measure($).catch(() => null)
+    if (measured === null) return
+    if (measured !== undefined) {
+      if (pingReply?.id === id && pingReply.text !== undefined) entry.under = pingReply.text
+      pingReply = undefined
+      entry.measured = measured
+      $.ui.invalidate('ui.render')
+      return
+    }
+    await new Promise(resolve => setTimeout(resolve, USAGE_POLL))
+  }
+}
+
 export const register: Register = on => {
-  // /context shows the corrected report; before the first request, the last saved one. With arguments (such as "all"),
-  // or when no report can be built, the built-in /context runs.
+  // /context shows the corrected report, and /context all the same with each saved item listed. Before anything was
+  // sent in the session, it sends "ping" once, and draws the report in the same row after the reply. With other
+  // arguments, or when no report can be built, the built-in /context runs.
   on('command.run', { command: 'context' }, async ($, given, next) => {
     // A plugin's $.command.run can leave args out; the engine's runs always carry them.
     const e = { ...given, args: given.args ?? '' }
-    if (e.args.trim() !== '') return next(e)
-    const built = await reportText($).catch(() => undefined)
+    const args = e.args.trim()
+    if (args !== '' && args !== 'all') return next(e)
+    const measured = await measure($).catch(() => null)
+    if (measured === null) return next(e)
+    if (measured !== undefined) {
+      // The built-in command is never run: the engine drops a hook's own answer once the command has run, and the
+      // built-in sends its full text to Claude. The report builds the built-in's sections from the usage breakdown.
+      return { text: keep(measured, args === 'all') }
+    }
+    // Without a session ID, the ping is tracked for the whole process.
+    const key = (await load($)) ?? ''
+    if (pinged.has(key)) return next(e)
+    pinged.add(key)
+    const id = hold({ detail: args === 'all' })
+    // A prompt cannot be submitted while this hook holds the command's turn, and a fresh session ends no turn after a
+    // local command, so the ping goes out shortly after this hook returns. Its submission settles once its turn ends;
+    // then the report is measured and drawn in this row. A /context submitted from here would skip this mod's hooks
+    // and send the built-in text to Claude, so the command is not run again.
+    setTimeout(() => {
+      pingReply = { id }
+      $.prompt
+        .submit({ text: PING })
+        .then(() => fill($, id))
+        .catch(() => undefined)
+    }, PING_DELAY)
 
-    return built === undefined ? next(e) : { text: keep(built) }
+    return { text: `Nothing was sent in this session yet, so /context sends "${PING}" to measure it. The report appears below the reply. [context-lean report ${id}]` }
   })
 
-  // Draws a kept report in its /context row in place of the summary line the model read, behind the same "⎿" bracket
-  // and indent as the engine's command rows. The engine refuses color codes in a row's text, so the report's colors
-  // become styled runs. A report this process no longer holds (after a restart or a reload) leaves the summary line.
-  on('ui.render', { component: 'CommandOutput', props: { command: 'context' } }, async ($, e, next) => {
-    const id = REPORT_ID.exec(e.props.text)?.[1]
-    const text = id === undefined ? undefined : reports.get(id)
-    if (text === undefined) return next(e)
+  // Draws a kept report in its /context row in place of the summary line the model read, or below the ping's reply,
+  // behind the same "⎿" bracket and indent as the engine's command rows. The engine refuses color codes in a row's
+  // text, so the report's colors become styled runs. A report this process no longer holds (after a restart or a
+  // reload) leaves the summary line.
+  on('ui.render', async ($, e, next) => {
+    const props = e.props as { command?: string; text?: string; isSummary?: boolean }
+    const reply = e.component === 'AssistantMessage' && props.isSummary !== true && typeof props.text === 'string' ? props.text : undefined
+    if (reply !== undefined && pingReply !== undefined) pingReply.text = reply
+    const kept =
+      reply !== undefined
+        ? [...reports.values()].find(entry => entry.under === reply)
+        : e.component === 'CommandOutput' && props.command === 'context'
+          ? reports.get(REPORT_ID.exec(props.text ?? '')?.[1] ?? '')
+          : undefined
+    if (kept?.measured === undefined || (reply === undefined && kept.under !== undefined)) return next(e)
+    const width = (e as { viewport?: { columns?: number } }).viewport?.columns
+    const text = report(kept.measured, typeof width === 'number' && width > ROW_INDENT ? width - ROW_INDENT : undefined, kept.detail)
     const { Box, Text } = $.ui.resolve(e)
     const lines = text.split('\n').map(line => h(Text, null, ...(line === '' ? [' '] : segmentsOf(line).map(({ text: run, ...style }) => h(Text, style, run)))))
     const tree = h(Box, { flexDirection: 'row' }, h(Text, { dimColor: true }, '  ⎿  '), h(Box, { flexDirection: 'column' }, ...lines)) as RenderElement | null | undefined
+    if (tree == null) return next(e)
+    if (reply === undefined) return tree
 
-    return tree ?? next(e)
+    return h(Box, { flexDirection: 'column' }, await next(e), h(Box, { marginTop: 1 }, tree)) as RenderElement
   })
 
   // Sends a hidden connector's server notes with the first ToolSearch result or tool call that uses it.
@@ -579,6 +683,9 @@ export const register: Register = on => {
   on('tool.describe', async ($, e, next) => {
     noteLocalServer(e.tool)
     const server = connectorOf(e.tool)
+    // Built-in tools as last described, and whether they are deferred, for the report's System tools section.
+    const builtIn = !e.tool.startsWith('mcp__')
+    if (builtIn) builtInTools.set(e.tool, e.isDeferred === true)
     if (!ARTIFACT_TOOLS.has(e.tool) && !RARE_TOOLS.has(e.tool) && server === undefined) return next(e)
     if (!(await hasToolSearch($))) {
       if (!ARTIFACT_TOOLS.has(e.tool)) return next(e)
@@ -599,6 +706,8 @@ export const register: Register = on => {
       // The engine's text points at the reminder this mod leaves out, so it points at the list below instead.
       if (listing !== '') description = description.replace(AGENTS_POINTER, AGENTS_HERE) + listing
     }
+
+    if (builtIn) builtInTools.set(e.tool, true)
 
     return { description, isDeferred: true }
   })

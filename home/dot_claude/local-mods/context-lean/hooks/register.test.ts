@@ -497,23 +497,29 @@ test('reports only notes kept in the prompt on the MCP row, until their server d
 
   on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
   engineRow(on)
-  const run = async () => drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
+  const run = async () => drawnRow($, 'context', (await $.command.run({ command: 'context', args: 'all' })).text ?? '')
 
   await $.prompt.attachment({ type: 'mcp_instructions_delta', text: `# MCP Server Instructions\n\n${local}\n## claude.ai Notion\nSearch.` })
   const shown = await run()
-  expect(shown).toContain(`MCP server instructions: ${local.length} tokens`)
+  expect(shown).toContain(`MCP server instructions: ${local.length} (`)
   expect(shown).toContain(`└ chrome-devtools · 1 server · ${local.length} tokens`)
   expect(shown).not.toContain('└ Usage')
 
   await $.prompt.attachment({ type: 'mcp_instructions_delta', text: 'The following MCP servers have disconnected. Their instructions above no longer apply:\nchrome-devtools\nThis is ambient context.' })
   const after = await run()
-  expect(after).toContain('MCP server instructions: 0 tokens')
+  expect(after).toContain('MCP server instructions: 0')
 })
 
 // Answers /context's built-in run, usage and token counts the way a session would.
+// How many times the built-in /context ran in a contextSession.
+let builtInRuns = 0
 const contextSession = (on: Parameters<Parameters<typeof test>[1]>[1], size: number | (() => number)) => {
   const tokens = () => (typeof size === 'number' ? size : size())
-  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  builtInRuns = 0
+  on('command.run', { command: 'context' }, () => {
+    builtInRuns++
+    return { text: 'BUILT-IN' }
+  })
   on('session.usage', () => ({
     value: { startedAt: 0, rateLimits: [], context: { tokens: tokens(), window: 1000000, breakdown: { totalTokens: tokens(), categories: [{ name: 'Messages', tokens: tokens(), kind: 'used' }] } } },
   }))
@@ -527,8 +533,8 @@ test('/context answers with one summary line and draws the corrected report in i
   const result = await $.command.run({ command: 'context' })
   expect(result.text).toMatch(/^Context: 5k real tokens; context-lean hid 0\. \[context-lean report [a-z0-9]+\]$/)
   const row = await drawnRow($, 'context', result.text ?? '')
-  expect(row).toContain('Context Usage (context-lean)')
-  expect(row.replace(/\u001b\[[0-9;]*m/g, '')).toContain('⛁ Messages: 5k tokens (0.5%)')
+  expect(row).toContain('Context-lean Usage')
+  expect(row.replace(/\u001b\[[0-9;]*m/g, '')).toContain('⛁ Messages: 5k (0.5%)')
   // Another command's row that names the report is drawn as it is.
   expect(await drawnRow($, 'echo', result.text ?? '')).toBe(result.text ?? '')
 })
@@ -538,38 +544,50 @@ test('a row whose report this process does not hold draws as the engine would', 
   expect(await drawnRow($, 'context', 'Context: 5k real tokens; context-lean hid 0. [context-lean report zzz]')).toBe('ENGINE')
 })
 
-test('/context all runs the built-in command', async ($, on) => {
-  contextSession(on, 5000)
-  const result = await $.command.run({ command: 'context', args: 'all' })
-  expect(result.text).toBe('BUILT-IN')
-})
-
-test('/context before anything was sent shows the last saved report, marked as such', async ($, on) => {
-  // The test kit keeps no store of its own, so the saved report needs one.
-  const memory = new Map<string, unknown>()
-  on('store.set', ($, e) => {
-    memory.set(e.key, e.value)
-    return { value: undefined }
+test('/context all draws the full report with sections from the breakdown, without running the built-in; other arguments run it', async ($, on) => {
+  const ran: string[] = []
+  on('command.run', { command: 'context' }, ($, e) => {
+    ran.push(e.args ?? '')
+    return { text: 'BUILT-IN' }
   })
-  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
-  let sent = 5000
-  contextSession(on, () => sent)
+  on('session.usage', () => ({
+    value: {
+      startedAt: 0,
+      rateLimits: [],
+      context: { tokens: 5000, window: 1000000, breakdown: { totalTokens: 5000, categories: [{ name: 'Messages', tokens: 5000, kind: 'used' }], agents: [{ agentType: 'worker', source: 'user', tokens: 40 }] } },
+    },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
   engineRow(on)
-  await $.command.run({ command: 'context' })
-  sent = 0
-  const result = await $.command.run({ command: 'context' })
-  expect(result.text).toMatch(/^Last saved report\. Context: 5k real tokens/)
-  expect(await drawnRow($, 'context', result.text ?? '')).toContain('No message sent in this session yet, so these numbers are from your last claude-opus-5-5 report')
+  const result = await $.command.run({ command: 'context', args: 'all' })
+  expect(result.text).toMatch(/^Context: 5k real tokens/)
+  // The engine drops a hook's own answer once the built-in has run, so it never runs for a report.
+  expect(ran).toEqual([])
+  const row = await drawnRow($, 'context', result.text ?? '')
+  expect(row).toContain('\n \nCustom agents · .claude/agents/\n└ worker · 1 agent · 40 tokens')
+  expect(row.match(/Opus 5\.5/g)?.length).toBe(1)
+  expect((await $.command.run({ command: 'context', args: 'tools' })).text).toBe('BUILT-IN')
 })
 
-test("/context before anything was sent skips another model's saved report", async ($, on) => {
-  const memory = new Map<string, unknown>([['last-report:claude-haiku-5-5', { real: 5000, window: 1000000, model: 'claude-haiku-5-5', categories: [], hidden: [], kept: [], at: 0 }]])
-  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
-  contextSession(on, 0)
-  expect((await $.command.run({ command: 'context' })).text).toBe('BUILT-IN')
-  // A report from before 0.8.0, under the bare key, was drawn over the whole model window, so it is not shown.
-  memory.set('last-report', { real: 7000, window: 1000000, model: 'claude-opus-5-5', categories: [], hidden: [], kept: [], at: 0 })
-  expect((await $.command.run({ command: 'context' })).text).toBe('BUILT-IN')
+test('/context lists the built-in tools sent in full under System tools', async ($, on) => {
+  on('tool.describe', ($, e) => ({ description: e.description }))
+  on('session.usage', () => ({
+    value: { startedAt: 0, rateLimits: [], context: { tokens: 5000, window: 1000000, breakdown: { totalTokens: 5000, categories: [{ name: 'System tools', tokens: 2600, kind: 'used', color: 'inactive' }] } } },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  engineRow(on)
+  await $.tool.describe({ tool: 'Read', description: 'read', provider: ENGINE })
+  await $.tool.describe({ tool: 'Bash', description: 'run', provider: ENGINE })
+  await $.tool.describe({ tool: 'CronCreate', description: 'cron', provider: ENGINE, isDeferred: true })
+  // Deferred by this mod, so not sent in full.
+  await $.tool.describe({ tool: 'Workflow', description: 'flow', provider: ENGINE })
+  const brief = await drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
+  expect(brief).toContain('\nSystem tools · built in\n')
+  expect(brief).toContain('└ 2 tools · 2.6k tokens')
+  const all = await drawnRow($, 'context', (await $.command.run({ command: 'context', args: 'all' })).text ?? '')
+  expect(all).toContain('└ Bash\n└ Read')
+  expect(all).not.toContain('└ CronCreate')
+  expect(all).not.toContain('└ Workflow\n')
 })
 
 test('keeps token counts per model, so switching models does not count again', async ($, on) => {
@@ -580,6 +598,13 @@ test('keeps token counts per model, so switching models does not count again', a
   })
   on('store.get', ($, e) => ({ value: memory.get(e.key) }))
   on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('store.keys', () => ({ value: [...memory.keys()] }))
+  on('store.delete', ($, e) => {
+    memory.delete(e.key)
+    return { value: undefined }
+  })
+  memory.set('last-report', {})
+  memory.set('last-report:claude-opus-5-5', {})
   let model = 'claude-opus-5-5'
   let counted = 0
   on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
@@ -598,12 +623,112 @@ test('keeps token counts per model, so switching models does not count again', a
   await $.command.run({ command: 'context' })
   expect(counted).toBe(before)
   expect(memory.has('counts:claude-opus-5-5') && memory.has('counts:claude-haiku-5-5')).toBe(true)
+  // Reports saved by versions before 0.11.0 are deleted.
+  expect([...memory.keys()].some(key => key.startsWith('last-report'))).toBe(false)
 })
 
-test('/context before anything was sent, with no saved report, runs the built-in command', async ($, on) => {
+test('/context before anything was sent sends "ping" just after it returns, then draws the report below the reply', async ($, on) => {
+  let sent = 0
+  const submitted: string[] = []
+  const reply = (text: string) => $.ui.render({ component: 'AssistantMessage', surface: 'terminal', props: { text, isFirstOfReply: true } } as never)
+  // A dropped prompt settles at once, as a sent one does once its turn ends. The reply is drawn while it runs.
+  on('prompt.submit', async ($$, e) => {
+    submitted.push(e.text)
+    sent = 5000
+    await reply('Pong.')
+    return { drop: 'test' }
+  })
+  contextSession(on, () => sent)
+  engineRow(on)
+  const first = await $.command.run({ command: 'context' })
+  expect(first.text).toMatch(/so \/context sends "ping" to measure it\. The report appears below the reply\. \[context-lean report [a-z0-9]+\]$/)
+  expect(await drawnRow($, 'context', first.text ?? '')).toBe(first.text ?? '')
+  expect(submitted).toEqual([])
+  await new Promise(resolve => setTimeout(resolve, 400))
+  expect(submitted).toEqual(['ping'])
+  // The built-in command never ran: in a session with nothing sent it would print its own row and send its text.
+  expect(builtInRuns).toBe(0)
+  // The waiting row keeps its text; the reply's row gains the report below it. Other replies stay as drawn.
+  expect(await drawnRow($, 'context', first.text ?? '')).toBe(first.text ?? '')
+  const drawn = textOf((await reply('Pong.')) as Drawn)
+  expect(drawn.startsWith('Pong.')).toBe(true)
+  expect(drawn).toContain('Context-lean Usage')
+  expect(textOf((await reply('Other.')) as Drawn)).toBe('Other.')
+  // The ping is sent once per session, and /context is not run again.
+  await new Promise(resolve => setTimeout(resolve, 400))
+  expect(submitted).toEqual(['ping'])
+  expect((await $.command.run({ command: 'context' })).text).toMatch(/^Context: 5k real tokens/)
+})
+
+test('the report after the ping estimates the tool names and notes the next message hides, from the last ones hidden', async ($, on) => {
+  const memory = new Map<string, unknown>()
+  on('store.set', ($$, e) => {
+    memory.set(e.key, e.value)
+    return { value: undefined }
+  })
+  on('store.get', ($$, e) => ({ value: memory.get(e.key) }))
+  on('store.keys', () => ({ value: [...memory.keys()] }))
+  on('store.delete', ($$, e) => {
+    memory.delete(e.key)
+    return { value: undefined }
+  })
+  on('prompt.attachment', ($$, e) => ({ text: e.text }))
+  on('session.id', () => ({ value: 'fresh' }))
+  let sent = 0
+  const reply = (text: string) => $.ui.render({ component: 'AssistantMessage', surface: 'terminal', props: { text, isFirstOfReply: true } } as never)
+  on('prompt.submit', async () => {
+    sent = 5000
+    await reply('Pong.')
+    return { drop: 'test' }
+  })
+  contextSession(on, () => sent)
+  engineRow(on)
+  // An earlier session hid these; this one has sent nothing yet.
+  memory.set('upcoming', { 'Gmail tool names': { mcp__claude_ai_Gmail__search: 'mcp__claude_ai_Gmail__search' }, 'Notion server notes': { Notion: '## claude.ai Notion\nSearch first.' } })
+  await $.command.run({ command: 'context' })
+  await new Promise(resolve => setTimeout(resolve, 400))
+  const drawn = textOf((await reply('Pong.')) as Drawn).replace(/\u001b\[[0-9;]*m/g, '')
+  expect(drawn).toMatch(/└ Saved by context-lean · ~\d+ tokens \(estimated: first sent with your next message\)/)
+  expect(drawn).toMatch(/└ Tool names · 1 name · \d+ tokens \(estimated\)/)
+  expect(drawn).toMatch(/└ Server notes · 1 server · \d+ tokens \(estimated\)/)
+  // Once a message sends the tool list, its own rows replace the estimates, and they are saved for the next session.
+  await $.prompt.attachment({ type: 'deferred_tools_delta', text: `${HEADER}\nmcp__claude_ai_Slack__send` })
+  const after = await $.command.run({ command: 'context', args: 'all' })
+  const row = (await drawnRow($, 'context', after.text ?? '')).replace(/\u001b\[[0-9;]*m/g, '')
+  expect(row).not.toContain('estimated')
+  expect(row).toContain('Slack')
+  expect(row).not.toContain('Gmail')
+  for (let wait = 0; wait < 40 && !('Slack tool names' in (memory.get('upcoming') as object)); wait++) await new Promise(resolve => setTimeout(resolve, 25))
+  expect(Object.keys(memory.get('upcoming') as object)).toEqual(['Slack tool names'])
+})
+
+test('/context runs the built-in command when the ping was offered and usage still counts nothing', async ($, on) => {
+  on('prompt.submit', () => {
+    throw new Error('no prompt')
+  })
   contextSession(on, 0)
-  const result = await $.command.run({ command: 'context' })
-  expect(result.text).toBe('BUILT-IN')
+  expect((await $.command.run({ command: 'context' })).text).toContain('sends "ping"')
+  expect((await $.command.run({ command: 'context' })).text).toBe('BUILT-IN')
+})
+
+test('/context draws the model window with the cut part in its last squares', async ($, on) => {
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({
+    value: { startedAt: 0, rateLimits: [], context: { tokens: 5000, window: 1000000, breakdown: { totalTokens: 5000, maxTokens: 433000, categories: [{ name: 'Messages', tokens: 5000, kind: 'used' }] } } },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
+  engineRow(on)
+  const text = (await $.command.run({ command: 'context' })).text ?? ''
+  const draw = async (columns: number) =>
+    textOf((await $.ui.render({ component: 'CommandOutput', surface: 'terminal', viewport: { columns }, props: { command: 'context', args: '', text, isErrored: false } } as never)) as Drawn)
+  // A 20-column grid for the 1m model window, its last rows cut; 5 columns in a narrow terminal.
+  for (const columns of [200, 100]) {
+    const lines = (await draw(columns)).split('\n')
+    expect(lines[1]).toMatch(/^(?:\S ){19}\S {3}\S/)
+    expect(lines[10]).toMatch(/^(?:⛝ ){19}⛝/)
+  }
+  expect((await draw(70)).split('\n')[1]).toMatch(/^(?:\S ){4}\S {3}\S/)
 })
 
 test('/context runs the built-in command when the report cannot be built', async ($, on) => {
@@ -689,8 +814,8 @@ test('/context draws the usable window the breakdown reports', async ($, on) => 
   on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
   engineRow(on)
   const row = await drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
-  expect(row).toContain('5k/433k tokens (1%), real')
-  expect(row).toContain('✕ Removed by autocompact window: 567k tokens (56.7% of 1m)')
-  expect(row).toContain('Autocompact buffer: 33k tokens (7.6%)')
-  expect(row).toContain('Free space: 395k (91.2%)')
+  expect(row).toContain('5k/400k real (1%)')
+  expect(row).toContain('⛝ Cut by autocompact window: 567k (56.7% of 1m)')
+  expect(row).toContain('Autocompact buffer: 33k (7.6% of 433k)')
+  expect(row).toContain('Free space: 395k (98.8%)')
 })
