@@ -1,9 +1,6 @@
 ---
 name: browser
-description: >
-  Use before browser MCP automation or browser test runs: page checks,
-  screenshots, DOM/network inspection, or playback. For real Safari, use
-  real-safari.
+description: "Before browser MCP automation or browser test runs: page checks, screenshots, DOM/network inspection, playback. Real Safari: real-safari."
 ---
 
 Never foreground a browser or steal focus. Never play audible sound unless the

@@ -1,6 +1,6 @@
 ---
 name: review-fix
-description: "Review a change, fix verified findings, and re-check fixes of major bugs; review plus --fix. The default review after agent work."
+description: "Review plus --fix: fix verified findings and re-check major-bug fixes. Default review after agent work."
 ---
 
 Run the [review](../review/SKILL.md) skill with `--fix` added to the user's

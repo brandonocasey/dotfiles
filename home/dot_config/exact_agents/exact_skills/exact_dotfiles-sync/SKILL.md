@@ -1,6 +1,6 @@
 ---
 name: dotfiles-sync
-description: "Sync changed chezmoi targets to sources, scan for secrets, commit, push, and apply. Use when the user asks to commit or push chezmoi or dotfiles changes."
+description: "On request, sync chezmoi or dotfiles changes to sources, scan for secrets, commit, push, and apply."
 ---
 
 Optional argument: target paths. Without one, use the targets this session changed.

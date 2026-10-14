@@ -1,6 +1,6 @@
 ---
 name: llm-setup-audit
-description: "Audit global skills, roles, rules, and config for defects and token waste; rules/config edits need a request to change or approval."
+description: "Audit global skills, roles, rules, and config for defects and token waste."
 ---
 
 Give each reader every needed rule once, in plain words and few tokens.

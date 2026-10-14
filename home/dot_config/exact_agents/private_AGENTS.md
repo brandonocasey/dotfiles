@@ -4,19 +4,16 @@
 - Before irreversible work, show a read-only preview of the scope and what cannot be restored. Get approval unless that scope is already approved.
 - Ask before destructive or out-of-scope work, unapproved outward actions, credentials, or using my device. Skill gates and required approvals still apply.
 - Never search `env`, `~/.netrc`, or config for credentials. Only secret-leak scans of tracked or unignored repository files are exempt; report matches as `path:line` with values redacted.
-- Put output where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use. A skill's default is not permission. Otherwise, use chat or the local file I asked for.
+- Put output in chat or where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use; a skill's default is not permission.
 - Manually check visible behavior; use `ui-verify` for UI. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Never `sleep` 20s or more in the foreground, or use foreground until loops. Run commands likely to take over ~20s (test suites, builds, browser runs) in the background with a log file and poll it; short commands stay foreground.
 - Use `agent-probe` for headless usage or A/B probes. In other `claude -p` runs, keep `ToolSearch` in any `--tools` list. When tool search is off (`ENABLE_TOOL_SEARCH=false` in env or settings, a custom `ANTHROPIC_BASE_URL`, or ToolSearch denied), add `--strict-mcp-config`. Without these, every connector tool is sent in full: about 600k tokens per call.
-- Each tool call re-sends all context, so use few calls. Combine independent commands; search the whole scope in one call, never file by file.
+- Each tool call re-sends all context, so use few calls. Combine independent commands; search the whole scope in one call, never file by file. Find tight ranges first, then read only what you need, once, with all known ranges in one parallel batch; go one at a time only when the next depends on it.
 - Use `ast-grep` for code structure and `rg` for text, also on piped output (`grep` only where `rg` is missing). In `rg`, `-r` means replace; add `--hidden` for dotfiles.
 - Cap long output with quiet flags, `head`, `tail`, or `rg`. Start diffs with `git diff --stat` or `git show --stat`, then diff only needed paths.
-- Read only what you need, once. Find tight ranges first: `rg -n` for ranges, `ast-grep` for structure. Read all known ranges in one parallel batch; go one at a time only when the next depends on it.
-- In Claude Code, view a file you will edit with the Read tool, using `offset`/`limit` for a range. Edit and Write reject files seen only through Bash.
-- Read one known file with the file-read tool; `cat` only to load several skill files at once. Heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
+- Read one known file with the file-read tool, using `offset`/`limit` for a range; in Claude Code, Edit and Write reject files seen only through Bash. Use `cat` only to load several skill files at once; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
-
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
 - Leave scratch cleanup to `prune-agent-dirs.sh`, or use `find <dir> -delete`. Do not append `; echo rc=$?` to commands.
 - To find a past session, run `agent-task search` first.
@@ -24,11 +21,10 @@
 
 ## Directories
 
-Prefer XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`, including Windows. `/tmp` is fine when a tool needs it or I ask.
+Prefer XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`, including Windows. Keep fixed paths a tool requires; use `/tmp` only when a tool needs it or I ask.
 
 - Scratch: `<worktree>/.cache/agents/scratch/<task>/`; outside worktrees, `$TMPDIR` or the harness scratchpad when under the cache root, else `~/.cache/agents/scratch/<task>/`.
 - Backups before overwrite, force-removal, or migration: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`; preserve relative paths, never auto-prune, report the path.
-- Retain fixed paths required by tools.
 
 ## Skills own the detail
 
