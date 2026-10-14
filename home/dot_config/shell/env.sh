@@ -112,6 +112,9 @@ if command -v brew >/dev/null 2>&1; then
 	export MANPATH INFOPATH
 fi
 
+# Pin Claude Code: from 2.1.299 the managed security plugin bypasses context-lean's attachment edits.
+export DISABLE_AUTOUPDATER=1
+
 export PAGER="${PAGER:-less}"
 export GIT_PAGER="${GIT_PAGER:-less}"
 if command -v delta >/dev/null 2>&1; then

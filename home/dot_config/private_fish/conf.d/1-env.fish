@@ -99,6 +99,9 @@ if type -q fd
     set -gx FZF_CTRL_T_COMMAND "$FZF_DEFAULT_COMMAND"
 end
 
+# Pin Claude Code: from 2.1.299 the managed security plugin bypasses context-lean's attachment edits.
+set -gx DISABLE_AUTOUPDATER 1
+
 # ~/.local/bin must resolve before Homebrew — its `brew` wrapper (and other
 # shims) live there and need to shadow the real binaries. Prepend + move so it
 # lands first even if a stale universal fish_user_paths ordered Homebrew ahead.
