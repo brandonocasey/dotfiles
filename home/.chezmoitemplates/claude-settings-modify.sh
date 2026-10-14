@@ -214,6 +214,11 @@ managed=$(
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,
   "effortLevel": "medium",
+  "modelSettings": {
+    "claude-sonnet-5-5": { "effortLevel": "medium" },
+    "claude-opus-5-5": { "effortLevel": "medium" },
+    "claude-haiku-5-5": { "effortLevel": "xhigh" }
+  },
   "tui": "fullscreen",
   "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
