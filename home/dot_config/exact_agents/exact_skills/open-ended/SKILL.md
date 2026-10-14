@@ -48,7 +48,8 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
    **Checked**.
 5. When the task includes changes and they are authorized, apply the verified
    items now, so the next round sees the current state.
-6. Tell the user one line: `round k: X new, Y rejected`.
+6. Record `round k: X new, Y rejected` in the ledger. Tell the user only if
+   the round changes the plan.
 
 ## 2. Stop
 
@@ -61,6 +62,6 @@ Stop when any of these is true:
 ## 3. Report
 
 Lead with the result: **ran dry** or **stopped at the cap**. At the cap, say
-whether the last round still found items. Then give every **Found** item in a
-compact table, the **Rejected** count, scope not yet checked, and the ledger
-path.
+whether the last round still found items. Then give the **Found** items in a
+compact table under the main rules' row limit, highest risk first. Add the
+**Rejected** count, scope not yet checked, and the ledger path.

@@ -7,11 +7,13 @@ Use a `cheap` agent when the harness cannot monitor the process or interpretatio
 While the watcher runs, the main session never polls the same target.
 
 For a long run (workflow, build, or watcher), state an ETA in minutes at the start.
-Report each phase change without a prompt.
+Report a phase change in one line only when it changes the plan or the ETA.
 Answer "status?" from the run's own log or journal, in three lines or fewer, state first.
 For a Workflow, use `agent-wf-status` per [workflows.md](workflows.md).
-For background work over 10 minutes, print one progress line (done/total, failures) every 10–15 minutes.
-While a background job you own is pending, put `Waiting on: <thing>, checked <time>, next check <time>` just before the final `Next:` line.
+Print timed progress lines (done/total, failures) only when the user asks for them.
+When background jobs start, give one line: `Waiting on: <thing>, ends by <time>`.
+When a job finishes and nothing needs the user or changes the plan, end the turn with no text.
+If something needs the user while jobs still run, report it and end with `Next:`.
 
 A sub-agent's prompt cache expires after an idle period set by its harness and model; its next request rewrites its whole context.
 A waiting sub-agent wakes before that expiry: every 4 minutes in Claude Code (5-minute cache), every 25 minutes only on a verified API-billed OpenAI GPT-5.6 or later cache (30-minute minimum), and every 4 minutes on any other harness or model, or when unsure.
