@@ -162,6 +162,16 @@ managed=$(
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/auto-title.sh new",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "Notification": [
