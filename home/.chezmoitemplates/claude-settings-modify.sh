@@ -79,6 +79,7 @@ managed=$(
   },
   "model": "opus",
   "env": {
+    "CLAUDE_CODE_DISABLE_FILE_MENTIONS": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
     "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp"
   },
