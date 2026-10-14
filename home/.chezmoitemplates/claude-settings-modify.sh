@@ -240,7 +240,7 @@ JSON
 
 live=$(cat)
 
-# The merge needs jq. It ships in the shared brew bundle that the pre-install
+# The merge needs jq. It ships in the shared CLI Brewfile that the brew-cli
 # script installs before chezmoi applies any file, so this is the bootstrap
 # edge case only. Never destroy the live file: pass it through untouched, and
 # fall back to the managed defaults only when there is no live file yet.

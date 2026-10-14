@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Reruns only when the macOS Brewfile changes:
+# mac.Brewfile {{ include ".chezmoiscripts/.brew/mac.Brewfile" | sha256sum }}
+# brew-env.sh {{ include ".chezmoiscripts/.brew/brew-env.sh" | sha256sum }}
+set -euo pipefail
+
+. "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.brew/brew-env.sh"
+
+brew_bundle_install mac

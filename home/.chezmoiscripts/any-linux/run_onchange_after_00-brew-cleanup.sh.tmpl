@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Removes packages dropped from any Brewfile. Reruns when either Brewfile changes:
+# cli.Brewfile {{ include ".chezmoiscripts/.brew/cli.Brewfile" | sha256sum }}
+# mac.Brewfile {{ include ".chezmoiscripts/.brew/mac.Brewfile" | sha256sum }}
+set -euo pipefail
+
+. "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.brew/brew-env.sh"
+
+# Cleanup must see every Brewfile at once, or it would remove the other file's
+# packages. Write a real file: `brew bundle` reads it more than once, and a
+# /dev/stdin pipe is empty on the second read.
+BREWFILE="$(mktemp)"
+trap 'rm -f "$BREWFILE"' EXIT
+cat "$(brewfile cli)" "$(brewfile mac)" >"$BREWFILE"
+
+# The dry run is fast; only force the slow cleanup and cache prune when it
+# finds something to remove.
+if [ -n "$(brew bundle cleanup --file="$BREWFILE")" ]; then
+  brew bundle cleanup --force --file="$BREWFILE"
+  brew cleanup --prune=all
+fi

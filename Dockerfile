@@ -86,15 +86,17 @@ COPY --chown=$UID:$GID home/.chezmoiignore /home/$UNAME/.local/share/chezmoi/hom
 COPY --chown=$UID:$GID home/.chezmoiexternal.toml /home/$UNAME/.local/share/chezmoi/home/.chezmoiexternal.toml
 COPY --chown=$UID:$GID .chezmoiroot /home/$UNAME/.local/share/chezmoi/.chezmoiroot
 
-# Run pre-install scripts to install Homebrew packages (cached layer).
-RUN export CHEZMOI_SOURCE_DIR="/home/${UNAME}/.local/share/chezmoi" && \
-    bash "/home/${UNAME}/.local/share/chezmoi/home/.chezmoiscripts/any-linux/run_onchange_before_pre-install.sh"
+# Run the bootstrap and brew bundle scripts to install Homebrew packages (cached
+# layer). Their template parts are comments only, so bash runs them as-is.
+RUN export CHEZMOI_SOURCE_DIR="/home/${UNAME}/.local/share/chezmoi/home" && \
+    bash "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/any-linux/run_onchange_before_00-bootstrap.sh" && \
+    bash "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/any-linux/run_onchange_before_10-brew-cli.sh.tmpl"
 
 # Copy remaining dotfiles
 COPY --chown=$UID:$GID . /home/$UNAME/.local/share/chezmoi
 
 # Run chezmoi apply and clean up. Also switch the login shell to fish: the
-# pre-install's chsh is skipped under Docker, so without this, ssh/exec/login
+# login-shell script's chsh is skipped under Docker, so without this, ssh/exec/login
 # sessions land in bash (the useradd default) and never source the fish env that
 # puts Homebrew on PATH. CMD already runs fish for `docker run`, but logins don't.
 # /etc/profile.d/brew.sh covers the remaining gap: bash/sh login shells (fish

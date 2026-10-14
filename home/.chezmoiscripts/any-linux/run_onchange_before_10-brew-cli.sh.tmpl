@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Reruns only when the shared CLI Brewfile changes:
+# cli.Brewfile {{ include ".chezmoiscripts/.brew/cli.Brewfile" | sha256sum }}
+# brew-env.sh {{ include ".chezmoiscripts/.brew/brew-env.sh" | sha256sum }}
+set -euo pipefail
+
+. "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.brew/brew-env.sh"
+
+brew_bundle_install cli
