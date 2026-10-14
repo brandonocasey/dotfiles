@@ -135,6 +135,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/auto-title.sh",
             "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "echo 'Be concise: lead with the result, skip preamble and narration, keep only what the user needs.'",
+            "timeout": 5
           }
         ]
       }
