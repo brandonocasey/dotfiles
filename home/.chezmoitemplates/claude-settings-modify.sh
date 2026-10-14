@@ -84,6 +84,7 @@ managed=$(
     ]
   },
   "model": "opus",
+  "autoCompactWindow": 400000,
   "promptCacheTtl": "1h",
   "env": {
     "CLAUDE_CODE_DISABLE_FILE_MENTIONS": "1",
