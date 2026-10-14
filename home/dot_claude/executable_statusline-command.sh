@@ -338,18 +338,21 @@ ctx_used_tokens=$(echo "$input" | jq -r '
 ' 2>/dev/null)
 case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
 
-# Auto-compact window from user settings, as Claude Code resolves it: a later
-# file wins, and within a file modelSettings.<model>.autoCompactWindow replaces
-# the top-level value. Model keys drop the [1m] flag and any date suffix.
-# Project settings are not read; "auto" means no fixed window.
+# Auto-compact window from user settings.json: modelSettings.<model>
+# .autoCompactWindow replaces the top-level value. Model ids and settings keys
+# both drop the [1m] flag and any date suffix before matching, as Claude Code
+# does. Project settings are not read; "auto" means no fixed window.
 settings_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-model_key=$(printf '%s' "$model_id" | sed -E 's/\[[^]]*\]$//; s/-[0-9]{8}$//')
-compact_window=$(jq -rs --arg m "$model_key" '
-  reduce .[] as $s (null;
-    ($s.modelSettings[$m].autoCompactWindow // $s.autoCompactWindow // .) as $w
-    | if $w == "auto" then null else $w end)
-  // empty
-' "$settings_dir/settings.json" "$settings_dir/settings.local.json" 2>/dev/null)
+compact_window=$(jq -r --arg m "$model_id" '
+  def canon: sub("\\[[^]]*\\]$"; "") | sub("-[0-9]{8}$"; "");
+  ($m | canon) as $k
+  # An exactly canonical key wins over a [1m] or dated spelling of it.
+  | ([(.modelSettings // {}) | to_entries | sort_by((.key | canon) != .key)[]
+      | select((.key | canon) == $k)
+      | .value.autoCompactWindow | select(. != null)] | first) as $model
+  | ($model // .autoCompactWindow)
+  | if . == "auto" then empty else (. // empty) end
+' "$settings_dir/settings.json" 2>/dev/null)
 # Claude Code accepts 100k to 1M; anything else is ignored here too.
 case $compact_window in *[!0-9]* | '') compact_window="" ;; esac
 if [ -n "$compact_window" ] && { [ "$compact_window" -lt 100000 ] || [ "$compact_window" -gt 1000000 ]; }; then
