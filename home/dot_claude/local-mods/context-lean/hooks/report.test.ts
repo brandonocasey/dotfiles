@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { type Category, type Report, report as colored, withCompactThreshold } from './report'
+import { type Category, type Report, report as colored } from './report'
 
 // The report's text without its terminal color codes.
 const report = (measured: Report) => colored(measured).replace(/\u001b\[[0-9;]*m/g, '')
@@ -19,9 +19,9 @@ const BASE = { real: 19943, window: 1000000, estimate: 17265, model: 'claude-opu
 test('draws the /context grid beside the header and categories', () => {
   const lines = report({ ...BASE, hidden: [], kept: [] }).split('\n')
   expect(lines[0]).toBe('Context Usage (context-lean)')
-  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, Messages with the unsent notes ⛀, and the 5.9k difference ⛁.
-  // No server notes are kept, so server instructions has no square. The 33k buffer is 7 squares.
-  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
+  // One square is 5k: System prompt ⛀, System tools ⛁ ⛁, MCP tools ⛀, Messages ⛀, and the 8.2k difference ⛁ ⛁, which
+  // holds the unsent notes. No server notes are kept, so server instructions has no square. The 33k buffer is 7 squares.
+  expect(lines[1]).toBe('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   claude-opus-5-5')
   expect(lines[2]).toContain('   19.9k/1m tokens (2%), real')
   expect(lines[10]).toMatch(/^(⛶ ){13}⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝/)
   expect(lines.some(line => line.endsWith('⛶ Free space: 947.1k (94.7%)'))).toBe(true)
@@ -67,11 +67,11 @@ test('lists /context categories as estimated, plus the difference from the real 
   const text = report({ ...BASE, hidden: [{ label: 'Workflow description', items: 1, tokens: 1295 }], kept: [{ label: 'Atlassian MCP server notes', items: 1, tokens: 793 }] })
   expect(text).toContain('Estimated usage by category')
   expect(text).toContain('⛁ System tools: 9.3k tokens (0.9%)')
-  // Only the 793 kept tokens of /context's 2,304 stay on the server instructions row; the other 1,511 move to Messages.
+  // Only the 793 kept tokens of /context's 2,304 stay on the server instructions row; the other 1,511 move to the difference.
   expect(text).toContain('⛁ MCP server instructions: 793 tokens (0.1%)')
-  expect(text).toContain('⛁ Messages: 1.8k tokens (0.2%)')
-  // 19,943 real minus 14,015 estimated.
-  expect(text).toContain('⛁ Difference from the real total: 5.9k tokens (0.6%)')
+  expect(text).toContain('⛁ Messages: 296 tokens (0.0%)')
+  // 19,943 real minus 12,504 estimated.
+  expect(text).toContain('⛁ Difference from the real total: 7.4k tokens (0.7%)')
   expect(text.indexOf('Difference')).toBeLessThan(text.indexOf('Free space'))
   expect(text.indexOf('Free space')).toBeLessThan(text.indexOf('Autocompact buffer'))
   expect(text).toContain('Server notes kept in the prompt · 793 tokens\n└ Atlassian MCP · 1 server · 793 tokens')
@@ -97,8 +97,8 @@ test('fills the grid when the real total is over the window or the window is unk
 
 test('shades hidden tokens as boxes after the used squares, with a legend line', () => {
   const lines = report({ ...BASE, hidden: [{ label: 'Datadog tool names', items: 415, tokens: 11133 }, { label: 'Workflow description', items: 1, tokens: 7300 }], kept: [] }).split('\n')
-  // 6 used squares as above; 18,433 hidden is 4 more.
-  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
+  // 7 used squares as above; 18,433 hidden is 4 more.
+  expect(lines[1].startsWith('⛀ ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛋ ⛋ ⛋ ⛋ ⛶')).toBe(true)
   const legend = lines.findIndex(line => line.endsWith('⛋ Hidden by context-lean: 18.4k tokens (1.8%)'))
   const free = lines.findIndex(line => line.includes('⛶ Free space'))
   expect(legend).toBeGreaterThan(0)
@@ -119,21 +119,21 @@ test('leaves out the difference row when the estimate matches the real total', (
   expect(text).not.toContain('Difference from the real total')
 })
 
-test('shows only notes kept in the prompt on the MCP server instructions row, and moves the rest to Messages', () => {
+test('shows only notes kept in the prompt on the MCP server instructions row, and moves the rest to the difference', () => {
   const text = report({ ...BASE, real: 14015, estimate: 14015, hidden: [{ label: 'Notion server notes', items: 1, tokens: 1304 }], kept: [{ label: 'chrome-devtools server notes', items: 1, tokens: 120 }] })
   expect(text).toContain('⛁ MCP server instructions: 120 tokens (0.0%)')
-  // 296 plus the 2,184 of /context's 2,304 not kept.
-  expect(text).toContain('⛁ Messages: 2.5k tokens (0.2%)')
-  expect(text).not.toContain('Difference from the real total')
+  // Messages stays as /context computed it; the 2,184 of /context's 2,304 not kept are in no row.
+  expect(text).toContain('⛁ Messages: 296 tokens (0.0%)')
+  expect(text).toContain('⛁ Difference from the real total: 2.2k tokens (0.2%)')
 })
 
-test('recomputes Messages when /context cut it to the messages since the last request', () => {
+test('lists only the messages since the last request when /context cut Messages to them', () => {
   // The other rows (13,719) exceed the 12,000 real, so /context shows only the 296 since the last request.
   const text = report({ ...BASE, real: 12000, hidden: [], kept: [] })
-  // 12,000 real minus 11,415 other rows without the notes.
-  expect(text).toContain('⛁ Messages: 585 tokens (0.1%)')
+  expect(text).not.toContain('⛁ Messages:')
   expect(text).toContain('⛁ Messages since the last request (estimated): 296 tokens (0.0%)')
-  expect(text).not.toContain('Difference from the real total')
+  // 12,000 real minus 11,415 other rows without the notes.
+  expect(text).toContain('⛁ Difference from the real total: 585 tokens (0.1%)')
 })
 
 test('lists messages since the last request apart, outside the difference from the real total', () => {
@@ -149,11 +149,11 @@ test('lists messages since the last request apart, outside the difference from t
   expect(text).not.toContain('Difference from the real total')
 })
 
-test('adds a Messages row when /context left it out at 0', () => {
+test('adds no Messages row when /context left it out at 0', () => {
   const categories = CATEGORIES.filter(row => row.name !== 'Messages')
   const text = report({ ...BASE, real: 12000, categories, hidden: [], kept: [] })
-  expect(text).toContain('⛁ Messages: 585 tokens (0.1%)')
-  expect(text).not.toContain('Difference from the real total')
+  expect(text).not.toContain('Messages:')
+  expect(text).toContain('⛁ Difference from the real total: 585 tokens (0.1%)')
 })
 
 test('reports shortened agent descriptions in their own section', () => {
@@ -162,14 +162,13 @@ test('reports shortened agent descriptions in their own section', () => {
   expect(text).not.toContain('Hidden tool descriptions')
 })
 
-test('sizes the autocompact buffer from where compaction starts', () => {
-  const categories = withCompactThreshold(CATEGORIES, 1000000, 400000)
-  expect(categories.find(row => row.name === 'Autocompact buffer')?.tokens).toBe(600000)
-  const text = report({ ...BASE, categories, hidden: [], kept: [] })
-  expect(text).toContain('Autocompact buffer: 600k tokens (60.0%)')
-  expect(text).toContain('Free space: 380.1k (38.0%)')
-  expect(withCompactThreshold(CATEGORIES, 1000000, undefined)).toBe(CATEGORIES)
-  // With autocompact off, the engine's "Compact buffer" row is left as reported.
-  const off = [{ name: 'Compact buffer', tokens: 20000, kind: 'buffer' }]
-  expect(withCompactThreshold(off, 1000000, 400000)).toEqual(off)
+test('draws the usable window and names the model window when they differ', () => {
+  const text = report({ ...BASE, window: 433000, modelWindow: 1000000, hidden: [], kept: [] })
+  expect(text).toContain('19.9k/433k tokens (5%), real')
+  expect(text).toContain('✕ Removed by autocompact window: 567k tokens (56.7% of 1m)')
+  expect(text.indexOf('Autocompact buffer')).toBeLessThan(text.indexOf('Removed by autocompact window'))
+  expect(text).toContain('Autocompact buffer: 33k tokens (7.6%)')
+  // 433,000 minus 19,943 real and the 33,000 buffer.
+  expect(text).toContain('Free space: 380.1k (87.8%)')
+  expect(report({ ...BASE, modelWindow: 1000000, hidden: [], kept: [] })).not.toContain('Removed by autocompact window')
 })

@@ -1,5 +1,5 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
-import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary, withCompactThreshold } from './report'
+import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
@@ -54,8 +54,12 @@ const SERVER_NOTES = ' server notes'
 const NAMES = ' names'
 const COUNT_SYSTEM = 'Reply with only: ok'
 const BASE = '(base)'
+// Counts and the last report are stored per model, as `counts:<model>` and `last-report:<model>`. Stores written
+// before 0.8.0 hold one of each under the bare key, for whichever model ran last. Old counts are still reused for
+// that model; an old report is not, since it was drawn over the whole model window.
 const COUNTS = 'counts'
 const LAST_REPORT = 'last-report'
+const perModel = (key: string, model: string) => `${key}:${model}`
 const LOCAL_SERVERS = 'local-servers'
 // MCP config keys are usually one lowercase word, unlike the subheadings inside a connector's notes.
 const SERVER_NAME = /^[a-z0-9][a-z0-9_.-]*$/
@@ -101,8 +105,9 @@ type Host = {
   store: { get(key: string): Promise<unknown>; set(key: string, value: unknown): Promise<void>; delete(key: string): Promise<void>; keys(): Promise<string[]> }
 }
 type Saved = { at: number; hidden: Record<string, Record<string, string>>; kept: Record<string, Record<string, string>>; sent?: string[]; used?: string[]; seen?: string[]; agents?: string[] }
-// Token counts by row, reused across sessions while the row's text and the model stay the same.
+// Token counts by row for one model, reused across sessions while the row's text stays the same.
 type Counts = { model: string; rows: Record<string, { hash: string; tokens: number }> }
+type LastReport = Report & { at: number }
 
 // What the current session hid or kept, for the /context report. Saved per session so a resumed session still reports it.
 const SESSIONS_KEPT = 10
@@ -385,18 +390,22 @@ const hideInstructions = (text: string, agent: string) => {
 const reportText = async ($: EngineInterface): Promise<{ text: string; line: string }> => {
   await load($)
   const usage = await $.session.usage({ breakdown: 'full' })
+  const model = await $.session.model()
+  // A setting such as autoCompactWindow can make the usable window smaller than the model's. The report draws the
+  // usable one, as the built-in /context does.
+  const window = usage.context.breakdown?.maxTokens || usage.context.window
+  const stored = async <T>(key: string) => (await $.store.get(key).catch(() => undefined)) as T | undefined
   if (!usage.context.tokens) {
-    // Nothing was sent yet, so there is no real size, and the tools the mod defers are still counted. The last
-    // report stands in, with when it was measured; without one, /context runs the built-in command.
-    const last = (await $.store.get(LAST_REPORT).catch(() => undefined)) as (Report & { at: number }) | undefined
+    // Nothing was sent yet, so there is no real size, and the tools the mod defers are still counted. This model's
+    // last report stands in, with when it was measured; without one, /context runs the built-in command.
+    const last = await stored<LastReport>(perModel(LAST_REPORT, model))
     if (typeof last?.real !== 'number') throw new Error('nothing sent yet')
-    const saved: Report = { ...last, categories: last.categories ?? [], note: `No message sent in this session yet, so these numbers are from your last report (${new Date(last.at).toLocaleString()}).` }
+    const saved: Report = { ...last, window, modelWindow: usage.context.window, categories: last.categories ?? [], note: `No message sent in this session yet, so these numbers are from your last ${model} report (${new Date(last.at).toLocaleString()}).` }
 
     return { text: report(saved), line: summary(saved) }
   }
-  const model = await $.session.model()
-  const stored = (await $.store.get(COUNTS).catch(() => undefined)) as Counts | undefined
-  const known = stored?.model === model ? stored.rows : {}
+  const legacy = await stored<Counts>(COUNTS)
+  const known = (await stored<Counts>(perModel(COUNTS, model)))?.rows ?? (legacy?.model === model ? legacy.rows : {})
   const fresh: Counts['rows'] = {}
   // Failed counts are not saved, so the next run tries again.
   const count = async (label: string, text: string) => {
@@ -435,11 +444,13 @@ const reportText = async ($: EngineInterface): Promise<{ text: string; line: str
   const hiddenRows = counted.map(row =>
     row.label !== AGENTS || row.tokens === undefined ? row : { ...row, tokens: summaries === undefined || base === undefined ? undefined : Math.max(0, row.tokens - (summaries - base)) },
   )
-  const reported: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
-  const categories = withCompactThreshold(reported, usage.context.window, usage.context.breakdown?.autoCompactThreshold)
-  const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
+  const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
+  const measured: Report = { real: usage.context.tokens, window, modelWindow: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
   // The last report is stored as plain JSON, without fields left undefined.
-  await Promise.all([$.store.set(COUNTS, { model, rows: { ...known, ...fresh } }), $.store.set(LAST_REPORT, JSON.parse(JSON.stringify({ ...measured, at: Date.now() })))]).catch(() => undefined)
+  await Promise.all([
+    $.store.set(perModel(COUNTS, model), { model, rows: { ...known, ...fresh } }),
+    $.store.set(perModel(LAST_REPORT, model), JSON.parse(JSON.stringify({ ...measured, at: Date.now() }))),
+  ]).catch(() => undefined)
 
   return { text: report(measured), line: summary(measured) }
 }

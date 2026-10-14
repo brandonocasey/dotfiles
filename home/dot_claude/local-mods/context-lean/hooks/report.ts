@@ -5,24 +5,15 @@ export type Counted = { label: string; items: number; tokens: number | undefined
 export type Category = { name: string; tokens: number; kind: string; color?: string }
 export type Report = {
   real: number
+  // The usable window, which a setting such as autoCompactWindow can make smaller than the model's.
   window: number
+  modelWindow?: number
   estimate: number | undefined
   model: string
   categories: Category[]
   hidden: Counted[]
   kept: Counted[]
   note?: string
-}
-
-// The usage breakdown sizes the autocompact buffer within the autoCompactWindow setting's window (433k gives 33k),
-// but the report draws the model's whole window (1m). The buffer is resized to everything past the point where
-// compaction starts, which the breakdown reports as autoCompactThreshold.
-const AUTOCOMPACT_BUFFER = 'Autocompact buffer'
-export const withCompactThreshold = (categories: Category[], window: number, threshold: number | undefined) => {
-  if (threshold === undefined || window <= 0) return categories
-  const buffer = Math.max(0, window - threshold)
-
-  return categories.map(row => (row.kind === 'buffer' && row.name === AUTOCOMPACT_BUFFER ? { ...row, tokens: buffer } : row))
 }
 
 // Marks notes that were hidden from the prompt and later sent with a tool result.
@@ -58,27 +49,24 @@ const isBuiltInDescription = (label: string) => label.endsWith(' description')
 // /context's own estimates, plus the gap to the real total. Interactive and headless sessions estimate
 // deferred tools differently, so individual categories are left as /context reports them, except two:
 // /context counts every connected server's notes, sent or not, so that row shows the notes kept in the prompt.
-// /context computes Messages as max(0, real total minus the other rows) plus messages sent since the last request,
-// and leaves the row out at 0, so Messages is recomputed without the unsent notes. The estimated part since the last
-// request gets its own row and stays out of the gap, since the real total does not include it yet.
+// /context computes Messages as max(0, real total minus the other rows) plus messages sent since the last request.
+// Messages keeps the first part as computed with /context's notes row, so tokens no row accounts for are not shown as
+// messages: they go to the difference row, together with the unsent notes /context counted. The estimated part since
+// the last request gets its own row and stays out of the gap, since the real total does not include it yet.
 const categoriesOf = ({ real, window, categories: reported, kept }: Report) => {
   const inPrompt = sum(kept.filter(row => isNotes(row.label)))
-  const unsent = (reported.find(row => row.name === MCP_NOTES)?.tokens ?? inPrompt) - inPrompt
   const others = reported.filter(row => row.kind === 'used' && row.name !== MESSAGES).reduce((all, row) => all + row.tokens, 0)
   const messages = reported.find(row => row.name === MESSAGES)
-  const pending = Math.max(0, (messages?.tokens ?? 0) - Math.max(0, real - others))
-  const sent = Math.max(0, (messages?.tokens ?? 0) - pending - Math.max(0, real - others) + Math.max(0, real - others + unsent))
+  // The part of /context's Messages that is in the real total, and the estimated rest since the last request.
+  const sent = Math.min(messages?.tokens ?? 0, Math.max(0, real - others))
+  const pending = (messages?.tokens ?? 0) - sent
   const pendingRow: Category = { name: PENDING, tokens: pending, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' }
-  const added: Category[] = messages === undefined && sent > 0 ? [{ name: MESSAGES, tokens: sent, kind: 'used', color: 'purple_FOR_SUBAGENTS_ONLY' }] : []
-  const categories = [
-    ...reported.flatMap(row => {
-      if (row.name === MCP_NOTES) return [{ ...row, tokens: inPrompt }]
-      if (row.name === MESSAGES) return [{ ...row, tokens: sent }, ...(pending > 0 ? [pendingRow] : [])]
+  const categories = reported.flatMap(row => {
+    if (row.name === MCP_NOTES) return [{ ...row, tokens: inPrompt }]
+    if (row.name === MESSAGES) return [...(sent > 0 ? [{ ...row, tokens: sent }] : []), ...(pending > 0 ? [pendingRow] : [])]
 
-      return [row]
-    }),
-    ...added,
-  ]
+    return [row]
+  })
   const total = (kind: string) => categories.filter(row => row.kind === kind).reduce((all, row) => all + row.tokens, 0)
   const gap: Category = { name: 'Difference from the real total', tokens: real - (total('used') - pending), kind: 'used' }
   const free: Category = { name: 'Free space', tokens: Math.max(0, window - real - total('buffer')), kind: 'free' }
@@ -109,7 +97,7 @@ const colorOf = (category: Category) => COLORS[category.color ?? ''] ?? GRAY
 // a full square ⛁ or a partial one ⛀. Hidden squares ⛋ follow, showing where the hidden tokens would sit without context-lean.
 const GRID_ROWS = 10
 const GRID_COLUMNS = 20
-const SYMBOL: Record<string, string> = { used: '⛁', partial: '⛀', hidden: '⛋', free: '⛶', buffer: '⛝' }
+const SYMBOL: Record<string, string> = { used: '⛁', partial: '⛀', hidden: '⛋', free: '⛶', buffer: '⛝', removed: '✕' }
 type Cell = { symbol: string; color: number }
 const grid = (categories: Category[], saved: number, window: number) => {
   const squares = GRID_ROWS * GRID_COLUMNS
@@ -161,10 +149,11 @@ export const summary = ({ real, hidden, note }: Report) =>
   `${note === undefined ? '' : 'Last saved report. '}Context: ${short(real)} real tokens; context-lean hid ${short(sum(hidden))}.`
 
 export const report = (measured: Report) => {
-  const { real, window, estimate, model, hidden, kept, note } = measured
+  const { real, window, modelWindow, estimate, model, hidden, kept, note } = measured
   const saved = sum(hidden)
   const total = real + saved
   const categories = categoriesOf(measured)
+  const removed = modelWindow === undefined ? 0 : modelWindow - window
   const line = (symbol: string, color: number, name: string, value: string) => `${paint(color, symbol)} ${name}: ${paint(GRAY, value)}`
   const side = [
     model,
@@ -180,6 +169,8 @@ export const report = (measured: Report) => {
             ? paint(GRAY, `${SYMBOL.buffer} ${row.name}: ${short(row.tokens)} tokens (${percent(row.tokens, window)})`)
             : line(SYMBOL[row.kind] ?? SYMBOL.used, colorOf(row), row.name, `${short(row.tokens)}${row.kind === 'free' ? '' : ' tokens'} (${percent(row.tokens, window)})`),
         ])),
+    // The part of the model's window past the usable one, which the grid leaves out, as a share of the model's window.
+    ...(removed > 0 ? [paint(GRAY, `${SYMBOL.removed} Removed by autocompact window: ${short(removed)} tokens (${percent(removed, modelWindow ?? 0)} of ${short(modelWindow ?? 0)})`)] : []),
   ]
   const squares = grid(categories, saved, window)
   const indent = ' '.repeat(GRID_COLUMNS * 2 - 1)
@@ -200,7 +191,7 @@ export const report = (measured: Report) => {
     ...section('Server notes sent on first use', kept.filter(row => isSentNotes(row.label)), without(`${NOTES}${SENT}`), 'server'),
     ...section('Server notes kept in the prompt', kept.filter(row => isNotes(row.label)), without(NOTES), 'server'),
     '',
-    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates. ${MCP_NOTES} counts only notes still sent in the prompt; the rest of /context's count moves to ${MESSAGES}.`),
+    paint(GRAY, `Hidden items are counted with ${model}'s tokenizer; built-in tools count their descriptions, not their input schemas. Categories are /context's estimates. ${MCP_NOTES} counts only notes still sent in the prompt; the rest of /context's count moves to the difference row.`),
   ]
 
   return lines.join('\n')

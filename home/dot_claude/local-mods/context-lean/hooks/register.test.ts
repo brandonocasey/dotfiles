@@ -559,7 +559,45 @@ test('/context before anything was sent shows the last saved report, marked as s
   sent = 0
   const result = await $.command.run({ command: 'context' })
   expect(result.text).toMatch(/^Last saved report\. Context: 5k real tokens/)
-  expect(await drawnRow($, 'context', result.text ?? '')).toContain('No message sent in this session yet, so these numbers are from your last report')
+  expect(await drawnRow($, 'context', result.text ?? '')).toContain('No message sent in this session yet, so these numbers are from your last claude-opus-5-5 report')
+})
+
+test("/context before anything was sent skips another model's saved report", async ($, on) => {
+  const memory = new Map<string, unknown>([['last-report:claude-haiku-5-5', { real: 5000, window: 1000000, model: 'claude-haiku-5-5', categories: [], hidden: [], kept: [], at: 0 }]])
+  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
+  contextSession(on, 0)
+  expect((await $.command.run({ command: 'context' })).text).toBe('BUILT-IN')
+  // A report from before 0.8.0, under the bare key, was drawn over the whole model window, so it is not shown.
+  memory.set('last-report', { real: 7000, window: 1000000, model: 'claude-opus-5-5', categories: [], hidden: [], kept: [], at: 0 })
+  expect((await $.command.run({ command: 'context' })).text).toBe('BUILT-IN')
+})
+
+test('keeps token counts per model, so switching models does not count again', async ($, on) => {
+  const memory = new Map<string, unknown>()
+  on('store.set', ($, e) => {
+    memory.set(e.key, e.value)
+    return { value: undefined }
+  })
+  on('store.get', ($, e) => ({ value: memory.get(e.key) }))
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  let model = 'claude-opus-5-5'
+  let counted = 0
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({ value: { startedAt: 0, rateLimits: [], context: { tokens: 5000, window: 1000000, breakdown: { totalTokens: 5000, categories: [] } } } }))
+  on('session.model', () => ({ value: model }))
+  on('model.complete', ($, e) => {
+    counted++
+    return { value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }
+  })
+  await $.prompt.attachment({ type: 'mcp_instructions_delta', text: '# MCP Server Instructions\n\n## claude.ai Notion\nSearch first.' })
+  await $.command.run({ command: 'context' })
+  model = 'claude-haiku-5-5'
+  await $.command.run({ command: 'context' })
+  const before = counted
+  model = 'claude-opus-5-5'
+  await $.command.run({ command: 'context' })
+  expect(counted).toBe(before)
+  expect(memory.has('counts:claude-opus-5-5') && memory.has('counts:claude-haiku-5-5')).toBe(true)
 })
 
 test('/context before anything was sent, with no saved report, runs the built-in command', async ($, on) => {
@@ -634,7 +672,7 @@ test('keeps notes kept for one agent when a subagent hides the same notes', asyn
   expect(again.text).toContain('Search first.')
 })
 
-test('/context sizes the autocompact buffer from the reported compaction point', async ($, on) => {
+test('/context draws the usable window the breakdown reports', async ($, on) => {
   on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
   on('session.usage', () => ({
     value: {
@@ -643,7 +681,7 @@ test('/context sizes the autocompact buffer from the reported compaction point',
       context: {
         tokens: 5000,
         window: 1000000,
-        breakdown: { totalTokens: 5000, autoCompactThreshold: 400000, categories: [{ name: 'Messages', tokens: 5000, kind: 'used' }, { name: 'Autocompact buffer', tokens: 33000, kind: 'buffer' }] },
+        breakdown: { totalTokens: 5000, maxTokens: 433000, autoCompactThreshold: 400000, categories: [{ name: 'Messages', tokens: 5000, kind: 'used' }, { name: 'Autocompact buffer', tokens: 33000, kind: 'buffer' }] },
       },
     },
   }))
@@ -651,6 +689,8 @@ test('/context sizes the autocompact buffer from the reported compaction point',
   on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
   engineRow(on)
   const row = await drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
-  expect(row).toContain('Autocompact buffer: 600k tokens (60.0%)')
-  expect(row).toContain('Free space: 395k (39.5%)')
+  expect(row).toContain('5k/433k tokens (1%), real')
+  expect(row).toContain('✕ Removed by autocompact window: 567k tokens (56.7% of 1m)')
+  expect(row).toContain('Autocompact buffer: 33k tokens (7.6%)')
+  expect(row).toContain('Free space: 395k (91.2%)')
 })
