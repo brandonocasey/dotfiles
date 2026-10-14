@@ -2,6 +2,7 @@
 name: reviewer
 description: "Independent adversarial review of a change; the review skill runs it for every review. Read-only; returns verified candidate findings."
 model: claude-opus-5-5
+autoCompactWindow: 400000
 effort: xhigh
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
 disallowedTools: Edit, Write, NotebookEdit, Agent
