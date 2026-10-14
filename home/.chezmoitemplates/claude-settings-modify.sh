@@ -30,6 +30,7 @@ managed=$(
       "Write",
       "mcp__claude_ai_Atlassian_MCP__createJiraIssue",
       "mcp__claude_ai_Atlassian_MCP__editJiraIssue",
+      "mcp__claude_ai_Atlassian_MCP__executeWrite",
       "mcp__claude_ai_Atlassian_MCP__transitionJiraIssue",
       "Bash(jira-api GET *)",
       "Bash(git worktree prune*)",
