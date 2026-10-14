@@ -5,9 +5,18 @@ description: "Create logical Conventional Commits; choose amend versus new."
 
 Optional argument: a target file or chunk. Commit only that target.
 
-1. **Gather** — skip if you already know the context. Run `git status --short`,
-   `git diff --stat`, `git diff --staged --stat`, and `git log --oneline -5`. Then diff
-   only the files whose changes you still need to see.
+1. **Gather.** Claude Code fills the snapshot below from the session's working
+   directory when the skill loads. Run the commands yourself when they still show
+   as raw `!` commands, when you commit in another worktree, or when files changed
+   after loading. Then diff only the files whose changes you still need to see.
+
+   Status: !`git status --short 2>&1 || true`
+
+   Unstaged: !`git diff --stat 2>&1 | tail -n 30`
+
+   Staged: !`git diff --staged --stat 2>&1 | tail -n 30`
+
+   Recent: !`git log --oneline -5 2>&1 || true`
 2. **Decide amend or new.** Amend only when HEAD is not pushed to any remote and the change relates
    directly to it. Never amend a pushed commit. Make a new commit when none exist,
    HEAD is pushed, or the change has a different purpose or is a distinct unit.
