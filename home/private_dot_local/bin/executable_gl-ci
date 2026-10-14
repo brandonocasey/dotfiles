@@ -14,7 +14,7 @@ specs in their logs (Playwright, WebdriverIO, Karma, Jest), and how often each
 spec failed in the last N finished default-branch pipelines, including retried
 attempts. Verdicts:
   new           never failed on the default branch
-  pre-existing  also fails in the latest default-branch pipeline
+  pre-existing  also fails in the latest default-branch pipeline that ran the job
   flaky         passed on retry in the MR, or failed only in older or retried
                 default-branch attempts (it may also have been fixed there)
   pending       its job's retry is still running
@@ -246,8 +246,15 @@ def cmd_failures(args):
     pipelines = [p for p in gl.get(f'{gl.base}/pipelines?ref={urllib.parse.quote(gl.default_branch)}'
                                    f'&scope=finished&per_page={min(100, args.n * 2)}')
                  if p['status'] in ('success', 'failed')][:args.n]
+    def load(p):
+        jobs = gl.jobs(p['id'])
+        # Jobs that finished: rules, schedules, or path filters can leave a job out of a pipeline.
+        ran = {name for name, attempts in jobs.items() if attempts[-1]['status'] in ('success', 'failed')}
+        return pipeline_failures(gl, jobs, families), ran
+
     with ThreadPoolExecutor(4) as pool:
-        history = list(pool.map(lambda p: pipeline_failures(gl, gl.jobs(p['id']), families), pipelines))
+        loaded = list(pool.map(load, pipelines))
+    history = [h for h, _ in loaded]
     total = len(history)
     print(f'\nCompared with the last {total} finished {gl.default_branch} pipelines '
           f"({pipelines[-1]['created_at'][:10]} to {pipelines[0]['created_at'][:10]}):" if total else
@@ -263,7 +270,9 @@ def cmd_failures(args):
             items = [(f'(whole job {fam})', ('flaky', False, None), '')]
         for spec, (state, final, job), whole in items:
             hits = [h.get(fam, {}) for h in history]
-            latest = hits[0] if hits else {}
+            # Compare with the newest pipeline that ran this job (or any job of the family).
+            latest = next((h.get(fam, {}) for h, ran in loaded
+                           if (whole in ran if whole else any(family(n) == fam for n in ran))), {})
             if whole is None:
                 failed_in = [h for h in hits if spec in h.get('specs', {})]
                 latest_final = latest.get('specs', {}).get(spec, (None, False))[1]
