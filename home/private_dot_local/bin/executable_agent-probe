@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+"""Run `claude -p` variants in fresh scratch directories and compare their usage.
+
+Usage: agent-probe (--prompt TEXT | --prompt-file FILE) [--variant NAME=ARGS]... [-n RUNS] [options]
+
+  agent-probe --prompt 'Reply with OK only.' \\
+      --variant base= --variant off='--settings off.json' -n 3
+
+Each run gets a new empty working directory, `--no-session-persistence`, and
+stream-json output kept apart from stderr. Variant arguments that name existing
+files are made absolute first. A run whose MCP servers are still
+pending or failed at start is retried. USD comes from agent-sessions and the
+shared price file. Working directories are deleted afterwards; logs stay in
+--out. Runs use `claude` with the caller's CLAUDE_CONFIG_DIR.
+"""
+import argparse
+import json
+import os
+import shlex
+import shutil
+import statistics
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime
+from pathlib import Path
+
+SCRATCH = Path(os.environ.get('XDG_CACHE_HOME') or Path.home() / '.cache') / 'agents/scratch/agent-probe'
+RETRY_STATUSES = {'pending', 'failed'}
+
+
+def sessions_tool():
+    sibling = Path(__file__).resolve().with_name('agent-sessions')
+    return str(sibling) if sibling.exists() else shutil.which('agent-sessions')
+
+
+def parse_variant(spec):
+    name, sep, flags = spec.partition('=')
+    if not sep or not name:
+        raise argparse.ArgumentTypeError(f'variant must be NAME=ARGS, got {spec!r}')
+    return name, [absolute_if_file(arg) for arg in shlex.split(flags)]
+
+
+def absolute_if_file(arg):
+    """Runs start in an empty directory, so a relative path (`off.json`, `--settings=off.json`) must be made absolute."""
+    flag, sep, value = arg.rpartition('=') if arg.startswith('--') else ('', '', arg)
+    if value and not os.path.isabs(value) and os.path.exists(value):
+        return flag + sep + os.path.abspath(value)
+    return arg
+
+
+def read_events(path):
+    events = []
+    for line in path.read_text(errors='replace').splitlines():
+        try:
+            events.append(json.loads(line))
+        except ValueError:
+            continue
+    return events
+
+
+def mcp_state(events):
+    init = next((e for e in events if e.get('type') == 'system' and e.get('subtype') == 'init'), {})
+    return {s.get('name', '?'): s.get('status', '?') for s in init.get('mcp_servers') or []}
+
+
+def run_once(args, prompt, flags, log, err):
+    cwd = Path(tempfile.mkdtemp(prefix='cwd-', dir=args.out))
+    cmd = ['claude', '-p', prompt, '--output-format', 'stream-json', '--verbose',
+           '--no-session-persistence', '--max-turns', str(args.max_turns), *flags]
+    start = time.monotonic()
+    try:
+        with open(log, 'w') as out, open(err, 'w') as errfh:
+            proc = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=errfh, timeout=args.timeout)
+        code = proc.returncode
+    except subprocess.TimeoutExpired:
+        code = 'timeout'
+    finally:
+        if args.keep:
+            print(f'kept {cwd}', file=sys.stderr)
+        else:
+            shutil.rmtree(cwd, ignore_errors=True)
+    return code, time.monotonic() - start
+
+
+def run(args, prompt, name, flags, index):
+    log = args.out / f'{name}-{index}.jsonl'
+    err = args.out / f'{name}-{index}.stderr'
+    for attempt in range(1, args.retries + 2):
+        code, secs = run_once(args, prompt, flags, log, err)
+        events = read_events(log)
+        mcp = mcp_state(events)
+        waiting = sorted(n for n, s in mcp.items() if s in RETRY_STATUSES)
+        if not waiting or attempt > args.retries:
+            break
+        print(f'{name} #{index}: MCP not ready ({", ".join(waiting)}); retry {attempt}/{args.retries}', file=sys.stderr)
+    result = next((e for e in reversed(events) if e.get('type') == 'result'), {})
+    status = 'ok' if code == 0 and not result.get('is_error') else f"{result.get('subtype') or 'exit'} {code}"
+    if status != 'ok':
+        reason = next((line.strip() for line in err.read_text(errors='replace').splitlines() if line.strip()), '')
+        status += f': {reason[:80]}' if reason else ''
+    return dict(variant=name, run=index, attempts=attempt, log=str(log), status=status, secs=secs,
+                mcp=f"{sum(s == 'connected' for s in mcp.values())}/{len(mcp)}", mcp_waiting=waiting,
+                turns=result.get('num_turns', 0), claude_usd=result.get('total_cost_usd'))
+
+
+def add_usage(rows):
+    tool = sessions_tool()
+    if not tool:
+        sys.exit('agent-probe: agent-sessions not found next to this script or on PATH')
+    out = subprocess.run([sys.executable, tool, 'cost', '--by', 'file', '--json', *[r['log'] for r in rows]],
+                         capture_output=True, text=True)
+    if out.returncode:
+        sys.exit(f'agent-probe: agent-sessions failed: {out.stderr.strip()}')
+    data = json.loads(out.stdout)
+    by_file = {r['file']: r for r in data['rows']}
+    for r in rows:
+        u = by_file.get(r['log'], {})
+        r.update(tools=u.get('tool_calls', 0), usd=u.get('usd', 0.0), **{k: u.get(k, 0) for k in
+                 ('input_tokens', 'cache_creation_input_tokens', 'cache_read_input_tokens', 'output_tokens')})
+    return data['unpriced']
+
+
+def tok(n):
+    return f'{n / 1e3:.1f}k' if n >= 1000 else str(int(n))
+
+
+def print_table(rows):
+    headers = ['variant', 'run', 'tries', 'mcp', 'turns', 'tools', 'in', 'write', 'read', 'out', 'USD', 'claude USD', 'secs', 'status']
+    lines = []
+    for r in rows:
+        lines.append([r['variant'], str(r['run']), str(r['attempts']), r['mcp'], str(r['turns']), str(r['tools']),
+                      tok(r['input_tokens']), tok(r['cache_creation_input_tokens']), tok(r['cache_read_input_tokens']),
+                      tok(r['output_tokens']), f"{r['usd']:.4f}",
+                      '-' if r['claude_usd'] is None else f"{r['claude_usd']:.4f}", f"{r['secs']:.0f}", r['status']])
+    variants = list(dict.fromkeys(r['variant'] for r in rows))
+    for v in variants:
+        group = [r for r in rows if r['variant'] == v]
+        if len(group) < 2:
+            continue
+        def mean(key):
+            return statistics.mean(r[key] for r in group)
+        lines.append([v, 'mean', '', '', f"{mean('turns'):.1f}", f"{mean('tools'):.1f}", tok(mean('input_tokens')),
+                      tok(mean('cache_creation_input_tokens')), tok(mean('cache_read_input_tokens')),
+                      tok(mean('output_tokens')), f"{mean('usd'):.4f}", '', f"{mean('secs'):.0f}", ''])
+    widths = [max(len(x) for x in col) for col in zip(headers, *lines)]
+    for i, line in enumerate([headers, ['-' * w for w in widths]] + lines):
+        print('  '.join(c.ljust(w) if j in (0, 13) else c.rjust(w) for j, (c, w) in enumerate(zip(line, widths))).rstrip())
+
+
+def main():
+    p = argparse.ArgumentParser(prog='agent-probe', description=__doc__.split('\n')[0],
+                                formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__.split('\n\n', 1)[1])
+    src = p.add_mutually_exclusive_group(required=True)
+    src.add_argument('--prompt', help='prompt text')
+    src.add_argument('--prompt-file', type=Path, help='file holding the prompt')
+    p.add_argument('--variant', action='append', type=parse_variant, default=[],
+                   help="NAME=ARGS: extra claude flags, e.g. off='--settings off.json' (default: base=)")
+    p.add_argument('-n', '--runs', type=int, default=1, help='runs per variant (default 1)')
+    p.add_argument('--max-turns', type=int, default=3, help='claude --max-turns (default 3)')
+    p.add_argument('--retries', type=int, default=3, help='reruns while MCP servers are pending or failed (default 3)')
+    p.add_argument('--timeout', type=int, default=600, help='seconds per run (default 600)')
+    p.add_argument('--out', type=Path, help=f'log directory (default {SCRATCH}/<time>)')
+    p.add_argument('--keep', action='store_true', help='keep the working directories')
+    p.add_argument('--json', action='store_true', help='print rows as JSON')
+    args = p.parse_args()
+    if args.runs < 1:
+        p.error('--runs must be at least 1')
+    if not shutil.which('claude'):
+        sys.exit('agent-probe: claude not found on PATH')
+    prompt = args.prompt if args.prompt is not None else args.prompt_file.read_text()
+    args.out = (args.out or SCRATCH / datetime.now().strftime('%Y%m%d-%H%M%S')).expanduser().resolve()
+    args.out.mkdir(parents=True, exist_ok=True)
+    variants = args.variant or [('base', [])]
+    if len({n for n, _ in variants}) != len(variants):
+        p.error('variant names must be unique')
+    rows = []
+    # Interleave variants so drift over time (cache warmth, load) spreads evenly across them.
+    for index in range(1, args.runs + 1):
+        for name, flags in variants:
+            print(f'running {name} #{index}', file=sys.stderr)
+            rows.append(run(args, prompt, name, flags, index))
+    unpriced = add_usage(rows)
+    if args.json:
+        json.dump(rows, sys.stdout, indent=1)
+        print()
+    else:
+        print_table(rows)
+        if unpriced:
+            print('Unpriced models (add them to the price file):', unpriced)
+        print(f'Logs: {args.out}')
+    if any(r['status'] != 'ok' or r['mcp_waiting'] for r in rows):
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
