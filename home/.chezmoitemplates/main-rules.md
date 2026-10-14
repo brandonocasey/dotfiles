@@ -14,7 +14,7 @@
 - Before spawning, monitoring, or escalating after failure: `sub-agents` and `sub-agents/references/roles.md`. They own roles, models, and Workflow `agent()` settings.
 - Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (choose checks, read failures), `manual-tester`, `reviewer`, `consult` (escalation).
 - Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
-- Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Every change gets a review; read-only tasks need none.
+- Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Review only at its end points (done, commit, push, integrate, deploy, land, remote test run), not per iteration turn; read-only tasks need none.
 - Before copyable output: `host-preflight/references/copyable-output.md`. Before links, ELI5, status updates, recaps, PR descriptions, review comments, tickets, or docs: `shared/writing-details.md`.
 
 ## Writing

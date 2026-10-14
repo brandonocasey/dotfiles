@@ -119,6 +119,10 @@ to a stale branch wastes a run.
 
 ## Approve and merge
 
+Before pushing a fix or a conflict resolution, review only the fix commits
+and any conflict resolutions per
+[when-to-run.md](../review/references/when-to-run.md) **Scope**, not the whole
+pull request, unless the user asks.
 Before a fix that will be pushed, pause and later restore auto-merge per
 [auto-merge-pause.md](../shared/auto-merge-pause.md). Otherwise let an enabled
 auto-merge finish. Before any approval or manual merge, read

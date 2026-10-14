@@ -134,7 +134,7 @@ exists, and go to section 6 for the rest.
    tools. Capture before and after evidence, such as screenshots or logs.
 6. Search for the same defect at sibling call sites, and fix them in the
    same change.
-7. Commit per `commit`. Run `review` at the hand-off in
+7. Commit per `commit`. This is an end point: run `review` per
    `review/references/when-to-run.md` **Timing**. Push or open a pull request
    only when the Git rules allow it.
 
