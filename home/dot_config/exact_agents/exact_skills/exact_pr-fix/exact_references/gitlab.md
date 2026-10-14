@@ -13,6 +13,8 @@ self-hosted GitLab. Verify flags with `glab <command> --help` before use.
 | Failed jobs | `glab ci get --pipeline-id PIPELINE_ID --with-job-details -F json` |
 | Job log | `glab ci trace JOB_ID` |
 | One retry | `glab ci retry JOB_ID` |
+| Failure triage | `gl-ci failures N`: failed and retried jobs, failing specs, and a new, pre-existing, or flaky verdict from the last 10 default-branch pipelines (`-n`) |
+| Wait for a pipeline | `gl-ci wait PIPELINE_ID`, or after a push `gl-ci wait !N --sha "$(git rev-parse HEAD)"`, in the background; exit 0 is success, 1 a failed pipeline, 2 an error |
 
 Map the `glab mr view` JSON to the blockers in SKILL.md:
 
@@ -24,7 +26,8 @@ Map the `glab mr view` JSON to the blockers in SKILL.md:
 - `has_conflicts` is true, or `detailed_merge_status` is `need_rebase` or
   `conflict`: rebase or update the branch.
 - `head_pipeline.status` is `created`, `pending`, or `running`: wait.
-- `head_pipeline.status` is `failed`: read each failed job's full log. Fix or
+- `head_pipeline.status` is `failed`: run `gl-ci failures N` first to tell new
+  failures from pre-existing or flaky ones. Read each failed job's full log. Fix or
   retry per [Fix failing checks](check-repair.md), with `glab ci trace` and
   `glab ci retry` in place of the `gh run` commands.
 - `detailed_merge_status` is `not_approved` or `requested_changes`: a review

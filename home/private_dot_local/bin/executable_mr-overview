@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Open GitLab MRs by you and the Claude service account, with CI, approvals, and conflicts.
+
+Usage: mr-overview [--author USERNAME]... [--project TEXT]... [--md]
+
+  mr-overview                      all projects, one table
+  mr-overview --project web-player only projects whose path contains web-player
+  mr-overview --author dj-jwx      add another author
+
+The plain table shortens titles to 60 characters; --md prints full titles and links.
+Set GITLAB_HOST for a self-hosted GitLab.
+"""
+import argparse
+import json
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+# Service accounts whose MRs count as "Claude's". Usernames come from GitLab, not
+# web-player config, which only has the generic bot rule.
+CLAUDE_ACCOUNTS = ['service_account_group_109288310_620500bbaa7eb4524326140cfdea56c4']
+
+
+def api(path, paginate=False):
+    cmd = ['glab', 'api', path] + (['--paginate'] if paginate else [])
+    out = subprocess.run(cmd, capture_output=True, text=True)
+    if out.returncode:
+        sys.exit(f'mr-overview: glab api {path} failed: {out.stderr.strip() or out.stdout.strip()}')
+    decoder, text, pos, values = json.JSONDecoder(), out.stdout, 0, []
+    # --paginate prints one JSON array per page back to back.
+    while pos < len(text):
+        if text[pos].isspace():
+            pos += 1
+            continue
+        value, pos = decoder.raw_decode(text, pos)
+        values.append(value)
+    if not paginate:
+        return values[0] if values else None
+    return [item for page in values for item in page]
+
+
+def resolve(username):
+    users = api(f'users?username={username}')
+    return users[0] if users else None
+
+
+def details(mr):
+    base = f"projects/{mr['project_id']}/merge_requests/{mr['iid']}"
+    full = api(base)
+    approvals = api(f'{base}/approvals')
+    pipe = full.get('head_pipeline') or {}
+    failed = []
+    if pipe.get('status') == 'failed':
+        jobs = api(f"projects/{mr['project_id']}/pipelines/{pipe['id']}/jobs?scope[]=failed&per_page=100")
+        failed = sorted(j['name'] for j in jobs if not j.get('allow_failure'))
+    status = full.get('detailed_merge_status', '?')
+    conflict = 'yes' if full.get('has_conflicts') or status == 'conflict' else 'rebase' if status == 'need_rebase' else 'no'
+    return {
+        'ref': mr['references']['full'].rsplit('/', 1)[-1],
+        'url': mr['web_url'],
+        'title': mr['title'],
+        'author': mr['author']['username'],
+        'ci': pipe.get('status', 'none') + (': ' + ', '.join(failed) if failed else ''),
+        'approvals': f"{len(approvals.get('approved_by') or [])}/{approvals.get('approvals_required', 0)}",
+        'conflicts': conflict,
+        'status': status,
+        'updated': mr['updated_at'][:10],
+    }
+
+
+def main():
+    p = argparse.ArgumentParser(prog='mr-overview', description=__doc__.split('\n')[0],
+                                formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__.split('\n\n', 1)[1])
+    p.add_argument('--author', action='append', default=[], help='extra GitLab username (repeatable)')
+    p.add_argument('--project', action='append', default=[], help='keep projects whose path contains this text (repeatable)')
+    p.add_argument('--md', action='store_true', help='markdown table with links and full titles')
+    args = p.parse_args()
+
+    me = api('user')
+    authors = {me['id']: 'me'}
+    for username in CLAUDE_ACCOUNTS + args.author:
+        user = resolve(username)
+        if not user and username in args.author:
+            sys.exit(f'mr-overview: no GitLab user {username}')
+        if not user:
+            # The Claude account exists only on gitlab.com; other hosts list your MRs alone.
+            print(f'(skipped {username}: no such user on this host)', file=sys.stderr)
+            continue
+        authors.setdefault(user['id'], user['name'] if user['username'].startswith('service_account_') else user['username'])
+    mrs = []
+    for author_id in authors:
+        mrs += api(f'merge_requests?scope=all&state=opened&author_id={author_id}&per_page=100', paginate=True)
+    if args.project:
+        mrs = [m for m in mrs if any(t in m['references']['full'].split('!')[0] for t in args.project)]
+    with ThreadPoolExecutor(8) as pool:
+        rows = list(pool.map(details, mrs))
+    for row, mr in zip(rows, mrs):
+        row['author'] = authors[mr['author']['id']]
+    rows.sort(key=lambda r: r['updated'], reverse=True)
+
+    headers = ['MR', 'author', 'title', 'CI', 'approvals', 'conflicts', 'merge status', 'updated']
+    keys = ['ref', 'author', 'title', 'ci', 'approvals', 'conflicts', 'status', 'updated']
+    print(f"{len(rows)} open MRs by {', '.join(authors.values())}")
+    if not rows:
+        return
+    if args.md:
+        print('| ' + ' | '.join(headers) + ' |\n|' + ' --- |' * len(headers))
+        for r in rows:
+            cells = [f"[{r['ref']}]({r['url']})"] + [str(r[k]).replace('|', '\\|') for k in keys[1:]]
+            print('| ' + ' | '.join(cells) + ' |')
+        return
+    lines = [[r[k] if k != 'title' or len(r[k]) <= 60 else r[k][:59] + '…' for k in keys] for r in rows]
+    widths = [max(len(x) for x in col) for col in zip(headers, *lines)]
+    for line in [headers, ['-' * w for w in widths]] + lines:
+        print('  '.join(c.ljust(w) for c, w in zip(line, widths)).rstrip())
+
+
+if __name__ == '__main__':
+    main()
