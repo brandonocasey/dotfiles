@@ -33,13 +33,7 @@ managed=$(
       "mcp__claude_ai_Atlassian_MCP__createJiraIssue",
       "mcp__claude_ai_Atlassian_MCP__editJiraIssue",
       "mcp__claude_ai_Atlassian_MCP__transitionJiraIssue",
-      "Bash(glab mr approve*)",
-      "Bash(glab mr merge*)",
-      "Bash(gh pr merge*)",
-      "Bash(gh pr review*--approve*)",
       "Bash(jira-api GET *)",
-      "Bash(jira-api POST *)",
-      "Bash(jira-api PUT *)",
       "Bash(git worktree prune*)",
       "Bash(tmux capture-pane *)",
       "Bash(chezmoi source-path)",
@@ -66,50 +60,7 @@ managed=$(
     "defaultMode": "auto"
   },
   "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "excludedCommands": [
-      "open *",
-      "osascript *",
-      "safaridriver *",
-      "npx playwright *",
-      "playwright *",
-      "glab *",
-      "gh *",
-      "git",
-      "git *",
-      "jira-api *",
-      "curl *",
-      "wget *",
-      "ssh *",
-      "scp *",
-      "rsync *",
-      "npm publish *",
-      "tmux *",
-      "docker *",
-      "claude *",
-      "codex *",
-      "xcrun *",
-      "xcodebuild *",
-      "screencapture *"
-    ],
-    "network": {
-      "allowedDomains": ["*"],
-      "allowLocalBinding": true
-    },
-    "filesystem": {
-      "allowWrite": [
-        "~/.local/state/agents",
-        "~/.local/share/chezmoi",
-        "~/.config/agents",
-        "~/.claude",
-        "~/.claude-two",
-        "~/.codex",
-        "~/Projects",
-        "~/.cache",
-        "~/Library/Caches"
-      ]
-    }
+    "enabled": false
   },
   "autoMode": {
     "environment": [
@@ -119,11 +70,11 @@ managed=$(
     "allow": [
       "$defaults",
       "Approving an MR/PR with `glab mr approve`, `glab api --method POST .../merge_requests/<iid>/approve`, or `gh pr review --approve` when the user asked to approve that MR/PR in this session. Read-only polling of MR/PR state (`glab mr view`, GET `glab api`) is never Self-Approval.",
+      "Merging an MR/PR (`glab mr merge`, `gh pr merge`) or enabling auto-merge on it when the user asked to merge that MR/PR in this session. Re-enabling auto-merge (`gh pr merge <n> --auto`, `glab mr merge <iid> --auto-merge --yes`) that this session paused before pushing, with the same method, is part of the paused state, not a new merge.",
       "Commenting on, closing, or editing MRs in gitlab.com/jwpconnatix/*, and updating Jira issues or fix versions in jwplayer.atlassian.net, when the user asked for that action in this session.",
       "Editing files under ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, or ~/.codex/ (settings, hooks, skills, agents, plugins, local mods), or a repository's .claude/settings.local.json, copying them to ~/.local/state/agents/backups/ first, running `chezmoi apply`, and committing, amending unpushed commits, or `git pull --rebase` in ~/.local/share/chezmoi, when the user ran /llm-setup-audit or asked for that change in this session. Short test runs of `claude` or `codex` in tmux from ~/.cache/agents/scratch/ that only check such a change are part of it; they never do other task work.",
       "In agent-created worktrees under <repo>/.worktrees/: detached checkouts, cherry-picks, and rebases or rewording of local commits, when the tree is clean and the branch tip is backed up (backup dir or ref). Force-pushes still need the user's request in this session.",
-      "Serving a local build on 0.0.0.0 (a repo dev server, or `python3 -m http.server --directory <build or test page dir>`) when the user asked to test on a phone, Apple TV, or other LAN device in this session. A static file server never serves a repository root or home directory. Stop the server when that testing ends.",
-      "Retrying a Bash command with dangerouslyDisableSandbox after it failed with sandbox evidence (Operation not permitted, EPERM, sandbox violation, socket or browser launch failure), when the same command would be allowed without the flag."
+      "Serving a local build on 0.0.0.0 (a repo dev server, or `python3 -m http.server --directory <build or test page dir>`) when the user asked to test on a phone, Apple TV, or other LAN device in this session. A static file server never serves a repository root or home directory. Stop the server when that testing ends."
     ]
   },
   "model": "opus",

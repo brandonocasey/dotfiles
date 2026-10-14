@@ -3,9 +3,5 @@
     "JIRA_EMAIL": "bcasey@jwplayer.com"
   },
   "outputStyle": "main",
-  "spinnerTipsEnabled": false,
-  "sandbox": {
-    "enabled": false,
-    "autoAllowBashIfSandboxed": false
-  }
+  "spinnerTipsEnabled": false
 }
