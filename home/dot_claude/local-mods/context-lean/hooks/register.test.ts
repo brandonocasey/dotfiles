@@ -633,3 +633,24 @@ test('keeps notes kept for one agent when a subagent hides the same notes', asyn
   const again = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
   expect(again.text).toContain('Search first.')
 })
+
+test('/context sizes the autocompact buffer from the reported compaction point', async ($, on) => {
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({
+    value: {
+      startedAt: 0,
+      rateLimits: [],
+      context: {
+        tokens: 5000,
+        window: 1000000,
+        breakdown: { totalTokens: 5000, autoCompactThreshold: 400000, categories: [{ name: 'Messages', tokens: 5000, kind: 'used' }, { name: 'Autocompact buffer', tokens: 33000, kind: 'buffer' }] },
+      },
+    },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
+  engineRow(on)
+  const row = await drawnRow($, 'context', (await $.command.run({ command: 'context' })).text ?? '')
+  expect(row).toContain('Autocompact buffer: 600k tokens (60.0%)')
+  expect(row).toContain('Free space: 395k (39.5%)')
+})

@@ -1,5 +1,5 @@
 import type { EngineInterface, Register, RenderElement } from 'claude-code'
-import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary } from './report'
+import { AGENTS, TRIMMED, type Category, type Counted, type Report, type Row, report, SENT, summary, withCompactThreshold } from './report'
 
 // Built-in tools kept out of the prompt until ToolSearch loads them by name.
 const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 'DesignSync'])
@@ -435,7 +435,8 @@ const reportText = async ($: EngineInterface): Promise<{ text: string; line: str
   const hiddenRows = counted.map(row =>
     row.label !== AGENTS || row.tokens === undefined ? row : { ...row, tokens: summaries === undefined || base === undefined ? undefined : Math.max(0, row.tokens - (summaries - base)) },
   )
-  const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
+  const reported: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
+  const categories = withCompactThreshold(reported, usage.context.window, usage.context.breakdown?.autoCompactThreshold)
   const measured: Report = { real: usage.context.tokens, window: usage.context.window, estimate: usage.context.breakdown?.totalTokens, model, categories, hidden: hiddenRows, kept: keptRows }
   // The last report is stored as plain JSON, without fields left undefined.
   await Promise.all([$.store.set(COUNTS, { model, rows: { ...known, ...fresh } }), $.store.set(LAST_REPORT, JSON.parse(JSON.stringify({ ...measured, at: Date.now() })))]).catch(() => undefined)

@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { type Category, type Report, report as colored } from './report'
+import { type Category, type Report, report as colored, withCompactThreshold } from './report'
 
 // The report's text without its terminal color codes.
 const report = (measured: Report) => colored(measured).replace(/\u001b\[[0-9;]*m/g, '')
@@ -160,4 +160,16 @@ test('reports shortened agent descriptions in their own section', () => {
   const text = report({ ...BASE, hidden: [{ label: 'Built-in agent descriptions (shortened)', items: 3, tokens: 420 }], kept: [] })
   expect(text).toContain('Shortened agent descriptions · 420 tokens\n└ Built-in agents · 3 agents · 420 tokens')
   expect(text).not.toContain('Hidden tool descriptions')
+})
+
+test('sizes the autocompact buffer from where compaction starts', () => {
+  const categories = withCompactThreshold(CATEGORIES, 1000000, 400000)
+  expect(categories.find(row => row.name === 'Autocompact buffer')?.tokens).toBe(600000)
+  const text = report({ ...BASE, categories, hidden: [], kept: [] })
+  expect(text).toContain('Autocompact buffer: 600k tokens (60.0%)')
+  expect(text).toContain('Free space: 380.1k (38.0%)')
+  expect(withCompactThreshold(CATEGORIES, 1000000, undefined)).toBe(CATEGORIES)
+  // With autocompact off, the engine's "Compact buffer" row is left as reported.
+  const off = [{ name: 'Compact buffer', tokens: 20000, kind: 'buffer' }]
+  expect(withCompactThreshold(off, 1000000, 400000)).toEqual(off)
 })

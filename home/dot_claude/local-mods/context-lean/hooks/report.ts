@@ -14,6 +14,17 @@ export type Report = {
   note?: string
 }
 
+// The usage breakdown sizes the autocompact buffer within the autoCompactWindow setting's window (433k gives 33k),
+// but the report draws the model's whole window (1m). The buffer is resized to everything past the point where
+// compaction starts, which the breakdown reports as autoCompactThreshold.
+const AUTOCOMPACT_BUFFER = 'Autocompact buffer'
+export const withCompactThreshold = (categories: Category[], window: number, threshold: number | undefined) => {
+  if (threshold === undefined || window <= 0) return categories
+  const buffer = Math.max(0, window - threshold)
+
+  return categories.map(row => (row.kind === 'buffer' && row.name === AUTOCOMPACT_BUFFER ? { ...row, tokens: buffer } : row))
+}
+
 // Marks notes that were hidden from the prompt and later sent with a tool result.
 export const SENT = ' (sent on first use)'
 // The row of built-in agent descriptions replaced with one-line summaries.
