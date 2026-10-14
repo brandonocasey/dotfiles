@@ -273,10 +273,13 @@ def cmd_failures(args):
             else:
                 failed_in = [h for h in hits if h.get('any_failed')]
                 latest_final = latest.get('final_failed')
+            # A family-wide item (no job) checks every shard's last attempt.
+            ends = [info['last_status'].get(job, 'success')] if job else list(info['last_status'].values())
+            odd = [s for s in ends if s not in ('success', 'failed')]
             if not final and (job in info['running'] if job else info['running']):
                 verdict, reason = 'pending', 'retry still running'
-            elif not final and info['last_status'].get(job, 'success') not in ('success', 'failed'):
-                verdict, reason = 'unclear', f"retry ended {info['last_status'][job]}"
+            elif not final and odd:
+                verdict, reason = 'unclear', f'retry ended {odd[0]}'
             elif not final:
                 verdict, reason = 'flaky', 'passed on retry in the MR'
             elif not failed_in:
