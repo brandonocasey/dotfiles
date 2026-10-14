@@ -7,6 +7,8 @@ README.md
 .local/bin/codex*
 .local/bin/opencode
 .local/bin/tokensave
+# Python bytecode from running bin scripts in the source tree.
+.local/bin/__pycache__
 
 # ignore these files if not on Mac
 {{- if ne .chezmoi.os "darwin" }}
