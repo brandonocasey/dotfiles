@@ -336,16 +336,63 @@ ctx_used_tokens=$(echo "$input" | jq -r '
   .context_window.current_usage
   | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) else empty end
 ' 2>/dev/null)
-compact_warn_tokens=${CLAUDE_COMPACT_WARN_TOKENS:-300000}
-case $compact_warn_tokens in *[!0-9]*) compact_warn_tokens=300000 ;; esac
-compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-500000}
-case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=500000 ;; esac
 case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
 
+# Auto-compact window from user settings, as Claude Code resolves it: a later
+# file wins, and within a file modelSettings.<model>.autoCompactWindow replaces
+# the top-level value. Model keys drop the [1m] flag and any date suffix.
+# Project settings are not read; "auto" means no fixed window.
+settings_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+model_key=$(printf '%s' "$model_id" | sed -E 's/\[[^]]*\]$//; s/-[0-9]{8}$//')
+compact_window=$(jq -rs --arg m "$model_key" '
+  reduce .[] as $s (null;
+    ($s.modelSettings[$m].autoCompactWindow // $s.autoCompactWindow // .) as $w
+    | if $w == "auto" then null else $w end)
+  // empty
+' "$settings_dir/settings.json" "$settings_dir/settings.local.json" 2>/dev/null)
+# Claude Code accepts 100k to 1M; anything else is ignored here too.
+case $compact_window in *[!0-9]* | '') compact_window="" ;; esac
+if [ -n "$compact_window" ] && { [ "$compact_window" -lt 100000 ] || [ "$compact_window" -gt 1000000 ]; }; then
+  compact_window=""
+fi
+if [ -n "$compact_window" ] && [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ] &&
+  [ "$ctx_total" -lt "$compact_window" ] 2>/dev/null; then
+  compact_window=$ctx_total
+fi
+
+# Claude Code compacts 33k below the window: it reserves 20k for output, then
+# keeps a 13k buffer. The hint marks that point and the warn sits 20k before
+# it, as in Claude Code's own warning.
+compact_at=""
+[ -n "$compact_window" ] && compact_at=$((compact_window - 33000))
+if [ -n "$compact_at" ]; then
+  default_hint=$compact_at
+  default_warn=$((compact_at - 20000))
+else
+  default_hint=500000
+  default_warn=300000
+fi
+compact_warn_tokens=${CLAUDE_COMPACT_WARN_TOKENS:-$default_warn}
+case $compact_warn_tokens in *[!0-9]*) compact_warn_tokens=$default_warn ;; esac
+compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-$default_hint}
+case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=$default_hint ;; esac
+
+# Usage is measured against the compaction point when a window is set, since
+# that is the real ceiling; otherwise against the model's context window.
 ctx_used_pct=""
-if [ -n "$ctx_remaining" ]; then
+if [ -n "$compact_at" ] && [ -n "$ctx_used_tokens" ]; then
+  ctx_used_pct=$(awk -v u="$ctx_used_tokens" -v w="$compact_at" 'BEGIN{printf "%d", u * 100 / w + 0.5}')
+elif [ -n "$ctx_remaining" ]; then
   ctx_used_pct=$(awk -v r="$ctx_remaining" 'BEGIN{printf "%d", 100 - r + 0.5}')
 fi
+
+# Short token count: "312k", "1.2M".
+fmt_tokens() {
+  awk -v t="$1" 'BEGIN{
+    if (t >= 1000000) { v = sprintf("%.1f", t / 1000000); sub(/\.0$/, "", v); printf "%sM", v }
+    else printf "%dk", int(t / 1000 + 0.5)
+  }'
+}
 
 # 1M detection: explicit total >250k, OR model id/name contains 1m / 1M
 is_1m=0
@@ -363,7 +410,9 @@ fi
 
 # --- Context window label: window size instead of generic "ctx" ---
 # Prefer reported capacity; model-based defaults apply only when capacity is absent.
-if [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]; then
+if [ -n "$compact_at" ] && [ -n "$ctx_used_tokens" ]; then
+  ctx_label=$(fmt_tokens "$compact_at")
+elif [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]; then
   ctx_label=$(awk -v t="$ctx_total" 'BEGIN{
     if (t+0 >= 1000000) printf "%gM", t/1000000; else printf "%dk", int(t/1000 + 0.5)
   }')
@@ -384,11 +433,16 @@ parts=""
 
 # Prompt cache: minutes until the main cache expires, or a cyan "cold" once it
 # has. Shown only after caching was observed, so a fresh session stays quiet.
-# Cyan, because yellow and red are reserved for usage warnings.
-pc_seg=$(echo "$input" | jq -r --argjson now "$(date +%s)" '
+# Cyan, because yellow and red are reserved for usage warnings. When cold, the
+# next turn re-writes the whole context to the cache, so that token count
+# follows ("cold:312k").
+cold_tokens=""
+[ -n "$ctx_used_tokens" ] && cold_tokens=$(fmt_tokens "$ctx_used_tokens")
+pc_seg=$(echo "$input" | jq -r --argjson now "$(date +%s)" --arg cold "$cold_tokens" '
   .prompt_cache // empty | select(.caching_observed == true)
   | if .warm == true and .expires_at != null
     then "\u001b[38;5;245mc:\u001b[0m\(((.expires_at - $now) / 60) | if . < 0 then 0 else floor end)m"
+    elif $cold != "" then "\u001b[36mcold\u001b[0m\u001b[38;5;245m:\u001b[0m\u001b[36m\($cold)\u001b[0m"
     else "\u001b[36mcold\u001b[0m" end
 ' 2>/dev/null)
 if [ -n "$pc_seg" ]; then
