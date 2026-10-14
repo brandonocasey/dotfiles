@@ -1,6 +1,0 @@
-name = "light-reviewer"
-description = "Independent light review of a small, low-risk change; the review skill picks it per when-to-run.md. Read-only; returns verified candidate findings."
-model = "gpt-6.1-sol"
-model_reasoning_effort = "low"
-developer_instructions = """
-{{ template "agents/reviewer.md" (dict "harness" "codex") }}"""
