@@ -1,8 +1,9 @@
 # When to run a review automatically
 
 Run `review-fix` (`review --fix`, which fixes and loops) on this session's own
-change once the work is complete. Review when requested or when material uncertainty
-remains. Otherwise apply the triggers and narrow exceptions below.
+change once the work is complete. Every change, including each follow-up, gets a
+review: light or normal, per **Choose the tier** below. The only exception is a
+preview prototype.
 
 ## Timing
 
@@ -21,48 +22,56 @@ remains. Otherwise apply the triggers and narrow exceptions below.
   verified outcome, including defects fixed, never relabeling it clean after repairs.
   Disclose any inline fallback ([delegation.md](delegation.md)).
 
-## Triggers
+## Normal-tier triggers
 
-- New features, behavior or logic changes, bug fixes, and broad refactors trigger
-  review regardless of line count or caller count. This includes consolidation,
-  type cleanup, and "no behavior change" edits that touch logic.
-- Review changes affecting security, trust boundaries, persistence, migrations,
+Use the normal tier (`reviewer`) when any of these apply:
+
+- New features, behavior or logic changes, bug fixes, and refactors, including
+  consolidation, type cleanup, and "no behavior change" edits that touch logic.
+  Exception: a small logic change (see **Choose the tier**) whose changed lines
+  a test that ran green in this task covers. Broad refactors are never small.
+- Changes affecting security, trust boundaries, persistence, migrations,
   deletion, external writes, concurrency, crypto, or shared contracts.
-- Include routing, paths, parsing, validation, resource limits, error handling,
+- Routing, paths, parsing, validation, resource limits, error handling,
   browser workers, WASM, OPFS, service workers, and async lifecycle changes.
-- Classify shell scripts, wrappers, CI workflows, build or packaging config, tests,
-  documentation, and agent instructions by their effect. Changes to checks that
-  decide whether tests or CI passed require review.
-- Review manual rebase or merge conflict resolutions and changed branches,
-  conditions, or error paths without a test that ran green in this task.
-- Review the combined implementation, including committed task changes, rather than
-  assessing each small edit in isolation.
+- Changes to checks that decide whether tests or CI passed. Classify other shell
+  scripts, wrappers, CI workflows, build or packaging config, tests, documentation,
+  and agent instructions by their effect.
+- Manual rebase or merge conflict resolutions, and changed branches, conditions,
+  or error paths without a test that ran green in this task.
+- Material uncertainty remains, or the user asks for a normal, full, or deep review.
+- Judge the combined implementation, including committed task changes, rather than
+  each small edit in isolation.
 
-## Skip exceptions
+## Choose the tier
 
-- Prototypes built only to show through `preview` or Artifacts (`/preview`,
-  `/artifacts`) skip review unless the user requests it. The triggers apply once
-  that code moves into a change that will ship.
-- Otherwise, skip only when the user did not request review, no material uncertainty remains,
-  and every change is a prose-only correction, cosmetic styling that preserves
-  interaction, or a narrow mechanical edit with verified equivalence: no decisions,
-  state transitions, accepted inputs, error behavior, or integration assumptions
-  change. Passing tests alone does not justify skipping.
+- Use the light tier (`light-reviewer`) only when no normal-tier trigger applies
+  and the combined diff is either:
+  - prose-only, cosmetic styling that preserves interaction, or a narrow
+    mechanical edit with verified equivalence: no decisions, state transitions,
+    accepted inputs, error behavior, or integration assumptions change; or
+  - small: at most about 40 changed lines in at most 2 files.
+- Everything else gets the normal tier. When unsure, choose normal. `--light` and
+  `--normal` override this choice. Name the tier in the report. The tier picks
+  the reviewer role only; it does not change loop.md's full-review or fix-check passes.
 - A dependency bump, config value, or test-only change is not automatically
-  exempt. Broad refactors still require review. Inspect the diff and run relevant
-  checks.
+  light. Inspect the diff and run relevant checks first. Passing tests alone
+  never decide the tier.
+- Prototypes built only to show through `preview` or Artifacts (`/preview`,
+  `/artifacts`) skip review unless the user requests it. This section applies once
+  that code moves into a change that will ship.
 
 ## Follow-ups
 
-- Review fixes and follow-up commits as a delta (`<last-reviewed-sha>..<new-head-sha>`)
-  with surrounding context when they change logic beyond a one-line local edit
-  or a one-line edit that introduces new behavior or risk. This replaces the
-  once-per-hand-off rule for repairs after a review.
+- A follow-up change is one made after the review's fix loop ends. Repairs inside
+  the loop are not follow-ups.
+- Review each follow-up change as a delta (`<last-reviewed-sha>..<new-head-sha>`)
+  with surrounding context, even a one-line or prose-only edit. Pick its tier by
+  **Choose the tier**, using the delta alone. This replaces the once-per-hand-off
+  rule for repairs after a review.
 - The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
-  Separate later behavior or risk changes start a new delta review. Report
-  unresolved findings explicitly.
-- Cosmetic CSS or prose-only follow-ups use the skip exceptions above. Do not rerun
-  a full review merely to obtain a clean report after repairs.
+  Report unresolved findings explicitly. Do not rerun a review of the whole
+  target merely to obtain a clean report after repairs.
 
 ## What review cannot replace
 

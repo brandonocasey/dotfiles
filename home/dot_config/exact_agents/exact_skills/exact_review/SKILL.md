@@ -13,9 +13,10 @@ For an MR/PR, first read in one parallel batch: `reviewer-steps.md`,
 `remote-target.md`, `ci-and-conflicts.md`, `output.md`, and `remote-comments.md`,
 all in `references/`.
 
-Arguments: `--test` and `--no-test` (**Manual testing**), `--fix` (steps 4–5), and
-`--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to fix,
-approve, or merge, or that names reviewer models counts as the matching flag.
+Arguments: `--test` and `--no-test` (**Manual testing**), `--fix` (steps 4–5),
+`--light` and `--normal` (review tier), and `--agents <model>[:<effort>][,…]`
+(**Delegation**). A request in words to fix, approve, or merge, for a light or
+normal review, or that names reviewer models counts as the matching flag.
 
 ## Automatic completion review
 
@@ -23,7 +24,7 @@ For automatic reviews of this session's work, read [when-to-run.md](references/w
 
 ## Delegation
 
-Every review runs through the `reviewer` sub-agent. Before spawning, read [delegation.md](references/delegation.md).
+Every review runs through the `reviewer` or `light-reviewer` sub-agent. Before spawning, read [delegation.md](references/delegation.md).
 
 ## Manual testing
 

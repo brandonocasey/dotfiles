@@ -1,6 +1,6 @@
 name = "reviewer"
-description = "Independent adversarial review of a change; the review skill runs it for every review. Read-only; returns verified candidate findings."
+description = "Independent adversarial review of a change; the review skill's normal tier. Read-only; returns verified candidate findings."
 model = "gpt-6.1-sol"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 developer_instructions = """
 {{ template "agents/reviewer.md" (dict "harness" "codex") }}"""

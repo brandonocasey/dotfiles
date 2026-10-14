@@ -1,10 +1,14 @@
 ## Delegation
 
-Always delegate the review to the `reviewer` sub-agent, whatever the target:
+Always delegate the review to a reviewer sub-agent, whatever the target:
 own work, a colleague's MR/PR, an arbitrary commit, or a follow-up delta.
 Explicitly prohibit edits, commits, cleanup, and further delegation in its prompt.
 - Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
   beside it found nothing extra.
+- Light tier: one `light-reviewer` instead, when [when-to-run.md](when-to-run.md)
+  **Choose the tier** picks it for own work, or with `--light`. Other targets use
+  `reviewer` unless `--light` is set. Fix checks in the loop keep the tier unless
+  the repair meets a normal-tier trigger.
 - `--agents <model>[:<effort>][,…]`: one `reviewer` per entry, in parallel, on that
   model and effort.
 Without `--agents`, the `sub-agents` skill owns model and effort selection.
