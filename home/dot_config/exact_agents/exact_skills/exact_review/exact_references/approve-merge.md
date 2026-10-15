@@ -9,21 +9,31 @@ Each flag is the user's request to approve or merge the reviewed MR/PR
 
 `--auto-merge` and `--merge` never imply approval. Combine them with `--approve` for that.
 
+A fix pushed to the MR/PR, `--approve`, `--auto-merge`, or `--merge` is also the
+user's request to mark a draft MR/PR ready. This overrides the `ship` rule that
+leaves drafts alone. A fix run with no flag runs only steps 1–3 here.
+
 Run this step last: after step 5's fix loop when `--fix` applies, otherwise after step 3.
 
 1. **Gate**: run only when no `bug`, `requirement`, or `question` finding remains
-   unfixed. Otherwise skip every flag and name the blocking findings.
+   unfixed. Otherwise skip every flag, leave draft state alone, and name the
+   blocking findings.
 2. **Head**: refresh the source SHA. If it moved since the review or fix push,
    review the changed commits through steps 0–2 and recheck affected findings.
    Run affected checks and manual cases, then repeat the gate above.
    Use only that verified SHA as `HEAD_SHA`.
-3. **Approve** (`--approve`): follow the `ship` skill's
+3. **Ready**: if the MR/PR is a draft, mark it ready and read the state back.
+   - GitHub: `gh pr ready <number>`; check `gh pr view <number> --json isDraft`.
+   - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
+   - Outside the checkout, add `-R` as in merge.md. If it stays a draft, skip
+     steps 5–6 and report it as a blocker.
+4. **Approve** (`--approve`): follow the `ship` skill's
    [merge.md](../../ship/references/merge.md#approve) **Approve** section with `HEAD_SHA`.
-4. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
+5. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
    **Enable auto-merge** with `HEAD_SHA`.
-5. **Watch** (`--merge` only): follow merge.md **Watch**. Move the ticket only when
+6. **Watch** (`--merge` only): follow merge.md **Watch**. Move the ticket only when
    it belongs to this task or the user asked.
-6. **Local cleanup** (`--merge` only, after a confirmed merge): remove every local
+7. **Local cleanup** (`--merge` only, after a confirmed merge): remove every local
    remnant of the MR/PR per the `worktree` skill's **Remove** and
    `host-preflight/references/task-resources.md`, from `<main-checkout>`.
    - Remove the review worktree and any other clean worktree on the source branch,
@@ -36,6 +46,6 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - Run `git -C <main-checkout> fetch --prune origin`, then `git worktree prune`.
 
 End the report with one line:
-`Merge: approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`
+`Merge: marked ready; approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`
 (only the parts that ran), or `Merge: not run (<reason>)`. Name any retained remnant
 and its reason.

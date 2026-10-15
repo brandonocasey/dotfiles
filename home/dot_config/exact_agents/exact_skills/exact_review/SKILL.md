@@ -81,5 +81,6 @@ comments"). Follow [threads.md](references/threads.md) for the named MR/PR.
 
 ## 7. Optional: --approve, --auto-merge, --merge
 
-For --approve, --auto-merge, --merge, or a request to approve or merge, read
-[approve-merge.md](references/approve-merge.md).
+For --approve, --auto-merge, --merge, a request to approve or merge, or a fix
+pushed to an MR/PR, read [approve-merge.md](references/approve-merge.md). Each
+marks a draft MR/PR ready.
