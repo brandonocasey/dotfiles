@@ -45,7 +45,21 @@ managed=$(
       "Edit(~/.local/share/chezmoi/home/.chezmoitemplates/main-rules.md)",
       "Bash(glab mr list *)",
       "Bash(glab mr view *)",
-      "Bash(claude plugin validate *)"
+      "Bash(claude plugin validate *)",
+      "Bash(jenkins-api GET *)",
+      "Bash(shellcheck *)",
+      "Bash(agent-task search *)",
+      "Bash(chezmoi managed)",
+      "Bash(chezmoi managed *)",
+      "Bash(chezmoi cat *)",
+      "Bash(npm view *)",
+      "mcp__claude_ai_Atlassian_MCP__getJiraIssue",
+      "mcp__claude_ai_Atlassian_MCP__searchJiraIssuesUsingJql",
+      "mcp__claude_ai_Atlassian_MCP__executeRead",
+      "mcp__claude_ai_Atlassian_MCP__discover",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Google_Drive__search_files",
+      "mcp__chrome-devtools__list_console_messages"
     ],
     "ask": [],
     "deny": [
