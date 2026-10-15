@@ -16,6 +16,7 @@
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
 - Leave scratch cleanup to `prune-agent-dirs.sh`, or use `find <dir> -delete`. Do not append `; echo rc=$?` to commands.
+- Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob. Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands.
 - To find a past session, run `agent-task search` first.
 - If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.
 
