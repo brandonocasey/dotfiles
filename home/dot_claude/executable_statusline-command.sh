@@ -665,14 +665,14 @@ else
   fi
 fi
 
-# "<account>@<ip>:<port>" leads the line; the account (grey) links to claude.ai.
-parts=""
-[ -n "$account_name" ] && parts=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
+# "<account>@<ip>:<port>"; the account (grey) links to claude.ai.
+who_seg=""
+[ -n "$account_name" ] && who_seg=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
 if [ -n "$srv_seg" ]; then
-  if [ -n "$parts" ]; then
-    parts=$(printf '%s\033[38;5;245m@\033[0m%s' "$parts" "$srv_seg")
+  if [ -n "$who_seg" ]; then
+    who_seg=$(printf '%s\033[38;5;245m@\033[0m%s' "$who_seg" "$srv_seg")
   else
-    parts="$srv_seg"
+    who_seg="$srv_seg"
   fi
 fi
 
@@ -683,11 +683,7 @@ if [ -n "$effort" ]; then
 else
   model_seg=$(printf '\033[34m%s\033[0m' "$model")
 fi
-if [ -n "$parts" ]; then
-  parts=$(printf '%s%s%s' "$parts" "$sep" "$model_seg")
-else
-  parts="$model_seg"
-fi
+parts="$model_seg"
 
 # Prompt cache: the time until it expires, or "cold".
 pc_val=""
@@ -860,7 +856,12 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# Project and branch close the line, since a long branch name runs longest.
-[ -n "$loc_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$loc_seg")
+# Where the session runs, "<account>@<ip>:<port>|project#branch", gets its own
+# line below the rest, since a long branch name runs longest.
+place=$who_seg
+if [ -n "$loc_seg" ]; then
+  if [ -n "$place" ]; then place="$place$sep$loc_seg"; else place=$loc_seg; fi
+fi
+[ -n "$place" ] && parts=$(printf '%s\n%s' "$parts" "$place")
 
 printf '%b' "$parts"
