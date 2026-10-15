@@ -64,6 +64,6 @@ Stop when any of these is true:
 ## 3. Report
 
 Lead with the result: **ran dry** or **stopped at the cap**. At the cap, say
-whether the last round still found items. Then give the **Found** items in a
-compact table under the main rules' row limit, highest risk first. Add the
+whether the last round still found items. Then give the **Found** items as a
+list under the main rules' item limit, highest risk first. Add the
 **Rejected** count, scope not yet checked, and the ledger path.
