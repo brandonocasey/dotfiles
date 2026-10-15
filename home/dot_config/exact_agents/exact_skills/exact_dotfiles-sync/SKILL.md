@@ -9,12 +9,11 @@ A user request to commit or push dotfiles is the consent to commit and push the
 current branch of the chezmoi source repo, for this run only. It gives no standing
 consent. Force-push stays forbidden.
 
-Resolve the repo once: `cd "$(chezmoi source-path)" && git rev-parse --show-toplevel`.
+Resolve the repo once: `git -C "$(chezmoi source-path)" rev-parse --show-toplevel`.
 Use the literal path for `<src>`.
 
-Run each Git command below as `cd <src> && git ...`: one Git command per call,
-with no pipes, `;`, or variable assignments. Only plain `git` commands run
-outside the sandbox, which signing and SSH pushes need; `git -C` stays inside.
+Run each Git command below as `git -C <src> ...`: one Git command per call,
+with no pipes, `;`, or variable assignments.
 
 1. **Scope.** Use the named targets, or the targets this session changed.
    Never include `*credentials*`, `*.pem`, `*.key`, token files, or paths in
