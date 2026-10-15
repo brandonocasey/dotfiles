@@ -763,14 +763,91 @@ if [ -n "$git_info" ]; then
 fi
 
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels. Each links
-# to the claude.ai usage page.
+# to the claude.ai usage page. The 7-day one goes in after Fable's limit below
+# joins it.
 usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
 rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
 [ -n "$fh_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fh_seg")
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
+
+# Fable's weekly limit and usage credits: "F:<usage%>" and
+# "<countdown>:$<used>/$<limit>". Monthly credits reset at 00:00 UTC on the
+# 1st, as the overage-reset header reports; that header comes only with model
+# replies, so the countdown is worked out here instead of costing a call.
+# Claude Code doesn't send either here, but a headless `/usage` reports both as
+# JSON (usage_report.rate_limits). Once 5 minutes pass since the last try, one
+# runs in the background and writes the fields this line reads; a failed run
+# keeps the old ones. It calls no model, so it costs no tokens; with no
+# settings, it runs no hooks and no status line. All of an account's sessions
+# share the try time and an mkdir lock, so they start one run between them.
+# Values fetched over 15 minutes ago dim.
+ex_file="$rl_dir/usage-extra-$rl_key"
+ex_lock="$ex_file.lock"
+ex_tried="" ex_fetched="" fable_pct="" cr_used="" cr_limit="" cr_pct="" cr_cur="" cr_reset=""
+{ read -r ex_tried < "$ex_file.tried"; } 2>/dev/null
+{ read -r ex_fetched fable_pct cr_used cr_limit cr_pct cr_cur cr_reset < "$ex_file"; } 2>/dev/null
+case $ex_tried in *[!0-9]* | '') ex_tried=0 ;; esac
+if [ $((now - ex_tried)) -ge 300 ]; then
+  # A run that died leaves its lock; timeout ends a live run within 30 seconds.
+  mkdir "$ex_lock" 2>/dev/null ||
+    { find "$ex_lock" -maxdepth 0 -mmin +2 -exec rmdir {} \; 2>/dev/null && mkdir "$ex_lock" 2>/dev/null; }
+  if [ $? -eq 0 ]; then
+    printf '%s\n' "$now" > "$ex_file.tried"
+    (
+      cd "$rl_dir" || exit
+      # Telemetry costs ~0.7 s of the ~2 s run. CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+      # MUST stay unset: it also skips the usage fetch, leaving the old copy.
+      CLAUDE_CODE_DISABLE_CLAUDE_MDS=1 DISABLE_TELEMETRY=1 \
+        timeout 30 claude -p /usage --model claude-haiku-5-5 --effort low --tools '' --setting-sources '' \
+        --strict-mcp-config --no-chrome --no-session-persistence --max-turns 1 \
+        --output-format stream-json --verbose |
+        jq -r 'select(.type == "assistant") | .usage_report.rate_limits // empty
+          | (.extra_usage // {}) as $x | (10 | pow(.; $x.decimal_places // 2)) as $d
+          | (now | gmtime) as $t
+          | ([$t[0] + (if $t[1] == 11 then 1 else 0 end), ($t[1] + 1) % 12, 1, 0, 0, 0, 0, 0] | mktime) as $r
+          | [(now | floor),
+            ([.limits[]? | select(.scope.model.display_name? == "Fable") | .percent][0] // "-"),
+            (if $x.is_enabled == true and $x.monthly_limit != null
+              then ($x.used_credits // 0) / $d, $x.monthly_limit / $d, ($x.utilization // 0), ($x.currency // "USD"), $r
+              else "-", "-", "-", "-", "-" end)]
+          | map(tostring) | join(" ")' > "$ex_file.$$"
+      [ -s "$ex_file.$$" ] && mv -f "$ex_file.$$" "$ex_file"
+      rm -f "$ex_file.$$"
+      rmdir "$ex_lock"
+    ) </dev/null >/dev/null 2>&1 &
+  fi
+fi
+case $ex_fetched in *[!0-9]* | '') ex_fetched=0 ;; esac
+ex_dim=""
+[ $((now - ex_fetched)) -gt 900 ] && ex_dim="2;"
+# Fable's limit is a weekly one, so it joins the 7-day window after a "·":
+# "5.4d:37%·F:3%".
+if [ -n "$fable_pct" ] && [ "$fable_pct" != - ]; then
+  fb_seg=$(rl_dim=$ex_dim rate_seg "" "$fable_pct")
+  fb_seg=$(printf '\033[%s38;5;245mF:\033[0m%s' "$ex_dim" "$fb_seg")
+  if [ -n "$sd_seg" ]; then
+    sd_seg=$(printf '%s\033[38;5;245m·\033[0m%s' "$sd_seg" "$fb_seg")
+  else
+    sd_seg=$fb_seg
+  fi
+fi
 [ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
+# Credits show only once at least a whole unit ($1) is spent this month.
+cr_shown=0
+case $cr_used in '' | *[!0-9.]*) ;; *) printf -v cr_shown '%.0f' "$cr_used" ;; esac
+if [ -n "$cr_limit" ] && [ "$cr_limit" != - ] && [ "$cr_shown" != 0 ]; then
+  cr_sym='$'
+  [ "$cr_cur" = USD ] || cr_sym="$cr_cur "
+  c=$(color_for_pct "$(printf '%.0f' "$cr_pct")")
+  cr_seg=$(printf '\033[%s%sm%s%.0f/%s%.0f\033[0m' "$ex_dim" "$c" "$cr_sym" "$cr_used" "$cr_sym" "$cr_limit")
+  case $cr_reset in
+    *[!0-9]* | '') ;;
+    *) cr_seg=$(printf '%s\033[%s38;5;245m:\033[0m%s' "$(rl_dim=$ex_dim countdown_str "$cr_reset")" "$ex_dim" "$cr_seg") ;;
+  esac
+  parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$cr_seg")
+fi
 
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
 # <usage%>", then the dollars spent of the limit when the gateway reports them.
