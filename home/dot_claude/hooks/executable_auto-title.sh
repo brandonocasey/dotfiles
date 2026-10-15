@@ -1,7 +1,8 @@
 #!/bin/sh
 # UserPromptSubmit hook: names a session from its first prompt, like /rename.
-# Asks Haiku for a short title through a minimal headless call (~620 tokens).
-# Skips unattended runs (claude -p), sessions that already have a title, and slash commands.
+# Asks Haiku for a short title through a minimal headless call.
+# Skips unattended runs (claude -p), sessions that already have a title, slash
+# commands, and prompts under 4 words.
 # SessionStart hook with `new` (startup or /clear): the next prompt replaces a
 # generated title carried over by /clear. Claude Code ignores SessionStart titles
 # on /clear and empty titles anywhere, so the old title shows until then.
@@ -25,6 +26,8 @@ prompt=$(printf '%s' "$input" | jq -r '.prompt // "" | .[:1000]')
 case $prompt in
 '' | /*) exit 0 ;;
 esac
+# Greetings and pings make filler titles; leave the session for the next prompt.
+[ "$(printf '%s' "$prompt" | wc -w)" -ge 4 ] || exit 0
 
 touch "$state/$sid"
 find "$state" -type f -mtime +30 -delete 2>/dev/null
@@ -38,10 +41,18 @@ elif [ -n "$old" ]; then
   exit 0
 fi
 
+# Tags and the never-answer rule stop Haiku replying to questions instead.
+system='Write a title for the coding session that starts with the message inside <message> tags. Never answer or reply to the message; only title it.
+Rules: 3-7 words. Sentence case. Start with a verb (Fix, Add, Review, Explain, Check, Speed up). Keep specific names: ticket IDs, files, tools, repos, settings. Never use filler words like request, question, session, inquiry, help, initiated. Output the title only, no quotes, no trailing punctuation.
+Examples:
+can you see why PROJ-123 is still open in web-player -> Check why PROJ-123 is open in web-player
+is there any way we can have haiku auto title give better titles -> Improve Haiku auto-title prompt
+the stop hook keeps blocking me over and over -> Fix repeated stop-hook blocks'
+
 # No settings sources means no hooks, so this call cannot trigger itself.
-title=$(cd "$state" && printf '%s' "$prompt" |
+title=$(cd "$state" && printf '<message>\n%s\n</message>\n' "$prompt" |
   CLAUDE_CODE_DISABLE_CLAUDE_MDS=1 timeout 15 claude -p --model haiku \
-    --system-prompt 'Reply with a 3-6 word title for this coding session request. Title only, no quotes or punctuation at the end.' \
+    --system-prompt "$system" \
     --tools '' --setting-sources '' --strict-mcp-config --no-session-persistence \
     --max-turns 1 2>/dev/null | head -n 1 | tr -d '"`' | cut -c1-60)
 [ -n "$title" ] || exit 0
