@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Claude Code status line script
+# Claude Code status line script. Besides drawing the line, it keeps the
+# session's port block from hooks/session-port.sh reserved: it touches the
+# port file, records the prompt-cache expiry the block is kept until, and
+# writes a released port file back while no other session holds the block.
 
 input=$(cat 2>/dev/null || echo '{}')
 
@@ -28,17 +31,11 @@ eval "$(printf '%s' "$input" | jq -r --argjson now "$now" '
     | if . then (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0) else null end | s)",
   "rl_sid=\(.session_id | s)",
   "rl_live=\(.rate_limits // {} | tojson | @sh)",
-  # Extra / overage usage (probe several likely field names).
-  "extra_pct=\(.rate_limits.extra.used_percentage // .rate_limits.overage.used_percentage
-    // .rate_limits.extra_usage.used_percentage // .extra_usage.used_percentage // .overage.used_percentage | s)",
-  "extra_dollars=\(.rate_limits.extra.used_dollars // .rate_limits.extra.used_usd // .rate_limits.overage.used_dollars
-    // .extra_usage.used_dollars // .extra_usage.used_usd // .billing.extra_used_dollars | s)",
-  "extra_limit_dollars=\(.rate_limits.extra.limit_dollars // .rate_limits.extra.cap_dollars
-    // .extra_usage.limit_dollars // .extra_usage.cap_dollars // .billing.extra_limit_dollars | s)",
   # Prompt cache: "warm" or "cold", empty until caching was observed.
   "pc_state=\(.prompt_cache // null | select(.caching_observed == true)
     | if .warm == true and .expires_at != null then "warm" else "cold" end | s)",
-  "pc_expires=\(.prompt_cache.expires_at | s)"
+  "pc_expires=\(.prompt_cache.expires_at | s)",
+  "pc_ttl=\(.prompt_cache.ttl | s)"
 ' 2>/dev/null)"
 rl_sid=${rl_sid//[!A-Za-z0-9._-]/_}
 
@@ -87,10 +84,15 @@ if cd "$cwd" 2>/dev/null &&
         BEGIN { n = split(ENVIRON["WT_LIST"], rows, "\n"); for (i = 1; i <= n; i++) { split(rows[i], f, "\t"); p[i] = f[1]; b[i] = f[2] } }
         {
           # Longest path wins, so ".worktrees/a" never matches inside ".worktrees/ab".
+          # Every occurrence is checked: ".worktrees/ab-old" may come before ".worktrees/a/".
           best = 0
           for (i = 1; i <= n; i++) {
-            j = index($0, p[i])
-            if (j && substr($0, j + length(p[i]), 1) !~ /[A-Za-z0-9._-]/ && (!best || length(p[i]) > length(p[best]))) best = i
+            if (best && length(p[i]) <= length(p[best])) continue
+            s = $0
+            while ((j = index(s, p[i])) > 0) {
+              if (substr(s, j + length(p[i]), 1) !~ /[A-Za-z0-9._-]/) { best = i; break }
+              s = substr(s, j + 1)
+            }
           }
           if (best) last = p[best] "\t" b[best]
         }
@@ -120,32 +122,37 @@ fi
 # Extract version number from display name or model id
 # Display name examples: "Claude Sonnet 4.6", "Claude Opus 4.8", "Claude Haiku 3.5"
 # Model id examples: "claude-sonnet-4-6", "claude-opus-4", "claude-haiku-3-5"
+# The [1m] flag and a date suffix ("claude-sonnet-4-20250514") are dropped
+# first, so the date never reads as a minor version.
+ver_id=${model_id%\[*\]}
+[[ $ver_id =~ ^(.*)-[0-9]{8}$ ]] && ver_id=${BASH_REMATCH[1]}
 model=""
 case "$model_raw" in
   *[Ss]onnet*)
     ver=$(echo "$model_raw" | grep -oE '[0-9]+\.[0-9]+' | head -1)
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+' | head -1)
+    [ -z "$ver" ] && ver=$(echo "$model_raw" | grep -oE '[0-9]+' | head -1)
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+' | head -1)
     model="S${ver}"
     ;;
   *[Oo]pus*)
     ver=$(echo "$model_raw" | grep -oE '[0-9]+\.[0-9]+' | head -1)
     [ -z "$ver" ] && ver=$(echo "$model_raw" | grep -oE '[0-9]+' | head -1)
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+' | head -1)
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+' | head -1)
     model="O${ver}"
     ;;
   *[Hh]aiku*)
     ver=$(echo "$model_raw" | grep -oE '[0-9]+\.[0-9]+' | head -1)
     [ -z "$ver" ] && ver=$(echo "$model_raw" | grep -oE '[0-9]+' | head -1)
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+' | head -1)
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+-[0-9]+' | head -1 | tr '-' '.')
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+' | head -1)
     model="H${ver}"
     ;;
   *[Ff]able*)
     ver=$(echo "$model_raw" | grep -oE '[0-9]+\.[0-9]+' | head -1)
     [ -z "$ver" ] && ver=$(echo "$model_raw" | grep -oE '[0-9]+' | head -1)
-    [ -z "$ver" ] && ver=$(echo "$model_id" | grep -oE '[0-9]+' | head -1)
+    [ -z "$ver" ] && ver=$(echo "$ver_id" | grep -oE '[0-9]+' | head -1)
     model="F${ver}"
     ;;
   *)
@@ -181,10 +188,14 @@ rl_lock="$rl_dir/rate-limits-$rl_key.lock"
 rl_prev_file=""
 [ -n "$rl_sid" ] && rl_prev_file="$rl_dir/session-$rl_sid.json"
 rl_locked=""
+rl_takeover=""
+port_lock=""
 rl_tmp=""
 # Claude Code cancels a running script when a new update fires; don't leave
 # temp files or a held lock behind.
-trap 'rm -f "$rl_tmp"; [ -n "$rl_locked" ] && rmdir "$rl_lock" 2>/dev/null' EXIT
+trap 'rm -f "$rl_tmp"; [ -n "$rl_locked" ] && rmdir "$rl_lock" 2>/dev/null
+  [ -n "$rl_takeover" ] && rmdir "$rl_lock.takeover" 2>/dev/null
+  [ -n "$port_lock" ] && rmdir "$port_lock" 2>/dev/null' EXIT
 trap 'exit 1' HUP INT TERM
 
 # Atomic write so concurrent readers never see a partial file.
@@ -205,10 +216,29 @@ else
   case $rl_lock_mtime in
     '' | *[!0-9]*) ;;
     *)
-      # A lock older than 10 s belongs to a killed run.
+      # A lock older than 10 s belongs to a killed run. Only the run holding
+      # the .takeover lock MAY remove it, after checking its age again, so two
+      # runs that both saw it stale never each remove one and both hold it.
       if [ $(($(date +%s) - rl_lock_mtime)) -gt 10 ]; then
-        rmdir "$rl_lock" 2>/dev/null
-        mkdir "$rl_lock" 2>/dev/null && rl_locked=1
+        if mkdir "$rl_lock.takeover" 2>/dev/null; then
+          rl_takeover=1
+          rl_lock_mtime=$(stat -c %Y "$rl_lock" 2>/dev/null || stat -f %m "$rl_lock" 2>/dev/null)
+          case $rl_lock_mtime in '' | *[!0-9]*) rl_lock_mtime=0 ;; esac
+          if [ $(($(date +%s) - rl_lock_mtime)) -gt 10 ]; then
+            rmdir "$rl_lock" 2>/dev/null
+            mkdir "$rl_lock" 2>/dev/null && rl_locked=1
+          fi
+          rmdir "$rl_lock.takeover" 2>/dev/null
+          rl_takeover=""
+        else
+          # A .takeover lock this old belongs to a killed run; the next run
+          # retries the takeover.
+          rl_to_mtime=$(stat -c %Y "$rl_lock.takeover" 2>/dev/null || stat -f %m "$rl_lock.takeover" 2>/dev/null)
+          case $rl_to_mtime in
+            '' | *[!0-9]*) ;;
+            *) [ $(($(date +%s) - rl_to_mtime)) -gt 10 ] && rmdir "$rl_lock.takeover" 2>/dev/null ;;
+          esac
+        fi
       fi
       ;;
   esac
@@ -247,7 +277,12 @@ eval "$(jq -nrS --argjson now "$now" --argjson live "${rl_live:-null}" \
   "five_hour_dim=\(if $l.five_hour then "" else "2;" end | s)",
   "seven_day=\(.seven_day.used_percentage | s)",
   "seven_day_reset=\(.seven_day.resets_at | s)",
-  "seven_day_dim=\(if $l.seven_day then "" else "2;" end | s)"
+  "seven_day_dim=\(if $l.seven_day then "" else "2;" end | s)",
+  "spend_pct=\(.spend_limit.used_percentage | s)",
+  "spend_reset=\(.spend_limit.resets_at | s)",
+  "spend_used=\(.spend_limit.used_usd | s)",
+  "spend_cap=\(.spend_limit.limit_usd | s)",
+  "spend_dim=\(if $l.spend_limit then "" else "2;" end | s)"
 ' 2>/dev/null)"
 
 if [ -n "$rl_locked" ]; then
@@ -259,8 +294,8 @@ if [ -n "$rl_locked" ]; then
   fi
   # Session files last past every window they hold (7 days at most); temp
   # files are left only by runs killed outright.
-  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name '*.json.*' -mmin +60 \
-    -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
+  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name 'session-*.port' -mtime +8 \
+    -o -name '*.json.*' -mmin +60 -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
   rmdir "$rl_lock" 2>/dev/null
   rl_locked=""
 fi
@@ -357,6 +392,12 @@ fi
 # it, as in Claude Code's own warning.
 compact_at=""
 [ -n "$compact_window" ] && compact_at=$((compact_window - 33000))
+# A window of 33k or less leaves no compaction point; measure against the
+# context window instead.
+if [ -n "$compact_at" ] && [ "$compact_at" -le 0 ]; then
+  compact_at=""
+  compact_window=""
+fi
 if [ -n "$compact_at" ]; then
   default_hint=$compact_at
   default_warn=$((compact_at - 20000))
@@ -437,6 +478,13 @@ lan_ip() {
   local iface host=""
   iface=$(route -n get default 2>/dev/null | awk '/interface:/ { print $2 }')
   [ -n "$iface" ] && host=$(ipconfig getifaddr "$iface" 2>/dev/null)
+  # A VPN's utun default route often has no IPv4 address; use the first
+  # Ethernet or Wi-Fi interface that has one.
+  if [ -z "$host" ]; then
+    for iface in $(ifconfig -l 2>/dev/null); do
+      case $iface in en*) host=$(ipconfig getifaddr "$iface" 2>/dev/null) && [ -n "$host" ] && break ;; esac
+    done
+  fi
   [ -z "$host" ] && host=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit } }')
   printf '%s' "$host"
 }
@@ -471,8 +519,7 @@ srv_detect() {
   # only when its own checkout is this one, not a worktree nested inside it.
   # A hidden-environment server on a port in the session's reserved block
   # counts as the session's wherever it runs.
-  assigned=$(cat "$rl_dir/port-$rl_sid" 2>/dev/null)
-  case $assigned in *[!0-9]*) assigned="" ;; esac
+  assigned=$srv_port
   rows=$(printf '%s\n' "$listen" | SRV_CWDS="$cwds" SRV_TITLES="$titles" SRV_TOP="$git_top" \
     SRV_BLOCK="$assigned" SRV_PROCS="$procs" SRV_SELF="$$" SRV_SID="$rl_sid" awk -F '\t' '
     BEGIN {
@@ -575,11 +622,43 @@ else
   if [ $((now - srv_mtime)) -lt 5 ]; then
     srv_seg=$(cat "$srv_cache" 2>/dev/null)
   else
+    # session-port.sh releases a block whose port file is untouched for an
+    # hour once the recorded cache expiry has passed, and this script's
+    # environment lacks $PORT. So the session's port is also kept in
+    # session-<sid>.port, and a released port file is written back from it
+    # while no other session's file holds the block; the session's exported
+    # PORT never changes.
+    srv_port_file="$rl_dir/port-$rl_sid"
+    srv_known_file="$rl_dir/session-$rl_sid.port"
+    srv_port=""
+    srv_known=""
+    { read -r srv_port < "$srv_port_file"; } 2>/dev/null
+    { read -r srv_known < "$srv_known_file"; } 2>/dev/null
+    case $srv_port in *[!0-9]*) srv_port="" ;; esac
+    case $srv_known in *[!0-9]* | '') srv_known=0 ;; esac
+    if [ -n "$srv_port" ]; then
+      [ "$srv_port" = "$srv_known" ] || printf '%s\n' "$srv_port" > "$srv_known_file"
+    elif [ "$srv_known" -ge 40000 ] && [ "$srv_known" -le 48990 ] && [ $(((srv_known - 40000) % 10)) -eq 0 ] &&
+      mkdir "$rl_dir/port.lock" 2>/dev/null; then
+      port_lock="$rl_dir/port.lock"
+      srv_held=""
+      for srv_f in "$rl_dir"/port-*; do
+        case $srv_f in "$srv_port_file" | *.conflict | *.until) continue ;; esac
+        srv_p=""
+        { read -r srv_p < "$srv_f"; } 2>/dev/null
+        case $srv_p in '' | *[!0-9]*) continue ;; esac
+        [ "$srv_p" -ge 40000 ] && [ "$srv_p" -le 48999 ] &&
+          [ $(((srv_p - 40000) / 10)) -eq $(((srv_known - 40000) / 10)) ] && srv_held=1 && break
+      done
+      if [ -z "$srv_held" ]; then
+        printf '%s\n' "$srv_known" > "$srv_port_file" && srv_port=$srv_known
+      fi
+      rmdir "$port_lock" 2>/dev/null
+      port_lock=""
+    fi
     srv_seg=$(srv_detect)
     rl_write "$srv_cache" "$srv_seg"
-    # Keeps this session's port reserved; session-port.sh releases ports
-    # untouched for an hour.
-    [ -f "$rl_dir/port-$rl_sid" ] && touch "$rl_dir/port-$rl_sid"
+    touch -c "$srv_port_file" "$srv_known_file"
   fi
 fi
 
@@ -619,8 +698,11 @@ case $pc_state in
     # cache every CACHE_KEEPALIVE_SLEEP seconds after the last cache write until
     # the session has been idle CACHE_KEEPALIVE_MAX_IDLE seconds since its last
     # prompt; the cache then lasts one more hour. Its defaults are mirrored here.
+    # It never pings a 5-minute cache, though a sleeper from an earlier 1-hour
+    # write can still be alive, so only a 1-hour cache is extended.
     ka_dir="${XDG_STATE_HOME:-$HOME/.local/state}/agents/cache-keepalive"
-    ka_pid=$(cat "$ka_dir/$rl_sid.sleeper" 2>/dev/null)
+    ka_pid=""
+    [ "$pc_ttl" = 1h ] && ka_pid=$(cat "$ka_dir/$rl_sid.sleeper" 2>/dev/null)
     if [ -n "$rl_sid" ] && [ -n "$ka_pid" ] && kill -0 "$ka_pid" 2>/dev/null; then
       ka_last=$(cat "$ka_dir/$rl_sid.last_prompt" 2>/dev/null)
       case $ka_last in *[!0-9]* | '') ka_last=$now ;; esac
@@ -629,6 +711,12 @@ case $pc_state in
         ka_ping=$((ka_ping + 2700))
         pc_end=$((ka_ping + 3600))
       done
+    fi
+    # session-port.sh keeps the session's port block until this expiry.
+    if [ -n "$rl_sid" ] && [ -e "$rl_dir/port-$rl_sid" ]; then
+      pc_until=""
+      { read -r pc_until < "$rl_dir/port-$rl_sid.until"; } 2>/dev/null
+      [ "$pc_until" = "$pc_end" ] || printf '%s\n' "$pc_end" > "$rl_dir/port-$rl_sid.until"
     fi
     # Time left in the rate-limit countdown format ("2.3h", "45m"); minutes
     # turn yellow from 15 left and red from 5.
@@ -706,20 +794,15 @@ rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day")
 [ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 
-# Extra / overage usage
-if [ -n "$extra_pct" ]; then
-  ex_int=$(printf '%.0f' "$extra_pct")
-  c=$(color_for_pct "$ex_int")
-  parts=$(printf '%s%sextra \033[%sm%d%%\033[0m' "$parts" "$sep" "$c" "$ex_int")
-elif [ -n "$extra_dollars" ]; then
-  # Fallback: dollars used (and limit if known)
-  if [ -n "$extra_limit_dollars" ] && awk -v l="$extra_limit_dollars" 'BEGIN{exit !(l+0 > 0)}'; then
-    pct=$(awk -v u="$extra_dollars" -v l="$extra_limit_dollars" 'BEGIN{printf "%d", (u/l)*100 + 0.5}')
-    c=$(color_for_pct "$pct")
-    parts=$(printf '%s%sextra \033[%sm$%.2f/$%.2f\033[0m' "$parts" "$sep" "$c" "$extra_dollars" "$extra_limit_dollars")
-  else
-    parts=$(printf '%s%sextra \033[38;5;245m$%.2f\033[0m' "$parts" "$sep" "$extra_dollars")
+# Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
+# <usage%>", then the dollars spent of the limit when the gateway reports them.
+rl_dim=$spend_dim
+sp_seg=$(rate_seg "$spend_reset" "$spend_pct")
+if [ -n "$sp_seg" ]; then
+  if [ -n "$spend_used" ] && [ -n "$spend_cap" ]; then
+    sp_seg=$(printf '%s \033[%s38;5;245m$%.2f/$%.2f\033[0m' "$sp_seg" "$rl_dim" "$spend_used" "$spend_cap")
   fi
+  parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
 # Project and branch close the line, since a long branch name runs longest.
