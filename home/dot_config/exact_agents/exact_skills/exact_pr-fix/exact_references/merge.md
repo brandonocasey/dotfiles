@@ -1,10 +1,10 @@
 ## Approve and merge
 
-Let an enabled auto-merge complete. Merge manually only with `--merge`, or when
-auto-merge is enabled but cannot complete. Before a manual merge, run a final
-read-only preflight: open, not a draft, mergeable, approved, and passing every
-required check at the recorded head SHA. Then use the configured merge method
-or the repository default, passed as its flag:
+Let an enabled auto-merge complete. Merge manually only with `--merge`: when
+auto-merge is off, or enabled but unable to complete. Before a manual merge, run a final read-only preflight at the recorded head SHA: open, not a
+draft, mergeable, and passing every required check. Require approval only when
+the repository requires it. Then use the configured merge method or the
+repository default, passed as its flag:
 `gh pr merge N --<METHOD> --match-head-commit HEAD_SHA`, where `METHOD` is
 `merge`, `squash`, or `rebase`. Never use `--admin` or `--delete-branch`. Do not merge a pull request
 that still has a review, required check, conflict, queue, policy, or
