@@ -370,9 +370,6 @@ rate_seg() {
   printf '%s' "$seg"
 }
 
-# Past the warn threshold the context segment shows a yellow ⚠, and past the
-# hint threshold a red ⚠, suggesting /compact because every later turn
-# re-reads the whole context.
 case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
 
 # Auto-compact window from user settings.json: modelSettings.<model>
@@ -404,8 +401,7 @@ if [ -n "$compact_window" ] && [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]
 fi
 
 # Claude Code compacts 33k below the window: it reserves 20k for output, then
-# keeps a 13k buffer. The hint marks that point and the warn sits 20k before
-# it, as in Claude Code's own warning.
+# keeps a 13k buffer.
 compact_at=""
 [ -n "$compact_window" ] && compact_at=$((compact_window - 33000))
 # A window of 33k or less leaves no compaction point; measure against the
@@ -414,17 +410,6 @@ if [ -n "$compact_at" ] && [ "$compact_at" -le 0 ]; then
   compact_at=""
   compact_window=""
 fi
-if [ -n "$compact_at" ]; then
-  default_hint=$compact_at
-  default_warn=$((compact_at - 20000))
-else
-  default_hint=500000
-  default_warn=300000
-fi
-compact_warn_tokens=${CLAUDE_COMPACT_WARN_TOKENS:-$default_warn}
-case $compact_warn_tokens in *[!0-9]*) compact_warn_tokens=$default_warn ;; esac
-compact_hint_tokens=${CLAUDE_COMPACT_HINT_TOKENS:-$default_hint}
-case $compact_hint_tokens in *[!0-9]*) compact_hint_tokens=$default_hint ;; esac
 
 # Usage is measured against the compaction point when a window is set, since
 # that is the real ceiling; otherwise against the model's context window.
@@ -677,8 +662,7 @@ if [ -n "$srv_seg" ]; then
 fi
 
 # Model + effort (blue then magenta, no joiner — the colour change separates
-# them). The context segment follows it after a "·" since both describe the
-# model session: "O5.5m·2.4h:55%".
+# them): "O5.5m".
 if [ -n "$effort" ]; then
   model_seg=$(printf '\033[34m%s\033[0m\033[35m%s\033[0m' "$model" "$effort")
 else
@@ -690,7 +674,7 @@ else
   parts="$model_seg"
 fi
 
-# The prompt cache expiry closes the context segment.
+# Prompt cache: the time until it expires, or "cold".
 pc_val=""
 case $pc_state in
   cold) pc_val=$'\033[36mcold\033[0m' ;;
@@ -727,46 +711,23 @@ case $pc_state in
     [ "$pc_left" -lt 0 ] && pc_left=0
     if [ "$pc_left" -le 5 ]; then
       pc_val=$(printf '\033[31m%sm\033[0m' "$pc_left")
-      warn_level=2
     elif [ "$pc_left" -le 15 ]; then
       pc_val=$(printf '\033[33m%sm\033[0m' "$pc_left")
-      warn_level=1
     else
       pc_val=$(rl_dim="" countdown_str "$pc_end")
     fi
     ;;
 esac
 
-# Context window usage joins the model as "<model>·<window>·<cache time>:<percent>",
-# ending in "<time>:<percent>" like the rate-limit segments; without a cache
-# time the window takes its place, and the window shows only when unusual
-# ("O5.5m·2.4h:59%", "O5.5·200k:40%"). One ⚠ closes the field when the
-# context nears compaction or the cache nears expiry, coloured by the worse.
+# Context window usage, led by the window only when unusual ("40%",
+# "200k:40%"), then the prompt cache's time to live ("ttl:2.3h", "ttl:cold").
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
-  if [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_hint_tokens" ]; then
-    c=31
-    warn_level=2
-  elif [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_warn_tokens" ]; then
-    # Never downgrade a red percent to yellow.
-    [ "$c" = 32 ] && c=33
-    [ "${warn_level:-0}" -lt 1 ] && warn_level=1
-  fi
-  hint=""
-  case ${warn_level:-0} in
-    2) hint=$(printf '\033[31m⚠\033[0m') ;;
-    1) hint=$(printf '\033[33m⚠\033[0m') ;;
-  esac
-  dot=$'\033[38;5;245m·\033[0m'
-  colon=$'\033[38;5;245m:\033[0m'
-  ctx_head=$dot
-  if [ -n "$ctx_label" ] && [ -n "$pc_val" ]; then
-    ctx_head="$dot$ctx_label$dot$pc_val$colon"
-  elif [ -n "$ctx_label$pc_val" ]; then
-    ctx_head="$dot$ctx_label$pc_val$colon"
-  fi
-  parts=$(printf '%s%s\033[%sm%d%%\033[0m%s' "$parts" "$ctx_head" "$c" "$ctx_used_pct" "$hint")
+  ctx_seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$ctx_used_pct")
+  [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
+  parts="$parts$sep$ctx_seg"
 fi
+[ -n "$pc_val" ] && parts=$(printf '%s%s\033[38;5;245mttl:\033[0m%s' "$parts" "$sep" "$pc_val")
 
 # Project and branch as "project#branch": the project (green) is the git
 # repository root, falling back to the cwd; the branch is bright white because
