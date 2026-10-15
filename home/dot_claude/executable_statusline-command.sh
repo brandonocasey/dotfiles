@@ -44,6 +44,7 @@ rl_sid=${rl_sid//[!A-Za-z0-9._-]/_}
 git_info=""
 git_root_name=""
 git_top=""
+repo_url=""
 # Absolute git-dir and common dir in one call. --git-common-dir points at the
 # main repo's .git even from a linked worktree or a submodule whose gitdir
 # lives elsewhere; the two match only in the main checkout.
@@ -66,6 +67,18 @@ if cd "$cwd" 2>/dev/null &&
       git_root_name=$(basename "$common_dir" .git)
     fi
   fi
+
+  # Web page of the origin remote, else the first remote. Raw config skips
+  # insteadOf rewrites, which often turn https into ssh. SSH and git URLs map to
+  # https without their port; credentials are dropped; local paths give none.
+  repo_url=$(git --no-optional-locks config --get-regexp '^remote\..*\.url$' 2>/dev/null |
+    awk '$1 == "remote.origin.url" { u = $2; exit } !u { u = $2 } END { print u }' |
+    sed -E -e 's#^(git\+)?ssh://([^@/]*@)?([^:/]+)(:[0-9]*)?/#https://\3/#' \
+      -e 's#^git://([^/]+)/#https://\1/#' \
+      -e '\#://#!s#^([^/:@]+@)?([^/:]+):/?#https://\2/#' \
+      -e 's#^(https?://)[^@/]*@#\1#' \
+      -e 's#(\.git)?/*$##' \
+      -e '\#^https?://[^/]+/.#!d')
 
   # Claude often works in a linked worktree by absolute path while the session
   # stays in the main checkout. From the main checkout, show the branch of the
@@ -770,21 +783,20 @@ fi
 
 # Project and branch as "project#branch": the project (green) is the git
 # repository root, falling back to the cwd; the branch is bright white because
-# yellow and red are reserved for usage warnings. The segment is an OSC 8 link
-# to the shown checkout's absolute path, so terminals can open or copy it.
+# yellow and red are reserved for usage warnings. Each part is an OSC 8 link:
+# the project to its repository's web page, else to the shown checkout's
+# absolute path; the branch to that path, so terminals can open or copy it.
 dir_base="$git_root_name"
 if [ -z "$dir_base" ]; then
   if [ "$cwd" = "$HOME" ]; then dir_base=HOME; else dir_base=$(basename "$cwd" 2>/dev/null); fi
 fi
+loc_path=${git_top:-$cwd}
+loc_path=${loc_path//%/%25}
+loc_link="file://${loc_path// /%20}"
 loc_seg=""
-[ -n "$dir_base" ] && loc_seg=$(printf '\033[32m%s\033[0m' "$dir_base")
+[ -n "$dir_base" ] && loc_seg=$(printf '\033]8;;%s\a\033[32m%s\033[0m\033]8;;\a' "${repo_url:-$loc_link}" "$dir_base")
 if [ -n "$git_info" ]; then
-  loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033[97m%s\033[0m' "$loc_seg" "$git_info")
-fi
-if [ -n "$loc_seg" ]; then
-  loc_path=${git_top:-$cwd}
-  loc_path=${loc_path//%/%25}
-  loc_seg=$(printf '\033]8;;file://%s\a%s\033]8;;\a' "${loc_path// /%20}" "$loc_seg")
+  loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033]8;;%s\a\033[97m%s\033[0m\033]8;;\a' "$loc_seg" "$loc_link" "$git_info")
 fi
 
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels. Each links
