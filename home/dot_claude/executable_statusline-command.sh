@@ -317,11 +317,11 @@ if [ -n "$rl_locked" ]; then
 fi
 
 # --- Color picker for a used% value ---
-# green <60, yellow 60-79, red >=80
+# green <65, yellow 65-79, red >=80
 color_for_pct() {
   local used=$1
   if [ "$used" -ge 80 ]; then printf '31'
-  elif [ "$used" -ge 60 ]; then printf '33'
+  elif [ "$used" -ge 65 ]; then printf '33'
   else printf '32'
   fi
 }
@@ -349,18 +349,33 @@ countdown_str() {
 }
 
 # --- Build an unlabeled "<countdown>:<pct>%" rate-limit segment ---
-# $1 = reset epoch (may be empty), $2 = used percentage (may be empty)
-# The countdown colours itself per unit; the percentage is colored by usage
-# (green / yellow / red). Elsewhere yellow and red mark only usage warnings
-# and an expiring prompt cache.
+# $1 = reset epoch (may be empty), $2 = used percentage (may be empty),
+# $3 = window length and $4 = budget step, in seconds (may be empty)
+# The countdown colours itself per unit. With a window, step, and reset, the
+# percentage is coloured by an even budget across the window (1/7 a day for 7
+# days, 1/5 an hour for 5 hours), counted to the start of the current step:
+# yellow once usage runs more than one step's share ahead of it, red once more
+# than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
+# and red mark only usage warnings and an expiring prompt cache.
 rate_seg() {
-  local reset=$1 pct=$2 seg="" p c
+  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
     seg=$(countdown_str "$reset")
   fi
   if [ -n "$pct" ]; then
     p=$(printf '%.0f' "$pct")
-    c=$(color_for_pct "$p")
+    if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
+      c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" 'BEGIN {
+        e = w - (r - n)
+        if (e < 0) e = 0
+        if (e >= w) e = w - 1
+        s = 100 * t / w
+        b = int(e / t) * s
+        print (p >= 100 || p > b + 2 * s ? 31 : p > b + s ? 33 : 32)
+      }')
+    else
+      c=$(color_for_pct "$p")
+    fi
     if [ -n "$seg" ]; then
       seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
     else
@@ -751,10 +766,10 @@ fi
 # to the claude.ai usage page.
 usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
 rl_dim=$five_hour_dim
-fh_seg=$(rate_seg "$five_hour_reset" "$five_hr")
+fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
 [ -n "$fh_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fh_seg")
 rl_dim=$seven_day_dim
-sd_seg=$(rate_seg "$seven_day_reset" "$seven_day")
+sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
 [ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
