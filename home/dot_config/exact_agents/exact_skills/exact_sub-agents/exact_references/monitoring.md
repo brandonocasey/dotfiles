@@ -29,4 +29,4 @@ Run the queued action only when the watcher reports reason `merged`.
 On any other result, such as `required_checks_passed`, a deadline, or a new head SHA, report it to the user.
 `agent-watch` takes GitHub `OWNER/REPO#PR@SHA` and GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA` targets. For other platforms, say the watch is unsupported.
 The queued action keeps its consent rules.
-Otherwise, report the pipeline URL and stop: no watcher or polling.
+Otherwise, report the pipeline status and stop: no watcher or polling.

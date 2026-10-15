@@ -14,7 +14,7 @@ On exit, read the final event's top-level `reason`, then each target's `results[
 
 - `checks_complete`: one line per MR/PR with its target reason, such as `required_checks_passed` or `merged`.
 - `action_required`: for a target with `check_failed` or `check_cancelled`, list each failed or cancelled check with its job URL. For any other blocked target reason, give the reason and detail. Name any target that was still pending; it is no longer watched. Repair as below.
-- `deadline_exceeded`: CI is still running; give each pipeline URL.
+- `deadline_exceeded`: CI is still running; say so per MR/PR, without pipeline links.
 - `cancelled`: say the watch was stopped.
 
 Do not restart the watch unless the user asks, except after a repair or retry.

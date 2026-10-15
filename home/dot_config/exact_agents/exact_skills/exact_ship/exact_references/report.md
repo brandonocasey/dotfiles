@@ -18,7 +18,7 @@ State plainly:
 
 With several branches, give one line per branch. End with one **Links**
 section in the link format of [writing-details.md](../../shared/writing-details.md),
-with no OSC 8 escapes: the MR/PR URL, submodule MR/PR URLs, pipeline URL,
-preview URL (when set), and ticket URL (when set).
+with no OSC 8 escapes: the MR/PR URL, submodule MR/PR URLs, the pipeline URL only
+when it failed, preview URL (when set), and ticket URL (when set).
 
 When checking for a deployed preview URL, read [preview-url.md](preview-url.md).
