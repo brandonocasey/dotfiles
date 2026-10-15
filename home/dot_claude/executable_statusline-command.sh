@@ -266,6 +266,9 @@ eval "$(jq -nrS --argjson now "$now" --argjson live "${rl_live:-null}" \
       $l[$k] as $mine | $p[$k] as $old | $c[$k] as $cached
       | .[$k] =
         if $mine == null then $cached
+        # spend_limit reports the fullest limit, whose period can change, so a
+        # live value always wins over a cached one that resets later.
+        elif $k == "spend_limit" then $mine
         elif $mine == $old then ($cached // $mine)
         elif $old != null and same($mine; $old) and $mine.used_percentage < $old.used_percentage then $mine
         else newer($mine; $cached) end)
