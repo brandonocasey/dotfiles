@@ -1,0 +1,13 @@
+[commit]
+  gpgsign = true
+
+[user]
+  name = Brandon Casey
+  email = brandonocasey@gmail.com
+  signingkey = ~/.ssh/bcasey@forgejo.koof.win-07072026.pub
+
+[gpg]
+  format = ssh
+
+[core]
+  sshCommand = "ssh -i ~/.ssh/bcasey@forgejo.koof.win-07072026 -o IdentitiesOnly=yes"

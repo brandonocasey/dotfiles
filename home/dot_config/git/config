@@ -166,6 +166,13 @@
   path = ~/.config/git/jwbrandon
 
 # --- remote authority (by remote URL) — overrides the directory rules above ---
+# Forgejo first, so a GitHub/GitLab remote wins in a repo that also mirrors there.
+[includeIf "hasconfig:remote.*.url:ssh://*forgejo.koof.win*/**"]
+  path = ~/.config/git/forgejo
+[includeIf "hasconfig:remote.*.url:https://forgejo.koof.win/**"]
+  path = ~/.config/git/forgejo
+[includeIf "hasconfig:remote.*.url:git@forgejo.koof.win:*/**"]
+  path = ~/.config/git/forgejo
 [includeIf "hasconfig:remote.*.url:**github.com**brandonocasey/**"]
   path = ~/.config/git/brandonocasey
 [includeIf "hasconfig:remote.*.url:**github.com**videojs/**"]
@@ -178,8 +185,6 @@
   path = ~/.config/git/bcasey1
 [includeIf "hasconfig:remote.*.url:**gitlab.com**bcasey1/**"]
   path = ~/.config/git/bcasey1
-[includeIf "hasconfig:remote.*.url:ssh://*forgejo.koof.win*/**"]
-  path = ~/.config/git/forgejo
 
 [safe]
 	directory = *
