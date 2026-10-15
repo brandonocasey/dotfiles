@@ -36,7 +36,8 @@ session_project() {
     common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
     case $common in
         */.git) basename "${common%/.git}" ;;
-        '') basename "$cwd" ;;
+        # A removed worktree: name its repository, not the worktree.
+        '') cwd=${cwd%%/.worktrees/*}; basename "${cwd%%/.claude/worktrees/*}" ;;
         *) basename "$common" .git ;;
     esac
 }
