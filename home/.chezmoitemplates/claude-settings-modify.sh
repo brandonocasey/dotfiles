@@ -176,6 +176,15 @@ managed=$(
     ],
     "SessionStart": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/session-port.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "resume|fork",
         "hooks": [
           {

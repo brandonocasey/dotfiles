@@ -30,8 +30,10 @@ On koof, read `~/.config/agents/environments/koof.md` before server work.
 Bind application and preview HTTP servers to `0.0.0.0`; tool-control endpoints
 keep their required binding. Report `http://<lan-ip>:<port>`, never `localhost`.
 Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux,
-or `ipconfig` on Windows. Give each dev server and worktree its own random free
-port; pass the same port to every start command for the task.
+or `ipconfig` on Windows. Claude Code sessions reserve a block of ports: give
+each dev server the first of `$PORT`, `$PORT_1` … `$PORT_9` that nothing
+listens on. Without `$PORT`, give each dev server and worktree its own random
+free port. Pass the same port to every start command for the task.
 
 ## Cleanup
 
