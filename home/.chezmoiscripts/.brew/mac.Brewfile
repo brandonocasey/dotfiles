@@ -50,8 +50,6 @@ if OS.mac?
   cask 'ghostty'
   cask 'wireshark-app'
   cask 'openinterminal'
-  # Finder sidebar CLI; the pkg installer needs sudo
-  cask 'mysides'
 
   # App Store applications
   mas 'Xcode', id: 497799835
