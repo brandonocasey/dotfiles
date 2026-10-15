@@ -487,8 +487,7 @@ sep=$(printf '\033[38;5;245m|\033[0m')
 # (http-server does) hide their environment from ps; such a server also counts
 # when it runs in the checkout this line shows (not $HOME). The segment always
 # shows the machine's LAN IPv4 address, joined by the session's port when it
-# has one. On the home network, 192.168.73.x, only ".x" shows (".7:43750");
-# elsewhere the full address does. Links always use the full address.
+# has one ("192.168.73.7:43750").
 # Detection takes ~250 ms, so each session reuses its result for 5 s.
 lan_ip() {
   local iface host=""
@@ -504,13 +503,9 @@ lan_ip() {
   [ -z "$host" ] && host=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit } }')
   printf '%s' "$host"
 }
-ip_disp() {
-  case $1 in 192.168.73.*) printf '.%s' "${1#192.168.73.}" ;; *) printf '%s' "$1" ;; esac
-}
 srv_detect() {
-  local listen pids cwds titles procs rows ports first host disp more assigned shown row others
+  local listen pids cwds titles procs rows ports host assigned shown row
   host=$(lan_ip)
-  disp=$(ip_disp "$host")
   listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
     /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
   ')
@@ -586,14 +581,12 @@ srv_detect() {
   row=""
   if [ -n "$assigned" ]; then
     row=$(printf '%s\n' "$ports" | awk -F '\t' -v p="$assigned" '$1 == p')
-    others=$(printf '%s\n' "$ports" | awk -F '\t' -v p="$assigned" '$1 != "" && $1 != p')
   elif [ -n "$ports" ]; then
     row=${ports%%$'\n'*}
     shown=${row%%$'\t'*}
-    others=$(printf '%s\n' "$ports" | sed 1d)
   fi
   if [ -z "$shown" ]; then
-    [ -n "$disp" ] && printf '\033[35m%s\033[0m' "$disp"
+    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host"
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -601,21 +594,15 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "$disp:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "35" "$host:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m%s:%s\033[0m' "$disp" "$shown"
+    printf '\033[31m%s:%s\033[0m' "$host" "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m%s:%s\033[0m' "$disp" "$shown"
+    printf '\033[2;35m%s:%s\033[0m' "$host" "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
-  fi
-  # "+N" counts the session's other servers and links to the first of them.
-  if [ -n "$others" ]; then
-    more=$(printf '%s\n' "$others" | wc -l | tr -d ' ')
-    first=${others%%$'\n'*}
-    srv_link "${first%%$'\t'*}" "${first##*$'\t'}" "38;5;245" "+$more"
   fi
   return 0
 }
@@ -630,7 +617,7 @@ srv_link() {
 srv_seg=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$(ip_disp "$srv_ip")")
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$srv_ip")
 else
   srv_cache="$rl_dir/servers-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
