@@ -11,7 +11,7 @@ exception is a preview prototype (**Scope**).
   - the user says the task is done, or asks for a review;
   - a commit the user asked for, or `investigate` step 7's fix commit. Routine
     per-turn commits (git-policy's commit before reporting) do not count;
-  - just before a push outside `ship`;
+  - right after a push outside `ship`, while its CI runs; push the fixes after;
   - just before integrating the change into another branch (merge, cherry-pick,
     or fast-forwarding a shared branch to include it) outside `land`, or
     deploying it. Rebasing the task branch to sync it does not count;
