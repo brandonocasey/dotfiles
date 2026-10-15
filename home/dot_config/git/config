@@ -197,6 +197,9 @@
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
+# Forgejo has no HTTPS login here; fetch https:// remotes and submodules over SSH
+[url "git@forgejo.koof.win:"]
+	insteadOf = https://forgejo.koof.win/
 [submodule]
 	recurse = true
 [status]
