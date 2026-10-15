@@ -8,31 +8,59 @@ acct_cfg="$HOME/.claude.json"
 [ -n "$CLAUDE_CONFIG_DIR" ] && acct_cfg="$CLAUDE_CONFIG_DIR/.claude.json"
 account=$(grep -oE '"emailAddress"[[:space:]]*:[[:space:]]*"[^"]*"' "$acct_cfg" 2>/dev/null | head -1 | sed -E 's/.*:[[:space:]]*"([^"]*)".*/\1/')
 account_name="${account%%@*}"
-account_name="${account_name:0:3}"
 
-# --- PORT (optional, only when set in the environment) ---
-port_display=""
-[ -n "$PORT" ] && port_display=":$PORT"
+now=${EPOCHSECONDS:-$(date +%s)}
+
+# Read every input field in one jq run; each extra run costs about 4 ms.
+# Missing fields come out empty.
+eval "$(printf '%s' "$input" | jq -r --argjson now "$now" '
+  def s: if . == null then "" else tostring end | @sh;
+  "cwd=\(.workspace.current_dir // .cwd | s)",
+  "transcript=\(.transcript_path | s)",
+  "model_raw=\(.model.display_name | s)",
+  "model_id=\(.model.id | s)",
+  "effort_raw=\(.effort.level | s)",
+  "ctx_remaining=\(.context_window.remaining_percentage | s)",
+  "ctx_total=\(.context_window.context_window_size // .context_window.total_tokens // .context_window.total
+    // .context_window.size // .context_window.max_tokens // .context_window.window_tokens | s)",
+  # Tokens in context from the last API call (same input-only formula as used_percentage).
+  "ctx_used_tokens=\(.context_window.current_usage
+    | if . then (.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0) else null end | s)",
+  "rl_sid=\(.session_id | s)",
+  "rl_live=\(.rate_limits // {} | tojson | @sh)",
+  # Extra / overage usage (probe several likely field names).
+  "extra_pct=\(.rate_limits.extra.used_percentage // .rate_limits.overage.used_percentage
+    // .rate_limits.extra_usage.used_percentage // .extra_usage.used_percentage // .overage.used_percentage | s)",
+  "extra_dollars=\(.rate_limits.extra.used_dollars // .rate_limits.extra.used_usd // .rate_limits.overage.used_dollars
+    // .extra_usage.used_dollars // .extra_usage.used_usd // .billing.extra_used_dollars | s)",
+  "extra_limit_dollars=\(.rate_limits.extra.limit_dollars // .rate_limits.extra.cap_dollars
+    // .extra_usage.limit_dollars // .extra_usage.cap_dollars // .billing.extra_limit_dollars | s)",
+  # Prompt cache: "warm" or "cold", empty until caching was observed.
+  "pc_state=\(.prompt_cache // null | select(.caching_observed == true)
+    | if .warm == true and .expires_at != null then "warm" else "cold" end | s)",
+  "pc_expires=\(.prompt_cache.expires_at | s)"
+' 2>/dev/null)"
+rl_sid=${rl_sid//[!A-Za-z0-9._-]/_}
 
 # --- Git branch ---
-cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty' 2>/dev/null)
 [ -z "$cwd" ] && cwd="$PWD"
 git_info=""
 git_root_name=""
-if cd "$cwd" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
+git_top=""
+# Absolute git-dir and common dir in one call. --git-common-dir points at the
+# main repo's .git even from a linked worktree or a submodule whose gitdir
+# lives elsewhere; the two match only in the main checkout.
+if cd "$cwd" 2>/dev/null &&
+  git_dirs=$(git --no-optional-locks rev-parse --path-format=absolute --git-dir --git-common-dir 2>/dev/null); then
+  git_dir=${git_dirs%%$'\n'*}
+  common_dir=${git_dirs#*$'\n'}
+  git_top=$(git --no-optional-locks rev-parse --show-toplevel 2>/dev/null)
   branch=$(git --no-optional-locks branch --show-current 2>/dev/null)
   [ -z "$branch" ] && branch="detached"
   git_info="$branch"
 
-  # Name the repository, not the checkout: --git-common-dir points at the main
-  # repo's .git even from a linked worktree or a submodule whose gitdir lives
-  # elsewhere, so worktrees report the parent repo instead of ".worktrees/<x>".
-  common_dir=$(git --no-optional-locks rev-parse --git-common-dir 2>/dev/null)
-  case "$common_dir" in
-    "") ;;
-    /*) ;;
-    *) common_dir="$cwd/$common_dir" ;;
-  esac
+  # Name the repository, not the checkout, so worktrees report the parent repo
+  # instead of ".worktrees/<x>".
   if [ -n "$common_dir" ]; then
     if [ "$(basename "$common_dir")" = ".git" ]; then
       git_root_name=$(basename "$(cd "$common_dir/.." 2>/dev/null && pwd -P)")
@@ -45,16 +73,14 @@ if cd "$cwd" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
   # Claude often works in a linked worktree by absolute path while the session
   # stays in the main checkout. From the main checkout, show the branch of the
   # worktree its tool calls named most recently instead.
-  transcript=$(echo "$input" | jq -r '.transcript_path // empty' 2>/dev/null)
-  if [ -f "$transcript" ] &&
-    [ "$(git --no-optional-locks rev-parse --git-dir 2>/dev/null)" = "$(git --no-optional-locks rev-parse --git-common-dir 2>/dev/null)" ]; then
+  if [ -f "$transcript" ] && [ "$git_dir" = "$common_dir" ]; then
     wt_list=$(git --no-optional-locks worktree list --porcelain 2>/dev/null | awk '
       /^worktree / { if (n++) path = substr($0, 10); else path = "" }
       /^branch / && path != "" { sub("refs/heads/", "", $2); print path "\t" $2 }
       /^detached/ && path != "" { print path "\tdetached" }
     ')
     if [ -n "$wt_list" ]; then
-      wt_branch=$(tail -n 2000 "$transcript" | rg -F '"tool_use"' | jq -rR '
+      wt_hit=$(tail -n 2000 "$transcript" | rg -F '"tool_use"' | jq -rR '
         fromjson? | select(.type == "assistant") | .message.content[]?
         | select(.type == "tool_use") | .input | tostring | gsub("[\t\n]"; " ")
       ' 2>/dev/null | WT_LIST="$wt_list" awk -F '\t' '
@@ -66,11 +92,14 @@ if cd "$cwd" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
             j = index($0, p[i])
             if (j && substr($0, j + length(p[i]), 1) !~ /[A-Za-z0-9._-]/ && (!best || length(p[i]) > length(p[best]))) best = i
           }
-          if (best) last = b[best]
+          if (best) last = p[best] "\t" b[best]
         }
         END { if (last != "") print last }
       ')
-      [ -n "$wt_branch" ] && git_info="$wt_branch"
+      if [ -n "$wt_hit" ]; then
+        git_top=${wt_hit%%$'\t'*}
+        git_info=${wt_hit#*$'\t'}
+      fi
     fi
   fi
 
@@ -86,8 +115,6 @@ if cd "$cwd" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
 fi
 
 # --- Model name (shorten to S/O/H + version) ---
-model_raw=$(echo "$input" | jq -r '.model.display_name // empty' 2>/dev/null)
-model_id=$(echo "$input" | jq -r '.model.id // empty' 2>/dev/null)
 [ -z "$model_raw" ] || [ "$model_raw" = "null" ] && model_raw="Claude"
 
 # Extract version number from display name or model id
@@ -127,24 +154,17 @@ case "$model_raw" in
     ;;
 esac
 
-# --- Effort level (shortened to single letter) ---
-effort_raw=$(echo "$input" | jq -r '.effort.level // empty' 2>/dev/null)
+# --- Effort level (single letter; capital X for max, beside x for xhigh) ---
 effort=""
 case "$effort_raw" in
-  low|LOW|Low)       effort="lo" ;;
-  medium|MEDIUM|Medium|med) effort="md" ;;
-  high|HIGH|High)    effort="hi" ;;
-  xhigh|XHIGH|xHigh|XHigh|extreme) effort="xh" ;;
-  max|MAX|Max)       effort="mx" ;;
+  low|LOW|Low)       effort="l" ;;
+  medium|MEDIUM|Medium|med) effort="m" ;;
+  high|HIGH|High)    effort="h" ;;
+  xhigh|XHIGH|xHigh|XHigh|extreme) effort="x" ;;
+  max|MAX|Max)       effort="X" ;;
   "")                effort="" ;;
-  *)                 effort=$(echo "$effort_raw" | cut -c1-2 | tr '[:upper:]' '[:lower:]') ;;
+  *)                 effort=$(echo "$effort_raw" | cut -c1 | tr '[:upper:]' '[:lower:]') ;;
 esac
-
-# --- Context window ---
-ctx_remaining=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty' 2>/dev/null)
-ctx_total=$(echo "$input" | jq -r '
-  (.context_window.context_window_size // .context_window.total_tokens // .context_window.total // .context_window.size // .context_window.max_tokens // .context_window.window_tokens // empty)
-' 2>/dev/null)
 
 # --- Rate limits (each window: countdown to reset, then usage %) ---
 # Claude Code sends rate_limits only after a session's first API response, and
@@ -158,7 +178,6 @@ rl_dir="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline"
 rl_key=$(printf '%s' "${account:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}" | tr -c 'A-Za-z0-9._@-' '_')
 rl_cache="$rl_dir/rate-limits-$rl_key.json"
 rl_lock="$rl_dir/rate-limits-$rl_key.lock"
-rl_sid=$(echo "$input" | jq -j '.session_id // empty' 2>/dev/null | tr -c 'A-Za-z0-9._-' '_')
 rl_prev_file=""
 [ -n "$rl_sid" ] && rl_prev_file="$rl_dir/session-$rl_sid.json"
 rl_locked=""
@@ -195,11 +214,11 @@ else
   esac
 fi
 
-rl_live=$(echo "$input" | jq -c '.rate_limits // {}' 2>/dev/null)
 rl_cached=$(jq -cs '.[0] // null' "$rl_cache" 2>/dev/null)
 rl_prev=""
 [ -n "$rl_prev_file" ] && rl_prev=$(jq -cs '.[0] // null' "$rl_prev_file" 2>/dev/null)
-rl_state=$(jq -ncS --argjson now "$(date +%s)" --argjson live "${rl_live:-null}" \
+# Values this session has no live copy of come from the cache and are dimmed.
+eval "$(jq -nrS --argjson now "$now" --argjson live "${rl_live:-null}" \
   --argjson cache "${rl_cached:-null}" --argjson prev "${rl_prev:-null}" '
   def fresh: type == "object" and (.resets_at | type) == "number" and .resets_at > $now;
   def clean: if type == "object" then with_entries(select(.value | fresh)) else {} end;
@@ -220,60 +239,31 @@ rl_state=$(jq -ncS --argjson now "$(date +%s)" --argjson live "${rl_live:-null}"
         elif $mine == $old then ($cached // $mine)
         elif $old != null and same($mine; $old) and $mine.used_percentage < $old.used_percentage then $mine
         else newer($mine; $cached) end)
-  | {live: $l, cache: ., cache_changed: (. != $cache), prev_changed: ($l != $prev)}
-' 2>/dev/null)
-[ -z "$rl_state" ] && rl_state='{"live":{},"cache":{}}'
+  | def s: if . == null then "" else tostring end | @sh;
+  "rl_cache_json=\(if . != $cache then tojson else null end | s)",
+  "rl_live_json=\(if $l != $prev then $l | tojson else null end | s)",
+  "five_hr=\(.five_hour.used_percentage | s)",
+  "five_hour_reset=\(.five_hour.resets_at | s)",
+  "five_hour_dim=\(if $l.five_hour then "" else "2;" end | s)",
+  "seven_day=\(.seven_day.used_percentage | s)",
+  "seven_day_reset=\(.seven_day.resets_at | s)",
+  "seven_day_dim=\(if $l.seven_day then "" else "2;" end | s)"
+' 2>/dev/null)"
 
 if [ -n "$rl_locked" ]; then
-  if [ "$(echo "$rl_state" | jq -r '.cache_changed')" != true ] ||
-    rl_write "$rl_cache" "$(echo "$rl_state" | jq -cS '.cache')"; then
+  if [ -z "$rl_cache_json" ] || rl_write "$rl_cache" "$rl_cache_json"; then
     # Record what this session saw only once the cache holds it.
-    if [ -n "$rl_prev_file" ] && [ "$(echo "$rl_state" | jq -r '.prev_changed')" = true ]; then
-      rl_write "$rl_prev_file" "$(echo "$rl_state" | jq -cS '.live')"
+    if [ -n "$rl_prev_file" ] && [ -n "$rl_live_json" ]; then
+      rl_write "$rl_prev_file" "$rl_live_json"
     fi
   fi
   # Session files last past every window they hold (7 days at most); temp
   # files are left only by runs killed outright.
-  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name '*.json.*' -mmin +60 \) \
-    -delete 2>/dev/null
+  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name '*.json.*' -mmin +60 \
+    -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
   rmdir "$rl_lock" 2>/dev/null
   rl_locked=""
 fi
-
-# Values this session has no live copy of come from the cache and are dimmed.
-five_hr=$(echo "$rl_state" | jq -r '.cache.five_hour.used_percentage // empty' 2>/dev/null)
-five_hour_reset=$(echo "$rl_state" | jq -r '.cache.five_hour.resets_at // empty' 2>/dev/null)
-five_hour_dim=$(echo "$rl_state" | jq -r 'if .live.five_hour then "" else "2;" end' 2>/dev/null)
-seven_day=$(echo "$rl_state" | jq -r '.cache.seven_day.used_percentage // empty' 2>/dev/null)
-seven_day_reset=$(echo "$rl_state" | jq -r '.cache.seven_day.resets_at // empty' 2>/dev/null)
-seven_day_dim=$(echo "$rl_state" | jq -r 'if .live.seven_day then "" else "2;" end' 2>/dev/null)
-
-# --- Extra / overage usage (probe several likely field names) ---
-extra_pct=$(echo "$input" | jq -r '
-  (.rate_limits.extra.used_percentage
-   // .rate_limits.overage.used_percentage
-   // .rate_limits.extra_usage.used_percentage
-   // .extra_usage.used_percentage
-   // .overage.used_percentage
-   // empty)
-' 2>/dev/null)
-extra_dollars=$(echo "$input" | jq -r '
-  (.rate_limits.extra.used_dollars
-   // .rate_limits.extra.used_usd
-   // .rate_limits.overage.used_dollars
-   // .extra_usage.used_dollars
-   // .extra_usage.used_usd
-   // .billing.extra_used_dollars
-   // empty)
-' 2>/dev/null)
-extra_limit_dollars=$(echo "$input" | jq -r '
-  (.rate_limits.extra.limit_dollars
-   // .rate_limits.extra.cap_dollars
-   // .extra_usage.limit_dollars
-   // .extra_usage.cap_dollars
-   // .billing.extra_limit_dollars
-   // empty)
-' 2>/dev/null)
 
 # --- Color picker for a used% value ---
 # green <60, yellow 60-79, red >=80
@@ -310,7 +300,8 @@ countdown_str() {
 # --- Build an unlabeled "<countdown>:<pct>%" rate-limit segment ---
 # $1 = reset epoch (may be empty), $2 = used percentage (may be empty)
 # The countdown colours itself per unit; the percentage is colored by usage
-# (green / yellow / red), which is why no other field uses yellow or red.
+# (green / yellow / red). Elsewhere yellow and red mark only usage warnings
+# and an expiring prompt cache.
 rate_seg() {
   local reset=$1 pct=$2 seg="" p c
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
@@ -328,31 +319,29 @@ rate_seg() {
   printf '%s' "$seg"
 }
 
-# Tokens in context from the last API call (same input-only formula as
-# used_percentage). Past the warn threshold the segment shows a yellow ⚠, and
-# past the hint threshold a red ⚠, suggesting /compact because every later
-# turn re-reads the whole context.
-ctx_used_tokens=$(echo "$input" | jq -r '
-  .context_window.current_usage
-  | if . then ((.input_tokens // 0) + (.cache_creation_input_tokens // 0) + (.cache_read_input_tokens // 0)) else empty end
-' 2>/dev/null)
+# Past the warn threshold the context segment shows a yellow ⚠, and past the
+# hint threshold a red ⚠, suggesting /compact because every later turn
+# re-reads the whole context.
 case $ctx_used_tokens in *[!0-9]*) ctx_used_tokens="" ;; esac
 
 # Auto-compact window from user settings.json: modelSettings.<model>
 # .autoCompactWindow replaces the top-level value. Model ids and settings keys
 # both drop the [1m] flag and any date suffix before matching, as Claude Code
-# does. Project settings are not read; "auto" means no fixed window.
+# does. Project settings are not read; "auto" means no fixed window. Output is
+# "<effective window>\t<top-level window>"; the second is the usual one.
 settings_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-compact_window=$(jq -r --arg m "$model_id" '
+compact_windows=$(jq -r --arg m "$model_id" '
   def canon: sub("\\[[^]]*\\]$"; "") | sub("-[0-9]{8}$"; "");
+  def fixed: if . == "auto" or . == null then "" else tostring end;
   ($m | canon) as $k
   # An exactly canonical key wins over a [1m] or dated spelling of it.
   | ([(.modelSettings // {}) | to_entries | sort_by((.key | canon) != .key)[]
       | select((.key | canon) == $k)
       | .value.autoCompactWindow | select(. != null)] | first) as $model
-  | ($model // .autoCompactWindow)
-  | if . == "auto" then empty else (. // empty) end
+  | "\($model // .autoCompactWindow | fixed)\t\(.autoCompactWindow | fixed)"
 ' "$settings_dir/settings.json" 2>/dev/null)
+compact_window=${compact_windows%%$'\t'*}
+usual_window=${compact_windows#*$'\t'}
 # Claude Code accepts 100k to 1M; anything else is ignored here too.
 case $compact_window in *[!0-9]* | '') compact_window="" ;; esac
 if [ -n "$compact_window" ] && { [ "$compact_window" -lt 100000 ] || [ "$compact_window" -gt 1000000 ]; }; then
@@ -414,7 +403,10 @@ fi
 # --- Context window label: window size instead of generic "ctx" ---
 # Prefer reported capacity; model-based defaults apply only when capacity is absent.
 if [ -n "$compact_at" ] && [ -n "$ctx_used_tokens" ]; then
-  ctx_label=$(fmt_tokens "$compact_at")
+  # The usual compaction point (the top-level setting) goes unlabelled; only a
+  # session that differs shows its size.
+  ctx_label=""
+  [ "$compact_window" = "$usual_window" ] || ctx_label=$(fmt_tokens "$compact_at")
 elif [ -n "$ctx_total" ] && [ "$ctx_total" != "null" ]; then
   ctx_label=$(awk -v t="$ctx_total" 'BEGIN{
     if (t+0 >= 1000000) printf "%gM", t/1000000; else printf "%dk", int(t/1000 + 0.5)
@@ -430,35 +422,181 @@ fi
 # fields apart, which keeps the line short on narrow terminals.
 sep=$(printf '\033[38;5;245m|\033[0m')
 
-# Account name (grey) leads the line
-parts=""
-[ -n "$account_name" ] && parts=$(printf '\033[38;5;247m%s\033[0m' "$account_name")
-
-# Prompt cache: minutes until the main cache expires, or a cyan "cold" once it
-# has. Shown only after caching was observed, so a fresh session stays quiet.
-# Cyan, because yellow and red are reserved for usage warnings. When cold, the
-# next turn re-writes the whole context to the cache, so that token count
-# follows ("cold:312k").
-cold_tokens=""
-[ -n "$ctx_used_tokens" ] && cold_tokens=$(fmt_tokens "$ctx_used_tokens")
-pc_seg=$(echo "$input" | jq -r --argjson now "$(date +%s)" --arg cold "$cold_tokens" '
-  .prompt_cache // empty | select(.caching_observed == true)
-  | if .warm == true and .expires_at != null
-    then "\u001b[38;5;245mc:\u001b[0m\(((.expires_at - $now) / 60) | if . < 0 then 0 else floor end)m"
-    elif $cold != "" then "\u001b[36mcold\u001b[0m\u001b[38;5;245m:\u001b[0m\u001b[36m\($cold)\u001b[0m"
-    else "\u001b[36mcold\u001b[0m" end
-' 2>/dev/null)
-if [ -n "$pc_seg" ]; then
-  if [ -n "$parts" ]; then
-    parts=$(printf '%s%s%s' "$parts" "$sep" "$pc_seg")
+# Dev servers (magenta): TCP listeners this session started. Claude Code starts
+# this script with its own environment, so $PORT never carries them. A
+# listener belongs to the session when its environment holds this session's
+# CLAUDE_CODE_SESSION_ID, it descends from the session's Claude process, or it
+# runs in the session's scratch space. Servers that retitle themselves
+# (http-server does) hide their environment from ps; such a server also counts
+# when it runs in the checkout this line shows (not $HOME). The segment always
+# shows the machine's LAN IPv4 address, joined by the session's port when it
+# has one. On the home network, 192.168.73.x, only ".x" shows (".7:43750");
+# elsewhere the full address does. Links always use the full address.
+# Detection takes ~250 ms, so each session reuses its result for 5 s.
+lan_ip() {
+  local iface host=""
+  iface=$(route -n get default 2>/dev/null | awk '/interface:/ { print $2 }')
+  [ -n "$iface" ] && host=$(ipconfig getifaddr "$iface" 2>/dev/null)
+  [ -z "$host" ] && host=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit } }')
+  printf '%s' "$host"
+}
+ip_disp() {
+  case $1 in 192.168.73.*) printf '.%s' "${1#192.168.73.}" ;; *) printf '%s' "$1" ;; esac
+}
+srv_detect() {
+  local listen pids cwds titles procs rows ports first host disp more assigned shown row others
+  host=$(lan_ip)
+  disp=$(ip_disp "$host")
+  listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
+    /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
+  ')
+  [ -n "$listen" ] || ports=""
+  [ -n "$listen" ] && {
+  pids=$(printf '%s\n' "$listen" | cut -f1 | sort -u | paste -sd, -)
+  cwds=$(lsof -a -d cwd -p "$pids" -Fpn 2>/dev/null | awk '
+    /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
+  ')
+  # "<pid>\t<title>\t<1 if its environment holds this session's id>\t<1 if ps
+  # shows any environment>". Node daemons retitle themselves, so lsof reports
+  # "node"; ps shows the title.
+  titles=$({ ps -E -ww -o pid=,command= -p "$pids" 2>/dev/null ||
+    ps e -ww -o pid=,command= -p "$pids" 2>/dev/null; } |
+    awk -v s="CLAUDE_CODE_SESSION_ID=$rl_sid" '{
+      n = split($2, a, "/"); i = index($0, s)
+      print $1 "\t" a[n] "\t" (i && substr($0, i + length(s), 1) !~ /[^ ]/) "\t" (index($0, " PATH=") > 0)
+    }')
+  procs=$(ps -A -o pid=,ppid=,comm= 2>/dev/null)
+  # Rows: "<port>\t<1 if reachable from the LAN>\t<cwd to confirm>". The cwd
+  # is set only for a hidden-environment server matched by folder; it counts
+  # only when its own checkout is this one, not a worktree nested inside it.
+  # A hidden-environment server on a port in the session's reserved block
+  # counts as the session's wherever it runs.
+  assigned=$(cat "$rl_dir/port-$rl_sid" 2>/dev/null)
+  case $assigned in *[!0-9]*) assigned="" ;; esac
+  rows=$(printf '%s\n' "$listen" | SRV_CWDS="$cwds" SRV_TITLES="$titles" SRV_TOP="$git_top" \
+    SRV_BLOCK="$assigned" SRV_PROCS="$procs" SRV_SELF="$$" SRV_SID="$rl_sid" awk -F '\t' '
+    BEGIN {
+      n = split(ENVIRON["SRV_CWDS"], rows, "\n")
+      for (i = 1; i <= n; i++) { split(rows[i], f, "\t"); dir[f[1]] = f[2] }
+      n = split(ENVIRON["SRV_TITLES"], rows, "\n")
+      for (i = 1; i <= n; i++) { split(rows[i], f, "\t"); title[f[1]] = f[2]; mine[f[1]] = f[3]; env[f[1]] = f[4] }
+      top = ENVIRON["SRV_TOP"]
+      if (top == ENVIRON["HOME"]) top = ""
+      n = split(ENVIRON["SRV_PROCS"], rows, "\n")
+      for (i = 1; i <= n; i++) {
+        split(rows[i], f, " "); parent[f[1]] = f[2]
+        c = rows[i]; sub(/^ *[0-9]+ +[0-9]+ +/, "", c); sub(/.*\//, "", c); comm[f[1]] = c
+      }
+      # The nearest "claude" ancestor of this script is the session process.
+      for (p = ENVIRON["SRV_SELF"]; p > 1 && comm[p] != "claude"; p = parent[p]) ;
+      claude = (p > 1) ? p : ""
+      sid = ENVIRON["SRV_SID"]
+      block = ENVIRON["SRV_BLOCK"]
+    }
+    # Editor daemons may start from a session but are not servers.
+    title[$1] ~ /^(eslint_d|prettierd|biome)$/ { next }
+    {
+      addr = $2; port = addr; sub(/.*:/, "", port); host = substr(addr, 1, length(addr) - length(port) - 1)
+      hit = mine[$1] == 1 || index(dir[$1], "/" sid "/")
+      if (!hit && claude != "") for (p = parent[$1]; p > 1; p = parent[p]) if (p == claude) { hit = 1; break }
+      if (!hit && env[$1] != 1 && block != "" && port + 0 >= block + 0 && port + 0 <= block + 9) hit = 1
+      check = ""
+      d = dir[$1]
+      if (!hit && env[$1] != 1 && top != "" && (d == top || index(d, top "/") == 1)) check = d
+      if (!hit && check == "") next
+      print port "\t" (host !~ /^(127\.|\[::1\]|localhost)/) "\t" check
+    }
+  ')
+  # Output: "<port>\t<1 if reachable from the LAN>", LAN servers first, then by port.
+  ports=$(printf '%s\n' "$rows" | while IFS=$'\t' read -r port lan check; do
+    [ -n "$port" ] || continue
+    [ -z "$check" ] || [ "$(git -C "$check" rev-parse --show-toplevel 2>/dev/null)" = "$git_top" ] || continue
+    printf '%s\t%s\n' "$port" "$lan"
+  done | awk -F '\t' '
+    { if (!($1 in seen) || $2) seen[$1] = $2 }
+    END { for (p in seen) print p "\t" seen[p] }
+  ' | sort -t $'\t' -k2,2nr -k1,1n)
+  }
+  # The shown port is the one the session-port hook assigned, else the first
+  # server found. It is dim while nothing listens on it.
+  shown=$assigned
+  row=""
+  if [ -n "$assigned" ]; then
+    row=$(printf '%s\n' "$ports" | awk -F '\t' -v p="$assigned" '$1 == p')
+    others=$(printf '%s\n' "$ports" | awk -F '\t' -v p="$assigned" '$1 != "" && $1 != p')
+  elif [ -n "$ports" ]; then
+    row=${ports%%$'\n'*}
+    shown=${row%%$'\t'*}
+    others=$(printf '%s\n' "$ports" | sed 1d)
+  fi
+  if [ -z "$shown" ]; then
+    [ -n "$disp" ] && printf '\033[35m%s\033[0m' "$disp"
+    return 0
+  fi
+  # A process outside the session on the assigned port (one whose visible
+  # environment lacks this session's id) is a conflict: the port shows red,
+  # and the .conflict file makes session-port.sh pick a new block on resume.
+  # The file goes once the port is the session's again or free.
+  if [ -n "$row" ]; then
+    srv_link "$shown" "${row##*$'\t'}" "35" "$disp:$shown"
+    rm -f "$rl_dir/port-$rl_sid.conflict"
+  elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
+    { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
+    printf '\033[31m%s:%s\033[0m' "$disp" "$shown"
+    : > "$rl_dir/port-$rl_sid.conflict"
   else
-    parts="$pc_seg"
+    printf '\033[2;35m%s:%s\033[0m' "$disp" "$shown"
+    rm -f "$rl_dir/port-$rl_sid.conflict"
+  fi
+  # "+N" counts the session's other servers and links to the first of them.
+  if [ -n "$others" ]; then
+    more=$(printf '%s\n' "$others" | wc -l | tr -d ' ')
+    first=${others%%$'\n'*}
+    srv_link "${first%%$'\t'*}" "${first##*$'\t'}" "38;5;245" "+$more"
+  fi
+  return 0
+}
+# OSC 8 link: $1 = port, $2 = 1 if reachable from the LAN, $3 = SGR colour,
+# $4 = text. BEL ends each escape because the final printf '%b' would read a
+# "\" terminator as the start of an escape.
+srv_link() {
+  local url_host=localhost
+  [ "$2" = 1 ] && [ -n "$host" ] && url_host=$host
+  printf '\033]8;;http://%s:%s\a\033[%sm%s\033[0m\033]8;;\a' "$url_host" "$1" "$3" "$4"
+}
+srv_seg=""
+if [ -z "$rl_sid" ]; then
+  srv_ip=$(lan_ip)
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$(ip_disp "$srv_ip")")
+else
+  srv_cache="$rl_dir/servers-$rl_sid"
+  srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
+  case $srv_mtime in '' | *[!0-9]*) srv_mtime=0 ;; esac
+  if [ $((now - srv_mtime)) -lt 5 ]; then
+    srv_seg=$(cat "$srv_cache" 2>/dev/null)
+  else
+    srv_seg=$(srv_detect)
+    rl_write "$srv_cache" "$srv_seg"
+    # Keeps this session's port reserved; session-port.sh releases ports
+    # untouched for an hour.
+    [ -f "$rl_dir/port-$rl_sid" ] && touch "$rl_dir/port-$rl_sid"
+  fi
+fi
+
+# "<account>@<ip>:<port>" leads the line; the account (grey) links to claude.ai.
+parts=""
+[ -n "$account_name" ] && parts=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
+if [ -n "$srv_seg" ]; then
+  if [ -n "$parts" ]; then
+    parts=$(printf '%s\033[38;5;245m@\033[0m%s' "$parts" "$srv_seg")
+  else
+    parts="$srv_seg"
   fi
 fi
 
 # Model + effort (blue then magenta, no joiner — the colour change separates
-# them). The context-window size is not repeated here; the context segment
-# already labels it (1M, 200k).
+# them). The context segment follows it after a "·" since both describe the
+# model session: "O5.5m·2.4h:55%".
 if [ -n "$effort" ]; then
   model_seg=$(printf '\033[34m%s\033[0m\033[35m%s\033[0m' "$model" "$effort")
 else
@@ -470,40 +608,103 @@ else
   parts="$model_seg"
 fi
 
-# Context window usage (labeled with the window size: 1M / 200k / …)
+# The prompt cache expiry closes the context segment.
+pc_val=""
+case $pc_state in
+  cold) pc_val=$'\033[36mcold\033[0m' ;;
+  warm)
+    case $pc_expires in *[!0-9.]* | '') pc_expires=$now ;; esac
+    pc_end=${pc_expires%.*}
+    # While hooks/cache-keepalive.sh sleeps for this session, it pings the 1-hour
+    # cache every CACHE_KEEPALIVE_SLEEP seconds after the last cache write until
+    # the session has been idle CACHE_KEEPALIVE_MAX_IDLE seconds since its last
+    # prompt; the cache then lasts one more hour. Its defaults are mirrored here.
+    ka_dir="${XDG_STATE_HOME:-$HOME/.local/state}/agents/cache-keepalive"
+    ka_pid=$(cat "$ka_dir/$rl_sid.sleeper" 2>/dev/null)
+    if [ -n "$rl_sid" ] && [ -n "$ka_pid" ] && kill -0 "$ka_pid" 2>/dev/null; then
+      ka_last=$(cat "$ka_dir/$rl_sid.last_prompt" 2>/dev/null)
+      case $ka_last in *[!0-9]* | '') ka_last=$now ;; esac
+      ka_ping=$((pc_end - 3600))
+      while [ $((ka_ping + 2700 - ka_last)) -lt 7200 ]; do
+        ka_ping=$((ka_ping + 2700))
+        pc_end=$((ka_ping + 3600))
+      done
+    fi
+    # Time left in the rate-limit countdown format ("2.3h", "45m"); minutes
+    # turn yellow from 15 left and red from 5.
+    pc_left=$(((pc_end - now) / 60))
+    [ "$pc_left" -lt 0 ] && pc_left=0
+    if [ "$pc_left" -le 5 ]; then
+      pc_val=$(printf '\033[31m%sm\033[0m' "$pc_left")
+      warn_level=2
+    elif [ "$pc_left" -le 15 ]; then
+      pc_val=$(printf '\033[33m%sm\033[0m' "$pc_left")
+      warn_level=1
+    else
+      pc_val=$(rl_dim="" countdown_str "$pc_end")
+    fi
+    ;;
+esac
+
+# Context window usage joins the model as "<model>·<window>·<cache time>:<percent>",
+# ending in "<time>:<percent>" like the rate-limit segments; without a cache
+# time the window takes its place, and the window shows only when unusual
+# ("O5.5m·2.4h:59%", "O5.5·200k:40%"). One ⚠ closes the field when the
+# context nears compaction or the cache nears expiry, coloured by the worse.
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
-  hint=""
   if [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_hint_tokens" ]; then
     c=31
-    hint=$(printf '\033[31m⚠\033[0m')
+    warn_level=2
   elif [ -n "$ctx_used_tokens" ] && [ "$ctx_used_tokens" -ge "$compact_warn_tokens" ]; then
     # Never downgrade a red percent to yellow.
     [ "$c" = 32 ] && c=33
-    hint=$(printf '\033[33m⚠\033[0m')
+    [ "${warn_level:-0}" -lt 1 ] && warn_level=1
   fi
-  parts=$(printf '%s%s%s\033[38;5;245m:\033[0m\033[%sm%d%%\033[0m%s' "$parts" "$sep" "$ctx_label" "$c" "$ctx_used_pct" "$hint")
+  hint=""
+  case ${warn_level:-0} in
+    2) hint=$(printf '\033[31m⚠\033[0m') ;;
+    1) hint=$(printf '\033[33m⚠\033[0m') ;;
+  esac
+  dot=$'\033[38;5;245m·\033[0m'
+  colon=$'\033[38;5;245m:\033[0m'
+  ctx_head=$dot
+  if [ -n "$ctx_label" ] && [ -n "$pc_val" ]; then
+    ctx_head="$dot$ctx_label$dot$pc_val$colon"
+  elif [ -n "$ctx_label$pc_val" ]; then
+    ctx_head="$dot$ctx_label$pc_val$colon"
+  fi
+  parts=$(printf '%s%s\033[%sm%d%%\033[0m%s' "$parts" "$ctx_head" "$c" "$ctx_used_pct" "$hint")
 fi
 
 # Project and branch as "project#branch": the project (green) is the git
 # repository root, falling back to the cwd; the branch is bright white because
-# yellow and red are reserved for usage warnings.
+# yellow and red are reserved for usage warnings. The segment is an OSC 8 link
+# to the shown checkout's absolute path, so terminals can open or copy it.
 dir_base="$git_root_name"
-[ -z "$dir_base" ] && dir_base=$(basename "$cwd" 2>/dev/null)
+if [ -z "$dir_base" ]; then
+  if [ "$cwd" = "$HOME" ]; then dir_base=HOME; else dir_base=$(basename "$cwd" 2>/dev/null); fi
+fi
 loc_seg=""
 [ -n "$dir_base" ] && loc_seg=$(printf '\033[32m%s\033[0m' "$dir_base")
 if [ -n "$git_info" ]; then
   loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033[97m%s\033[0m' "$loc_seg" "$git_info")
 fi
-[ -n "$loc_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$loc_seg")
+if [ -n "$loc_seg" ]; then
+  loc_path=${git_top:-$cwd}
+  loc_path=${loc_path//%/%25}
+  loc_seg=$(printf '\033]8;;file://%s\a%s\033]8;;\a' "${loc_path// /%20}" "$loc_seg")
+fi
 
-# 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels
+# 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels. Each links
+# to the claude.ai usage page.
+usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
 rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr")
-[ -n "$fh_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$fh_seg")
+[ -n "$fh_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fh_seg")
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day")
-[ -n "$sd_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$sd_seg")
+[ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 
 # Extra / overage usage
 if [ -n "$extra_pct" ]; then
@@ -521,9 +722,7 @@ elif [ -n "$extra_dollars" ]; then
   fi
 fi
 
-# PORT (magenta, only when set)
-if [ -n "$port_display" ]; then
-  parts=$(printf '%s%s\033[35m%s\033[0m' "$parts" "$sep" "$port_display")
-fi
+# Project and branch close the line, since a long branch name runs longest.
+[ -n "$loc_seg" ] && parts=$(printf '%s%s%s' "$parts" "$sep" "$loc_seg")
 
 printf '%b' "$parts"
