@@ -10,7 +10,9 @@ const test = require('node:test');
 const scratch = path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'agents', 'scratch', 'agent-wf-status-tests');
 test.after(() => fs.rmSync(scratch, { recursive: true, force: true }));
 
-const cli = path.resolve(__dirname, '../../../../..', 'private_dot_local/bin/executable_agent-wf-status');
+// Use the chezmoi source helper; fall back to the installed one outside the source tree.
+const sourceCli = path.resolve(__dirname, '../../../../..', 'private_dot_local/bin/executable_agent-wf-status');
+const cli = fs.existsSync(sourceCli) ? sourceCli : path.join(os.homedir(), '.local/bin/agent-wf-status');
 
 function workflowDir(events) {
   fs.mkdirSync(scratch, { recursive: true });

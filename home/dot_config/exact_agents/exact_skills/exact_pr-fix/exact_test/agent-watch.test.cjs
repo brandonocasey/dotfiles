@@ -1,14 +1,22 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 const skillDir = path.resolve(__dirname, '..');
-const watcher = path.resolve(skillDir, '../../../../private_dot_local/bin/executable_agent-watch');
+// Use the chezmoi source helper; fall back to the installed one outside the source tree.
+const sourceWatcher = path.resolve(skillDir, '../../../../private_dot_local/bin/executable_agent-watch');
+const watcher = fs.existsSync(sourceWatcher) ? sourceWatcher : path.join(os.homedir(), '.local/bin/agent-watch');
 const fixtures = path.join(__dirname, fs.existsSync(path.join(__dirname, 'exact_fixtures')) ? 'exact_fixtures' : 'fixtures');
-const fakeGh = path.join(fixtures, 'fake-gh.cjs');
-const fakeGlab = path.join(fixtures, 'fake-glab.cjs');
+// The chezmoi source names executable fixtures with an `executable_` prefix.
+const fixture = (name) => {
+  const source = path.join(fixtures, `executable_${name}`);
+  return fs.existsSync(source) ? source : path.join(fixtures, name);
+};
+const fakeGh = fixture('fake-gh.cjs');
+const fakeGlab = fixture('fake-glab.cjs');
 const { backoffDelay, parseArgs } = require(watcher);
 const scratchRoot = process.env.AGENT_WATCH_TEST_ROOT;
 

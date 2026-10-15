@@ -8,7 +8,9 @@ const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
 const { after, before, test } = require('node:test');
 
-const helper = path.resolve(__dirname, '../../../../../private_dot_local/bin/executable_agent-preview');
+// Use the chezmoi source helper; fall back to the installed one outside the source tree.
+const sourceHelper = path.resolve(__dirname, '../../../../../private_dot_local/bin/executable_agent-preview');
+const helper = fs.existsSync(sourceHelper) ? sourceHelper : path.join(os.homedir(), '.local/bin/agent-preview');
 const root = path.join(os.homedir(), '.cache', 'agents', 'scratch', 'agent-preview-tests', `${process.pid}`);
 const stateDir = path.join(root, 'state');
 const asset = path.join(root, 'choice.html');
