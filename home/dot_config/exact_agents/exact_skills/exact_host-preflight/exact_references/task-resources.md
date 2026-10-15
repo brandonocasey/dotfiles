@@ -35,7 +35,8 @@ or `ipconfig` on Windows. Claude Code sessions reserve a block of ports:
 Give each such server the first block port that nothing listens on.
 Without `$PORT`, give each such server and worktree its own random free port.
 Automated tests and test runners never use the block. They pick their own
-free port: port 0 or the tool's default. Pass the same port to every start
+random free port, such as port 0. Never rely on a tool's default port:
+parallel sessions and worktrees share it. Pass the same port to every start
 command for the task.
 
 ## Cleanup
