@@ -9,7 +9,7 @@ exception is a preview prototype (**Scope**).
 
 - Review only at an end point:
   - the user says the task is done, or asks for a review;
-  - a commit the user asked for, or `investigate` step 7's fix commit. Routine
+  - a commit the user asked for, or `investigate`'s fix commit (section 5, item 7). Routine
     per-turn commits (git-policy's commit before reporting) do not count;
   - right after a push outside `ship`, while its CI runs; push the fixes after;
   - just before integrating the change into another branch (merge, cherry-pick,
@@ -28,6 +28,11 @@ exception is a preview prototype (**Scope**).
   not mean nothing to review. Finish the implementation and the checks and manual
   check that can run before the end point. Checks that only run remotely or need
   a device or person may follow the review; report them as pending.
+- Before the final review of this session's own work, inspect already-finished CI
+  failures of any existing task-branch push, once, per
+  [ci-and-conflicts.md](ci-and-conflicts.md), and fix them. Never wait for CI or
+  push solely to obtain it. During `ship`, skip this when the push starts a new
+  pipeline. Without push authorization, review locally.
 - When the task goes straight on to `ship` or `land` in the same turn, skip
   earlier end points and review only there.
 - During `ship`, review after the push per ship's finish-scope.md.

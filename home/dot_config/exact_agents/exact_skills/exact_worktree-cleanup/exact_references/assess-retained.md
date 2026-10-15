@@ -73,10 +73,13 @@ Assign one verdict per branch:
   the target tree; or explicit replacement evidence proves every change is covered.
   Require successful commands and complete relevant history. Errors or missing
   history mean unknown. File overlap or a matching PR title alone is insufficient.
-- **No longer useful**: the work still differs from the target, but the ticket is closed, the
-  remote branch is gone, no PR references it, and the branch has had no commit since the target
-  changed the same files. A closed-without-merge PR whose head equals the local tip, or that the
-  local tip is an ancestor of, counts as the PR referencing it and closing it; report the PR URL.
+- **No longer useful**: the work still differs from the target, no open PR references it, and
+  one of these holds:
+  - No merged PR references it. The ticket is closed and the remote branch is gone. The branch
+    has had no commit since the target changed the same files.
+  - A closed-without-merge PR references it. A closed PR means the work is no longer needed.
+    The PR references it when its head equals the local tip or contains it. Report the PR URL.
+
   State each condition that holds.
 - **Still relevant**: unique changes remain, the ticket is open or unknown, and nothing in the
   target replaces them. Include recent commits and any open PR.

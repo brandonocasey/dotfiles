@@ -56,7 +56,7 @@ with no pipes, `;`, or variable assignments.
 5. **Commit.** Load [commit](../commit/SKILL.md). Make one commit per concern.
 6. **Pull and push.** Run `git pull --autostash`, with no strategy flag, so the
    repo's configured strategy applies and unstaged edits survive. Check the
-   pull's exit code; never pipe it to `tail` before `&&`. Resolve clear conflicts. Stop and ask
+   pull's exit code. Resolve clear conflicts. Stop and ask
    when the intended result is not clear. Then run `git push`.
 7. **Apply.** Run `chezmoi apply <targets>`, so the pushed sources take effect.
    Apply only the scoped targets; a wider apply overwrites unsynced target edits.

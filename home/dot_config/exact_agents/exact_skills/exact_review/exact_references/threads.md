@@ -12,7 +12,7 @@ GitLab and GitHub only. On any other platform, including Forgejo, report that
 5. Reply in one plain sentence and resolve the `fixed` and `stale` threads.
    The user's request authorizes this for the named MR/PR only.
    Never reply or resolve on a repository outside the user's organization unless the user names that action.
-6. Write draft replies for `question` threads to the review's comment file. Do not post them.
+6. Print draft replies for `question` threads for the user to post, as in [output.md](output.md). Do not post them.
 7. Report a table: thread link, class, and action taken.
 
 ## GitLab

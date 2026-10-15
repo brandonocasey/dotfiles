@@ -20,8 +20,8 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 - Protect the default branch, the current branch, and any branch checked out in the current
   worktree.
 - Remove only worktrees that are clean (including no untracked files), attached to a named local
-  branch, not in use by a running process, and unambiguous in path and identity — except an exact
-  detached PR-head match covered by review confirmation. Force-remove only under the `worktree` skill's **Blocked removal** rules.
+  branch, not in use by a running process, and unambiguous in path and identity — except a detached
+  worktree covered by the review-worktree confirmation. Force-remove only under the `worktree` skill's **Blocked removal** rules.
 - Use `git branch -d` for branches whose tip is an ancestor of the selected local target. Let Git
   refuse deletion if that normal merge check fails.
 - **Squash-merge exception**: `git branch -D` is allowed when the exact local tip equals a
@@ -82,7 +82,7 @@ Read all worktrees from `git worktree list --porcelain`. For each worktree, reco
 - branch or detached state;
 - HEAD commit;
 - `git -C <path> status --short --ignore-submodules=none` output;
-- whether a process has that path as its current directory.
+- whether a process has that path, or a path under it, as its current directory.
 
 On macOS or another system with `lsof`, inspect active directories with:
 
@@ -215,6 +215,8 @@ removal, then remove it:
 ```sh
 git worktree remove -- <worktree-path>
 ```
+
+Ignored files never block this removal. Git deletes them with the worktree.
 
 If the repository provides a purpose-built helper such as `scripts/remove-worktree.mjs`, inspect
 its behavior and use it when it is the project's documented path. If removal refuses, follow the

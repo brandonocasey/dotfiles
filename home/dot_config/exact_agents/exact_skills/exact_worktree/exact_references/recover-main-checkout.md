@@ -13,11 +13,11 @@ so the main checkout stays clean:
    `git -C <main-checkout> rev-parse stash@{0}`.
 3. Create the worktree, then apply that ID there:
    `git -C <main-checkout>/.worktrees/<branch> stash apply --index <stash-commit>`.
-4. Check that every intended change was restored. Immediately before you drop
+4. Resolve a conflict when the combined result is clear ([git-policy.md](../../shared/git-policy.md));
+   never discard either side just to make a conflict disappear. On an ambiguous
+   conflict, retain the stash and report its ID and both checkout paths.
+5. Check that every intended change was restored. Immediately before you drop
    the stash, find the entry whose commit is the recorded ID in
    `git stash list --format='%gd %H'`, and drop only that entry. Never use bare
    `pop`.
-5. Resolve a conflict when the combined result is clear ([git-policy.md](../../shared/git-policy.md));
-   never discard either side just to make a conflict disappear. On an ambiguous
-   conflict, retain the stash and report its ID and both checkout paths.
 6. Check `git status --short` in both checkouts.

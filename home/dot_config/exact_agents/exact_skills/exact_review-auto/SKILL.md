@@ -9,5 +9,5 @@ user's arguments. Read and follow that skill once. `--fix` runs its fix loop.
 Preserve the user's target and every other flag, such as `--agents` or `--no-test`.
 
 Invoking this skill is the user's request to fix, approve, and merge the target.
-Review step 7 still owns the gate, the approval rules, and the merge watch:
-blocking findings, a moved head, or a local target stop the approval and merge.
+Review step 7 owns the gate, head re-check, approval rules, and merge watch.
+Blocking findings or a local target stop approval and merge.

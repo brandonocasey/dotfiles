@@ -16,7 +16,7 @@ their attention once: preflight, then one page, then read results.
    the device that URL, not localhost. The server prints a guess; swap in the en0 address if it is a VPN one. A QR code helps for phones.
 3. Check the page loads from the device's network before asking: `curl` the
    LAN URL. A firewall prompt or VPN can block it.
-4. iPhone driven by the agent: Safari > Settings > Developer > Remote
+4. iPhone driven by the agent: Settings > (Apps >) Safari > Advanced > Remote
    Automation must be on, and the phone unlocked and trusted. Stop and ask if
    it drops mid-run; do not retry in a loop.
 5. HTTPS: clipboard, camera, mic, DRM (EME `requestMediaKeySystemAccess`), and service workers
@@ -32,26 +32,28 @@ Write `scenarios.json` in the task scratch dir:
 `{"title","device","scenarios":[{"id","title","steps":[]}]}`.
 
 - Number every scenario; one sentence title, at most 3 short steps.
-- Put shared setup and teardown in the page, not in every scenario. For
-  AirPlay, step 1 and the last step reset to the local device.
+- Put shared setup in the first scenario and teardown in the last, not in
+  every scenario. For AirPlay, step 1 and the last step reset to the local
+  device.
 - Cover the expected result in the title ("Audio plays on <device>").
 - No event logs or debug UI the user must read.
 
 ## Run and read results
 
 ```sh
-python3 ~/.config/agents/skills/device-test/scripts/serve.py scenarios.json --out results.jsonl
+python3 ~/.config/agents/skills/device-test/scripts/serve.py <scratch>/scenarios.json --out <scratch>/results.jsonl
 ```
 
 Run it in the background; it prints the LAN URL (with a random token in the path; requests without it get 403)
-and picks a free port. Give the user the URL, then wait. Read new lines of `results.jsonl`
+and picks a free port. Pass `--port` per [task-resources.md](../host-preflight/references/task-resources.md) when `$PORT` is set.
+Give the user the URL, then wait. Read new lines of `results.jsonl`
 (`{id,status,notes,ts,device,ua}`; status is pass, fail, or skip). Do not ask
 for results in chat. If the user types prose instead, record it against the
 scenario and continue.
 
 Reprint the scenario list when the user asks for it or after any change. After
 a fix, rerun only failed scenarios plus one that passed, with a fresh
-`--out` file. Stop the server when done, per
+`--out` file. Stop the server when done or abandoned, including on failure, per
 [task-resources.md](../host-preflight/references/task-resources.md).
 
 ## Report

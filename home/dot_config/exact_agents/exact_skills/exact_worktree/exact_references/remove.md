@@ -24,8 +24,8 @@ A squash merge does not prove the original commits are preserved.
 
 For a remote MR/PR, fetch and refresh its state before using merged/closed status.
 Remove a local branch only through **Remove after push** below, `land`'s merged
-branch checks, or the `-D` exceptions documented in `review` step 7 and
-`worktree-cleanup`. If a deleted remote branch prevents that proof, retain the local
+branch checks, or the `-D` exceptions in `review` step 7 and in a user-invoked
+`worktree-cleanup` run. If a deleted remote branch prevents that proof, retain the local
 branch; a clean worktree can still be removed when that retained branch preserves
 its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
 
@@ -57,8 +57,9 @@ git -C <main-checkout> rev-parse <branch>                     # local tip; must 
 
 Pass the full ref: a bare `<branch>` pattern also matches
 `refs/heads/<prefix>/<branch>` and can print a second ID.
-If the IDs differ, `ls-remote` prints nothing, or the command fails, keep the
-worktree and the branch and report both IDs. Otherwise:
+If the IDs differ or the command fails, keep the worktree and the branch and
+report both IDs. When `ls-remote` prints nothing, keep the branch; remove a clean
+worktree per **Remove**. Otherwise:
 
 ```sh
 git -C <main-checkout> worktree remove <worktree-path>

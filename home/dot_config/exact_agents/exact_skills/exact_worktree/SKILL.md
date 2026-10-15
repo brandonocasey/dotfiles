@@ -31,12 +31,5 @@ Before removing a worktree or branch, read [remove.md](references/remove.md).
 It owns cleanup eligibility, preservation checks, and removal after push.
 Batch cleanup runs only when the user invokes `worktree-cleanup` or `disk-cleanup`.
 
-### Submodules
-
-For removal with initialized submodules, follow **Remove**, then
-[removal-checks.md](references/removal-checks.md), **Submodules**.
-
-### Blocked removal
-
-If ordinary removal fails, follow **Remove**, then
-[removal-checks.md](references/removal-checks.md), **Blocked removal**.
+After **Remove**, read [removal-checks.md](references/removal-checks.md):
+**Submodules** for initialized submodules, **Blocked removal** when ordinary removal fails.

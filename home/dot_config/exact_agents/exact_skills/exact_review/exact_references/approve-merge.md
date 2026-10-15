@@ -43,7 +43,7 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
      is gone and `branch -d` refuses the squash-merged tip, run
      `git branch -D <branch>` only when the local tip equals the merged MR/PR's
      recorded head SHA. Otherwise keep it and report both IDs.
-   - Run `git -C <main-checkout> fetch --prune origin`, then `git worktree prune`.
+   - Run `git -C <main-checkout> fetch --prune origin`, then `git -C <main-checkout> worktree prune`.
 
 End the report with one line:
 `Merge: marked ready; approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`

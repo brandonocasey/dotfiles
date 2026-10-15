@@ -40,8 +40,8 @@ Kill a finding that an earlier pass killed, unless its code changed since that p
 Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
 For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
-passes target it. Run once, after step 5: step 4's per-run report, `Ship:` line, and
-worktree removal; the auto-merge restore; and step 7. Step 5's ask replaces step 4's
+passes target it. Run once, after step 5, in this order: the auto-merge restore,
+step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's
 answer resolves or accepts every item; otherwise leave auto-merge off. Keep the
 review worktree until then. If no sub-agent is available, stop after the first

@@ -7,7 +7,8 @@
   CI after shipping**, and report without waiting for it. Honor an explicit
   monitoring or repair request in the current turn, and keep the worktree until
   that work ends. Read ci-repair.md before any repair or retry; it also covers
-  a CI failure the user requests or the `review` own-work rule requires (once,
+  a CI failure the user requests or the own-work rule in
+  [when-to-run.md](../../review/references/when-to-run.md) **Timing** requires (once,
   for jobs that already failed).
 - Wait for the review, not CI, before the report. While it runs, make no commits
   and hold CI repairs.
@@ -19,7 +20,7 @@
   ci-repair.md's fix-push cap only when it carries a CI repair.
 - The review's fix loop ([loop.md](../../review/references/loop.md)) decides when
   to re-check, while the new CI runs. Push each later fix pass the same way.
-- After every review and fix push ends, and the loop's closing list is empty or
+- After every review and fix push ends, and the loop's step 5 list is empty or
   the user's answer resolves or accepts every item, restore any paused auto-merge
   per [auto-merge-pause.md](../../shared/auto-merge-pause.md).
 - With `--approve` or `--merge`, under that same condition and with no blocking

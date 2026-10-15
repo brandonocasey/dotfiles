@@ -32,7 +32,7 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Before the spawn, the main session reads no review references, and it never reviews
+Before the spawn, the main session reads no review references except when-to-run.md, and it never reviews
 the code itself. Start one `cheap` sub-agent with exactly this prompt:
 
 ```text
@@ -44,11 +44,14 @@ Scratch: <task scratch directory>. Earlier worktree: <path or none>.
 - Run setups one at a time, never in parallel.
 - On `empty`, say there is nothing to review and stop. On `checks: unclear` or a
   blocker, rerun the prompt with the `worker` role, adding `Judgement: allowed`, any
-  reported worktree, and started checks. If the worker is still blocked, report the
-  blocker to the user and stop.
+  reported worktree, and started checks. If the worker is still blocked, clean up
+  per [output.md](references/output.md), report the blocker to the user, and stop.
 - Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
+- Never add a summary of the change, focus areas, what already passed, or earlier
+  findings. That framing steers reviewers away from the code. Only a fix check adds
+  the inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the manual pass uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
 - Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,

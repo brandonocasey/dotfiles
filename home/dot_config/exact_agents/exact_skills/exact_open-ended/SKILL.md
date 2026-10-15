@@ -28,11 +28,11 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
 
 1. Write the shared prompt once to `<ledger-dir>/brief.md`: task, scope, end
    check, ledger path, repository constraints, and the instructions below.
-   Spawn one agent per angle, in one message, with "read brief.md; your angle:
-   X". Use `explorer` for read-only search and `worker` when items need
+   Spawn one agent per angle, in one message, with "read <ledger-dir>/brief.md; your
+   angle: X", using the absolute path. Use `explorer` for read-only search and `worker` when items need
    judgement or research. Tell each agent to:
    - read the ledger first;
-   - write its result to `round-<k>/<angle>.md` and return the path and item
+   - write its result to `<ledger-dir>/round-<k>/<angle>.md` and return the path and item
      count;
    - return only items absent from **Found** and **Rejected**, each with source
      (`file:line` or URL), evidence, and the reason it is new;

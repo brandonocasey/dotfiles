@@ -36,7 +36,8 @@ If the pinned diff is empty, report `empty` and stop.
   prompt gives one, else the current checkout.
 - MR/PR: **Source checkout** in [remote-target.md](remote-target.md). Branch: the
   `worktree` skill's `references/create.md`. Reuse a review worktree from an earlier pass.
-- With `.gitmodules`, run `git -C <worktree> submodule update --init --recursive`.
+- In a worktree you created, with `.gitmodules`, run
+  `git -C <worktree> submodule update --init --recursive`.
 - Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
 
 ## 3. Checks

@@ -39,10 +39,7 @@ Find each target's source before editing: chezmoi or another repository. Update 
 Before any sync, check hooks and automatic Git settings.
 A sync must not commit, push, or overwrite other files without approval.
 
-When the scope names several hosts, read [host-drift.md](references/host-drift.md).
-Compare each shared source with its resolved installation on every named host.
-Distinguish intentional host differences from stale copies. After an authorized
-sync, check hashes and linked references again; report every remaining mismatch.
+When the scope names several hosts, follow [host-drift.md](references/host-drift.md) on every named host.
 
 ### Chezmoi
 
@@ -77,14 +74,14 @@ Write one apply script (`sh`, with the backup step) to the scratch directory, pr
 
 ### Ownership and invocation
 
-Report findings without editing Claude-app-owned `skills/synced/` or `gh skill` installs with `metadata.github-*` frontmatter.
+Report findings without editing Claude-app-owned `skills/synced/` or `gh skill` installs with `metadata.github-*` frontmatter, or skills listed in `~/.agents/.skill-lock.json`.
 Leave targets modified within the last few minutes alone; another agent may own them.
 On “modified since read,” reread and merge with the new content.
 
 Preserve invocation settings unless the user asks to change them. Report each harness separately:
 
 - Claude Code: `disable-model-invocation` frontmatter and `skillOverrides`.
-  `user-invocable-only` is explicit-only; `name-only` still lists the name; `off` also removes the `/` entry.
+  `user-invocable-only` is explicit-only; `name-only` lists only the name, saving description tokens while keeping model visibility; `off` also removes the `/` entry.
 - Codex: `policy.allow_implicit_invocation` in `agents/openai.yaml`, and `skills.config` in its config.
 
 One harness's setting does not control another.
@@ -107,7 +104,7 @@ One harness's setting does not control another.
   Never remove a check or authorization boundary merely because it restates a default.
 - **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
   Narrow or remove other stop points; agents follow them literally.
-- **Language:** apply the main-session Writing rules.
+- **Language:** apply [writing.md](../shared/writing.md).
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
 - **Setup claims:** for a Claude Code or setup question, read the current setting first and test it. Otherwise mark the answer unverified.
@@ -122,7 +119,7 @@ Prioritize recurring cost over raw file size:
 2. Model-invocable skill listings load every session.
    Propose explicit-only invocation for rarely used skills: `disable-model-invocation` for owned skills;
    `skillOverrides: user-invocable-only` for other Claude skills.
-   `name-only` saves description tokens while keeping model visibility.
+   To keep model visibility, propose `name-only` instead.
    Plugin skills ignore `skillOverrides`; manage them through `/plugin`.
 3. Skill bodies load on invocation and remain in context.
    Weight cost by `/<name>` or `$<name>` counts in `~/.claude*/history.jsonl` and `~/.codex/history.jsonl`.
@@ -131,9 +128,7 @@ Prioritize recurring cost over raw file size:
 4. Linked reads add tokens. Make each conditional: “Read X when Y.”
 
 For workflow improvements or a session-history audit, read
-[session-evidence.md](references/session-evidence.md). Inspect corrections and
-repeated follow-ups alongside invocation counts. Check the surrounding turns,
-current implementation, and coverage before ranking avoidable user effort.
+[session-evidence.md](references/session-evidence.md).
 
 Claude Code compaction retains at most the first 5,000 tokens per invoked skill, about 15 KB by this estimate.
 Flag longer skills and put essential rules first. Its shared retention budget can also drop older skills.
@@ -173,9 +168,8 @@ Never add tool-specific commands there.
 
 1. Complete setup, apply fixes (or propose them, per **Skills** above), and record veto items.
 2. Check edited frontmatter with `head`, compare token counts, and re-derive algorithms or calculations changed or retained.
-   After workflow edits, replay relevant failures with
-   [workflow-replays.md](references/workflow-replays.md). Record expected and
-   observed behavior without external writes. Do not infer savings from counts.
+   After workflow edits, replay relevant failures per
+   [workflow-replays.md](references/workflow-replays.md).
 3. Report under **Bugs fixed / Deduped / Improved / Session evidence / Veto items / Left alone**.
    For each finding, state the defect, its workflow effect, and the fix.
 

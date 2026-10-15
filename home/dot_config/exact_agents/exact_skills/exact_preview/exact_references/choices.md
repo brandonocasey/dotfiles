@@ -17,8 +17,8 @@ Split the choices into separate questions, one decision each. Do not ask the use
 Per [task-resources.md](../../host-preflight/references/task-resources.md), put the
 config and disposable visual assets in the task scratch directory. Keep private gallery
 state (access token and feedback) under the external XDG cache scratch directory in a
-separate `preview-state/` directory, and never serve it as static files. Reuse one random
-port for this gallery. Write a JSON config with stable question and option IDs:
+separate `preview-state/` directory, and never serve it as static files. Pick its port per
+`task-resources.md` and reuse it for this gallery. Write a JSON config with stable question and option IDs:
 
 ```json
 {

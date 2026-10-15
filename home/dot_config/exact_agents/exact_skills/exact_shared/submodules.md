@@ -4,7 +4,7 @@ Shared by `ship` and `land`. A superproject gitlink change is incomplete
 without its submodule commits. For owned submodules, both skills carry the
 submodule branch through the same steps. `land` reads
 [land/references/submodules.md](../land/references/submodules.md) for its
-**Land** steps.
+land steps.
 
 ## Facts
 
@@ -34,9 +34,9 @@ For every entry in `.gitmodules`, establish:
   checkout's clone of the submodule (`<MAIN_WT>/<SUB_PATH>`), never from the
   worktree's clone.
 
-A changed submodule that is not owned stops the skill: the recorded commit
-must already exist on the submodule's remote (`git -C <SUB_PATH> branch -r
---contains HEAD` prints a branch). If it does not, report the submodule path
+For a changed submodule that is not owned, the recorded commit must already
+exist on its remote: after `git -C <SUB_PATH> fetch --quiet`,
+`git -C <SUB_PATH> branch -r --contains HEAD` prints a branch. If it does not, report the submodule path
 and commit ID and stop; never push to a foreign remote.
 
 ## Commit gate

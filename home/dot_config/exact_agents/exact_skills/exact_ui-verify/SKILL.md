@@ -73,5 +73,5 @@ defects and rerun the affected checks.
 Reuse results for unchanged code and inputs.
 
 Return evidence to the requesting task or `review`. This skill checks the
-implemented result; design direction and option galleries belong to
-`frontend-design` and [preview](../preview/SKILL.md).
+implemented result; option galleries belong to [preview](../preview/SKILL.md),
+and design direction to `frontend-design` when the user invokes it.

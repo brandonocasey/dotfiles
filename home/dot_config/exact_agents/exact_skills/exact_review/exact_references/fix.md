@@ -17,12 +17,6 @@ For any other target, print the comments and wait for `--fix`. End with:
 After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means
 `--fix` for the same target. Treat every other reply as a normal request.
 
-Before the final review of this session's own work, inspect already-finished CI
-failures of any existing task-branch push, once, per
-[ci-and-conflicts.md](ci-and-conflicts.md), and fix them. Never wait for CI or
-push solely to obtain it. During `ship`, skip this when the push starts a new
-pipeline. Without push authorization, review locally.
-
 ## 4. Optional: --fix
 
 Run this step when **Fix authorization** skips the gate, the user asks (`--fix`, a

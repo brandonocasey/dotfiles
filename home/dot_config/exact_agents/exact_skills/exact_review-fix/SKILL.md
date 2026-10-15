@@ -8,4 +8,4 @@ arguments. Read and follow that skill once. `--fix` runs its fix loop.
 Preserve the user's target and every other flag, such as `--agents` or `--no-test`.
 
 Invoking this skill is the user's request to fix the target. Approval and merge
-still need `--approve` or `--merge`, or `review-auto`.
+still need `--approve`, `--auto-merge`, or `--merge`, or a user-invoked `review-auto`.
