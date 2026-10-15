@@ -759,14 +759,14 @@ if [ -n "$git_info" ]; then
 fi
 
 # 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels. Each links
-# to the claude.ai usage page. The 7-day one goes in after Fable's limit below
-# joins it.
+# to the claude.ai usage page.
 usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
 rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
 [ -n "$fh_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fh_seg")
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
+[ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 
 # Fable's weekly limit and usage credits: "F:<usage%>" and
 # "<countdown>:$<used>/$<limit>". Monthly credits reset at 00:00 UTC on the
@@ -818,18 +818,12 @@ fi
 case $ex_fetched in *[!0-9]* | '') ex_fetched=0 ;; esac
 ex_dim=""
 [ $((now - ex_fetched)) -gt 900 ] && ex_dim="2;"
-# Fable's limit is a weekly one, so it joins the 7-day window after a "·":
-# "5.4d:37%·F:3%".
+# Fable's limit gets its own segment after the 7-day window: "5.4d:37%|F:3%".
 if [ -n "$fable_pct" ] && [ "$fable_pct" != - ]; then
   fb_seg=$(rl_dim=$ex_dim rate_seg "" "$fable_pct")
   fb_seg=$(printf '\033[%s38;5;245mF:\033[0m%s' "$ex_dim" "$fb_seg")
-  if [ -n "$sd_seg" ]; then
-    sd_seg=$(printf '%s\033[38;5;245m·\033[0m%s' "$sd_seg" "$fb_seg")
-  else
-    sd_seg=$fb_seg
-  fi
+  parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fb_seg")
 fi
-[ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 # Credits show only once at least a whole unit ($1) is spent this month.
 cr_shown=0
 case $cr_used in '' | *[!0-9.]*) ;; *) printf -v cr_shown '%.0f' "$cr_used" ;; esac
