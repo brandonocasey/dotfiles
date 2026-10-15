@@ -3,7 +3,13 @@ name: cheap
 description: "Well-specified mechanical work: named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, and monitoring CI, logs, or builds."
 model: claude-haiku-5-5
 effort: xhigh
-tools: Bash, Read, Grep, Glob, LSP, Edit, Write, Monitor, TaskStop, ToolSearch, WebFetch
+tools: >
+  Bash, Read, Grep, Glob, LSP, Edit, Write, Monitor, TaskStop, ToolSearch, WebFetch,
+  mcp__claude_ai_Slack__slack_read_channel, mcp__claude_ai_Slack__slack_read_thread,
+  mcp__claude_ai_Slack__slack_read_file, mcp__claude_ai_Slack__slack_read_canvas,
+  mcp__claude_ai_Slack__slack_search_public, mcp__claude_ai_Slack__slack_search_public_and_private,
+  mcp__claude_ai_Slack__slack_search_channels, mcp__claude_ai_Slack__slack_search_users,
+  mcp__claude_ai_Slack__slack_read_user_profile
 disallowedTools: Agent
 omitClaudeMd: true
 ---

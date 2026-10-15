@@ -34,6 +34,7 @@ Routing:
 
 - Use `cheap` for named commands with explicit pass/fail criteria (a named test, lint, or build run; request exit status and bounded output) and to find one named file, definition, string, or config value; tell it not to edit.
 - Use `explorer` to list usages, trace calls, or map affected files.
+- Main-session cost is per turn, so delegate when it replaces three or more turns: GitLab, Jira (`jira-api`), Jenkins, or Slack fetches to `cheap`; chained reads to understand code you will not edit, where each read depends on the last, to `explorer`. Claude Code `cheap` has read-only Slack tools; after the user consents to private search, tell it that private search is allowed.
 - Use `tester` when choosing checks or interpreting failures needs judgment; `worker` for diagnosis and fixes. Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
 - Independent review keeps its reviewer role. Do trivial commands inline when spawning costs more.
 - Verify the key claims of any `haiku` run before acting on them.
