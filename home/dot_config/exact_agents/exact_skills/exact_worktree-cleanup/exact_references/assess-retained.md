@@ -60,8 +60,7 @@ GitLab fields map as in step 3; `description` stands in for `body`.
 Look for a merged PR whose title, body, or head name references the branch or its ticket key, or
 uses words such as "supersedes", "replaces", or "reland". For a closed-without-merge PR, read its
 closing comment and any linked PR: "superseded by #N" or "moved to #N" with #N merged is
-superseded; "not needed", "won't do", or "duplicate" is no longer useful; a close with no
-explanation is evidence only when combined with the local checks below. A ticket key is any `[A-Z]+-[0-9]+`
+superseded; any other close, even with no explanation, is no longer useful. A ticket key is any `[A-Z]+-[0-9]+`
 token in the branch name or its commit subjects. When a Jira or GitLab issue tool is available,
 fetch the ticket and record its status; `Done`, `Closed`, or `Won't Do` with no open PR for the
 branch is evidence for no longer useful.
@@ -81,8 +80,8 @@ Assign one verdict per branch:
     The PR references it when its head equals the local tip or contains it. Report the PR URL.
 
   State each condition that holds.
-- **Still relevant**: unique changes remain, the ticket is open or unknown, and nothing in the
-  target replaces them. Include recent commits and any open PR.
+- **Still relevant**: unique changes remain, the ticket is open or unknown, no
+  closed-without-merge PR references the branch, and nothing in the target replaces them. Include recent commits and any open PR.
 - **Unknown**: forge, ticket, or merge-tree evidence was unavailable or contradictory. Say which.
 
 Show a table with `branch`, `tip`, `last commit`, `upstream`, `pr`, `verdict`, `recommend`, and
