@@ -2,6 +2,10 @@
 node = "26"
 go = ['latest']
 uv = ['latest']
+# Language servers for the Claude Code LSP plugins; the TypeScript one is
+# TypeScript 7 (run_onchange_after_07-lsp-install) with the ~/.local/bin wrapper.
+rust-analyzer = 'latest'
+'npm:pyright' = 'latest'
 
 [settings]
 experimental = true
