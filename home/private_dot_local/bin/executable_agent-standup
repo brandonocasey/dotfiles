@@ -27,6 +27,20 @@ ask_claude() {
         --allowedTools "$tools" 2>>"$LOG")
 }
 
+# Repository name for a session, so worktrees of one repo share a label.
+session_project() {
+    local cwd common
+    cwd=$(jq -r 'select(.cwd) | .cwd' "$1" 2>/dev/null | head -1)
+    [ -z "$cwd" ] && { basename "$(dirname "$1")"; return; }
+    [ "$cwd" = "$HOME" ] && { echo "none (home directory)"; return; }
+    common=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    case $common in
+        */.git) basename "${common%/.git}" ;;
+        '') basename "$cwd" ;;
+        *) basename "$common" .git ;;
+    esac
+}
+
 # User prompts and final replies from today's Claude sessions.
 session_digest() {
     local since exclude prompts
@@ -45,7 +59,7 @@ session_digest() {
             head -40)
         # Sessions with no prompts today did no work today.
         [ -z "$prompts" ] && continue
-        echo "=== $(basename "$(dirname "$f")")"
+        echo "=== project: $(session_project "$f")"
         echo "$prompts"
         # Final replies get truncated, so collect every link the session mentioned.
         echo "LINKS: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null |
@@ -101,7 +115,7 @@ if [ -z "$(printf %s "$digest" | tr -d '[:space:]')" ]; then
     exit 0
 fi
 
-format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-12 bullets total, each bullet under 20 words. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
+format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-12 bullets total, each bullet under 20 words. Inside each section, group bullets by project: a bold project label on its own line, such as '*hive*', then that project's bullets. A project is a repository: take its name from the session's 'project:' header or the MR URL path. Use the Jira project key for ticket-only work, and '*Other*' for work with no project or a 'none' project. Order projects by amount of work. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
 intro="The input is a digest of today's work: the user's prompts and final replies from Claude Code sessions, plus GitLab activity. Write a standup"
 
 if [ "$1" = --print ]; then
