@@ -136,8 +136,9 @@ Cut both without skipping any step above:
 
 - Batch independent reads, searches, and commands into one call. Search the whole
   scope with one `rg`, not file by file.
-- Read partials. Locate code with LSP when available, `ast-grep` for structure, or
-  `rg -n`, then read only those ranges (file-read `offset`/`limit` or `sed -n`).
+- Read partials. For a named symbol's references or definition, use LSP first when
+  available, loading it if deferred; otherwise locate code with `ast-grep` for structure
+  or `rg -n`. Then read only those ranges (file-read `offset`/`limit` or `sed -n`).
   Still read all needed context: the whole changed function, its callers, and the
   contracts a finding depends on. Read whole config files, small modules, and files
   you need most of.
