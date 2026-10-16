@@ -8,8 +8,9 @@ running `agent-wait` waiter. After 20 minutes of waiting on the same jobs it
 must write a handoff file and hand back with `HANDOFF: <path>`, so the main
 session can wait for free and start a fresh agent from that file.
 
-Only SubagentHandback messages reach the main session; plain reply text does
-not. A handback ends the turn, so this hook often runs right after one.
+SubagentHandback delivers one report and ends the turn. The harness discards a
+stop-hook block after a turn ended by a tool, so this hook can only steer
+plain-text stops; after a handback it just records the outcome.
 
 Exit 2 blocks the stop and shows the message to the subagent.
 """
@@ -27,8 +28,9 @@ WARM_SECONDS = 20 * 60
 WAITER = re.compile(r"\bagent-wait\b")
 HANDOFF = re.compile(r"HANDOFF:[*_`\s]*([^\s`*]+)")
 REPORT = (
-    "Report only through SubagentHandback; plain reply text never reaches "
-    "the main session."
+    "If you have SubagentHandback, it delivers one report only, so call it "
+    "once, at the end; plain reply text does not reach the main session. "
+    "Without it, your final plain reply is the report."
 )
 
 
@@ -56,25 +58,51 @@ def own_running_shells(data: dict, transcript: str) -> list[dict]:
     ]
 
 
-def last_handback(transcript: str) -> str:
-    """Message of the latest SubagentHandback call, or ""."""
-    for line in reversed(transcript.splitlines()):
-        if '"SubagentHandback"' not in line:
-            continue
+def parts(entry: dict) -> list:
+    content = (entry.get("message") or {}).get("content")
+    return [p for p in content if isinstance(p, dict)] if isinstance(content, list) else []
+
+
+def turn_handback(transcript: str) -> tuple[bool, str, bool]:
+    """(ended, message, delivered) for a SubagentHandback that ended this turn."""
+    entries = []
+    for line in transcript.splitlines():
         try:
-            content = json.loads(line).get("message", {}).get("content") or []
-        except (ValueError, AttributeError):
+            entries.append(json.loads(line))
+        except ValueError:
             continue
-        for part in content if isinstance(content, list) else []:
-            if part.get("type") == "tool_use" and part.get("name") == "SubagentHandback":
-                return str((part.get("input") or {}).get("message") or "")
-    return ""
+    last = next((i for i in range(len(entries) - 1, -1, -1)
+                 if entries[i].get("type") == "assistant"), None)
+    if last is None:
+        return False, "", False
+    call = next((p for p in parts(entries[last])
+                 if p.get("type") == "tool_use" and p.get("name") == "SubagentHandback"), None)
+    if not call:
+        return False, "", False
+    results = [p for e in entries[last + 1:] for p in parts(e)
+               if p.get("type") == "tool_result" and p.get("tool_use_id") == call.get("id")]
+    rejected = any(p.get("is_error") or re.search(
+        r"Nothing was sent|\"success\":\s*false", json.dumps(p.get("content")))
+        for p in results)
+    return True, str((call.get("input") or {}).get("message") or ""), not rejected
 
 
 def handoff_file(text: str) -> str:
-    m = HANDOFF.search(text)
-    path = os.path.expanduser(m.group(1).rstrip(".,;:)]'\"")) if m else ""
+    found = HANDOFF.findall(text)
+    path = os.path.expanduser(found[-1].rstrip(".,;:)]'\"")) if found else ""
     return path if path and os.path.isfile(path) else ""
+
+
+def wait_keys(jobs: list[dict]) -> list[str]:
+    """What is being waited on: work job ids, or a waiter's check for detached jobs."""
+    keys = []
+    for t in jobs:
+        command = t.get("command") or ""
+        if WAITER.search(command):
+            keys.append("check:" + command.split(" -- ", 1)[-1].strip())
+        else:
+            keys.append(t["id"])
+    return sorted(set(keys))
 
 
 def block(message: str, entry: dict) -> int:
@@ -100,29 +128,37 @@ def main() -> int:
             os.remove(state_file)
         return 0
 
-    handoff = handoff_file(last_handback(transcript)) or handoff_file(
-        data.get("last_assistant_message") or ""
-    )
+    ended, handback, delivered = turn_handback(transcript)
+    if ended:
+        # A block would be discarded; record what the handback did.
+        handoff = handoff_file(handback) if delivered else ""
+        if handoff and os.path.exists(state_file):
+            os.remove(state_file)
+        decision = "handoff" if handoff else ("handed-back" if delivered else "handback-rejected")
+        log({**entry, "decision": decision, "file": handoff})
+        return 0
+
+    handoff = handoff_file(data.get("last_assistant_message") or "")
     if handoff:
         if os.path.exists(state_file):
             os.remove(state_file)
         log({**entry, "decision": "handoff", "file": handoff})
         return 0
 
-    # The clock covers waits on the same work jobs. A new job (work done
-    # between jobs) starts a new wait.
+    # The clock covers waits on the same work. A new job or done-check
+    # (work done between waits) starts a new wait.
     now = time.time()
-    work = sorted(t["id"] for t in jobs if not WAITER.search(t.get("command") or ""))
+    keys = wait_keys(jobs)
     try:
         with open(state_file, encoding="utf-8") as f:
             state = json.load(f)
         since, known = float(state["since"]), state["jobs"]
     except (OSError, ValueError, KeyError, TypeError):
         since, known = now, []
-    if not set(work) <= set(known):
+    if not set(keys) <= set(known):
         since = now
     with open(state_file, "w", encoding="utf-8") as f:
-        json.dump({"since": since, "jobs": work}, f)
+        json.dump({"since": since, "jobs": keys}, f)
     waited = now - since
 
     if waited >= WARM_SECONDS:
@@ -135,8 +171,8 @@ def main() -> int:
             "Write tool) with the task state, findings so far, the next step, "
             "each running job's log path, and the condition that means it is "
             "done. Stop your agent-wait waiter with TaskStop if you have it; "
-            "otherwise leave it. Then call SubagentHandback with a message "
-            f"that ends with the line HANDOFF: {target}. {REPORT}",
+            "otherwise leave it. Then end your report with the line "
+            f"HANDOFF: {target}. {REPORT}",
             {**entry, "waited": int(waited)},
         )
 
@@ -149,10 +185,8 @@ def main() -> int:
         "prompt cache expire. Before stopping, start a waiter with "
         "run_in_background: true, e.g. `agent-wait --max 270 -- test -e <done-file>`. "
         "It wakes you within 4.5 minutes; check the job, re-arm the waiter if "
-        "it still runs, then stop again. Stop without SubagentHandback while "
-        "you wait. If you already handed back, the main session has that "
-        "report; when the job ends, call SubagentHandback again with the final "
-        f"result. {REPORT} For jobs that may run past 20 "
+        "it still runs, then stop again with a short plain-text note. "
+        f"{REPORT} For jobs that may run past 20 "
         "minutes, start them detached instead of with run_in_background, so a "
         "handoff does not leave you parked until they end: "
         "`nohup setsid sh -c '<cmd> > <log> 2>&1; echo $? > <done-file>' "

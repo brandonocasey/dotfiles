@@ -26,7 +26,7 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 
 Give parallel agents identical shared instruction prefixes, then the differing file lists or review items.
 Continue an existing agent for related follow-up work when the harness supports it and its last turn ended under 5 minutes ago. Otherwise spawn a fresh agent and pass the earlier results as file paths: continuing an agent whose cache expired rewrites its whole context.
-A sub-agent that stops while its own background job runs must keep a background `agent-wait` waiter, so it wakes every 4.5 minutes; the `subagent-wait` hook enforces this. An agent that hands back while its job runs may send a later, final handback. After 20 minutes of waiting on the same jobs, the hook makes it hand back with `HANDOFF: <file>`. Then wait on the job's done condition in a background command, and spawn a fresh agent with that file.
+A sub-agent that stops while its own background job runs must keep a background `agent-wait` waiter, so it wakes every 4.5 minutes; the `subagent-wait` hook enforces this. The hook cannot act after a `SubagentHandback`, which also delivers only one report, so tell agents that start background jobs to stop with plain text while they wait and hand back once, at the end. After 20 minutes of waiting on the same work, the hook makes it hand back with `HANDOFF: <file>`. Then wait on the job's done condition in a background command, and spawn a fresh agent with that file.
 
 ## Conditional procedures
 
