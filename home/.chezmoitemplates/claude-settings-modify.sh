@@ -160,7 +160,7 @@ managed=$(
           {
             "type": "command",
             "command": "sh ~/.claude/hooks/auto-title.sh",
-            "timeout": 20
+            "timeout": 5
           },
           {
             "type": "command",
