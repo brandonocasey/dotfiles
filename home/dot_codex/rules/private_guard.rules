@@ -1,6 +1,3 @@
-{{- if eq .chezmoi.hostname "bcasey-dev" -}}
-# Prompt rules MUST be omitted because this host uses approval_policy = "never".
-{{ else -}}
 # Prompt before writes the user wants to approve. Codex rules match command
 # prefixes only: no globs, and no "outside scratch" test for rm.
 # Needs approval_policy = "on-request"; "never" turns prompt into forbidden.
@@ -42,4 +39,3 @@ prefix_rule(
     match = [["jira-api", "POST", "/version"], ["jira-api", "DELETE", "/version/1"]],
     not_match = [["jira-api", "GET", "/myself"]],
 )
-{{ end -}}
