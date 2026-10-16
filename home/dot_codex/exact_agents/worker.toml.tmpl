@@ -4,3 +4,9 @@ model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
 developer_instructions = """
 {{ template "agents/worker.md" (dict "harness" "codex") }}"""
+
+[skills]
+include_instructions = false
+
+[skills.bundled]
+enabled = false

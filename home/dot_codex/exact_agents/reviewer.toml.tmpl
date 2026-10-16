@@ -4,3 +4,13 @@ model = "gpt-6-astra"
 model_reasoning_effort = "xhigh"
 developer_instructions = """
 {{ template "agents/reviewer.md" (dict "harness" "codex") }}"""
+
+[skills]
+include_instructions = false
+
+[skills.bundled]
+enabled = false
+
+[features]
+apps = false
+plugins = false

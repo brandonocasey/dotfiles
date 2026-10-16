@@ -65,6 +65,21 @@ chezmoi apply ~/.codex/config.toml
 Rerun the config apply after a synced account path changes, then restart Codex
 to refresh skill discovery.
 
+Codex limits the skill catalog to 1,000 tokens and retained tool outputs to
+4,000 tokens each. Automatic compaction starts at 100,000 context tokens.
+Output limits can truncate evidence; earlier compaction can lose detail.
+
+All seven Codex roles omit automatic skill guidance and bundled skills.
+Delegating sessions must pass required skill paths and task constraints.
+The explorer, tester, reviewer, and consult roles disable apps and plugins.
+Other roles retain them; standalone MCP servers remain available.
+The documentation MCP exposes search, page retrieval, and OpenAPI retrieval.
+Linux disables the bundled browser and Chrome plugins, whose configured
+backends require macOS. The standalone browser MCP configuration stays available.
+These settings follow the [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+and [custom-agent controls](https://developers.openai.com/codex/subagents#custom-agents).
+Restart Codex after applying them to refresh configuration and agent discovery.
+
 Shared writing rules live in `~/.config/agents/AGENTS.md`. Multi-step work and
 change recaps additionally load `skills/shared/work-output.md`. The delegation
 skill loads monitoring and escalation procedures only when those operations

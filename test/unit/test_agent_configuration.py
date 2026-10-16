@@ -100,7 +100,9 @@ class AgentConfigurationTests(unittest.TestCase):
                 input="", text=True, capture_output=True, check=True, timeout=10,
                 env=dict(os.environ, HOME=directory, XDG_CONFIG_HOME=directory,
                          XDG_CACHE_HOME=directory, XDG_STATE_HOME=directory))
-            self.assertNotIn("skills", tomllib.loads(result.stdout))
+            config = tomllib.loads(result.stdout)
+            self.assertEqual(config["skills"]["max_context_tokens"], 1000)
+            self.assertNotIn("config", config["skills"])
 
 if __name__ == "__main__":
     unittest.main()

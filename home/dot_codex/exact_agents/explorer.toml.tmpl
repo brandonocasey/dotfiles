@@ -6,3 +6,13 @@ model_reasoning_effort = "low"
 sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}read-only{{ end }}"
 developer_instructions = """
 {{ template "agents/explorer.md" (dict "harness" "codex") }}"""
+
+[skills]
+include_instructions = false
+
+[skills.bundled]
+enabled = false
+
+[features]
+apps = false
+plugins = false
