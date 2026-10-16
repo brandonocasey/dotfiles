@@ -12,20 +12,67 @@ Exit 2 cancels the call and shows the message to the model.
 """
 
 import json
+import os
 import re
 import sys
 
-POLL_LOOP = re.compile(r"\b(until|while)\b[^\n]*?\bdo\b(?:(?!\bdone\b)[\s\S])*?\bsleep\b")
+POLL_LOOP = re.compile(
+    r"\b(until|while)\b[^\n]*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
+)
 SLEEP = re.compile(r"\bsleep\s+(\d+(?:\.\d+)?)([smhd]?)\b")
 UNIT = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
-# Quoted arguments are data (search patterns, commit messages), except the
-# script given to `sh -c` and friends.
-QUOTED = re.compile(r"(?<!-c )(\"[^\"]*\"|'[^']*')")
+SHELLS = {"sh", "bash", "zsh", "dash", "ksh"}
 GH_WATCH = re.compile(r"\bgh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch)\b")
 PROC_MATCH = re.compile(
-    r"\b(pkill|pgrep)\b((?:\s+-[A-Za-z]+)*?\s+-[A-Za-z]*f[A-Za-z]*(?:\s+-[A-Za-z]+)*)\s+"
-    r"(\"[^\"]*\"|'[^']*'|[^\s;|&]+)"
+    r"\b(pkill|pgrep)\b((?:\s+-[A-Za-z]+)*?\s+-[A-Za-z]*f[A-Za-z]*(?:\s+-[A-Za-z]+)*)"
+    r"(?:\s+--)?\s+(\"[^\"]*\"|'[^']*'|[^\s;|&]+)"
 )
+
+
+def code_only(cmd: str) -> str:
+    """Blank quoted data and comments, keeping offsets.
+
+    Quoted arguments are data (search patterns, commit messages), except the
+    script given to a shell's -c flag, which stays.
+    """
+    out, words, word, i, n = [], [], "", 0, len(cmd)
+    while i < n:
+        c = cmd[i]
+        if c == "\\" and i + 1 < n:
+            out.append(cmd[i:i + 2])
+            word += cmd[i + 1]
+            i += 2
+        elif c in "'\"":
+            j = i + 1
+            while j < n and cmd[j] != c:
+                j += 2 if c == '"' and cmd[j] == "\\" else 1
+            body = cmd[i + 1:j]
+            script = (
+                not word and len(words) >= 2
+                and re.fullmatch(r"-[a-z]*c[a-z]*", words[-1])
+                and os.path.basename(words[-2]) in SHELLS
+            )
+            out.append(c + (body if script else re.sub(r"[^\n]", " ", body)) + c)
+            word += "x"
+            i = j + 1
+        elif c == "#" and not word:
+            j = cmd.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i))
+            i = j
+        elif c.isspace() or c in ";&|()":
+            if word:
+                words.append(word)
+                word = ""
+            if c in ";&|()\n":
+                words = []
+            out.append(c)
+            i += 1
+        else:
+            word += c
+            out.append(c)
+            i += 1
+    return "".join(out)[:n]
 
 
 HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)")
@@ -35,8 +82,8 @@ def problems(cmd: str, background: bool) -> list[str]:
     # Heredoc bodies are data (notes, scripts being written), not commands.
     cmd = HEREDOC.sub("", cmd)
     found = []
+    code = code_only(cmd)
     if not background:
-        code = QUOTED.sub("''", cmd)
         if POLL_LOOP.search(code):
             found.append(
                 "Foreground polling loop. Rerun it with run_in_background: true "
@@ -59,10 +106,9 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "Foreground gh watch. Rerun it with run_in_background: true, "
                 "or use agent-watch."
             )
-    quoted = [q.span() for q in QUOTED.finditer(cmd)]
     for m in PROC_MATCH.finditer(cmd):
-        if any(a <= m.start() < b for a, b in quoted):
-            continue
+        if code[m.start()] != cmd[m.start()]:
+            continue  # inside quoted data or a comment
         tool, pattern = m.group(1), m.group(3).strip("\"'")
         # An anchored pattern cannot match this shell, whose command line
         # starts with the shell's own path.
