@@ -82,8 +82,10 @@ preview prototype (**Scope**).
 ## Follow-ups
 
 - A follow-up change is one made after the review's fix loop ends. Repairs inside
-  the loop, and their commits, are not follow-ups. Fixes the user directs after
-  the loop ends, such as for a held question or an open finding, are follow-ups.
+  the loop, and their commits, are not follow-ups. Fixes for the review's own
+  findings, including held questions the user decides later, are repairs, not
+  follow-ups. The fix loop's rules apply: only a major finding's fix gets a
+  re-check, by the same reviewer.
 - Follow-ups wait for the next end point (**Timing**), such as their own finished
   commit. Then review them together as one delta
   (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
