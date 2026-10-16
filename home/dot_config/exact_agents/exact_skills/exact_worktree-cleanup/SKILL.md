@@ -21,7 +21,7 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   worktree.
 - Remove only worktrees that are clean (including no untracked files), attached to a named local
   branch, not in use by a running process, and unambiguous in path and identity — except a detached
-  worktree covered by the review-worktree confirmation. Force-remove only under the `worktree` skill's **Blocked removal** rules.
+  worktree covered by the review-worktree or named detached-baseline confirmation. Force-remove only under the `worktree` skill's **Blocked removal** rules.
 - Use `git branch -d` for branches whose tip is an ancestor of the selected local target. Let Git
   refuse deletion if that normal merge check fails.
 - **Squash-merge exception**: `git branch -D` is allowed when the exact local tip equals a
@@ -39,6 +39,10 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 - **Review-worktree confirmation**: may remove every clean, idle worktree whose HEAD exactly
   matches a remote PR head, or is contained in a merged PR's head under the matching rules in
   step 3, including detached worktrees and multiple worktrees for one PR. It never authorizes deleting local branch refs unless those branches separately qualify.
+- **Named detached-baseline confirmation**: outside review, removal requires explicit approval
+  naming the detached path and HEAD, with that commit preserved in the remaining main checkout
+  or a named local ref that will remain. All ordinary cleanliness, idle, protection, and
+  preservation checks still apply; a baseline label or target ancestry alone is not approval.
 - Do not infer that a branch is merged from its name, a closed-but-unmerged pull request, or a
   stale local ref.
 - Retain a branch used by an open PR even if an older PR for that branch was merged.
@@ -99,6 +103,26 @@ Also list local branches with their upstreams and tips:
 ```sh
 git for-each-ref --format='%(refname:short) %(objectname:short) %(upstream:short)' refs/heads
 ```
+
+Before final retention decisions, inspect ignored files too: use
+`git -C <path> ls-files --others --ignored --exclude-standard -z` and inspect their
+contents/types without following symlinks. Apply the preservation and blocker rules in
+[remove.md](../worktree/references/remove.md) and
+[removal-checks.md](../worktree/references/removal-checks.md), even if Git would remove them.
+Unknown notes and requested files need an explicit disposition; offer archival preservation
+and removal in the first approval instead of silently discarding them or retaining by default.
+Dirty or active worktrees stay; an archive never makes dirty work eligible for removal.
+
+For proposed archives, name the source paths and destination outside every removal target.
+Preserve relative paths, file types, modes, and symlink targets without following links.
+Exclude only roots verified as dependency or build output from project configuration and
+inspection; a directory name alone never justifies excluding nested source or notes.
+Verify the complete included path/type inventory, symlink targets, and regular-file content
+hashes against the source; record excluded roots and evidence separately. Recheck source
+stability after copying and immediately before removal; any change or failed verification
+means retain and reassess. Report external copies as Archived, never Saved (which requires
+repository evidence). Archived Unknown files require the user's specific relocation approval;
+they do not become Disposable or authorize force-removal under Blocked removal.
 
 ### 3. Establish merge evidence
 
@@ -192,15 +216,24 @@ squash-merged branches rather than guess.
 
 A worktree is removable only when its category has evidence — local ancestry in the
 selected target, a merged PR whose head contains every local commit, a user-confirmed
-exact closed-PR head, or a user-confirmed review match — and every safety rule passes.
+exact closed-PR head, a user-confirmed review match, or a named detached-baseline confirmation — and every safety rule passes.
 A local branch without a worktree can qualify through local ancestry, merged-PR
 evidence, or a user-confirmed exact closed-without-merge head. Current, target,
 open-PR, and otherwise protected branches remain protected in every category.
 
+Before the first approval, reconcile a fresh complete worktree and local-branch inventory
+against the final preview after step 5. Account for every row, including unmatched paths,
+detached HEADs, and branches without worktrees; refresh merge/open-PR evidence as needed,
+including formerly open PRs that may now be merged. Resolve missing rows or unknown evidence
+as explicit keeps, never omissions. Reconcile again if inventory changes before removal.
+
 Before mutating anything, show a compact table with `remove`, `keep`, and `reason` for every
 candidate. Every `keep` row then goes through step 5. If the user asked for a dry run, show the step 5
 assessment, ask nothing, and stop. Otherwise ask the user to approve the `remove` rows before step 6. Ask in the
-same message as the step 5 question when step 5 asks one.
+same message as the step 5 question when step 5 asks one. Include specific archived-file
+relocations (source, destination, verification, and original-file removal) and each named
+detached-baseline exception with its HEAD-preservation proof in that first approval.
+Only the approved rows and dispositions are authorized; changed scope needs a new preview.
 
 ### 5. Assess retained candidates
 
@@ -209,14 +242,16 @@ Complete its assessment and required confirmations before removal.
 
 ### 6. Remove one target at a time
 
-For each approved worktree, recheck its path, branch, cleanliness, and HEAD immediately before
+For each approved worktree, recheck its path, branch, cleanliness, ignored-file disposition,
+archive/source stability, idle state, and HEAD immediately before
 removal, then remove it:
 
 ```sh
 git worktree remove -- <worktree-path>
 ```
 
-Ignored files never block this removal. Git deletes them with the worktree.
+Ignored files never block Git removal; delete them only under their inspected, approved
+dispositions. Retain if requested preservation or archive verification is incomplete.
 
 If the repository provides a purpose-built helper such as `scripts/remove-worktree.mjs`, inspect
 its behavior and use it when it is the project's documented path. If removal refuses, follow the
