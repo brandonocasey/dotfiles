@@ -487,7 +487,7 @@ sep=$(printf '\033[38;5;245m|\033[0m')
 # (http-server does) hide their environment from ps; such a server also counts
 # when it runs in the checkout this line shows (not $HOME). The segment always
 # shows the machine's LAN IPv4 address, joined by the session's port when it
-# has one ("192.168.73.7:43750").
+# has one ("192.168.73.7:43750", shown as "7:43750").
 # Detection takes ~250 ms, so each session reuses its result for 5 s.
 lan_ip() {
   local iface host=""
@@ -504,8 +504,10 @@ lan_ip() {
   printf '%s' "$host"
 }
 srv_detect() {
-  local listen pids cwds titles procs rows ports host assigned shown row
+  local listen pids cwds titles procs rows ports host host_shown assigned shown row
   host=$(lan_ip)
+  # The home LAN prefix is dropped from the shown address ("7:43750"); links keep it.
+  host_shown=${host#192.168.73.}
   listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
     /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
   ')
@@ -586,7 +588,7 @@ srv_detect() {
     shown=${row%%$'\t'*}
   fi
   if [ -z "$shown" ]; then
-    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host"
+    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host_shown"
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -594,14 +596,14 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "$host:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "35" "$host_shown:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m%s:%s\033[0m' "$host" "$shown"
+    printf '\033[31m%s:%s\033[0m' "$host_shown" "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m%s:%s\033[0m' "$host" "$shown"
+    printf '\033[2;35m%s:%s\033[0m' "$host_shown" "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   fi
   return 0
@@ -617,7 +619,7 @@ srv_link() {
 srv_seg=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$srv_ip")
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "${srv_ip#192.168.73.}")
 else
   srv_cache="$rl_dir/servers-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
@@ -665,16 +667,9 @@ else
   fi
 fi
 
-# "<account>@<ip>:<port>"; the account (grey) links to claude.ai.
+# The account (grey) leads the line and links to claude.ai.
 who_seg=""
 [ -n "$account_name" ] && who_seg=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
-if [ -n "$srv_seg" ]; then
-  if [ -n "$who_seg" ]; then
-    who_seg=$(printf '%s\033[38;5;245m@\033[0m%s' "$who_seg" "$srv_seg")
-  else
-    who_seg="$srv_seg"
-  fi
-fi
 
 # Model + effort (blue then magenta, no joiner — the colour change separates
 # them): "O5.5m".
@@ -684,6 +679,7 @@ else
   model_seg=$(printf '\033[34m%s\033[0m' "$model")
 fi
 parts="$model_seg"
+[ -n "$who_seg" ] && parts="$who_seg$sep$parts"
 
 # Prompt cache: the time until it expires, or "cold".
 pc_val=""
@@ -716,29 +712,33 @@ case $pc_state in
       { read -r pc_until < "$rl_dir/port-$rl_sid.until"; } 2>/dev/null
       [ "$pc_until" = "$pc_end" ] || printf '%s\n' "$pc_end" > "$rl_dir/port-$rl_sid.until"
     fi
-    # Time left in the rate-limit countdown format ("2.3h", "45m"); minutes
-    # turn yellow from 15 left and red from 5.
+    # Minutes left ("25m"), shown only from 30 left; they turn yellow from 15
+    # left and red from 5.
     pc_left=$(((pc_end - now) / 60))
     [ "$pc_left" -lt 0 ] && pc_left=0
     if [ "$pc_left" -le 5 ]; then
       pc_val=$(printf '\033[31m%sm\033[0m' "$pc_left")
     elif [ "$pc_left" -le 15 ]; then
       pc_val=$(printf '\033[33m%sm\033[0m' "$pc_left")
-    else
+    elif [ "$pc_left" -le 30 ]; then
       pc_val=$(rl_dim="" countdown_str "$pc_end")
     fi
     ;;
 esac
 
 # Context window usage, led by the window only when unusual ("40%",
-# "200k:40%"), then the prompt cache's time to live ("ttl:2.3h", "ttl:cold").
+# "200k:40%"), then the prompt cache's time to live in the same segment once
+# 30 minutes or less remain ("40%:25m", "40%:cold").
+ctx_seg=""
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
   ctx_seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$ctx_used_pct")
   [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
-  parts="$parts$sep$ctx_seg"
 fi
-[ -n "$pc_val" ] && parts=$(printf '%s%s\033[38;5;245mttl:\033[0m%s' "$parts" "$sep" "$pc_val")
+if [ -n "$pc_val" ]; then
+  if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$pc_val"); else ctx_seg=$pc_val; fi
+fi
+[ -n "$ctx_seg" ] && parts="$parts$sep$ctx_seg"
 
 # Project and branch as "project#branch": the project (green) is the git
 # repository root, falling back to the cwd; the branch is bright white because
@@ -768,77 +768,6 @@ rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
 [ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
 
-# Fable's weekly limit and usage credits: "F:<usage%>" and
-# "<countdown>:$<used>/$<limit>". Monthly credits reset at 00:00 UTC on the
-# 1st, as the overage-reset header reports; that header comes only with model
-# replies, so the countdown is worked out here instead of costing a call.
-# Claude Code doesn't send either here, but a headless `/usage` reports both as
-# JSON (usage_report.rate_limits). Once 5 minutes pass since the last try, one
-# runs in the background and writes the fields this line reads; a failed run
-# keeps the old ones. It calls no model, so it costs no tokens; with no
-# settings, it runs no hooks and no status line. All of an account's sessions
-# share the try time and an mkdir lock, so they start one run between them.
-# Values fetched over 15 minutes ago dim.
-ex_file="$rl_dir/usage-extra-$rl_key"
-ex_lock="$ex_file.lock"
-ex_tried="" ex_fetched="" fable_pct="" cr_used="" cr_limit="" cr_pct="" cr_cur="" cr_reset=""
-{ read -r ex_tried < "$ex_file.tried"; } 2>/dev/null
-{ read -r ex_fetched fable_pct cr_used cr_limit cr_pct cr_cur cr_reset < "$ex_file"; } 2>/dev/null
-case $ex_tried in *[!0-9]* | '') ex_tried=0 ;; esac
-if [ $((now - ex_tried)) -ge 300 ]; then
-  # A run that died leaves its lock; timeout ends a live run within 30 seconds.
-  mkdir "$ex_lock" 2>/dev/null ||
-    { find "$ex_lock" -maxdepth 0 -mmin +2 -exec rmdir {} \; 2>/dev/null && mkdir "$ex_lock" 2>/dev/null; }
-  if [ $? -eq 0 ]; then
-    printf '%s\n' "$now" > "$ex_file.tried"
-    (
-      cd "$rl_dir" || exit
-      # Telemetry costs ~0.7 s of the ~2 s run. CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
-      # MUST stay unset: it also skips the usage fetch, leaving the old copy.
-      CLAUDE_CODE_DISABLE_CLAUDE_MDS=1 DISABLE_TELEMETRY=1 \
-        timeout 30 claude -p /usage --model claude-haiku-5-5 --effort low --tools '' --setting-sources '' \
-        --strict-mcp-config --no-chrome --no-session-persistence --max-turns 1 \
-        --output-format stream-json --verbose |
-        jq -r 'select(.type == "assistant") | .usage_report.rate_limits // empty
-          | (.extra_usage // {}) as $x | (10 | pow(.; $x.decimal_places // 2)) as $d
-          | (now | gmtime) as $t
-          | ([$t[0] + (if $t[1] == 11 then 1 else 0 end), ($t[1] + 1) % 12, 1, 0, 0, 0, 0, 0] | mktime) as $r
-          | [(now | floor),
-            ([.limits[]? | select(.scope.model.display_name? == "Fable") | .percent][0] // "-"),
-            (if $x.is_enabled == true and $x.monthly_limit != null
-              then ($x.used_credits // 0) / $d, $x.monthly_limit / $d, ($x.utilization // 0), ($x.currency // "USD"), $r
-              else "-", "-", "-", "-", "-" end)]
-          | map(tostring) | join(" ")' > "$ex_file.$$"
-      [ -s "$ex_file.$$" ] && mv -f "$ex_file.$$" "$ex_file"
-      rm -f "$ex_file.$$"
-      rmdir "$ex_lock"
-    ) </dev/null >/dev/null 2>&1 &
-  fi
-fi
-case $ex_fetched in *[!0-9]* | '') ex_fetched=0 ;; esac
-ex_dim=""
-[ $((now - ex_fetched)) -gt 900 ] && ex_dim="2;"
-# Fable's limit gets its own segment after the 7-day window: "5.4d:37%|F:3%".
-if [ -n "$fable_pct" ] && [ "$fable_pct" != - ]; then
-  fb_seg=$(rl_dim=$ex_dim rate_seg "" "$fable_pct")
-  fb_seg=$(printf '\033[%s38;5;245mF:\033[0m%s' "$ex_dim" "$fb_seg")
-  parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fb_seg")
-fi
-# Credits show only once at least a whole unit ($1) is spent this month.
-cr_shown=0
-case $cr_used in '' | *[!0-9.]*) ;; *) printf -v cr_shown '%.0f' "$cr_used" ;; esac
-if [ -n "$cr_limit" ] && [ "$cr_limit" != - ] && [ "$cr_shown" != 0 ]; then
-  cr_sym='$'
-  [ "$cr_cur" = USD ] || cr_sym="$cr_cur "
-  c=$(color_for_pct "$(printf '%.0f' "$cr_pct")")
-  cr_seg=$(printf '\033[%s%sm%s%.0f/%s%.0f\033[0m' "$ex_dim" "$c" "$cr_sym" "$cr_used" "$cr_sym" "$cr_limit")
-  case $cr_reset in
-    *[!0-9]* | '') ;;
-    *) cr_seg=$(printf '%s\033[%s38;5;245m:\033[0m%s' "$(rl_dim=$ex_dim countdown_str "$cr_reset")" "$ex_dim" "$cr_seg") ;;
-  esac
-  parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$cr_seg")
-fi
-
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
 # <usage%>", then the dollars spent of the limit when the gateway reports them.
 rl_dim=$spend_dim
@@ -850,12 +779,14 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# Where the session runs, "<account>@<ip>:<port>|project#branch", gets its own
-# line below the rest, since a long branch name runs longest.
-place=$who_seg
+# Where the session runs, "<ip>:<port>|project#branch", ends the line. The
+# project and branch move to a line of their own when the whole line would pass
+# 80 columns, since a long branch name runs longest. Width counts only visible
+# characters.
+[ -n "$srv_seg" ] && parts="$parts$sep$srv_seg"
 if [ -n "$loc_seg" ]; then
-  if [ -n "$place" ]; then place="$place$sep$loc_seg"; else place=$loc_seg; fi
+  line=$(printf '%b' "$parts$sep$loc_seg" | sed $'s/\033\\][^\a]*\a//g; s/\033\\[[0-9;]*m//g')
+  if [ "${#line}" -gt 80 ]; then parts="$parts\n$loc_seg"; else parts="$parts$sep$loc_seg"; fi
 fi
-[ -n "$place" ] && parts=$(printf '%s\n%s' "$parts" "$place")
 
 printf '%b' "$parts"
