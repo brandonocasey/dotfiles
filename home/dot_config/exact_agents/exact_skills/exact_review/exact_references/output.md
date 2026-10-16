@@ -36,7 +36,8 @@ general comments from [remote-target.md](remote-target.md). Then:
 - A finding that matches any other open thread is already raised: drop it.
 - A finding that matches any other resolved thread was settled by a person: drop it
   and name it in the cleared list.
-- Every open review-marked thread that no finding matched stays an open item: list
+- Every open review-marked thread that no finding matched stays an open item, using
+  the open rule in **Reading records** of [remote-comments.md](remote-comments.md): list
   it in the report and in the loop's step 5 list, so the step 7 gate sees it.
 
 On an own MR/PR, post per **Own MR/PR comments** in
