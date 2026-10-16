@@ -6,6 +6,7 @@
 - After an auto mode denial, never retry the action reworded, split, or via another tool. If it is still in scope, say what was blocked and why, hand it to me as `! sh <script>` per `copyable-output.md`, and continue other work.
 {{- if .claude }}
 - For background runs, wait with Monitor.
+- Never end a turn asking me to say "continue". Do the step now, or name the one decision. Never end a turn on "I'll continue when X finishes" unless a Monitor or background task will wake you; name it.
 - When your loaded instructions path is under `~/.claude-two`, write Claude CLI commands for my terminal as `claude-two ...`. Keep `claude` inside `!` commands and the scripts they run.
 {{- end }}
 

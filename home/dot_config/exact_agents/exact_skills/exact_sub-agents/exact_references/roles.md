@@ -24,7 +24,7 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | --- | --- | --- | --- |
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, xhigh | gpt-6-luna, xhigh |
 | `explorer` | Locate usages and trace code paths; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for usage lists | gpt-6.1-sol, low |
-| `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; pass `model: opus` for design or cross-module debugging | gpt-6.1-sol, low |
+| `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; default sonnet. Pass `model: opus` only for a design decision with no written plan, or a root-cause hunt after a sonnet worker failed once. Never for review fixes, finishing a PR, CI edits, or commit splitting | gpt-6.1-sol, low |
 | `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for test selection only | gpt-6.1-sol, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, xhigh |

@@ -14,11 +14,13 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 - Give independent reviewers only the context permitted by the `review` skill.
 - For roles with `omitClaudeMd: true`, include applicable repository constraints, required checks, allowed output paths, and any relevant global consent, destination, resource, or test protections absent from the role. Pass only what the assignment needs; do not paste the global rules or transcript.
 - Paste inputs under about 2k tokens (8k characters). Pass larger ones (diffs, logs, data, file contents) as file paths, and tell the agent to search or read only the parts it needs. Workflow scripts write large computed inputs under the task's scratch directory and pass the path.
+- When passing `model: opus`, state the reason in the prompt's first line.
 - Request raw results: data, findings, and paths, not prose for the user.
 - Name a result path, `<scratch>/<task>/<role>-<n>.md`. Tell agents: if the result exceeds ~40 lines, write it there and return at most 5 lines: path, counts, status. Read-only Codex roles cannot write; ask them for at most 40 lines. Read only the parts of a result file you need.
 - Fetch diffs, logs, and browser evidence through `cheap` agents first; they write raw output under the task's scratch directory and pass paths on.
 - Delegate web page and doc reads (WebFetch) to an agent; return only the needed excerpt.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
+- A denied action stays denied. Never reach its effect through another command, script, or test. Test destructive tools against a fake root, such as `AGENT_REAP_TMP`, never live paths.
 
 ## Prompt caching
 
