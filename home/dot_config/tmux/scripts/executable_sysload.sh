@@ -1,6 +1,6 @@
 #!/bin/sh
 # tmux status: CPU load as a percent of all cores, percent of memory in use, and
-# free disk space, on macOS and Linux.
+# free disk space in GB, on macOS and Linux.
 case $(uname) in
 Darwin)
   load=$(sysctl -n vm.loadavg | awk '{print $2}')
@@ -29,4 +29,4 @@ mem_color=$base
 [ "$mem" -ge 90 ] && mem_color=$red
 disk_color=$base
 [ "$disk_free_pct" -lt 10 ] && disk_color=$red
-printf 'c%s%% %sm%s%%%s %sd%sG%s' "$cpu" "$mem_color" "$mem" "$base" "$disk_color" "$disk" "$base"
+printf 'c%s%% %sm%s%%%s %s%sG%s' "$cpu" "$mem_color" "$mem" "$base" "$disk_color" "$disk" "$base"
