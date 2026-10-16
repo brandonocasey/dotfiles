@@ -1,16 +1,21 @@
 # When to run a review automatically
 
 Run `review-fix` (`review --fix`, which fixes and loops) on this session's own
-change at task end points, not per iteration turn. A change that never reaches
-an end point stays unreviewed, and each report says so (**Timing**). The only
-exception is a preview prototype (**Scope**).
+change once the work is finished and committed, and at the other end points
+below, not per edit, turn, or commit. A change that never reaches an end point
+stays unreviewed, and each report says so (**Timing**). The only exception is a
+preview prototype (**Scope**).
 
 ## Timing
 
 - Review only at an end point:
-  - the user says the task is done, or asks for a review;
-  - a commit the user asked for, or `investigate`'s fix commit (section 5, item 7). Routine
-    per-turn commits (git-policy's commit before reporting) do not count;
+  - the user asks for a review;
+  - the work is finished and its commits are made: right after the last commit
+    of the batch (git-policy's commit before reporting done, a commit the user
+    asked for, or `investigate`'s fix commit, section 5, item 7). Review the
+    whole batch once, not each commit. Commit the review's fixes per git-policy.
+    When more changes are later committed on top, review again (**Follow-ups**).
+    Commits of review fixes, from any review, never trigger another review;
   - right after a push outside `ship`, while its CI runs; push the fixes after;
   - just before integrating the change into another branch (merge, cherry-pick,
     or fast-forwarding a shared branch to include it) outside `land`, or
@@ -19,10 +24,11 @@ exception is a preview prototype (**Scope**).
     such as a Jenkins build. A push's CI counts as the push. Local checks and
     person-run device tests do not count.
   - during `ship` or `land`, at the points below.
-- A turn-end report is not an end point. While the user iterates, never review
-  per edit, todo, turn, or intermediate commit. Put this line just above any
-  `Next:` line, or last when there is none:
-  `⚠ Not reviewed yet: reviews at done, commit, push, integrate, deploy, land, or remote test run.`
+- A turn-end report is not an end point, nor is a done report with the work left
+  uncommitted. While the user iterates, never review per edit, todo, turn, or
+  intermediate commit. When unreviewed changes remain, put this line just above
+  any `Next:` line, or last when there is none:
+  `⚠ Not reviewed yet: reviews at finish with commits, push, integrate, deploy, land, or remote test run.`
 - At an end point, review the combined diff since the last review (or the task's
   recorded starting revision), committed and uncommitted alike. A clean tree does
   not mean nothing to review. Finish the implementation and the checks and manual
@@ -73,10 +79,12 @@ exception is a preview prototype (**Scope**).
 ## Follow-ups
 
 - A follow-up change is one made after the review's fix loop ends. Repairs inside
-  the loop are not follow-ups.
-- Follow-ups wait for the next end point (**Timing**). Then review them together
-  as one delta (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context,
-  even a one-line or prose-only edit.
+  the loop, and commits of any review's fixes, are not follow-ups.
+- Follow-ups wait for the next end point (**Timing**), such as their own finished
+  commit. Then review them together as one delta
+  (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
+  one-line or prose-only edit. Record `<head-sha>` in `review-state.md` after the
+  fix commits, so fix commits never fall in the next delta.
 - The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
   Report unresolved findings explicitly. Do not rerun a review of the whole
   target merely to obtain a clean report after repairs.
