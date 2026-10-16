@@ -18,7 +18,8 @@ import shlex
 import sys
 
 POLL_LOOP = re.compile(
-    r"\b(until|while)\b(?:(?!\bdone\b)[\s\S])*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
+    r"(?:^|[;&|({\n'\"]|\b(?:do|then|else)\b)\s*(until|while)\b"
+    r"(?:(?!\bdone\b)[\s\S])*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
 )
 SLEEP = re.compile(r"\bsleep\s+(\d+(?:\.\d+)?)([smhd]?)\b")
 UNIT = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
@@ -26,9 +27,10 @@ SHELLS = {"sh", "bash", "zsh", "dash", "ksh"}
 GH_WATCH = re.compile(r"\bgh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch)\b")
 PROC_TOOL = re.compile(r"\b(pkill|pgrep)\b")
 # Options that take a value, so the next word is not the pattern.
-PROC_ARG_OPTS = {"-u", "-U", "-g", "-G", "-P", "-s", "-t", "-F", "--signal",
-                 "--pidfile", "--ns", "--nslist", "--euid", "--uid", "--group",
-                 "--pgroup", "--parent", "--session", "--terminal"}
+PROC_ARG_OPTS = {"--signal", "--pidfile", "--ns", "--nslist", "--euid", "--uid",
+                 "--group", "--pgroup", "--parent", "--session", "--terminal",
+                 "--delimiter", "--older", "--runstates", "--cgroup", "--queue"}
+PROC_ARG_LETTERS = "uUgGPstFdOrq"  # short options that take a value (procps-ng 4)
 BACKGROUNDED = re.compile(r"(?<!&)&\s*$")
 
 
@@ -42,7 +44,12 @@ def proc_pattern(words: list[str]) -> str | None:
         if w in PROC_ARG_OPTS:
             i += 2
             continue
-        if w == "--full" or (re.fullmatch(r"-[A-Za-z]+", w) and "f" in w[1:]):
+        if re.fullmatch(r"-[A-Za-z]+", w):
+            full = full or "f" in w[1:]
+            if w[-1] in PROC_ARG_LETTERS:  # -u root, -fu root: next word is a value
+                i += 2
+                continue
+        elif w == "--full":
             full = True
         elif not w.startswith("-"):
             return w if full else None
@@ -50,11 +57,11 @@ def proc_pattern(words: list[str]) -> str | None:
     return None
 
 
-def code_only(cmd: str) -> str:
+def code_only(cmd: str, keep_scripts: bool = True) -> str:
     """Blank quoted data and comments, keeping offsets.
 
     Quoted arguments are data (search patterns, commit messages), except the
-    script given to a shell's -c flag, which stays.
+    script given to a shell's -c flag, which stays when keep_scripts is set.
     """
     out, words, word, i, n = [], [], "", 0, len(cmd)
     while i < n:
@@ -72,7 +79,7 @@ def code_only(cmd: str) -> str:
                 j += 2 if escapes and cmd[j] == "\\" else 1
             body = cmd[i + 1:j]
             script = (
-                not word and len(words) >= 2
+                keep_scripts and not word and len(words) >= 2
                 and re.fullmatch(r"-[A-Za-z]*c[A-Za-z]*", words[-1])
                 and any(os.path.basename(w) in SHELLS for w in words[:-1])
             )
@@ -108,10 +115,15 @@ def problems(cmd: str, background: bool) -> list[str]:
     found = []
     code = code_only(cmd)
     if not background:
-        # A line ending in a single & runs in the background, like the
-        # detached `nohup setsid sh -c '...' &` form subagent-wait suggests.
-        fg = "\n".join("" if BACKGROUNDED.search(line) else line
-                       for line in code.split("\n"))
+        # The last command of a line ending in a single & runs in the
+        # background, like the detached `nohup setsid sh -c '...' &` form
+        # subagent-wait suggests. Earlier `;` commands stay in the foreground.
+        lines = []
+        for line, bare in zip(code.split("\n"), code_only(cmd, False).split("\n")):
+            if BACKGROUNDED.search(bare):
+                line = line[:bare.rfind(";") + 1]
+            lines.append(line)
+        fg = "\n".join(lines)
         if POLL_LOOP.search(fg):
             found.append(
                 "Foreground polling loop. Rerun it with run_in_background: true "
@@ -124,7 +136,8 @@ def problems(cmd: str, background: bool) -> list[str]:
                     "background command instead of a fixed sleep."
                 )
                 break
-        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agent-wait\b", fg):
+        # Also with a trailing &: the harness tracks only run_in_background jobs.
+        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agent-wait\b", code):
             found.append(
                 "agent-wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits."
