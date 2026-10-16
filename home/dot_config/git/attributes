@@ -1,0 +1,2 @@
+# Route every merge through mergiraf (see [merge "mergiraf"] in config)
+* merge=mergiraf

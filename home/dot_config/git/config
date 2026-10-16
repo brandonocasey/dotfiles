@@ -110,6 +110,12 @@
   # three diff markers for conflicts
   conflictstyle = zdiff3
 
+# Syntax-aware merges for files listed in ~/.config/git/attributes; mergiraf
+# falls back to a line-based merge for languages it does not support.
+[merge "mergiraf"]
+  name = mergiraf
+  driver = ~/.local/share/mise/installs/forgejo-mergiraf-mergiraf/latest/mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L
+
 [pack]
   # Use any number of threads if possible
   threads = 0

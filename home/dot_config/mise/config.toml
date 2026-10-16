@@ -4,6 +4,8 @@ go = ['latest']
 uv = ['latest']
 # Code graph MCP server for agents (registered with `claude mcp add`)
 'github:DeusData/codebase-memory-mcp' = 'latest'
+# Syntax-aware git merge driver (wired in ~/.config/git/config and attributes)
+'forgejo:mergiraf/mergiraf' = 'latest'
 
 [settings]
 experimental = true
