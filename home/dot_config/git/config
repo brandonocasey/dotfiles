@@ -112,10 +112,11 @@
 
 # Syntax-aware merges for files listed in ~/.config/git/attributes; mergiraf
 # falls back to a line-based merge for languages it does not support.
-# Its fallback requires the newer Git installed by Homebrew.
+# Its fallback requires the newer Git installed by Homebrew. Without the
+# binary (a failed mise install), use git's own merge so conflicts keep markers.
 [merge "mergiraf"]
   name = mergiraf
-  driver = PATH=/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:$PATH ~/.local/share/mise/installs/forgejo-mergiraf-mergiraf/latest/mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L
+  driver = "PATH=/opt/homebrew/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:$PATH; m=$HOME/.local/share/mise/installs/forgejo-mergiraf-mergiraf/latest/mergiraf; if [ -x \"$m\" ]; then \"$m\" merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L; else git merge-file -L %X -L %S -L %Y --marker-size=%L %A %O %B; fi"
 
 [pack]
   # Use any number of threads if possible
