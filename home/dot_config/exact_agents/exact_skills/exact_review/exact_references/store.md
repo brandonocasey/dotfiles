@@ -1,16 +1,15 @@
 # Review store
 
 Review runs, passes, findings, threads, and MR/PR comments live in the
-`agent-review` CLI, one store per repository. Its README
-(`~/Projects/brandonocasey/agent-review/README.md`) and `agent-review --help`
-document every command, flag, and output field. This file names what the review
-skill uses.
+`agent-review` CLI, one store per repository. `agent-review --help` and the README
+of https://github.com/brandonocasey/agent-review document every command, flag,
+and output field. This file names what the review skill uses.
 
 ## Availability
 
 Run `agent-review status --help` once per run. When it fails, stop and report:
-agent-review missing: run `mise run install` in
-`~/Projects/brandonocasey/agent-review`.
+agent-review missing: run `mise install` (it reads the GitHub token of `gh`, so
+`gh auth login` first); Windows is not supported.
 
 ## Commands
 

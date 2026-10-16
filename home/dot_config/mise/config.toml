@@ -6,6 +6,8 @@ uv = ['latest']
 'github:DeusData/codebase-memory-mcp' = 'latest'
 # Syntax-aware git merge driver (wired in ~/.config/git/config and attributes)
 'forgejo:mergiraf/mergiraf' = 'latest'
+# Review store for the review skill; private releases, read with the gh token.
+'github:brandonocasey/agent-review' = { version = 'latest', os = ['macos', 'linux'] }
 
 [settings]
 experimental = true
@@ -18,6 +20,8 @@ trusted_config_paths = [
     '~/projects'
 ]
 idiomatic_version_file_enable_tools = ["node"]
+# Our own releases need no supply-chain wait.
+minimum_release_age_excludes = ['github:brandonocasey/agent-review']
 
 [_]
 file = { path = ".vt.env.local", required = false }
