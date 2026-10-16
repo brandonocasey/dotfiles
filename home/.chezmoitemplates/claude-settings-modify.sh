@@ -298,6 +298,10 @@ managed=$(
     "command": "bash ~/.claude/statusline-command.sh",
     "refreshInterval": 15
   },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/subagent-statusline-command.sh"
+  },
   "enabledPlugins": {
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
