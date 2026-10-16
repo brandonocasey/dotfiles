@@ -15,7 +15,8 @@ preview prototype (**Scope**).
     asked for, or `investigate`'s fix commit, section 5, item 7). Review the
     whole batch once, not each commit. Commit the review's fixes per git-policy.
     When more changes are later committed on top, review again (**Follow-ups**).
-    Commits of review fixes, from any review, never trigger another review;
+    Commits of fixes made inside any review's fix loop never trigger another
+    review;
   - right after a push outside `ship`, while its CI runs; push the fixes after;
   - just before integrating the change into another branch (merge, cherry-pick,
     or fast-forwarding a shared branch to include it) outside `land`, or
@@ -26,7 +27,9 @@ preview prototype (**Scope**).
   - during `ship` or `land`, at the points below.
 - A turn-end report is not an end point, nor is a done report with the work left
   uncommitted. While the user iterates, never review per edit, todo, turn, or
-  intermediate commit. When unreviewed changes remain, put this line just above
+  intermediate commit: one made while work continues in the same turn. The
+  commit before a done report is not intermediate, even when more requests may
+  follow. When unreviewed changes remain, put this line just above
   any `Next:` line, or last when there is none:
   `⚠ Not reviewed yet: reviews at finish with commits, push, integrate, deploy, land, or remote test run.`
 - At an end point, review the combined diff since the last review (or the task's
@@ -79,7 +82,8 @@ preview prototype (**Scope**).
 ## Follow-ups
 
 - A follow-up change is one made after the review's fix loop ends. Repairs inside
-  the loop, and commits of any review's fixes, are not follow-ups.
+  the loop, and their commits, are not follow-ups. Fixes the user directs after
+  the loop ends, such as for a held question or an open finding, are follow-ups.
 - Follow-ups wait for the next end point (**Timing**), such as their own finished
   commit. Then review them together as one delta
   (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
