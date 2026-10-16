@@ -26,13 +26,16 @@ breaks, when, and the fix. Apply repository templates when present.
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. For an MR/PR, read its discussion once with the
-[remote-target.md](remote-target.md) discussion commands and drop findings already
-raised in an open thread. A finding that matches a resolved thread with a
-`review-finding` marker is kept but not posted again: on an own MR/PR, list that
-thread's id in `not_fixed`, and in `fixed` once this run fixes it. A finding that
-matches a resolved thread without the marker was settled by a person: drop it and
-name it in the cleared list. On an own MR/PR, post per **Own MR/PR comments** in
+is a valid result. For an MR/PR, read its threads once with their resolved state:
+the [threads.md](threads.md) list command without its unresolved filter, plus the
+general comments from [remote-target.md](remote-target.md). Then:
+- A finding that matches a thread with a `review-finding` marker, open or resolved,
+  is kept, reported, and fixed as usual, but not posted again. On an own MR/PR, put
+  the finding id from that marker in `not_fixed` when the thread is resolved, and in
+  `fixed` once this run fixes it.
+- A finding that matches any other open thread is already raised: drop it.
+- A finding that matches any other resolved thread was settled by a person: drop it
+  and name it in the cleared list. On an own MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the body files. Otherwise do not
 post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may

@@ -49,8 +49,9 @@ Scratch: <task scratch directory>. Earlier worktree: <path or none>.
 - Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
-- When setup reports 2 or more prior reviews of the pinned head and 0 open items, report
+- On `skip` (2 or more prior reviews of the pinned head and 0 open items), report
   `Skipped: <short-sha> already has <N> reviews` with the record links and stop.
+  Setup stops before checkout, so there is nothing to clean up.
   With `--approve`, `--auto-merge`, or `--merge`, skip only the review and still run
   step 7.
   A request to review again overrides this. Never pass records to reviewers.

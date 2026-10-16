@@ -18,8 +18,8 @@ gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments
 ```
 
 The API command includes inline review comments. Reviewers never run the discussion
-commands, so earlier reviews cannot steer them. The main session skips findings
-already raised there.
+commands, so earlier reviews cannot steer them. The main session matches findings
+to threads per [output.md](output.md).
 
 Remote fetch — Forgejo:
 

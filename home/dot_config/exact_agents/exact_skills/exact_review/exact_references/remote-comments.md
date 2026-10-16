@@ -88,8 +88,8 @@ reviewer that raised it), and the marker
 `<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. `diff_refs` is
 GitLab only: the MR diff version of `reviewed_sha`. `line` is the new line for `new`
 and `context`, the old line for `old`; `old_line` is set only for `context` (an
-unchanged line inside a hunk). Skip findings already raised
-in an open thread. Pass `final_record_file` with the last pass only. Read only the
+unchanged line inside a hunk). List only findings that
+[output.md](output.md) says to post. Pass `final_record_file` with the last pass only. Read only the
 agent's returned links and failures; retry a failure once yourself.
 
 ````markdown

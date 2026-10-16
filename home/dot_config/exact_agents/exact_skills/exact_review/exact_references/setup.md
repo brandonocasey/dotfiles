@@ -30,6 +30,10 @@ parallel fetches share `FETCH_HEAD`.
 
 If the pinned diff is empty, report `empty` and stop.
 
+For an own MR/PR (step 4), look up prior reviews now. With 2 or more and 0 open
+items, report `skip` with the count and record links, and stop before checkout and
+checks.
+
 ## 2. Checkout
 
 - Working diff, commit, range, or other explicit target: the earlier worktree when the
