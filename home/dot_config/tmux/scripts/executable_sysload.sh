@@ -1,6 +1,6 @@
 #!/bin/sh
-# tmux status: 1-minute load average, percent of memory in use, and free disk
-# space, on macOS and Linux.
+# tmux status: CPU load as a percent of all cores, percent of memory in use, and
+# free disk space, on macOS and Linux.
 case $(uname) in
 Darwin)
   load=$(sysctl -n vm.loadavg | awk '{print $2}')
@@ -14,6 +14,8 @@ Darwin)
   vol=/
   ;;
 esac
+# 1-minute load average over core count; above 100% means work is queuing
+cpu=$(awk -v l="$load" -v n="$(getconf _NPROCESSORS_ONLN)" 'BEGIN {printf "%d", l * 100 / n}')
 # prints free space in GB, then free percent
 set -- $(df -Pk "$vol" | awk 'NR == 2 {printf "%d %d", $4 / 1048576, $4 * 100 / $2}')
 disk=$1
@@ -27,4 +29,4 @@ mem_color=$base
 [ "$mem" -ge 90 ] && mem_color=$red
 disk_color=$base
 [ "$disk_free_pct" -lt 10 ] && disk_color=$red
-printf 'load %s  %smem %s%%%s  %sdisk %sG free%s' "$load" "$mem_color" "$mem" "$base" "$disk_color" "$disk" "$base"
+printf 'cpu %s%%  %smem %s%%%s  %sdisk %sG%s' "$cpu" "$mem_color" "$mem" "$base" "$disk_color" "$disk" "$base"
