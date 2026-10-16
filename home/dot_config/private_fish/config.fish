@@ -25,11 +25,6 @@ if status is-interactive
         end
     end
 
-    # send OSC 133 to mark prompt start
-    function mark_prompt_start --on-event fish_prompt
-        echo -en "\e]133;A\e\\"
-    end
-
     function fzf-fd-nvim -a cwd --description "Open nvm to Telescope find_files selector"
         if [ -z "$cwd" ] || [ ! -d "$cwd" ]
             set cwd "$(find-root)"
