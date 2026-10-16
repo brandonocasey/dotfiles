@@ -493,7 +493,7 @@ sep=$(printf '\033[38;5;245m|\033[0m')
 # (http-server does) hide their environment from ps; such a server also counts
 # when it runs in the checkout this line shows (not $HOME). The segment always
 # shows the machine's LAN IPv4 address, joined by the session's port when it
-# has one ("192.168.73.7:43750", shown as "7:43750").
+# has one ("192.168.73.7:43750").
 # Detection takes ~250 ms, so each session reuses its result for 5 s.
 lan_ip() {
   local iface host=""
@@ -510,10 +510,8 @@ lan_ip() {
   printf '%s' "$host"
 }
 srv_detect() {
-  local listen pids cwds titles procs rows ports host host_shown assigned shown row
+  local listen pids cwds titles procs rows ports host assigned shown row
   host=$(lan_ip)
-  # The home LAN prefix is dropped from the shown address ("7:43750"); links keep it.
-  host_shown=${host#192.168.73.}
   listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
     /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
   ')
@@ -594,7 +592,7 @@ srv_detect() {
     shown=${row%%$'\t'*}
   fi
   if [ -z "$shown" ]; then
-    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host_shown"
+    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host"
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -602,14 +600,14 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "$host_shown:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "35" "$host:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m%s:%s\033[0m' "$host_shown" "$shown"
+    printf '\033[31m%s:%s\033[0m' "$host" "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m%s:%s\033[0m' "$host_shown" "$shown"
+    printf '\033[2;35m%s:%s\033[0m' "$host" "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   fi
   return 0
@@ -625,7 +623,7 @@ srv_link() {
 srv_seg=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "${srv_ip#192.168.73.}")
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$srv_ip")
 else
   srv_cache="$rl_dir/servers-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
@@ -673,7 +671,8 @@ else
   fi
 fi
 
-# The account (grey) leads the line and links to claude.ai.
+# The account (grey) leads the line and links to claude.ai; where the session
+# runs, "<ip>:<port>", follows it.
 who_seg=""
 [ -n "$account_name" ] && who_seg=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
 
@@ -685,6 +684,7 @@ else
   model_seg=$(printf '\033[34m%s\033[0m' "$model")
 fi
 parts="$model_seg"
+[ -n "$srv_seg" ] && parts="$srv_seg$sep$parts"
 [ -n "$who_seg" ] && parts="$who_seg$sep$parts"
 
 # Prompt cache: the time until it expires, or "cold".
@@ -785,11 +785,9 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# Where the session runs, "<ip>:<port>|project#branch", ends the line. The
-# project and branch move to a line of their own when the whole line would pass
-# 80 columns, since a long branch name runs longest. Width counts only visible
-# characters.
-[ -n "$srv_seg" ] && parts="$parts$sep$srv_seg"
+# Project and branch end the line. They move to a line of their own when the
+# whole line would pass 80 columns, since a long branch name runs longest.
+# Width counts only visible characters.
 if [ -n "$loc_seg" ]; then
   line=$(printf '%b' "$parts$sep$loc_seg" | sed $'s/\033\\][^\a]*\a//g; s/\033\\[[0-9;]*m//g')
   if [ "${#line}" -gt 80 ]; then parts="$parts\n$loc_seg"; else parts="$parts$sep$loc_seg"; fi
