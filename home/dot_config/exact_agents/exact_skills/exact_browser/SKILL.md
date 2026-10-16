@@ -41,6 +41,14 @@ For real Safari or Safari-only bugs, follow `real-safari` for driver selection a
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.
 For audio issues, where sound is allowed, read [audible-playback.md](references/audible-playback.md).
 
+## Hangs
+
+A `chrome-devtools` call that times out has hung the page for about 3 minutes;
+retrying on that page hangs again.
+
+- After the first `timed out` error, close that page and continue on a `new_page`.
+- In `emulate`, omit `networkConditions` unless the check needs throttling. It is the call that hangs most.
+
 ## Proof
 
 Check the observable that proves the claim: frames, pixels, or DOM state, not `currentTime`.
