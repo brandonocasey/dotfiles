@@ -69,12 +69,14 @@ If the pinned diff is empty, report `empty` and stop.
 - Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
   On GitLab with `own: yes`, also its `diff_refs` (`base_sha`, `start_sha`, `head_sha`).
 - Prior reviews of the pinned head per **Reading records** in
-  [remote-comments.md](remote-comments.md): the count and each record's link.
+  [remote-comments.md](remote-comments.md): the count, the open items, and each
+  record's link.
   Report `prior reviews: 0` when none.
 
 For a branch target with an open MR/PR by the authenticated user whose head equals
 the pinned SHA, pin that MR/PR instead and report it as the target, so fixes push
-and comments land on it.
+and comments land on it. Use the branch's existing worktree as the checkout when it
+has one, so the local branch keeps the fixes; otherwise use **Source checkout**.
 
 ## 5. Reviewer prompt
 

@@ -120,8 +120,8 @@ Prefix `glab` with `GITLAB_HOST=<host>` when self-hosted.
    returned draft `id`, then publish only those, each with
    `glab api -X PUT "projects/<enc-repo>/merge_requests/<n>/draft_notes/<id>/publish"`.
    Never use `bulk_publish`: it also publishes the user's own unfinished drafts.
-2. **Outside the diff.** GitLab: `glab mr note create <n> -m "$(cat <body-file>)"`
-   (a resolvable thread). GitHub: `gh pr comment <n> --body-file <body-file>`; it
+2. **Outside the diff.** GitLab: `glab mr note create <n> --repo <repo> -m "$(cat <body-file>)"`
+   (a resolvable thread). GitHub: `gh pr comment <n> --repo <repo> --body-file <body-file>`; it
    cannot be resolved, so step 4 answers it with a new comment.
 3. **Threads.** List all threads once, resolved ones included, with the
    [threads.md](threads.md) list command minus its unresolved filter. On GitHub, also
@@ -132,8 +132,8 @@ Prefix `glab` with `GITLAB_HOST=<host>` when self-hosted.
    (GitLab `-f resolved=false`; GitHub `unresolveReviewThread`). Use the
    [threads.md](threads.md) commands. For a GitHub general comment, post a new
    general comment instead: the reply text, then `Re: <finding id>`.
-5. **Final record.** GitLab: `glab mr note create <n> --resolvable=false -m "$(cat <file>)"`,
-   so it never blocks merging. GitHub: `gh pr comment <n> --body-file <file>`. Then
+5. **Final record.** GitLab: `glab mr note create <n> --repo <repo> --resolvable=false -m "$(cat <file>)"`,
+   so it never blocks merging. GitHub: `gh pr comment <n> --repo <repo> --body-file <file>`. Then
    read it back.
 
 Return at most 15 lines: each finding id with its comment link, each thread action,
@@ -158,7 +158,7 @@ reviews, plus a fix check that found no major finding.
 
 Reveal: 2 agree, 0 disagree.
 Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
-<!-- review-record v2 id=rv-7k2m head=<full-head-sha> reviews-at-head=<N> -->
+<!-- review-record v2 id=rv-7k2m head=<full-head-sha> reviews-at-head=<N> open=<O> -->
 ```
 
 ### Reading records
@@ -166,7 +166,8 @@ Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
 Read all general comments and keep those containing `<!-- review-record v2`. Trust
 only records by the authenticated user; ignore the rest. The prior reviews of the
 pinned head are the sum of `reviews-at-head` over trusted records whose `head`
-equals it.
+equals it; their open items are the `open` value of the newest such record. A record
+without `open` counts as having open items.
 
 ```sh
 glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"   # GitLab: author.username, body
