@@ -10,8 +10,10 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    whole current target. Re-verify, report, and fix as in steps 2–4. Hold
    behavior-change `question` items for the user.
 2. **Fix check.** Run only when the previous pass fixed a major finding. Continue the same
-   reviewers when the harness supports it (Claude Code: `SendMessage`); otherwise start
-   fresh reviewers on the delta with surrounding context. Send each reviewer:
+   reviewers when the harness supports it (Claude Code: `SendMessage`) and their last
+   turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
+   surrounding context, since continuing after the cache expires rewrites their whole
+   context. Send each reviewer:
    - every surviving finding from this cycle, from any reviewer or the manual pass, with
      its applied fix;
    - each killed finding with its one-line reason;

@@ -25,7 +25,7 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 ## Prompt caching
 
 Give parallel agents identical shared instruction prefixes, then the differing file lists or review items.
-Continue an existing agent for related follow-up work when the harness supports it.
+Continue an existing agent for related follow-up work when the harness supports it and its last turn ended under 5 minutes ago (1 hour for `long-worker`). Otherwise spawn a fresh agent and pass the earlier results as file paths: continuing an agent whose cache expired rewrites its whole context.
 
 ## Conditional procedures
 

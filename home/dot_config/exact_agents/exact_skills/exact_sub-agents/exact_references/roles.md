@@ -25,6 +25,7 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, xhigh | gpt-6-luna, xhigh |
 | `explorer` | Locate usages and trace code paths; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for usage lists | gpt-6.1-sol, low |
 | `worker` | Design, debugging, split implementation, research synthesis | claude-sonnet-5-5, medium; default sonnet. Pass `model: opus` only for a design decision with no written plan, or a root-cause hunt after a sonnet worker failed once. Never for review fixes, finishing a PR, CI edits, or commit splitting | gpt-6.1-sol, low |
+| `long-worker` | `worker` work that waits over 5 minutes at a time on test, build, or debug runs; 1-hour prompt cache | claude-sonnet-5-5, medium; same `model` overrides as `worker` | use `worker` |
 | `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for test selection only | gpt-6.1-sol, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, xhigh |
@@ -35,7 +36,7 @@ Routing:
 - Use `cheap` for named commands with explicit pass/fail criteria (a named test, lint, or build run; request exit status and bounded output) and to find one named file, definition, string, or config value; tell it not to edit.
 - Use `explorer` to list usages, trace calls, or map affected files.
 - Main-session cost is per turn, so delegate when it replaces three or more turns: GitLab, Jira (`jira-api`), Jenkins, or Slack fetches to `cheap`; chained reads to understand code you will not edit, where each read depends on the last, to `explorer`. Claude Code `cheap` has read-only Slack tools; after the user consents to private search, tell it that private search is allowed.
-- Use `tester` when choosing checks or interpreting failures needs judgment; `worker` for diagnosis and fixes. Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
+- Use `tester` when choosing checks or interpreting failures needs judgment; `worker` for diagnosis and fixes. Use `long-worker` instead when the task will wait over 5 minutes at a time, such as slow test suites, builds, or hang investigations; its cache writes cost 1.6x, so never use it for short tasks. Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
 - Independent review keeps its reviewer role. Do trivial commands inline when spawning costs more.
 - Verify the key claims of any `haiku` run before acting on them.
 - Without a sub-agent tool, work inline and identify any review that is not independent.
