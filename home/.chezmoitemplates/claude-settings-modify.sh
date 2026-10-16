@@ -212,6 +212,27 @@ managed=$(
             "timeout": 3300
           }
         ]
+      },
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/tmux-bell.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/tmux-bell.sh",
+            "timeout": 5
+          }
+        ]
       }
     ]
   },
