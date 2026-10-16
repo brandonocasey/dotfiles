@@ -215,6 +215,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/tmux-bell.sh clear",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh restore",
+            "timeout": 5
           }
         ]
       }

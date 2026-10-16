@@ -39,6 +39,12 @@ eval "$(printf '%s' "$input" | jq -r --argjson now "$now" '
 ' 2>/dev/null)"
 rl_sid=${rl_sid//[!A-Za-z0-9._-]/_}
 
+# /rename fires no hook, so pass its title to the tmux session from here.
+if [ -n "$TMUX_PANE" ] && [ -f "$transcript" ]; then
+  custom_title=$(rg -F '"type":"custom-title"' "$transcript" 2>/dev/null | tail -n 1 | jq -r '.customTitle // empty' 2>/dev/null)
+  [ -n "$custom_title" ] && sh ~/.claude/hooks/agent-tmux-session.sh sync "$custom_title" </dev/null >/dev/null 2>&1 &
+fi
+
 # --- Git branch ---
 [ -z "$cwd" ] && cwd="$PWD"
 git_info=""
