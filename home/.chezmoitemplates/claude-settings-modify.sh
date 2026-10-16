@@ -328,6 +328,17 @@ managed=$(
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/subagent-wait.py",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
