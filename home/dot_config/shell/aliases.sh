@@ -7,6 +7,21 @@ alias gp='git push'
 alias gl='git log'
 alias l='ls'
 
+codex() (
+	for codex_launch_argument do
+		case $codex_launch_argument in
+		--)
+			break
+			;;
+		--no-daemon)
+			command codex "$@"
+			return
+			;;
+		esac
+	done
+	command codex --no-daemon "$@"
+)
+
 if command -v eza >/dev/null 2>&1; then
 	alias ls='eza'
 	alias ll='eza -l --git --icons --time-style=long-iso'

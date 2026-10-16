@@ -69,6 +69,11 @@ Codex limits the skill catalog to 1,000 tokens and retained tool outputs to
 4,000 tokens each. Automatic compaction uses the model's default threshold.
 Output limits can truncate evidence.
 
+Codex disables shared-server auto-start with `features.daemon_auto_start = false`.
+Fish and Bash launches also add `--no-daemon`, bypassing existing servers.
+These sessions cannot use shared-server features such as `codex agents`.
+Use `command codex` for an explicit unwrapped invocation.
+
 All seven Codex roles omit automatic skill guidance and bundled skills.
 Delegating sessions must pass required skill paths and task constraints.
 The explorer, tester, reviewer, and consult roles disable apps and plugins.
