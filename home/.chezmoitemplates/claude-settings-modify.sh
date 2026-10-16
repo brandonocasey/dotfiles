@@ -85,19 +85,15 @@ managed=$(
   "autoMode": {
     "environment": [
       "$defaults",
-      "Trusted source control: gitlab.com/jwpconnatix/* and forgejo.koof.win/bcasey/*. Trusted Jira: jwplayer.atlassian.net.",
-      "Organization: JW Player / Connatix.",
-      "Trusted internal domains: jwplayer.atlassian.net.",
-      "Key internal services: Jira (jwplayer.atlassian.net), GitLab group gitlab.com/jwpconnatix, personal Forgejo repos forgejo.koof.win/bcasey/*."
+      "Organization: JW Player / Connatix. Trusted: GitLab group gitlab.com/jwpconnatix, Jira jwplayer.atlassian.net, personal Forgejo forgejo.koof.win/bcasey/*."
     ],
     "allow": [
       "$defaults",
-      "Approving an MR/PR with `glab mr approve`, `glab api --method POST .../merge_requests/<iid>/approve`, or `gh pr review --approve` when the user asked to approve that MR/PR in this session. Read-only polling of MR/PR state (`glab mr view`, GET `glab api`) is never Self-Approval.",
-      "Merging an MR/PR (`glab mr merge`, `gh pr merge`) or enabling auto-merge on it when the user asked to merge that MR/PR in this session. Re-enabling auto-merge (`gh pr merge <n> --auto`, `glab mr merge <iid> --auto-merge --yes`) that this session paused before pushing, with the same method, is part of the paused state, not a new merge.",
-      "Commenting on, closing, or editing MRs in gitlab.com/jwpconnatix/*, and updating Jira issues or fix versions in jwplayer.atlassian.net, when the user asked for that action in this session.",
-      "Editing files under ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, or ~/.codex/ (settings, hooks, skills, agents, plugins, local mods), or a repository's .claude/settings.local.json, copying them to ~/.local/state/agents/backups/ first, running `chezmoi apply`, and committing, amending unpushed commits, or `git pull --rebase` in ~/.local/share/chezmoi, when the user ran /llm-setup-audit or asked for that change in this session. Short test runs of `claude` or `codex` in tmux from ~/.cache/agents/scratch/ that only check such a change are part of it; they never do other task work.",
-      "In agent-created worktrees under <repo>/.worktrees/: detached checkouts, cherry-picks, and rebases or rewording of local commits, when the tree is clean and the branch tip is backed up (backup dir or ref). Force-pushes still need the user's request in this session.",
-      "Serving a local build on 0.0.0.0 (a repo dev server, or `python3 -m http.server --directory <build or test page dir>`) when the user asked to test on a phone, Apple TV, or other LAN device in this session. A static file server never serves a repository root or home directory. Stop the server when that testing ends."
+      "MR/PR and Jira actions the user asked for in this session: approve, merge, enable or re-enable auto-merge, comment, close, edit, and update Jira issues or fix versions. Read-only MR/PR polling is never Self-Approval.",
+      "Review comments on MRs/PRs the user authored, during a review the user asked for in this session: post, reply, resolve, and reopen. Never on MRs/PRs others authored.",
+      "Agent setup changes the user asked for in this session: edit ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, ~/.codex/, or a repo's .claude/settings.local.json after backing up to ~/.local/state/agents/backups/; run chezmoi apply; commit, amend unpushed commits, or git pull --rebase in ~/.local/share/chezmoi; short tmux test runs of claude or codex from ~/.cache/agents/scratch/.",
+      "In agent-created worktrees under <repo>/.worktrees/ with a clean tree and a backed-up tip: detached checkouts, cherry-picks, rebases, and rewording local commits. Force-pushes still need the user's request.",
+      "When the user asked to test on a LAN device in this session: serve a local build on 0.0.0.0, never a repo root or home directory, and stop it when testing ends."
     ]
   },
   "model": "opus",
