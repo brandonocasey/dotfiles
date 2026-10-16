@@ -61,7 +61,9 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   7. Continue into step 5's fix loop. [loop.md](loop.md) runs cleanup and step 7
      ([approve-merge.md](approve-merge.md)) once, after the loop ends.
 - **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
-  tests/lint, record the `Checked:` line, and commit per the `commit` skill. For a commit
+  tests/lint, record the `Checked:` line, and commit per the `commit` skill. Read each
+  file you will edit with the file-read tool, not `cat`. With a `--range` store target
+  ([store.md](store.md)), never amend or rebase the pinned commits; add fix commits. For a commit
   or the default branch, first create a fix branch per the `worktree` skill. Do not push.
 - **Working diff**: apply the fixes in place, record the `Checked:` line, and leave them
   uncommitted unless the user asks to commit.

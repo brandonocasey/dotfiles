@@ -13,7 +13,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    reviewers when the harness supports it (Claude Code: `SendMessage`) and their last
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
    surrounding context, since continuing after the cache expires rewrites their whole
-   context. Send each reviewer:
+   context. After one failed continuation, start fresh reviewers for that cycle's
+   remaining fix checks. Send each reviewer:
    - the output of `agent-review list --run <run> --cycle <n> --format prompt`
      ([store.md](store.md)): every surviving finding from this cycle, from any reviewer
      or the manual pass, with its applied fix, and each killed finding with its
@@ -32,8 +33,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
    from the first cycle. Skip it when the first full review found no major finding that
    survived verification. Its full review runs blind, then reveals:
-   - **Lock.** When the reviewers return, `finding add` their findings as reported,
-     then `pass end --lock`. The store refuses changes to them after that. Do not
+   - **Lock.** When the reviewers return, record their findings as reported with
+     `pass end --lock --findings -`. The store refuses changes to them after that. Do not
      `publish` from the lock until the reveal re-verification ends.
    - **Reveal.** Start a `reveal` pass and continue each reviewer (Claude Code:
      `SendMessage`) with `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a
@@ -51,14 +52,14 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed.
 
-Keep the loop state in the store per [store.md](store.md), with the setup's store
-target on every command: `pass start --base <pinned base>` with each reviewer, plus
-`manual` for the manual pass and `fix` for fixes; `finding add` as findings are
-verified or killed; for each fix, `reply` `Fixed in <sha>.` as `fix`, then `resolve`;
-for a fix check's `not fixed`, `reply` `Not fixed: <reason>` as that reviewer, then
-`resolve --reopen`; `resolve --triage question` for held items, and `reply` with the
-user's answer (`reply --local`) when it comes; then `pass end`. For a commit or range
-target, pass `--head HEAD` per [store.md](store.md).
+Keep the loop state in the store per [store.md](store.md): `run start --kind full
+--base <pinned base>` (or `pass start`, with `--base` for a full pass) with each
+reviewer, plus `manual` for the manual pass and `fix` for
+fixes; one `pass end --findings -` with the pass's verified and killed findings;
+`resolve <ids> --fixed <sha>` for the fixes; `resolve <id> --not-fixed <reason>` as the
+fix-check reviewer; `resolve --triage question` for held items, and `reply --local`
+with the user's answer when it comes. For a commit or range target, pass `--head HEAD`
+per [store.md](store.md).
 
 Kill a finding that an earlier pass killed, unless its code changed since that pass.
 Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
@@ -66,7 +67,8 @@ For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
 passes target it. On an own MR/PR, after each pass and its push, run `agent-review
 publish` per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run
-once, after step 5's last pass and its fix commits, in this order: `run end`, a last
+once, after step 5's last pass and its fix commits, in this order: `run end` (in the
+same call as any scratch cleanup that needs no worktree), a last
 `publish` with the final record (own MR/PR only), the auto-merge restore,
 step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's

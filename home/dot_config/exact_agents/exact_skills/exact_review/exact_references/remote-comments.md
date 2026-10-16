@@ -86,10 +86,10 @@ yourself. It refuses an MR/PR the user did not author. What it posts:
 - **Outside the diff.** GitLab: a resolvable thread. GitHub: a general comment; it
   cannot be resolved, so `publish` posts a reply to it as a new general comment
   ending `Re: <finding id>`.
-- **Replies.** `resolve` posts no text, so each answer is a `reply` first. Fixed:
-  `reply <id> --body "Fixed in <sha>." --run <run> --pass <pass> --reviewer fix`,
-  then `resolve <id> --triage fixed --resolution "fixed <sha>"`. Not fixed: `reply`
-  with `Not fixed: <reason>` by the fix-check reviewer, then `resolve <id> --reopen`.
+- **Replies.** Fixed: `resolve <id>... --fixed <sha> --run <run> --pass <pass>
+  --reviewer fix` adds the `Fixed in <sha>.` reply and resolves. Not fixed:
+  `resolve <id> --not-fixed "<reason>"` with the fix-check reviewer's `--run`,
+  `--pass`, and `--reviewer` adds the `Not fixed: <reason>.` reply and reopens.
   `publish` posts each reply with its author's signature, then resolves or reopens
   the thread.
 - **Final record.** GitLab: a note with `resolvable=false`, so it never blocks

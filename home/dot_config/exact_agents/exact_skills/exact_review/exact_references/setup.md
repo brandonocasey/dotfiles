@@ -17,7 +17,7 @@ parallel fetches share `FETCH_HEAD`.
   `<merge-base-sha>..<head-sha>` against the MR/PR's own target branch, never an assumed
   default branch: GitLab `diff_refs.base_sha`; GitHub `git merge-base` of `baseRefOid`
   and `headRefOid` after fetching both.
-- **Branch**: pin `<merge-base-sha>..<branch-sha>`, where the merge base is
+- **Branch** (also "branch X against Y"): pin `<merge-base-sha>..<branch-sha>`, where the merge base is
   `git merge-base <newest-default-base> <branch>`; see **Newest default base** in
   [default-branch.md](../../shared/default-branch.md). A user-given base replaces it.
   When an open MR/PR by the authenticated user has the branch SHA as its head, pin
@@ -39,7 +39,8 @@ If the pinned diff is empty, report `empty` and stop.
 - Working diff, commit, range, or other explicit target: the earlier worktree when the
   prompt gives one, else the current checkout.
 - MR/PR: **Source checkout** in [remote-target.md](remote-target.md). Branch: the
-  `worktree` skill's `references/create.md`. Reuse a review worktree from an earlier pass.
+  checkout that already has it (`git worktree list`), else the `worktree` skill's
+  `references/create.md`. Reuse a review worktree from an earlier pass.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
 - Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
@@ -48,7 +49,9 @@ If the pinned diff is empty, report `empty` and stop.
   self-hosted GitLab) and keep the target key it prints. Then run
   `agent-review status --head <head-sha>` with the store target: `--target <key>` for
   that MR/PR, `--range <pinned range>` for an MR/PR on another forge or a commit or
-  range the user named, else no flag (store.md **Commands**). For an own GitHub or
+  range the user named, else no flag, also for a branch with a given base
+  (`--default-branch <base branch>` when it is not the default branch; store.md
+  **Commands**). Run it bare, never filtered. For an own GitHub or
   GitLab MR/PR only, when the prompt says `Skip check: on`,
   `reviews_at_head` is 2 or more, and 0 threads are open, report `skip` with the
   count, run IDs, and any worktree you created, and stop before checks. Never skip
@@ -107,12 +110,13 @@ Return raw data: file, line, severity, failure scenario, evidence, tests run.
 ```
 
 Keep the severity scale in sync with [output.md](output.md). The main session converts
-the returned prose to `finding add` JSON per [store.md](store.md).
+the returned prose to `pass end --findings` JSON per [store.md](store.md).
 
 ## Report
 
 At most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each command with its log path, the store
-target (`--target <key>` for an MR/PR, `--range <range>`, or none), and the MR/PR facts. Then the filled
+target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
+none), and the MR/PR facts. Then the filled
 prompt in one fenced block. Or report `empty`, `checks: unclear`, or the blocker, with
 any worktree you created and any checks you started.
