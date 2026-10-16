@@ -22,6 +22,7 @@ plugins and update all plugins.
 
 On `bcasey-dev`, new Claude Code sessions use `bypassPermissions`.
 Codex uses `approval_policy = "never"` with `sandbox_mode = "danger-full-access"`.
+Its saved prompt rules are omitted on this host to avoid blocked commands.
 Other hostnames keep Claude's `auto` mode and Codex's `on-request` approvals.
 Apply the settings and restart each tool for these defaults to take effect.
 
