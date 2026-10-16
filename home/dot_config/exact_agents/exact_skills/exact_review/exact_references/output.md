@@ -28,8 +28,11 @@ breaks, when, and the fix. Apply repository templates when present.
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result. For an MR/PR, read its discussion once with the
 [remote-target.md](remote-target.md) discussion commands and drop findings already
-raised in an open thread. A finding that matches a resolved thread is not dropped; on
-an own MR/PR, it reopens that thread as `not fixed`. On an own MR/PR, post per **Own MR/PR comments** in
+raised in an open thread. A finding that matches a resolved thread with a
+`review-finding` marker is kept but not posted again: on an own MR/PR, list that
+thread's id in `not_fixed`, and in `fixed` once this run fixes it. A finding that
+matches a resolved thread without the marker was settled by a person: drop it and
+name it in the cleared list. On an own MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the body files. Otherwise do not
 post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may
