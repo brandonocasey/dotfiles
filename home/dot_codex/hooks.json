@@ -12,6 +12,31 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh codex",
+            "async": true,
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh codex",
+            "async": true,
+            "timeout": 3
+          }
+        ]
+      }
     ]
   }
 }

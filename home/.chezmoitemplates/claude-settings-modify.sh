@@ -199,6 +199,17 @@ managed=$(
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
+            "async": true,
+            "timeout": 3
+          }
+        ]
       }
     ],
     "Notification": [
@@ -231,6 +242,16 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/tmux-bell.sh",
             "timeout": 5
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
+            "async": true,
+            "timeout": 3
           }
         ]
       }
