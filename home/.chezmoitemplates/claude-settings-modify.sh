@@ -105,10 +105,14 @@ managed=$(
     ]
   },
   "model": "opus",
-  "autoCompactWindow": 433000,
+  "autoCompactWindow": 200000,
   "promptCacheTtl": "1h",
   "env": {
+    "BASH_MAX_OUTPUT_LENGTH": "12000",
     "CLAUDE_CODE_DISABLE_FILE_MENTIONS": "1",
+    "CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "1",
+    "LEFTHOOK_OUTPUT": "failure,summary",
+    "NO_COLOR": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
     "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp"
   },
