@@ -16,8 +16,9 @@ leaves drafts alone. A fix run with no flag runs only steps 1–3 here.
 Run this step last: after step 5's fix loop when `--fix` applies, otherwise after step 3.
 
 1. **Gate**: run only when no `bug`, `requirement`, or `question` finding remains
-   unfixed. Otherwise skip every flag, leave draft state alone, and name the
-   blocking findings.
+   unfixed: count those open findings with `agent-review status` or `list --open`
+   on the review's store target ([store.md](store.md)), after `sync`. Otherwise skip every flag, leave draft state
+   alone, and name the blocking findings.
 2. **Head**: refresh the source SHA. If it moved since the review or fix push,
    review the changed commits through steps 0–2 and recheck affected findings.
    Run affected checks and manual cases, then repeat the gate above.

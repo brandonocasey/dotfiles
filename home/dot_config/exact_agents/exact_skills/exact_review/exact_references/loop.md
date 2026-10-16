@@ -14,9 +14,10 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
    surrounding context, since continuing after the cache expires rewrites their whole
    context. Send each reviewer:
-   - every surviving finding from this cycle, from any reviewer or the manual pass, with
-     its applied fix;
-   - each killed finding with its one-line reason;
+   - the output of `agent-review list --run <run> --cycle <n> --format prompt`
+     ([store.md](store.md)): every surviving finding from this cycle, from any reviewer
+     or the manual pass, with its applied fix, and each killed finding with its
+     one-line reason;
    - the fix delta and the new check logs. The delta is
      `<last-reviewed-sha>..<new-head-sha>`; for a working-diff target, save the new
      working diff to a file and send both the old and new diff paths.
@@ -31,30 +32,42 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
    from the first cycle. Skip it when the first full review found no major finding that
    survived verification. Its full review runs blind, then reveals:
-   - **Lock.** When the reviewers return, save their findings unchanged to
-     `blind-<run>.md` in the task scratch directory. Never change them after the reveal.
-   - **Reveal.** Continue each reviewer (Claude Code: `SendMessage`) with every cycle 1
-     finding: its comment link, fix commit, and fix-check result, plus held `question`
-     items with any answers. Ask it to mark each fix or answer `agree` or `disagree`
+   - **Lock.** When the reviewers return, `finding add` their findings as reported,
+     then `pass end --lock`. The store refuses changes to them after that. Do not
+     `publish` from the lock until the reveal re-verification ends.
+   - **Reveal.** Start a `reveal` pass and continue each reviewer (Claude Code:
+     `SendMessage`) with `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a
+     commit or range target): every cycle 1 finding with
+     its comment link, fix commit, and fix-check result, plus held `question` items with
+     any answers. Ask it to mark each fix or answer `agree` or `disagree`
      with evidence, and to return new findings in the usual format, tagged
      `post-reveal`. Without continuation support, skip the reveal and say so.
    - Re-verify the blind and reveal findings together. A surviving `disagree` reopens
-     its cycle 1 finding as `not fixed`.
+     its cycle 1 finding as `not fixed`. Kill a blind finding with
+     `agent-review finding kill <id> --reason <text>`. Count the surviving `agree` and
+     `disagree` marks for `run end --reveal-agree <n> --reveal-disagree <m>`.
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed.
 
-After each pass, record the loop state (run ID, cycle, pass number, last-reviewed SHA, held `question` items, and per reviewer: its ID, model, effort, harness, harness version, starting context, and posted comment IDs) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
+Keep the loop state in the store per [store.md](store.md), with the setup's store
+target on every command: `pass start --base <pinned base>` with each reviewer, plus
+`manual` for the manual pass and `fix` for fixes; `finding add` as findings are
+verified or killed; for each fix, `reply` `Fixed in <sha>.` as `fix`, then `resolve`;
+for a fix check's `not fixed`, `reply` `Not fixed: <reason>` as that reviewer, then
+`resolve --reopen`; `resolve --triage question` for held items, and `reply` with the
+user's answer (`reply --local`) when it comes; then `pass end`. For a commit or range
+target, pass `--head HEAD` per [store.md](store.md).
 
 Kill a finding that an earlier pass killed, unless its code changed since that pass.
 Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
 For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
-passes target it. On an own MR/PR, after each pass and its push, start one posting
-agent per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run once,
-after step 5, in this order: the last pass's posting agent with the final record
-(own MR/PR only), the auto-merge restore,
+passes target it. On an own MR/PR, after each pass and its push, run `agent-review
+publish` per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run
+once, after step 5's last pass and its fix commits, in this order: `run end`, a last
+`publish` with the final record (own MR/PR only), the auto-merge restore,
 step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's
 answer resolves or accepts every item; otherwise leave auto-merge off. Keep the

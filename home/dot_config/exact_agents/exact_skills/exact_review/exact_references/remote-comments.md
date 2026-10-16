@@ -44,13 +44,17 @@ Every review of an MR/PR authored by the authenticated user ([fix.md](fix.md) **
 authorization** names the lookup) posts its findings, resolves fixed ones, and
 posts a final review record. GitLab and GitHub only, and only in a repository inside
 the user's organization; for an upstream or other outside repository, print as for
-other MRs/PRs. Never post on any other MR/PR unless the user asks.
+other MRs/PRs. Never post on any other MR/PR unless the user asks; then post only
+the findings the user chose with
+`agent-review publish --not-own --findings --only <ids>` per [output.md](output.md). It never posts records.
 
 ### IDs and signature
 
-- Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run.
+- Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run, from
+  `agent-review run start`.
 - Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
-- Reviewer ID: `r<n>`, unique within the run. A continued reviewer keeps its ID.
+- Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
+  keeps its ID.
 - Signature: `<model-id> <effort> <harness> <run>.<pass>.<reviewer>`, such as
   `claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1`. Harness is `claude-code` or
   `codex`. Write `default` for an unknown effort. Add ` post-reveal` to findings
@@ -59,38 +63,37 @@ other MRs/PRs. Never post on any other MR/PR unless the user asks.
 - Starting context, per reviewer and pass: the starting SHA plus `fresh`,
   `continued <pass> + <N> findings, fix diff`, or `blind, threads after lock`.
 
-### Main session's part
+### Publishing
 
-After each pass and its fix push (or after the pass, when nothing was fixed), write
-`post-<run>-<pass>.json` in the task scratch directory, then start one `cheap`
-sub-agent with exactly this prompt:
+After each pass and its fix push (or after the pass, when nothing was fixed), run
+`agent-review publish --target <key>` per [store.md](store.md); prefix
+`GITLAB_HOST=<host>` when self-hosted. It syncs first, then posts every pending
+finding, reply, and resolve, plus the final record of each ended run not yet posted.
+A rerun matches posted items instead of posting again. Read only its returned links and failures; rerun a failure once
+yourself. It refuses an MR/PR the user did not author. What it posts:
 
-```text
-Post review comments per **Posting agent** in <absolute path of remote-comments.md>.
-Input: <absolute path of the JSON file>.
-```
-
-```json
-{
-  "platform": "gitlab | github", "host": "<host>", "repo": "<project-path or owner/repo>",
-  "number": 123, "reviewed_sha": "<sha>",
-  "diff_refs": {"base_sha": "", "start_sha": "", "head_sha": ""},
-  "findings": [{"id": "rv-7k2m.c1p0.r1.f1", "path": "src/a.ts", "line": 42,
-    "old_line": 40, "side": "new | old | context", "in_diff": true, "body_file": "<path>"}],
-  "fixed": [{"id": "rv-7k2m.c1p0.r1.f1", "sha": "<short-sha>", "signature": "<fixer signature>"}],
-  "not_fixed": [{"id": "<finding id>", "signature": "<fix-check reviewer signature>", "reason": "<one line>"}],
-  "final_record_file": "<path, or null>"
-}
-```
-
-Each body file holds the step 3 comment text, the finding's signatures (one per
-reviewer that raised it), and the marker
-`<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. `diff_refs` is
-GitLab only: the MR diff version of `reviewed_sha`. `line` is the new line for `new`
-and `context`, the old line for `old`; `old_line` is set only for `context` (an
-unchanged line inside a hunk). List only findings that
-[output.md](output.md) says to post. Pass `final_record_file` with the last pass only. Read only the
-agent's returned links and failures; retry a failure once yourself.
+- Each finding body holds the step 3 comment text, the finding's signatures (one per
+  reviewer that raised it), and the marker
+  `<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. Every posted body,
+  replies and the final record included, also ends with
+  `<!-- agent-review id=<local-id> -->`.
+- **Findings, as one review.** GitHub: one review with `commit_id` set to the reviewed
+  SHA, `event` `COMMENT`, `body` `Review findings.`, and one comment per in-diff
+  finding (`side` `LEFT` for old, else `RIGHT`). GitLab: one draft note per in-diff
+  finding, its lines mapped to and positioned on the latest MR head, each published
+  by its own ID. Never use `bulk_publish`: it also publishes the user's own unfinished
+  drafts.
+- **Outside the diff.** GitLab: a resolvable thread. GitHub: a general comment; it
+  cannot be resolved, so `publish` posts a reply to it as a new general comment
+  ending `Re: <finding id>`.
+- **Replies.** `resolve` posts no text, so each answer is a `reply` first. Fixed:
+  `reply <id> --body "Fixed in <sha>." --run <run> --pass <pass> --reviewer fix`,
+  then `resolve <id> --triage fixed --resolution "fixed <sha>"`. Not fixed: `reply`
+  with `Not fixed: <reason>` by the fix-check reviewer, then `resolve <id> --reopen`.
+  `publish` posts each reply with its author's signature, then resolves or reopens
+  the thread.
+- **Final record.** GitLab: a note with `resolvable=false`, so it never blocks
+  merging. GitHub: a general comment.
 
 ````markdown
 **bug (medium):** <what breaks, when, and the fix>
@@ -101,43 +104,8 @@ agent's returned links and failures; retry a failure once yourself.
 
 claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1
 <!-- review-finding v1 id=rv-7k2m.c1p0.r1.f1 sha=<reviewed-sha> -->
+<!-- agent-review id=rv-7k2m.c1p0.r1.f1 -->
 ````
-
-### Posting agent
-
-Post exactly the given bodies; edit no other file. Put every command in one scratch
-script beside the input, appending each response to `<input>.log`, and run it once.
-Prefix `glab` with `GITLAB_HOST=<host>` when self-hosted.
-
-1. **Findings, as one review.** Skip this step when no finding is in the diff.
-   GitHub: write one review JSON with `commit_id` set to `reviewed_sha`, `event`
-   `COMMENT`, `body` `Review findings.`, and one `comments` entry per in-diff finding
-   (`path`, `line`, `side` `LEFT` for old, else `RIGHT`, `body`), then
-   `gh api repos/<repo>/pulls/<n>/reviews --input <review.json>`. GitLab: per in-diff
-   finding, `glab api -X POST "projects/<enc-repo>/merge_requests/<n>/draft_notes" -H 'Content-Type: application/json' --input <note.json>`
-   with `{"note": <body>, "position": {"position_type": "text", "base_sha", "start_sha", "head_sha", "old_path", "new_path", ...}}`:
-   `new_line` for `new`, `old_line` for `old`, both for `context`. Record each
-   returned draft `id`, then publish only those, each with
-   `glab api -X PUT "projects/<enc-repo>/merge_requests/<n>/draft_notes/<id>/publish"`.
-   Never use `bulk_publish`: it also publishes the user's own unfinished drafts.
-2. **Outside the diff.** GitLab: `glab mr note create <n> --repo <repo> -m "$(cat <body-file>)"`
-   (a resolvable thread). GitHub: `gh pr comment <n> --repo <repo> --body-file <body-file>`; it
-   cannot be resolved, so step 4 answers it with a new comment.
-3. **Threads.** List all threads once, resolved ones included, with the
-   [threads.md](threads.md) list command minus its unresolved filter. On GitHub, also
-   list general comments per **Reading records**. Match each `fixed` and `not_fixed`
-   id by the marker.
-4. **Replies.** For `fixed`: reply `Fixed in <sha>.` plus the signature, then resolve.
-   For `not_fixed`: reply `Not fixed: <reason>` plus the signature, then reopen
-   (GitLab `-f resolved=false`; GitHub `unresolveReviewThread`). Use the
-   [threads.md](threads.md) commands. For a GitHub general comment, post a new
-   general comment instead: the reply text, then `Re: <finding id>`.
-5. **Final record.** GitLab: `glab mr note create <n> --repo <repo> --resolvable=false -m "$(cat <file>)"`,
-   so it never blocks merging. GitHub: `gh pr comment <n> --repo <repo> --body-file <file>`. Then
-   read it back.
-
-Return at most 15 lines: each finding id with its comment link, each thread action,
-the final record link, and each failure with its exact error message.
 
 ### Final record
 
@@ -161,18 +129,12 @@ Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
 <!-- review-record v2 id=rv-7k2m head=<full-head-sha> reviews-at-head=<N> open=<O> -->
 ```
 
-### Reading records
+### Syncing
 
-Read all general comments and keep those containing `<!-- review-record v2`. Trust
-only records by the authenticated user; ignore the rest. The prior reviews of the
-pinned head are the sum of `reviews-at-head` over trusted records whose `head`
-equals it. The open items are the open threads that carry a `review-finding` marker
-posted by the authenticated user, from the [threads.md](threads.md) list command.
-On GitHub, a marked general comment by that user also counts as open until a later
-comment by that user ends with `Re: <its finding id>` after `Fixed in`. The record's
-`open` value is informational only.
-
-```sh
-glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"   # GitLab: author.username, body
-gh api --paginate repos/<owner>/<repo>/issues/<n>/comments --jq '.[] | {user: .user.login, created_at, url: .html_url, body}'   # GitHub
-```
+`agent-review sync --pr <n|url>` imports every thread, comment, and review record of
+the MR/PR. It trusts a `review-finding`, `agent-review`, or `review-record v2` marker
+only when its author is the authenticated user, its `editor` is null or that user, and
+it sits in the thread's first comment; it ignores the rest. Trusted records count in
+`reviews_at_head`. A marked GitHub general comment stays open until a later comment by
+that user ends with `Re: <its finding id>` after `Fixed in`. The record's `open` value
+is informational only.

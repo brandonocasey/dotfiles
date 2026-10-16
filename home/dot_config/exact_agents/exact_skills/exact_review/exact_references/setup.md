@@ -34,10 +34,6 @@ parallel fetches share `FETCH_HEAD`.
 
 If the pinned diff is empty, report `empty` and stop.
 
-For an own MR/PR (step 4), look up prior reviews now. When the prompt says
-`Skip check: on` and there are 2 or more with 0 open items, report `skip` with the
-count and record links, and stop before checkout and checks.
-
 ## 2. Checkout
 
 - Working diff, commit, range, or other explicit target: the earlier worktree when the
@@ -47,6 +43,16 @@ count and record links, and stop before checkout and checks.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
 - Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
+- From the review worktree, per [store.md](store.md): for a GitHub or GitLab MR/PR,
+  run `agent-review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
+  self-hosted GitLab) and keep the target key it prints. Then run
+  `agent-review status --head <head-sha>` with the store target: `--target <key>` for
+  that MR/PR, `--range <pinned range>` for an MR/PR on another forge or a commit or
+  range the user named, else no flag (store.md **Commands**). For an own GitHub or
+  GitLab MR/PR only, when the prompt says `Skip check: on`,
+  `reviews_at_head` is 2 or more, and 0 threads are open, report `skip` with the
+  count, run IDs, and any worktree you created, and stop before checks. Never skip
+  another target on `reviews_at_head`.
 
 ## 3. Checks
 
@@ -75,11 +81,8 @@ count and record links, and stop before checkout and checks.
   and mergeability.
 - Companion or linked MRs/PRs named in the request or description, as URLs.
 - Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
-  On GitLab with `own: yes`, also its `diff_refs` (`base_sha`, `start_sha`, `head_sha`).
-- Prior reviews of the pinned head per **Reading records** in
-  [remote-comments.md](remote-comments.md): the count, the open items, and each
-  record's link.
-  Report `prior reviews: 0` when none.
+- Prior reviews of the pinned head from the step 2 `status`: `reviews_at_head`, the
+  open threads, and the run IDs. Report `prior reviews: 0` when none.
 
 ## 5. Reviewer prompt
 
@@ -90,6 +93,7 @@ focus areas, or earlier findings. `<target>` is the user's target verbatim, foll
 ```text
 Review <target> for verified defects. Read-only: no edits, commits,
 cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
+Never run `agent-review`.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md that apply>
@@ -102,11 +106,13 @@ rule violation), or `nit` (optional style feedback, only when requested). Give e
 Return raw data: file, line, severity, failure scenario, evidence, tests run.
 ```
 
-Keep the severity scale in sync with [output.md](output.md).
+Keep the severity scale in sync with [output.md](output.md). The main session converts
+the returned prose to `finding add` JSON per [store.md](store.md).
 
 ## Report
 
 At most 15 lines: the pin, worktree path, whether you created or reused it, starting
-SHA, whether you installed dependencies, each command with its log path, and the MR/PR facts. Then the filled
+SHA, whether you installed dependencies, each command with its log path, the store
+target (`--target <key>` for an MR/PR, `--range <range>`, or none), and the MR/PR facts. Then the filled
 prompt in one fenced block. Or report `empty`, `checks: unclear`, or the blocker, with
 any worktree you created and any checks you started.

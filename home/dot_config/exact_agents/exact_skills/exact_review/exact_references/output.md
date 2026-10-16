@@ -26,24 +26,27 @@ breaks, when, and the fix. Apply repository templates when present.
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. For an MR/PR, read its threads once with their resolved state:
-the [threads.md](threads.md) list command without its unresolved filter, plus the
-general comments from [remote-target.md](remote-target.md). Then:
-- A finding that matches a thread with a `review-finding` marker, open or resolved,
-  is kept, reported, and fixed as usual, but not posted again. On an own MR/PR, put
-  the finding id from that marker in `fixed` once this run fixes it, or in
-  `not_fixed` when the thread is resolved and this run did not fix it.
+is a valid result. For a GitHub or GitLab MR/PR, run `agent-review sync --pr <n|url>`
+(with `GITLAB_HOST=<host>` for a self-hosted GitLab), then
+`agent-review list --target <key>` once for every thread with its resolved state
+([store.md](store.md)). Then:
+- A finding that matches a thread with a `review-finding` or `agent-review` marker,
+  open or resolved, is kept, reported, and fixed as usual, but not added again. On an
+  own MR/PR, `resolve` that thread as fixed once this run fixes it, or reopen it as
+  `not fixed` when it is resolved and this run did not fix it.
 - A finding that matches any other open thread is already raised: drop it.
 - A finding that matches any other resolved thread was settled by a person: drop it
   and name it in the cleared list.
-- Every open review-marked thread that no finding matched stays an open item, using
-  the open rule in **Reading records** of [remote-comments.md](remote-comments.md): list
-  it in the report and in the loop's step 5 list, so the step 7 gate sees it.
+- Every open review-marked thread that no finding matched stays an open item
+  (`agent-review list --open`): list it in the report and in the loop's step 5 list,
+  so the step 7 gate sees it.
 
-On an own MR/PR, post per **Own MR/PR comments** in
+On an own GitHub or GitLab MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
-printing comment blocks; the comment text goes only into the body files. Otherwise do not
-post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may
+printing comment blocks; the comment text goes only into the store. Otherwise do not
+post anything to the MR/PR unless the user asks. Then show the user
+`agent-review publish --not-own --findings --only <finding ids the user chose> --dry-run`,
+and run it without `--dry-run` only when the dry-run writes match the request. Step 6 lists what `--threads` may
 post. Print for the user to post, per `host-preflight/references/copyable-output.md`:
 one fenced block per comment, numbered by finding. Report CI and
 conflict status separately, with the observed source SHA and job or pipeline links.
@@ -56,7 +59,8 @@ worktree when this review installed dependencies in it, so follow-up repairs can
 reuse them. Never remove a pre-existing worktree, except under `--merge` step 7
 cleanup. Keep a worktree while repairs or re-verification in this run remain
 pending. Run cleanup separately from outward steps so a blocked approval or
-merge cannot prevent it. Report retained paths and reasons, or the removed path
+merge cannot prevent it. Never delete or prune `agent-review` store data; the
+store ages it out itself. Report retained paths and reasons, or the removed path
 and any blocker.
 
 For MR/PR comment links and suggestion syntax, read

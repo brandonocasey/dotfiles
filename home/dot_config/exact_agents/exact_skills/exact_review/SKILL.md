@@ -50,9 +50,11 @@ Skip check: <on for a run's first setup; off when the user asks to review again,
 - Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
-- On `skip` (2 or more prior reviews of the pinned head and 0 open items), report
-  `Skipped: <short-sha> already has <N> reviews` with the record links and stop.
-  Setup stops before checkout, so there is nothing to clean up.
+- On `skip` (own MR/PR only: `agent-review status --head <sha>` on its store target
+  shows `reviews_at_head` of 2 or more and 0 open threads; [store.md](references/store.md)),
+  report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
+  Setup stops before checks; clean up any worktree it reports per
+  [output.md](references/output.md).
   With `--approve`, `--auto-merge`, or `--merge`, skip only the review and still run
   step 7.
   A request to review again overrides this. Never pass records to reviewers.
@@ -70,13 +72,18 @@ Skip check: <on for a run's first setup; off when the user asks to review again,
 
 After the reviewers return, re-verify per **Delegation**, reading only the code each
 finding depends on: the cited lines, their callers, and any guard that could refute it.
+Record every pass, its verified and killed findings, and the run in the store per
+[store.md](references/store.md).
 Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallback.
 
 ## 3. Output
 
 When reporting results, read [output.md](references/output.md). It owns the
 finding format, remote comment links, evidence, and cleanup. Post comments only on
-an own MR/PR, or when the user asks.
+an own MR/PR, or when the user asks, and only with `agent-review publish`
+(`publish --not-own --findings --only <ids>` on another person's MR/PR, per
+[output.md](references/output.md);
+[store.md](references/store.md)).
 
 ## 4. Optional: --fix
 

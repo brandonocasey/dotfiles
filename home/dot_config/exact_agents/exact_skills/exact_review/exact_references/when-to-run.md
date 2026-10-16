@@ -37,15 +37,12 @@ preview prototype (**Scope**).
   not mean nothing to review. Finish the implementation and the checks and manual
   check that can run before the end point. Checks that only run remotely or need
   a device or person may follow the review; report them as pending.
-- After every review ends, including its fix loop, append one line to
-  `review-state.md` in the task scratch directory: the reviewed range
-  `<base-sha>..<head-sha>` and the time. The next end point reviews from the last
-  line's `<head-sha>`. When that SHA is no longer an ancestor of HEAD (rebase,
-  amend), map it with
-  `git range-diff --creation-factor=100 <base-sha>..<head-sha> <new-base>..HEAD`.
-  Review only commits marked new or changed (`!`, `>`), plus conflict resolutions.
-  Skip the review when every commit is unchanged (`=`) and nothing else changed;
-  report it as `✓ already reviewed at <head-sha>`.
+- Each review run records its reviewed range in the `agent-review` store
+  ([store.md](store.md)). Skip the review only when `agent-review status` reports
+  `reviewed: true` and an empty `unreviewed_commits`, plus `worktree.reviewed: true`
+  when the tree is dirty; report it as `✓ already reviewed at <head-sha>`. Otherwise
+  review `<review_from>..HEAD` from `status`, or from the task's starting revision
+  when `review_from` is null, plus uncommitted work.
 - Before the final review of this session's own work, inspect already-finished CI
   failures of any existing task-branch push, once, per
   [ci-and-conflicts.md](ci-and-conflicts.md), and fix them. Never wait for CI or
@@ -55,8 +52,7 @@ preview prototype (**Scope**).
   earlier end points and review only there.
 - During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
-  When `review-state.md` already covers the branch, apply the range-diff rule above
-  first, so a rebase alone triggers no second review.
+  Check `agent-review status` first, so a rebase alone triggers no second review.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
   and rerun affected checks before reporting completion. Pushes and changes outside
   the intended behavior keep their existing authorization rules. Report the
@@ -89,8 +85,8 @@ preview prototype (**Scope**).
 - Follow-ups wait for the next end point (**Timing**), such as their own finished
   commit. Then review them together as one delta
   (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
-  one-line or prose-only edit. Record `<head-sha>` in `review-state.md` after the
-  fix commits, so fix commits never fall in the next delta.
+  one-line or prose-only edit. End the run with `agent-review run end` after the
+  last fix commit, so `status` counts the fix commits as reviewed.
 - The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
   Report unresolved findings explicitly. Do not rerun a review of the whole
   target merely to obtain a clean report after repairs.

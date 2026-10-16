@@ -5,38 +5,22 @@ GitLab and GitHub only. On any other platform, including Forgejo, report that
 
 ## Procedure
 
-1. List unresolved discussions with the commands below.
+Use the `agent-review` commands in [store.md](store.md), each with the
+`--target <key>` that `sync` prints. Set `GITLAB_HOST=<host>` for a self-hosted GitLab.
+
+1. List unresolved discussions: `agent-review sync --pr <n|url>`, then
+   `agent-review list --open`.
 2. Classify each one: `fixed` (cite the commit sha), `stale`, `valid`, or `question`.
+   Record `valid` and `question` with `agent-review resolve <id> --triage <class>`.
 3. If the user only asked about status, stop here and report the table from step 7.
 4. Fix the `valid` threads that the request covers through review step 4. Then classify them as `fixed`.
-5. Reply in one plain sentence and resolve the `fixed` and `stale` threads.
+5. Reply in one plain sentence and resolve the `fixed` and `stale` threads:
+   `agent-review reply <id> --body '<reply>'`, then
+   `agent-review resolve <id> --triage fixed --resolution "fixed <sha>"` or
+   `--triage stale`, then `agent-review publish`. Add `--not-own` when the user did
+   not author the MR/PR; it then posts only replies and resolves. Show the user
+   `publish --dry-run` output first.
    The user's request authorizes this for the named MR/PR only.
    Never reply or resolve on a repository outside the user's organization unless the user names that action.
 6. Print draft replies for `question` threads for the user to post, as in [output.md](output.md). Do not post them.
 7. Report a table: thread link, class, and action taken.
-
-## GitLab
-
-```sh
-glab api --paginate "projects/<enc-path>/merge_requests/<iid>/discussions?per_page=100"
-glab api -X POST "projects/<enc-path>/merge_requests/<iid>/discussions/<id>/notes" -f body='<reply>'
-glab api -X PUT "projects/<enc-path>/merge_requests/<iid>/discussions/<id>" -f resolved=true
-```
-
-Use only discussions whose first note has `resolvable: true` and `resolved: false` (`notes[0]`).
-Prefix each command with `GITLAB_HOST=<host>` when self-hosted.
-
-## GitHub
-
-List threads with `isResolved: false`. When `hasNextPage` is true, repeat with `reviewThreads(first:100,after:"<endCursor>")` until it is false:
-
-```sh
-gh api graphql -f o=<owner> -f r=<repo> -F n=<n> -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){pageInfo{hasNextPage endCursor} nodes{id isResolved isOutdated path line comments(first:20){nodes{author{login} body url}}}}}}}'
-```
-
-Reply to and resolve one thread:
-
-```sh
-gh api graphql -f id=<thread-id> -f b='<reply>' -f query='mutation($id:ID!,$b:String!){addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$id,body:$b}){comment{url}}}'
-gh api graphql -f id=<thread-id> -f query='mutation($id:ID!){resolveReviewThread(input:{threadId:$id}){thread{isResolved}}}'
-```
