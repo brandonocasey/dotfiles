@@ -28,6 +28,15 @@ exception is a preview prototype (**Scope**).
   not mean nothing to review. Finish the implementation and the checks and manual
   check that can run before the end point. Checks that only run remotely or need
   a device or person may follow the review; report them as pending.
+- After every review ends, including its fix loop, append one line to
+  `review-state.md` in the task scratch directory: the reviewed range
+  `<base-sha>..<head-sha>` and the time. The next end point reviews from the last
+  line's `<head-sha>`. When that SHA is no longer an ancestor of HEAD (rebase,
+  amend), map it with
+  `git range-diff --creation-factor=100 <base-sha>..<head-sha> <new-base>..HEAD`.
+  Review only commits marked new or changed (`!`, `>`), plus conflict resolutions.
+  Skip the review when every commit is unchanged (`=`) and nothing else changed;
+  report it as `✓ already reviewed at <head-sha>`.
 - Before the final review of this session's own work, inspect already-finished CI
   failures of any existing task-branch push, once, per
   [ci-and-conflicts.md](ci-and-conflicts.md), and fix them. Never wait for CI or
@@ -37,6 +46,8 @@ exception is a preview prototype (**Scope**).
   earlier end points and review only there.
 - During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
+  When `review-state.md` already covers the branch, apply the range-diff rule above
+  first, so a rebase alone triggers no second review.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
   and rerun affected checks before reporting completion. Pushes and changes outside
   the intended behavior keep their existing authorization rules. Report the
