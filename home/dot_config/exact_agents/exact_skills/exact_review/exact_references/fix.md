@@ -49,7 +49,8 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
      text-only fixes record `Checked: diff only`.
   5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take
      the type from its **Choosing the type** procedure; carry any issue-tracker reference
-     from the MR/PR title. Handle auto-merge per `shared/auto-merge-pause.md`
+     from the MR/PR title. Never mention the review, its passes, or its findings in
+     the commit message or MR/PR description. Handle auto-merge per `shared/auto-merge-pause.md`
      (pause at start, restore after the push, new MR/PR when queued). Push to the source branch — the review
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead

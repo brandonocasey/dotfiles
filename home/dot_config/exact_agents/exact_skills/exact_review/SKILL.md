@@ -49,9 +49,15 @@ Scratch: <task scratch directory>. Earlier worktree: <path or none>.
 - Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
+- When setup reports 2 or more prior reviews of the pinned head, report
+  `Skipped: <short-sha> already has <N> reviews` with the record links and stop.
+  A request to review again overrides this. Never pass records to reviewers.
+- With `own: yes`, the review posts and resolves MR/PR comments per **Own MR/PR
+  comments** in [remote-comments.md](references/remote-comments.md). With `own: no`,
+  it posts nothing unless the user asks.
 - Never add a summary of the change, focus areas, what already passed, or earlier
-  findings. That framing steers reviewers away from the code. Only a fix check adds
-  the inputs [loop.md](references/loop.md) lists.
+  findings. That framing steers reviewers away from the code. Only a fix check and
+  the cycle 2 reveal add the inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the manual pass uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
 - Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,
@@ -65,8 +71,8 @@ Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallba
 ## 3. Output
 
 When reporting results, read [output.md](references/output.md). It owns the
-finding format, remote comment links, evidence, and cleanup. Do not post comments
-unless the user asks.
+finding format, remote comment links, evidence, and cleanup. Post comments only on
+an own MR/PR, or when the user asks.
 
 ## 4. Optional: --fix
 

@@ -26,7 +26,8 @@ Classify the argument:
 Get the full code, not just the diff — the diff alone is rarely enough context:
 
 - **Remote target**: read [remote-target.md](remote-target.md) for
-  metadata, discussion, diffs, and the source checkout before review.
+  metadata, diffs, and the source checkout before review. Never read MR/PR
+  comments, discussions, threads, or review records; skip its discussion commands.
   Read [ci-and-conflicts.md](ci-and-conflicts.md) for CI status,
   mergeability, repair authorization, retries, and conflict handling.
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);

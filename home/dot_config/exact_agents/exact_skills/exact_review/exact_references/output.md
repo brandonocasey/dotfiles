@@ -26,8 +26,11 @@ breaks, when, and the fix. Apply repository templates when present.
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. Do not post anything to the MR/PR unless the user asks; step 6 lists what
-`--threads` may post. Print for the user to post, per `host-preflight/references/copyable-output.md`:
+is a valid result. On an own MR/PR, post per **Own MR/PR comments** in
+[remote-comments.md](remote-comments.md) and link each posted comment instead of
+printing comment blocks; the comment text goes only into the body files. Otherwise do not
+post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may
+post. Print for the user to post, per `host-preflight/references/copyable-output.md`:
 one fenced block per comment, numbered by finding. Report CI and
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.

@@ -37,3 +37,125 @@ GitHub (replaces the line(s) the comment anchors to):
 <replacement lines>
 ```
 ````
+
+## Own MR/PR comments
+
+Every review of an MR/PR authored by the authenticated user ([fix.md](fix.md) **Fix
+authorization** names the lookup) posts its findings, resolves fixed ones, and
+posts a final review record. GitLab and GitHub only. Never post on any other MR/PR
+unless the user asks.
+
+### IDs and signature
+
+- Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run.
+- Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
+- Reviewer ID: `r<n>`, unique within the run. A continued reviewer keeps its ID.
+- Signature: `<model-id> <effort> <harness> <run>.<pass>.<reviewer>`, such as
+  `claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1`. Harness is `claude-code` or
+  `codex`. Write `default` for an unknown effort. Add ` post-reveal` to findings
+  from the cycle 2 reveal. The fixer signs with reviewer ID `fix`.
+- Harness version: run `claude --version` or `codex --version` once per run.
+- Starting context, per reviewer and pass: the starting SHA plus `fresh`,
+  `continued <pass> + <N> findings, fix diff`, or `blind, threads after lock`.
+
+### Main session's part
+
+After each pass and its fix push (or after the pass, when nothing was fixed), write
+`post-<run>-<pass>.json` in the task scratch directory, then start one `cheap`
+sub-agent with exactly this prompt:
+
+```text
+Post review comments per **Posting agent** in <absolute path of remote-comments.md>.
+Input: <absolute path of the JSON file>.
+```
+
+```json
+{
+  "platform": "gitlab | github", "host": "<host>", "repo": "<project-path or owner/repo>",
+  "number": 123, "reviewed_sha": "<sha>",
+  "diff_refs": {"base_sha": "", "start_sha": "", "head_sha": ""},
+  "findings": [{"id": "rv-7k2m.c1p0.r1.f1", "path": "src/a.ts", "line": 42,
+    "side": "new | old", "in_diff": true, "body_file": "<path>"}],
+  "fixed": [{"id": "rv-7k2m.c1p0.r1.f1", "sha": "<short-sha>", "signature": "<fixer signature>"}],
+  "not_fixed": [{"id": "<finding id>", "signature": "<fix-check reviewer signature>", "reason": "<one line>"}],
+  "final_record_file": "<path, or null>"
+}
+```
+
+Each body file holds the step 3 comment text, the finding's signatures (one per
+reviewer that raised it), and the marker
+`<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. `diff_refs` is
+GitLab only: the MR diff version of `reviewed_sha`. Skip findings already raised
+in an open thread. Pass `final_record_file` with the last pass only. Read only the
+agent's returned links and failures; retry a failure once yourself.
+
+````markdown
+**bug (medium):** <what breaks, when, and the fix>
+
+```suggestion
+<replacement lines>
+```
+
+claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1
+<!-- review-finding v1 id=rv-7k2m.c1p0.r1.f1 sha=<reviewed-sha> -->
+````
+
+### Posting agent
+
+Post exactly the given bodies; edit no other file. Put every command in one scratch
+script beside the input, appending each response to `<input>.log`, and run it once.
+Prefix `glab` with `GITLAB_HOST=<host>` when self-hosted.
+
+1. **Findings, as one review.** GitHub: write one review JSON with `commit_id` set to
+   `reviewed_sha`, `event` `COMMENT`, and one `comments` entry per in-diff finding
+   (`path`, `line`, `side` `RIGHT` for new or `LEFT` for old, `body`), then
+   `gh api repos/<repo>/pulls/<n>/reviews --input <review.json>`. GitLab: per in-diff
+   finding, `glab api -X POST "projects/<enc-repo>/merge_requests/<n>/draft_notes" -H 'Content-Type: application/json' --input <note.json>`
+   with `{"note": <body>, "position": {"position_type": "text", "base_sha", "start_sha", "head_sha", "old_path", "new_path", "new_line" or "old_line"}}`,
+   then once `glab api -X POST "projects/<enc-repo>/merge_requests/<n>/draft_notes/bulk_publish"`.
+   Post each finding outside the diff as a general comment
+   (`gh pr comment --body-file`, or `glab mr note create -m`).
+2. **Threads.** List threads once with the [threads.md](threads.md) list command and
+   match each `fixed` and `not_fixed` id to its thread by the marker.
+3. **Replies.** For `fixed`: reply `Fixed in <sha>.` plus the signature, then resolve.
+   For `not_fixed`: reply `Not fixed: <reason>` plus the signature, then reopen
+   (GitLab `-f resolved=false`; GitHub `unresolveReviewThread`). Use the
+   [threads.md](threads.md) commands.
+4. **Final record.** Post `final_record_file` as a general comment, then read it back.
+
+Return at most 15 lines: each finding id with its comment link, each thread action,
+the final record link, and each failure with its exact error message.
+
+### Final record
+
+Post one general comment after the review ends, even with open items. One row per
+reviewer per pass; a fix check row may list several continued reviewers.
+`reviews-at-head` counts the passes whose reviewed SHA is the final head: full
+reviews, plus a fix check that found no major finding.
+
+```markdown
+**Review rv-7k2m:** review-fixed at <short-head>. <C> cycles, <F> found, <X> fixed, <O> open.
+
+| Pass | Reviewed | Starting context | Reviewer |
+|---|---|---|---|
+| c1p0 full | 1a2b3c4 | fresh | r1 claude-opus-5-5 xhigh · Claude Code 2.1.296 |
+| c1p1 fix check | 1a2b3c4..5d6e7f8 | continued c1p0 + 2 findings, fix diff | r1 |
+| c2p0 full | 5d6e7f8 | blind, threads after lock | r2 gpt-6-astra xhigh · codex-cli 0.162.1 |
+| c2p1 fix check | 5d6e7f8..9e8d7c6 | continued c2p0 + 1 finding, fix diff | r2 |
+
+Reveal: 2 agree, 0 disagree.
+Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
+<!-- review-record v2 id=rv-7k2m head=<full-head-sha> reviews-at-head=<N> -->
+```
+
+### Reading records
+
+Read all general comments and keep those containing `<!-- review-record v2`. Trust
+only records by the authenticated user; ignore the rest. The prior reviews of the
+pinned head are the sum of `reviews-at-head` over trusted records whose `head`
+equals it.
+
+```sh
+glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"   # GitLab: author.username, body
+gh api --paginate repos/<owner>/<repo>/issues/<n>/comments --jq '.[] | {user: .user.login, created_at, body}'   # GitHub
+```

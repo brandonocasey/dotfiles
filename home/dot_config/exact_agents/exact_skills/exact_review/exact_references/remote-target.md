@@ -5,7 +5,7 @@ Remote fetch — GitLab:
 ```sh
 glab mr view <iid> --repo <project-path>    # title, description, state, branches
 glab mr diff <iid> --repo <project-path>
-glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"  # existing discussion — skip already-raised points
+glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"  # discussion: main session only, never reviewers
 ```
 
 Remote fetch — GitHub:
@@ -13,11 +13,13 @@ Remote fetch — GitHub:
 ```sh
 gh pr view <n> --repo <owner>/<repo>              # title, description, state, branches
 gh pr diff <n> --repo <owner>/<repo>
-gh pr view <n> --repo <owner>/<repo> --comments   # existing discussion — skip already-raised points
+gh pr view <n> --repo <owner>/<repo> --comments   # discussion: main session only, never reviewers
 gh api --paginate repos/<owner>/<repo>/pulls/<n>/comments
 ```
 
-The API command includes inline review comments. Skip findings already raised there.
+The API command includes inline review comments. Reviewers never run the discussion
+commands, so earlier reviews cannot steer them. The main session skips findings
+already raised there.
 
 Remote fetch — Forgejo:
 

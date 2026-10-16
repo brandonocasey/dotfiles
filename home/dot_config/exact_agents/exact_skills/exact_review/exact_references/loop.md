@@ -28,19 +28,31 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    not new.
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
    from the first cycle. Skip it when the first full review found no major finding that
-   survived verification.
+   survived verification. Its full review runs blind, then reveals:
+   - **Lock.** When the reviewers return, save their findings unchanged to
+     `blind-<run>.md` in the task scratch directory. Never change them after the reveal.
+   - **Reveal.** Continue each reviewer (Claude Code: `SendMessage`) with every cycle 1
+     finding: its comment link, fix commit, and fix-check result, plus held `question`
+     items with any answers. Ask it to mark each fix or answer `agree` or `disagree`
+     with evidence, and to return new findings in the usual format, tagged
+     `post-reveal`. Without continuation support, skip the reveal and say so.
+   - Re-verify the blind and reveal findings together. A surviving `disagree` reopens
+     its cycle 1 finding as `not fixed`.
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed.
 
-After each pass, record the loop state (cycle, pass number, reviewer IDs, last-reviewed SHA, held `question` items) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
+After each pass, record the loop state (run ID, cycle, pass number, last-reviewed SHA, held `question` items, and per reviewer: its ID, model, effort, harness, harness version, starting context, and posted comment IDs) in the phase checkpoint per [workflows.md](../../sub-agents/references/workflows.md).
 
 Kill a finding that an earlier pass killed, unless its code changed since that pass.
 Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
 For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
-passes target it. Run once, after step 5, in this order: the auto-merge restore,
+passes target it. On an own MR/PR, after each pass and its push, start one posting
+agent per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run once,
+after step 5, in this order: the last pass's posting agent with the final record
+(own MR/PR only), the auto-merge restore,
 step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's
 answer resolves or accepts every item; otherwise leave auto-merge off. Keep the

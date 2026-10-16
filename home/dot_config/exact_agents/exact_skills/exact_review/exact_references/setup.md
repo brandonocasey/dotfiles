@@ -66,6 +66,14 @@ If the pinned diff is empty, report `empty` and stop.
   failed job with its label and both job URLs, the source SHA, pending jobs as pending,
   and mergeability.
 - Companion or linked MRs/PRs named in the request or description, as URLs.
+- Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
+  On GitLab with `own: yes`, also its `diff_refs` (`base_sha`, `start_sha`, `head_sha`).
+- Prior reviews of the pinned head per **Reading records** in
+  [remote-comments.md](remote-comments.md): the count and each record's link.
+  Report `prior reviews: 0` when none.
+
+For a branch target with an open MR/PR whose head equals the pinned SHA, report that
+MR/PR's URL and these facts too.
 
 ## 5. Reviewer prompt
 
@@ -75,7 +83,7 @@ focus areas, or earlier findings. `<target>` is the user's target verbatim, foll
 
 ```text
 Review <target> for verified defects. Read-only: no edits, commits,
-cleanup, or sub-agents.
+cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md that apply>
