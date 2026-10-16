@@ -1,5 +1,12 @@
+# tmux panes start one shell level deep. Tide draws the prompt in a
+# non-interactive child shell, so raise the threshold only there.
+if not status is-interactive
+    set -q TMUX && set -q tide_shlvl_threshold && set -g tide_shlvl_threshold (math $tide_shlvl_threshold + 1)
+    return
+end
+
 # Keep these tide items on every machine, even after `tide configure` resets them
-status is-interactive && functions -q _tide_detect_os || return
+functions -q _tide_detect_os || return
 
 test -n "$tide_os_icon" || _tide_detect_os | read -U tide_os_icon
 contains os $tide_left_prompt_items || set -U tide_left_prompt_items os $tide_left_prompt_items
@@ -12,6 +19,3 @@ if not contains shlvl $tide_right_prompt_items
         set -U -a tide_right_prompt_items shlvl
     end
 end
-
-# tmux panes start at shell level 2, so show only deeper nesting there
-set -q TMUX && set -gx tide_shlvl_threshold 2
