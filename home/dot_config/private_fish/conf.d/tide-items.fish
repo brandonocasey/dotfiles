@@ -12,3 +12,6 @@ if not contains shlvl $tide_right_prompt_items
         set -U -a tide_right_prompt_items shlvl
     end
 end
+
+# tmux panes start at shell level 2, so show only deeper nesting there
+set -q TMUX && set -gx tide_shlvl_threshold 2
