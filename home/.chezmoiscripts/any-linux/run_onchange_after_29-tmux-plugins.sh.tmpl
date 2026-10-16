@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs before the tmux reload so a running server picks up new plugins.
-# tmux.conf hash: {{ include "dot_config/tmux/tmux.conf" | sha256sum }}
+# Hashes only the plugin list, so other tmux.conf edits skip this.
+# tmux plugins hash: {{ regexFindAll "(?m)^set -g @plugin .*$" (include "dot_config/tmux/tmux.conf") -1 | join "\n" | sha256sum }}
 
 export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin"
 OUTPUT=/dev/stdout
