@@ -85,15 +85,15 @@ managed=$(
   "autoMode": {
     "environment": [
       "$defaults",
-      "Organization: JW Player / Connatix. Trusted: GitLab group gitlab.com/jwpconnatix, Jira jwplayer.atlassian.net, personal Forgejo forgejo.koof.win/bcasey/*."
+      "Organization: JW Player / Connatix. Trusted source control: gitlab.com/jwpconnatix/*, forgejo.koof.win/bcasey/*. Trusted internal domains: jwplayer.atlassian.net."
     ],
     "allow": [
       "$defaults",
-      "MR/PR and Jira actions the user asked for in this session: approve, merge, enable or re-enable auto-merge, comment, close, edit, and update Jira issues or fix versions. Read-only MR/PR polling is never Self-Approval.",
+      "MR/PR and Jira actions the user asked for in this session: approve, merge, enable or re-enable auto-merge, comment, close, edit, and update Jira issues or fix versions. Read-only MR/PR polling is never Self-Approval. Re-enabling auto-merge that this session paused before pushing, with the same method, restores the user's setting and is not a new merge.",
       "Review comments on MRs/PRs the user authored, during a review the user asked for in this session: post, reply, resolve, and reopen. Never on MRs/PRs others authored.",
-      "Agent setup changes the user asked for in this session: edit ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, ~/.codex/, or a repo's .claude/settings.local.json after backing up to ~/.local/state/agents/backups/; run chezmoi apply; commit, amend unpushed commits, or git pull --rebase in ~/.local/share/chezmoi; short tmux test runs of claude or codex from ~/.cache/agents/scratch/.",
+      "Agent setup changes the user asked for in this session or that /llm-setup-audit applies: edit ~/.config/agents/, ~/.local/share/chezmoi/, ~/.claude/, ~/.claude-two/, ~/.codex/, or a repo's .claude/settings.local.json after backing up to ~/.local/state/agents/backups/; run chezmoi apply; commit, amend unpushed commits, or git pull --rebase in ~/.local/share/chezmoi. Short tmux test runs of claude or codex from ~/.cache/agents/scratch/ only check such a change and never do other task work.",
       "In agent-created worktrees under <repo>/.worktrees/ with a clean tree and a backed-up tip: detached checkouts, cherry-picks, rebases, and rewording local commits. Force-pushes still need the user's request.",
-      "When the user asked to test on a LAN device in this session: serve a local build on 0.0.0.0, never a repo root or home directory, and stop it when testing ends."
+      "When the user asked to test on a LAN device in this session: serve a repo dev server or local build on 0.0.0.0. A static file server never serves a repo root or home directory. Stop the server when testing ends."
     ]
   },
   "model": "opus",
