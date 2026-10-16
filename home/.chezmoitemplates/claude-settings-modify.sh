@@ -77,7 +77,7 @@ managed=$(
       "Read(~/.aws/**)"
     ],
     "additionalDirectories": ["~/.cache/agents"],
-    "defaultMode": "auto"
+    "defaultMode": "{{ if eq .chezmoi.hostname "bcasey-dev" }}bypassPermissions{{ else }}auto{{ end }}"
   },
   "sandbox": {
     "enabled": false

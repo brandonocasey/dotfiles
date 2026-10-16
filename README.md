@@ -20,6 +20,11 @@ plugins and update all plugins.
 
 ## Agent skills
 
+On `bcasey-dev`, new Claude Code sessions use `bypassPermissions`.
+Codex uses `approval_policy = "never"` with `sandbox_mode = "danger-full-access"`.
+Other hostnames keep Claude's `auto` mode and Codex's `on-request` approvals.
+Apply the settings and restart each tool for these defaults to take effect.
+
 Chezmoi manages `~/.config/agents/` and every owned folder under it as
 [exact directories](https://www.chezmoi.io/reference/source-state-attributes/).
 Applying removes files and folders absent from the source, including nested references.

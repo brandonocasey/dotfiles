@@ -48,7 +48,7 @@ approvals_reviewer = "user"
 plan_mode_reasoning_effort = "high"
 service_tier = "default"
 @NOTIFY@
-approval_policy = "on-request"
+approval_policy = "{{ if eq .chezmoi.hostname "bcasey-dev" }}never{{ else }}on-request{{ end }}"
 sandbox_mode    = "danger-full-access"
 web_search      = "cached"
 allow_login_shell = true
