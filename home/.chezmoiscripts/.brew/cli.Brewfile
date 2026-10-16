@@ -38,6 +38,8 @@ brew 'rsync'
 brew 'ast-grep'
 brew 'luajit'
 brew 'shellcheck'
+# secret scanner for staged changes (dotfiles-sync)
+brew 'gitleaks'
 # shell formatter to pair with shellcheck
 brew 'shfmt'
 brew 'pass'

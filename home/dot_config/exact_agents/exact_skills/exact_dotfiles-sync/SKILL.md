@@ -48,9 +48,11 @@ with no pipes, `;`, or variable assignments.
    - Never run `chezmoi add`, `re-add`, `edit`, `merge`, or `update`. With
      `autoCommit` or `autoPush` on, they commit or push on their own; both are off now.
 4. **Scan.** Stage only those source paths: `git add <paths>`.
-   Run the repo's secret scanner when it has one. Always run this scan too:
+   Scan the staged changes: `gitleaks git --staged --redact --no-banner -v --log-level warn <src>`.
+   Exit 0 means clean; exit 1 lists each leak, already redacted.
+   Only when `gitleaks` is missing, run instead
    `git grep --cached -nEi 'token|secret|passw|api[_-]?key|PRIVATE KEY|glpat-|ghp_|github_pat_|xox[bp]-|AKIA' -- <paths>`
-   Judge each match. Ignore plain prose, such as token counts.
+   and judge each match. Ignore plain prose, such as token counts.
    On a real secret, stop. Print the file, line, and match with the value
    replaced by `<redacted>`. Unstage the path and remove the secret from the source.
 5. **Commit.** Load [commit](../commit/SKILL.md). Make one commit per concern.
