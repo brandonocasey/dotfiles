@@ -14,19 +14,40 @@ Exit 2 cancels the call and shows the message to the model.
 import json
 import os
 import re
+import shlex
 import sys
 
 POLL_LOOP = re.compile(
-    r"\b(until|while)\b[^\n]*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
+    r"\b(until|while)\b(?:(?!\bdone\b)[\s\S])*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
 )
 SLEEP = re.compile(r"\bsleep\s+(\d+(?:\.\d+)?)([smhd]?)\b")
 UNIT = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
 SHELLS = {"sh", "bash", "zsh", "dash", "ksh"}
 GH_WATCH = re.compile(r"\bgh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch)\b")
-PROC_MATCH = re.compile(
-    r"\b(pkill|pgrep)\b((?:\s+-[A-Za-z]+)*?\s+-[A-Za-z]*f[A-Za-z]*(?:\s+-[A-Za-z]+)*)"
-    r"(?:\s+--)?\s+(\"[^\"]*\"|'[^']*'|[^\s;|&]+)"
-)
+PROC_TOOL = re.compile(r"\b(pkill|pgrep)\b")
+# Options that take a value, so the next word is not the pattern.
+PROC_ARG_OPTS = {"-u", "-U", "-g", "-G", "-P", "-s", "-t", "-F", "--signal",
+                 "--pidfile", "--ns", "--nslist", "--euid", "--uid", "--group",
+                 "--pgroup", "--parent", "--session", "--terminal"}
+BACKGROUNDED = re.compile(r"(?<!&)&\s*$")
+
+
+def proc_pattern(words: list[str]) -> str | None:
+    """The pattern of a pkill/pgrep that uses -f, or None."""
+    full, i = False, 0
+    while i < len(words):
+        w = words[i]
+        if w == "--":
+            return words[i + 1] if full and i + 1 < len(words) else None
+        if w in PROC_ARG_OPTS:
+            i += 2
+            continue
+        if w == "--full" or (re.fullmatch(r"-[A-Za-z]+", w) and "f" in w[1:]):
+            full = True
+        elif not w.startswith("-"):
+            return w if full else None
+        i += 1
+    return None
 
 
 def code_only(cmd: str) -> str:
@@ -40,17 +61,20 @@ def code_only(cmd: str) -> str:
         c = cmd[i]
         if c == "\\" and i + 1 < n:
             out.append(cmd[i:i + 2])
-            word += cmd[i + 1]
+            if cmd[i + 1] != "\n":  # an escaped newline only joins lines
+                word += cmd[i + 1]
             i += 2
         elif c in "'\"":
+            # Backslash escapes work in "..." and in $'...'.
+            escapes = c == '"' or (i > 0 and cmd[i - 1] == "$")
             j = i + 1
             while j < n and cmd[j] != c:
-                j += 2 if c == '"' and cmd[j] == "\\" else 1
+                j += 2 if escapes and cmd[j] == "\\" else 1
             body = cmd[i + 1:j]
             script = (
                 not word and len(words) >= 2
-                and re.fullmatch(r"-[a-z]*c[a-z]*", words[-1])
-                and os.path.basename(words[-2]) in SHELLS
+                and re.fullmatch(r"-[A-Za-z]*c[A-Za-z]*", words[-1])
+                and any(os.path.basename(w) in SHELLS for w in words[:-1])
             )
             out.append(c + (body if script else re.sub(r"[^\n]", " ", body)) + c)
             word += "x"
@@ -84,32 +108,42 @@ def problems(cmd: str, background: bool) -> list[str]:
     found = []
     code = code_only(cmd)
     if not background:
-        if POLL_LOOP.search(code):
+        # A line ending in a single & runs in the background, like the
+        # detached `nohup setsid sh -c '...' &` form subagent-wait suggests.
+        fg = "\n".join("" if BACKGROUNDED.search(line) else line
+                       for line in code.split("\n"))
+        if POLL_LOOP.search(fg):
             found.append(
                 "Foreground polling loop. Rerun it with run_in_background: true "
                 "and wait for its exit, or use Monitor for a stream of events."
             )
-        for m in SLEEP.finditer(code):
+        for m in SLEEP.finditer(fg):
             if float(m.group(1)) * UNIT[m.group(2)] >= 20:
                 found.append(
                     f"Foreground sleep {m.group(1)}{m.group(2)}. Wait on a condition in a "
                     "background command instead of a fixed sleep."
                 )
                 break
-        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agent-wait\b", code):
+        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agent-wait\b", fg):
             found.append(
                 "agent-wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits."
             )
-        if GH_WATCH.search(code):
+        if GH_WATCH.search(fg):
             found.append(
                 "Foreground gh watch. Rerun it with run_in_background: true, "
                 "or use agent-watch."
             )
-    for m in PROC_MATCH.finditer(cmd):
+    for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:
             continue  # inside quoted data or a comment
-        tool, pattern = m.group(1), m.group(3).strip("\"'")
+        tool = m.group(1)
+        rest = re.split(r"[;&|\n)]", code[m.end():], maxsplit=1)[0]
+        try:
+            words = shlex.split(cmd[m.end():m.end() + len(rest)])
+        except ValueError:
+            words = rest.split()
+        pattern = (proc_pattern(words) or "").strip("\"'")
         # An anchored pattern cannot match this shell, whose command line
         # starts with the shell's own path.
         if not pattern or pattern.startswith("^"):
