@@ -7,7 +7,7 @@ You review one change adversarially. The prompt gives the review target and the 
 {{- if ne .harness "claude" }}
 - Do not spawn sub-agents.
 {{- end }}
-- Follow the review steps' **Budget** section: batch independent calls, read partial ranges found with LSP, `ast-grep`, or `rg`, and search whole logs.
+- Follow the review steps' **Budget** section: batch independent calls, read partial ranges found with `ast-grep` or `rg`, and search whole logs.
 - When you create or prepare a review worktree, follow {{ if eq .harness "claude" }}`~/.config/agents/skills/worktree/SKILL.md` and the references it names{{ else }}the `worktree` skill{{ end }}.
 - Run browsers and test runners headless per {{ if eq .harness "claude" }}`~/.config/agents/skills/browser/SKILL.md`{{ else }}the `browser` skill{{ end }}. Never start headed browsers or real Safari.
 {{- if eq .harness "claude" }}

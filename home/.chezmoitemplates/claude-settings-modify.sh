@@ -323,9 +323,6 @@ managed=$(
   "enabledPlugins": {
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
     "context-lean@local-mods": true,
     "cc-plugin-sec-default@builtin": false
   },
