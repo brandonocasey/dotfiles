@@ -66,8 +66,8 @@ Rerun the config apply after a synced account path changes, then restart Codex
 to refresh skill discovery.
 
 Codex limits the skill catalog to 1,000 tokens and retained tool outputs to
-4,000 tokens each. Automatic compaction starts at 100,000 context tokens.
-Output limits can truncate evidence; earlier compaction can lose detail.
+4,000 tokens each. Automatic compaction uses the model's default threshold.
+Output limits can truncate evidence.
 
 All seven Codex roles omit automatic skill guidance and bundled skills.
 Delegating sessions must pass required skill paths and task constraints.
