@@ -95,7 +95,8 @@ do_procs() {
     [ -n "$cpid" ] || continue
     [ "$cpid" = "$pid" ] && continue
     comm="$(cat "$proc/comm" 2>/dev/null)"
-    case "$comm" in claude|codex|node-claude) continue ;; esac
+    # Versioned Claude installs run as their version number, e.g. 2.1.302.
+    case "$comm" in claude|codex|node-claude|[0-9]*.[0-9]*.[0-9]*) continue ;; esac
     claude_alive "$cpid"
     case $? in 0) continue ;; 2) continue ;; esac   # alive, or no record: leave it
     age="$(pid_age "$pid")" || continue
@@ -214,7 +215,7 @@ candidates() {
     say "Generated $(date '+%Y-%m-%d %H:%M'). List only; nothing here is deleted automatically."
     say ""
     cat "$out"
-  } > "$REPORT.tmp" && mv "$REPORT.tmp" "$REPORT"
+  } > "$REPORT.$$.tmp" && mv "$REPORT.$$.tmp" "$REPORT"   # per-run temp: sessions may end together
   say "candidates: $total entries in $REPORT"
   for h in "Merged, clean worktrees" "Merged local branches" "Backups" "Old Codex releases" "Superseded ms-playwright"; do
     c="$(awk -v h="$h" 'index($0,"## " h)==1{on=1;next} /^## /{on=0} on&&/^- /{c++} END{print c+0}' "$out")"
