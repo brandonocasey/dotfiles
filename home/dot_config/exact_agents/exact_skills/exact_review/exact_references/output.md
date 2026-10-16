@@ -31,11 +31,15 @@ the [threads.md](threads.md) list command without its unresolved filter, plus th
 general comments from [remote-target.md](remote-target.md). Then:
 - A finding that matches a thread with a `review-finding` marker, open or resolved,
   is kept, reported, and fixed as usual, but not posted again. On an own MR/PR, put
-  the finding id from that marker in `not_fixed` when the thread is resolved, and in
-  `fixed` once this run fixes it.
+  the finding id from that marker in `fixed` once this run fixes it, or in
+  `not_fixed` when the thread is resolved and this run did not fix it.
 - A finding that matches any other open thread is already raised: drop it.
 - A finding that matches any other resolved thread was settled by a person: drop it
-  and name it in the cleared list. On an own MR/PR, post per **Own MR/PR comments** in
+  and name it in the cleared list.
+- Every open review-marked thread that no finding matched stays an open item: list
+  it in the report and in the loop's step 5 list, so the step 7 gate sees it.
+
+On an own MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the body files. Otherwise do not
 post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may

@@ -7,8 +7,8 @@ current checkout). When a step needs judgement this file does not
 settle, stop and report the blocker instead of guessing. When the prompt says
 `Judgement: allowed`, decide it yourself instead and list each choice in the report.
 
-Input: the target as the user gave it, the task scratch directory, and any
-review worktree from an earlier pass. With several targets, set up one at a time:
+Input: the target as the user gave it, the task scratch directory, any
+review worktree from an earlier pass, and `Skip check: on` or `off`. With several targets, set up one at a time:
 parallel fetches share `FETCH_HEAD`.
 
 ## 1. Pin the target
@@ -20,6 +20,10 @@ parallel fetches share `FETCH_HEAD`.
 - **Branch**: pin `<merge-base-sha>..<branch-sha>`, where the merge base is
   `git merge-base <newest-default-base> <branch>`; see **Newest default base** in
   [default-branch.md](../../shared/default-branch.md). A user-given base replaces it.
+  When an open MR/PR by the authenticated user has the branch SHA as its head, pin
+  that MR/PR instead and report it as the target, so fixes push and comments land on
+  it. Its checkout is the branch's existing worktree when it has one, so the local
+  branch keeps the fixes; otherwise **Source checkout**.
 - **Commit or range**: its own SHA or range.
 - **Other explicit target** (a range plus the working tree, a range-diff): pin it as
   given; save a combined diff to a file in the scratch directory.
@@ -30,9 +34,9 @@ parallel fetches share `FETCH_HEAD`.
 
 If the pinned diff is empty, report `empty` and stop.
 
-For an own MR/PR (step 4), look up prior reviews now. With 2 or more and 0 open
-items, report `skip` with the count and record links, and stop before checkout and
-checks.
+For an own MR/PR (step 4), look up prior reviews now. When the prompt says
+`Skip check: on` and there are 2 or more with 0 open items, report `skip` with the
+count and record links, and stop before checkout and checks.
 
 ## 2. Checkout
 
@@ -76,11 +80,6 @@ checks.
   [remote-comments.md](remote-comments.md): the count, the open items, and each
   record's link.
   Report `prior reviews: 0` when none.
-
-For a branch target with an open MR/PR by the authenticated user whose head equals
-the pinned SHA, pin that MR/PR instead and report it as the target, so fixes push
-and comments land on it. Use the branch's existing worktree as the checkout when it
-has one, so the local branch keeps the fixes; otherwise use **Source checkout**.
 
 ## 5. Reviewer prompt
 

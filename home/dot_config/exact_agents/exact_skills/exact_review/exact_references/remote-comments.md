@@ -166,8 +166,9 @@ Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
 Read all general comments and keep those containing `<!-- review-record v2`. Trust
 only records by the authenticated user; ignore the rest. The prior reviews of the
 pinned head are the sum of `reviews-at-head` over trusted records whose `head`
-equals it; their open items are the `open` value of the newest such record. A record
-without `open` counts as having open items.
+equals it. The open items are the open threads that carry a `review-finding` marker
+posted by the authenticated user, from the [threads.md](threads.md) list command;
+the record's `open` value is informational only.
 
 ```sh
 glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"   # GitLab: author.username, body

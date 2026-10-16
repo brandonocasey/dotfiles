@@ -39,6 +39,7 @@ the code itself. Start one `cheap` sub-agent with exactly this prompt:
 Set up a review pass per <absolute path of references/setup.md>.
 Target: <the user's target verbatim; a range or MR/PR the calling skill or loop names; or none>.
 Scratch: <task scratch directory>. Earlier worktree: <path or none>.
+Skip check: <on for a run's first setup; off when the user asks to review again, and for later passes>.
 ```
 
 - Run setups one at a time, never in parallel.
