@@ -29,7 +29,7 @@ fi
 settings=$(jq -c '{modelSettings, autoCompactWindow}' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" 2>/dev/null)
 [ -n "$settings" ] || settings='{}'
 
-printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings" '
+printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings" --argjson now "$(date +%s)" '
   def esc: "\u001b[";
   def dim: esc + "38;5;245m";
   def reset: esc + "0m";
@@ -85,7 +85,11 @@ printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings"
         elif $win > 0 and $win < . then $win
         else . end;
 
-  .tasks[]?
+  def visible_len: gsub("\u001b\\[[0-9;]*m"; "") | length;
+
+  (.columns // 0) as $cols
+  | ((.cwd // "") | tostring) as $session_cwd
+  | .tasks[]?
   | ((.model // "") | tostring) as $model
   | ((.effort // "") | tostring) as $effort
   | (.contextWindowSize // 0) as $win
@@ -107,5 +111,35 @@ printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings"
        | (if $ceil.label != "" then $ceil.label + dim + ":" + reset else "" end)
          + esc + ($p | pct_color) + "m\($p)%" + reset
      else "" end) as $ctx_seg
-  | {id, content: ([$model_seg, $ctx_seg] | map(select(. != "")) | join(dim + "|" + reset))}
+  | ([$model_seg, $ctx_seg] | map(select(. != "")) | join(dim + "|" + reset)) as $stats
+  # Stats first, then who the agent is, then what it is doing. The progress
+  # label falls back to the description and is cut to fit the row.
+  # Agent type in cyan, then its own name when it differs ("reviewer@fix-auth").
+  | ((.agentType // "") | tostring) as $type
+  | ((.name // "") | tostring) as $name
+  | ((if $type != "" then esc + "36m" + $type + reset else "" end)
+     + (if $name != "" and $name != $type then (if $type != "" then dim + "@" + reset else "" end) + $name
+        else "" end)) as $who
+  # Other context: a finished or failed state, the run time, and the directory
+  # when the agent works outside the session directory (such as a worktree).
+  | ((.status // "running") | tostring) as $status
+  | (if $status == "running" then ""
+     elif $status == "completed" then esc + "32m" + "done" + reset
+     else esc + "31m" + $status + reset end) as $status_seg
+  | (if (.startTime | type) == "number" then (($now - .startTime / 1000) | floor) else null end) as $age
+  | (if $age == null or $age < 0 then ""
+     elif $age < 60 then dim + "\($age)s" + reset
+     elif $age < 3600 then dim + "\($age / 60 | floor)m" + reset
+     else dim + "\($age / 3600 | floor)h\($age % 3600 / 60 | floor)m" + reset end) as $age_seg
+  | (if (.cwd // "") != "" and .cwd != $session_cwd then dim + (.cwd | split("/") | last) + reset
+     else "" end) as $dir_seg
+  | ((.label // .description // "") | tostring | gsub("[\r\n\t]+"; " ")) as $what
+  | ([$who, $status_seg, $dir_seg, $age_seg, $stats] | map(select(. != ""))) as $fixed_segs
+  | ($fixed_segs | map(visible_len) | add // 0) as $fixed
+  | (if $cols > 0 then $cols - $fixed - 3 * ($fixed_segs | length) else 1000 end) as $room
+  | (if $room <= 1 then ""
+     elif ($what | length) > $room then $what[0:$room - 1] + "…"
+     else $what end) as $what
+  | {id, content: ([$stats, $who, $status_seg, $dir_seg, $age_seg, $what]
+      | map(select(. != "")) | join(dim + " · " + reset))}
 '
