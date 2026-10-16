@@ -26,7 +26,9 @@ breaks, when, and the fix. Apply repository templates when present.
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. On an own MR/PR, post per **Own MR/PR comments** in
+is a valid result. For an MR/PR, read its discussion once with the
+[remote-target.md](remote-target.md) discussion commands and drop findings already
+raised there. On an own MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the body files. Otherwise do not
 post anything to the MR/PR unless the user asks; step 6 lists what `--threads` may

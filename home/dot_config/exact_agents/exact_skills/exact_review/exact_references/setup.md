@@ -72,8 +72,9 @@ If the pinned diff is empty, report `empty` and stop.
   [remote-comments.md](remote-comments.md): the count and each record's link.
   Report `prior reviews: 0` when none.
 
-For a branch target with an open MR/PR whose head equals the pinned SHA, report that
-MR/PR's URL and these facts too.
+For a branch target with an open MR/PR by the authenticated user whose head equals
+the pinned SHA, pin that MR/PR instead and report it as the target, so fixes push
+and comments land on it.
 
 ## 5. Reviewer prompt
 

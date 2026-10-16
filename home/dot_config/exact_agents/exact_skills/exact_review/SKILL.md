@@ -51,6 +51,8 @@ Scratch: <task scratch directory>. Earlier worktree: <path or none>.
   per target. Otherwise the `sub-agents` skill sets model and effort.
 - When setup reports 2 or more prior reviews of the pinned head, report
   `Skipped: <short-sha> already has <N> reviews` with the record links and stop.
+  With `--approve`, `--auto-merge`, or `--merge`, skip only the review and still run
+  step 7.
   A request to review again overrides this. Never pass records to reviewers.
 - With `own: yes`, the review posts and resolves MR/PR comments per **Own MR/PR
   comments** in [remote-comments.md](references/remote-comments.md). With `own: no`,

@@ -42,8 +42,9 @@ GitHub (replaces the line(s) the comment anchors to):
 
 Every review of an MR/PR authored by the authenticated user ([fix.md](fix.md) **Fix
 authorization** names the lookup) posts its findings, resolves fixed ones, and
-posts a final review record. GitLab and GitHub only. Never post on any other MR/PR
-unless the user asks.
+posts a final review record. GitLab and GitHub only, and only in a repository inside
+the user's organization; for an upstream or other outside repository, print as for
+other MRs/PRs. Never post on any other MR/PR unless the user asks.
 
 ### IDs and signature
 
@@ -75,7 +76,7 @@ Input: <absolute path of the JSON file>.
   "number": 123, "reviewed_sha": "<sha>",
   "diff_refs": {"base_sha": "", "start_sha": "", "head_sha": ""},
   "findings": [{"id": "rv-7k2m.c1p0.r1.f1", "path": "src/a.ts", "line": 42,
-    "side": "new | old", "in_diff": true, "body_file": "<path>"}],
+    "old_line": 40, "side": "new | old | context", "in_diff": true, "body_file": "<path>"}],
   "fixed": [{"id": "rv-7k2m.c1p0.r1.f1", "sha": "<short-sha>", "signature": "<fixer signature>"}],
   "not_fixed": [{"id": "<finding id>", "signature": "<fix-check reviewer signature>", "reason": "<one line>"}],
   "final_record_file": "<path, or null>"
@@ -85,7 +86,9 @@ Input: <absolute path of the JSON file>.
 Each body file holds the step 3 comment text, the finding's signatures (one per
 reviewer that raised it), and the marker
 `<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. `diff_refs` is
-GitLab only: the MR diff version of `reviewed_sha`. Skip findings already raised
+GitLab only: the MR diff version of `reviewed_sha`. `line` is the new line for `new`
+and `context`, the old line for `old`; `old_line` is set only for `context` (an
+unchanged line inside a hunk). Skip findings already raised
 in an open thread. Pass `final_record_file` with the last pass only. Read only the
 agent's returned links and failures; retry a failure once yourself.
 
@@ -106,22 +109,32 @@ Post exactly the given bodies; edit no other file. Put every command in one scra
 script beside the input, appending each response to `<input>.log`, and run it once.
 Prefix `glab` with `GITLAB_HOST=<host>` when self-hosted.
 
-1. **Findings, as one review.** GitHub: write one review JSON with `commit_id` set to
-   `reviewed_sha`, `event` `COMMENT`, and one `comments` entry per in-diff finding
-   (`path`, `line`, `side` `RIGHT` for new or `LEFT` for old, `body`), then
+1. **Findings, as one review.** Skip this step when no finding is in the diff.
+   GitHub: write one review JSON with `commit_id` set to `reviewed_sha`, `event`
+   `COMMENT`, `body` `Review findings.`, and one `comments` entry per in-diff finding
+   (`path`, `line`, `side` `LEFT` for old, else `RIGHT`, `body`), then
    `gh api repos/<repo>/pulls/<n>/reviews --input <review.json>`. GitLab: per in-diff
    finding, `glab api -X POST "projects/<enc-repo>/merge_requests/<n>/draft_notes" -H 'Content-Type: application/json' --input <note.json>`
-   with `{"note": <body>, "position": {"position_type": "text", "base_sha", "start_sha", "head_sha", "old_path", "new_path", "new_line" or "old_line"}}`,
-   then once `glab api -X POST "projects/<enc-repo>/merge_requests/<n>/draft_notes/bulk_publish"`.
-   Post each finding outside the diff as a general comment
-   (`gh pr comment --body-file`, or `glab mr note create -m`).
-2. **Threads.** List threads once with the [threads.md](threads.md) list command and
-   match each `fixed` and `not_fixed` id to its thread by the marker.
-3. **Replies.** For `fixed`: reply `Fixed in <sha>.` plus the signature, then resolve.
+   with `{"note": <body>, "position": {"position_type": "text", "base_sha", "start_sha", "head_sha", "old_path", "new_path", ...}}`:
+   `new_line` for `new`, `old_line` for `old`, both for `context`. Record each
+   returned draft `id`, then publish only those, each with
+   `glab api -X PUT "projects/<enc-repo>/merge_requests/<n>/draft_notes/<id>/publish"`.
+   Never use `bulk_publish`: it also publishes the user's own unfinished drafts.
+2. **Outside the diff.** GitLab: `glab mr note create <n> -m "$(cat <body-file>)"`
+   (a resolvable thread). GitHub: `gh pr comment <n> --body-file <body-file>`; it
+   cannot be resolved, so step 4 answers it with a new comment.
+3. **Threads.** List all threads once, resolved ones included, with the
+   [threads.md](threads.md) list command minus its unresolved filter. On GitHub, also
+   list general comments per **Reading records**. Match each `fixed` and `not_fixed`
+   id by the marker.
+4. **Replies.** For `fixed`: reply `Fixed in <sha>.` plus the signature, then resolve.
    For `not_fixed`: reply `Not fixed: <reason>` plus the signature, then reopen
    (GitLab `-f resolved=false`; GitHub `unresolveReviewThread`). Use the
-   [threads.md](threads.md) commands.
-4. **Final record.** Post `final_record_file` as a general comment, then read it back.
+   [threads.md](threads.md) commands. For a GitHub general comment, post a new
+   general comment instead: the reply text, then `Re: <finding id>`.
+5. **Final record.** GitLab: `glab mr note create <n> --resolvable=false -m "$(cat <file>)"`,
+   so it never blocks merging. GitHub: `gh pr comment <n> --body-file <file>`. Then
+   read it back.
 
 Return at most 15 lines: each finding id with its comment link, each thread action,
 the final record link, and each failure with its exact error message.
@@ -157,5 +170,5 @@ equals it.
 
 ```sh
 glab api --paginate "projects/<url-encoded-project-path>/merge_requests/<iid>/notes?per_page=100"   # GitLab: author.username, body
-gh api --paginate repos/<owner>/<repo>/issues/<n>/comments --jq '.[] | {user: .user.login, created_at, body}'   # GitHub
+gh api --paginate repos/<owner>/<repo>/issues/<n>/comments --jq '.[] | {user: .user.login, created_at, url: .html_url, body}'   # GitHub
 ```
