@@ -105,7 +105,7 @@ managed=$(
     ]
   },
   "model": "opus",
-  "autoCompactWindow": 200000,
+  "autoCompactWindow": 433000,
   "promptCacheTtl": "1h",
   "env": {
     "BASH_MAX_OUTPUT_LENGTH": "12000",
