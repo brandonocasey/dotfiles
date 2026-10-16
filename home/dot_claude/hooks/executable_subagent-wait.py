@@ -63,28 +63,51 @@ def parts(entry: dict) -> list:
     return [p for p in content if isinstance(p, dict)] if isinstance(content, list) else []
 
 
-def turn_handback(transcript: str) -> tuple[bool, str, bool]:
-    """(ended, message, delivered) for a SubagentHandback that ended this turn."""
+def result_text(part: dict) -> str:
+    content = part.get("content")
+    if isinstance(content, list):
+        return " ".join(str(p.get("text", "")) for p in content if isinstance(p, dict))
+    return str(content or "")
+
+
+def handbacks(transcript: str) -> tuple[bool, str, bool, bool]:
+    """(ended, message, delivered, final) for SubagentHandback calls.
+
+    ended/message/delivered describe a handback that ended this turn. final
+    means a delivered handback has no later coordinator message, so the
+    agent's report is already out and its waits are over.
+    """
     entries = []
     for line in transcript.splitlines():
         try:
             entries.append(json.loads(line))
         except ValueError:
             continue
-    last = next((i for i in range(len(entries) - 1, -1, -1)
-                 if entries[i].get("type") == "assistant"), None)
-    if last is None:
-        return False, "", False
-    call = next((p for p in parts(entries[last])
-                 if p.get("type") == "tool_use" and p.get("name") == "SubagentHandback"), None)
+    results = {p.get("tool_use_id"): p for e in entries for p in parts(e)
+               if p.get("type") == "tool_result"}
+
+    def delivered(call: dict) -> bool:
+        p = results.get(call.get("id"))
+        return not p or not (p.get("is_error") or re.search(
+            r"Nothing was sent|\"success\"\s*:\s*false", result_text(p)))
+
+    calls, last_assistant, last_delivered, last_coordinator = {}, None, None, None
+    for i, e in enumerate(entries):
+        if e.get("type") == "assistant":
+            last_assistant = i
+            for p in parts(e):
+                if p.get("type") == "tool_use" and p.get("name") == "SubagentHandback":
+                    calls[i] = p
+                    if delivered(p):
+                        last_delivered = i
+        elif (e.get("origin") or {}).get("kind") == "coordinator":
+            last_coordinator = i
+    final = last_delivered is not None and (
+        last_coordinator is None or last_coordinator < last_delivered)
+    call = calls.get(last_assistant)
     if not call:
-        return False, "", False
-    results = [p for e in entries[last + 1:] for p in parts(e)
-               if p.get("type") == "tool_result" and p.get("tool_use_id") == call.get("id")]
-    rejected = any(p.get("is_error") or re.search(
-        r"Nothing was sent|\"success\":\s*false", json.dumps(p.get("content")))
-        for p in results)
-    return True, str((call.get("input") or {}).get("message") or ""), not rejected
+        return False, "", False, final
+    return True, str((call.get("input") or {}).get("message") or ""), delivered(call), final
 
 
 def handoff_file(text: str) -> str:
@@ -95,14 +118,11 @@ def handoff_file(text: str) -> str:
 
 def wait_keys(jobs: list[dict]) -> list[str]:
     """What is being waited on: work job ids, or a waiter's check for detached jobs."""
-    keys = []
-    for t in jobs:
-        command = t.get("command") or ""
-        if WAITER.search(command):
-            keys.append("check:" + command.split(" -- ", 1)[-1].strip())
-        else:
-            keys.append(t["id"])
-    return sorted(set(keys))
+    work = [t["id"] for t in jobs if not WAITER.search(t.get("command") or "")]
+    if work:
+        return sorted(work)
+    return sorted({"check:" + (t.get("command") or "").split(" -- ", 1)[-1].strip()
+                   for t in jobs})
 
 
 def block(message: str, entry: dict) -> int:
@@ -128,7 +148,7 @@ def main() -> int:
             os.remove(state_file)
         return 0
 
-    ended, handback, delivered = turn_handback(transcript)
+    ended, handback, delivered, final = handbacks(transcript)
     if ended:
         # A block would be discarded; record what the handback did.
         handoff = handoff_file(handback) if delivered else ""
@@ -137,9 +157,24 @@ def main() -> int:
         decision = "handoff" if handoff else ("handed-back" if delivered else "handback-rejected")
         log({**entry, "decision": decision, "file": handoff})
         return 0
+    if final:
+        # The report is out; a later wake (waiter or job exit) must not
+        # restart the wait or rewrite the handoff file.
+        if os.path.exists(state_file):
+            os.remove(state_file)
+        log({**entry, "decision": "after-handback"})
+        return 0
 
     handoff = handoff_file(data.get("last_assistant_message") or "")
     if handoff:
+        can_hand_back = ("SubagentHandback" in transcript
+                         and "SubagentHandback is not available" not in transcript)
+        if can_hand_back and not data.get("stop_hook_active"):
+            return block(
+                "Plain reply text does not reach the main session. Send this "
+                "report, ending with the HANDOFF line, through SubagentHandback.",
+                {**entry, "file": handoff},
+            )
         if os.path.exists(state_file):
             os.remove(state_file)
         log({**entry, "decision": "handoff", "file": handoff})
