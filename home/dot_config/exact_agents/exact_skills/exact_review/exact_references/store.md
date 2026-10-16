@@ -7,9 +7,11 @@ and output field. This file names what the review skill uses.
 
 ## Availability
 
-Run `agent-review status --help` once per run. When it fails, stop and report:
-agent-review missing: run `mise install` (it reads the GitHub token of `gh`, so
-`gh auth login` first); Windows is not supported.
+These rules need `agent-review` 0.2.0 or newer. Run `agent-review --version` once
+per run. When it fails or prints an older version, run
+`mise install github:brandonocasey/agent-review` (it reads the GitHub token of `gh`),
+then check again. When it still fails, stop and report: agent-review 0.2.0 missing:
+run `gh auth login`, then `mise install`; Windows is not supported.
 
 ## Commands
 
