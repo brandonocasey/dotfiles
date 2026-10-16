@@ -176,11 +176,6 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "echo 'Be concise: lead with the result, skip preamble and narration, keep only what the user needs.'",
-            "timeout": 5
-          },
-          {
-            "type": "command",
             "command": "sh ~/.claude/hooks/tmux-bell.sh working",
             "timeout": 5
           }
