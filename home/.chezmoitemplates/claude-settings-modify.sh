@@ -229,6 +229,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh restore",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-reap.sh session --apply",
+            "timeout": 2
           }
         ]
       }
@@ -240,6 +245,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/session-port.sh",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/agent-reap.sh report --count",
+            "timeout": 2
           }
         ]
       },
