@@ -100,7 +100,11 @@ def handbacks(transcript: str) -> tuple[bool, str, bool, bool]:
                     calls[i] = p
                     if delivered(p):
                         last_delivered = i
-        elif (e.get("origin") or {}).get("kind") == "coordinator":
+        elif "coordinator" in (
+            (e.get("origin") or {}).get("kind"),
+            # Messages queued mid-turn arrive as attachments.
+            ((e.get("attachment") or {}).get("origin") or {}).get("kind"),
+        ):
             last_coordinator = i
     final = last_delivered is not None and (
         last_coordinator is None or last_coordinator < last_delivered)
@@ -117,12 +121,27 @@ def handoff_file(text: str) -> str:
 
 
 def wait_keys(jobs: list[dict]) -> list[str]:
-    """What is being waited on: work job ids, or a waiter's check for detached jobs."""
-    work = [t["id"] for t in jobs if not WAITER.search(t.get("command") or "")]
-    if work:
-        return sorted(work)
-    return sorted({"check:" + (t.get("command") or "").split(" -- ", 1)[-1].strip()
-                   for t in jobs})
+    """What is being waited on: work job ids, and waiter checks for detached jobs."""
+    return sorted({
+        "check:" + command.split(" -- ", 1)[-1].strip() if WAITER.search(command) else t["id"]
+        for t in jobs for command in [t.get("command") or ""]
+    })
+
+
+def new_wait(keys: list[str], known: list[str]) -> bool:
+    """A new work job, or a waiter check replacing another, starts a new wait.
+
+    Adding the first waiter to a running job only arms the wait.
+    """
+    added = set(keys) - set(known)
+    had_check = any(k.startswith("check:") for k in known)
+    return any(not k.startswith("check:") or had_check for k in added)
+
+
+def clear(state_file: str) -> None:
+    for path in (state_file, state_file + ".plain-handoff"):
+        if os.path.exists(path):
+            os.remove(path)
 
 
 def block(message: str, entry: dict) -> int:
@@ -144,24 +163,22 @@ def main() -> int:
              "jobs": [t.get("command") or t.get("description") for t in jobs]}
 
     if not jobs:
-        if os.path.exists(state_file):
-            os.remove(state_file)
+        clear(state_file)
         return 0
 
     ended, handback, delivered, final = handbacks(transcript)
     if ended:
         # A block would be discarded; record what the handback did.
         handoff = handoff_file(handback) if delivered else ""
-        if handoff and os.path.exists(state_file):
-            os.remove(state_file)
+        if handoff:
+            clear(state_file)
         decision = "handoff" if handoff else ("handed-back" if delivered else "handback-rejected")
         log({**entry, "decision": decision, "file": handoff})
         return 0
     if final:
         # The report is out; a later wake (waiter or job exit) must not
         # restart the wait or rewrite the handoff file.
-        if os.path.exists(state_file):
-            os.remove(state_file)
+        clear(state_file)
         log({**entry, "decision": "after-handback"})
         return 0
 
@@ -169,14 +186,17 @@ def main() -> int:
     if handoff:
         can_hand_back = ("SubagentHandback" in transcript
                          and "SubagentHandback is not available" not in transcript)
-        if can_hand_back and not data.get("stop_hook_active"):
+        # Ask once per handoff; stop_hook_active is no guide, since it stays
+        # set after the forced-handoff block.
+        asked = state_file + ".plain-handoff"
+        if can_hand_back and not os.path.exists(asked):
+            open(asked, "w").close()
             return block(
                 "Plain reply text does not reach the main session. Send this "
                 "report, ending with the HANDOFF line, through SubagentHandback.",
                 {**entry, "file": handoff},
             )
-        if os.path.exists(state_file):
-            os.remove(state_file)
+        clear(state_file)
         log({**entry, "decision": "handoff", "file": handoff})
         return 0
 
@@ -190,7 +210,7 @@ def main() -> int:
         since, known = float(state["since"]), state["jobs"]
     except (OSError, ValueError, KeyError, TypeError):
         since, known = now, []
-    if not set(keys) <= set(known):
+    if new_wait(keys, known):
         since = now
     with open(state_file, "w", encoding="utf-8") as f:
         json.dump({"since": since, "jobs": keys}, f)
