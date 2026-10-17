@@ -69,6 +69,8 @@ Skip check: <on for a run's first setup; off when the user asks to review again,
 - Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,
   approval, and merge only to MRs/PRs that the user named or authored.
 - Use the reported CI facts in the step 3 report.
+- The risk tier is the highest of setup's `risk`, the reviewers' `Risk:` lines, and
+  `high` when a security finding or `high` bug survives. A new head resets it.
 
 After the reviewers return, re-verify per **Delegation**, reading only the code each
 finding depends on: the cited lines, their callers, and any guard that could refute it.

@@ -10,9 +10,11 @@ An external tool's findings go through the same re-verification.
 Merge the findings and remove duplicates by file, line, and failure scenario. Name the
 reviewers that found each finding. Then re-verify each finding in the worktree before
 showing or fixing anything: read the cited code, verify the failure scenario is reachable,
-and kill anything that isn't concrete. Also kill findings the change did not introduce or
-make reachable, and findings that restore behavior the user or repository rules
-deliberately removed. Keep `unverified` host-behavior questions. For `high` and
+and kill anything that isn't concrete. Keep a finding the change did not introduce or
+make reachable as `pre-existing` when it is in code the review read; kill other old-code
+findings. Kill findings that restore behavior the user or repository rules
+deliberately removed, and security findings on the false-alarm list in
+[reviewer-steps.md](reviewer-steps.md) step 2. Keep `unverified` host-behavior questions. For `high` and
 `medium` bugs, never kill a finding only because its trigger is rare; kill a `low` bug
 or nit unless you are certain. A passing test that covers the exact scenario refutes a
 finding. Use `ui-verify` or the repository's benchmark when a finding needs that evidence. Do not re-run tests a reviewer already reported

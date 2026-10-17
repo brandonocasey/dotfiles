@@ -3,8 +3,8 @@
 Each finding or comment covers one issue in at most three sentences: what
 breaks, when, and the fix. Apply repository templates when present.
 
-1. **TLDR line** — one sentence: how many findings survived, and whether any are real bugs
-   vs. minor notes.
+1. **TLDR line** — one sentence: how many findings survived, whether any are real bugs
+   vs. minor notes, how many are pre-existing, and the risk tier with its reason.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No
    project codenames without a gloss.
 3. **One block per surviving finding**, most-severe first, each led by a severity label:
@@ -22,7 +22,11 @@ breaks, when, and the fix. Apply repository templates when present.
      failure scenario concretely. Where a small code change fixes it, include a
      suggestion block.
      **Fix** (local targets) — the concrete change as a small code snippet or exact edit.
-4. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
+   A security finding keeps its `Security (<class>):` lead-in.
+4. **Pre-existing** — defects the change did not introduce, after the change's
+   findings, in the same block format, each marked `pre-existing`. They are not the
+   author's fault, never block approval, and are fixed only when the user names them.
+5. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"

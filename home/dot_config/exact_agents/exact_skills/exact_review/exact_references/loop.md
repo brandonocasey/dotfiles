@@ -28,8 +28,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    usual format. Re-verify and fix as in step 1.
 3. Repeat step 2 until a fix check finds no major finding that is new or `not fixed`
    and survives re-verification, or after 3 fix checks. Other findings are fixed or held
-   but never start another fix check. A held `question` that a later pass re-raises is
-   not new.
+   but never start another fix check. A held `question` or a `pre-existing` finding
+   that a later pass re-raises is not new.
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
    from the first cycle. Skip it when the first full review found no major finding that
    survived verification. Its full review runs blind, then reveals:
@@ -50,7 +50,9 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
-   how to proceed.
+   how to proceed. When the second cycle's full review still found a major finding,
+   name the recurring cause in one line and suggest rethinking the approach before
+   more fixes.
 
 Keep the loop state in the store per [store.md](store.md): `run start --kind full
 --base <pinned base>` (or `pass start`, with `--base` for a full pass) with each

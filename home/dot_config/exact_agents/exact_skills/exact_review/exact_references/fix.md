@@ -24,7 +24,8 @@ Run this step when **Fix authorization** skips the gate, the user asks (`--fix`,
 threads that the request covers (fix only those threads):
 
 - **Scope**: fix every surviving `bug` and `requirement`, unless the user names
-  a subset. Fix `nit` items only when style changes are requested.
+  a subset. Fix `nit` items only when style changes are requested. Fix
+  `pre-existing` findings only when the user names them.
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.

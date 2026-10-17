@@ -87,7 +87,23 @@ If the pinned diff is empty, report `empty` and stop.
 - Prior reviews of the pinned head from the step 2 `status`: `reviews_at_head`, the
   open threads, and the run IDs. Report `prior reviews: 0` when none.
 
-## 5. Reviewer prompt
+## 5. Risk tier
+
+Set the tier from the pinned diff; the highest matching rule wins. When a path's role
+is unclear, choose the higher tier.
+
+- `high`: auth, permissions, payments, database migrations, CI or deploy config
+  (`.github/workflows`, `.gitlab-ci.yml`, `Jenkinsfile`, Dockerfiles, infra),
+  dependency manifests or lockfiles, or secret handling; or a path under a REVIEW.md
+  `High risk:` glob.
+- `low`: only documentation, Markdown, comments, test files, or REVIEW.md `Low risk:`
+  globs changed, in under 400 changed lines.
+- `medium`: everything else.
+
+A REVIEW.md at the root or in a changed directory may list `High risk:`, `Low risk:`,
+and `Skip:` path globs, and what counts as broken in that code.
+
+## 6. Reviewer prompt
 
 Fill this template. Fill the fields and add nothing else: no summary of the change,
 focus areas, or earlier findings. `<target>` is the user's target verbatim, followed by
@@ -99,14 +115,15 @@ cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
 Never run `agent-review`.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
-Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md that apply>
+Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
 Checks: <commands with their log paths, or `none`>
 Severity scale: `bug` (wrong behavior reachable in production), `question` (design
 choice worth confirming with the author), `requirement` (an explicit repository
 rule violation), or `nit` (optional style feedback, only when requested). Give each
 `bug` a severity: `high` (data loss, security hole, crash, or a broken main path),
 `medium` (wrong result on a common path), or `low` (rare edge case or minor effect).
-Return raw data: file, line, severity, failure scenario, evidence, tests run.
+Return raw data: file, line, severity, `pre-existing` when marked, failure scenario,
+evidence, tests run. End with `Risk: low|medium|high - <one-line reason>`.
 ```
 
 Keep the severity scale in sync with [output.md](output.md). The main session converts
@@ -117,6 +134,6 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 At most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each command with its log path, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), and the MR/PR facts. Then the filled
+none), the MR/PR facts, and `risk: <tier> (<rule or paths>)`. Then the filled
 prompt in one fenced block. Or report `empty`, `checks: unclear`, or the blocker, with
 any worktree you created and any checks you started.

@@ -24,6 +24,9 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    review the changed commits through steps 0–2 and recheck affected findings.
    Run affected checks and manual cases, then repeat the gate above.
    Use only that verified SHA as `HEAD_SHA`.
+   **Risk**: when the risk tier is `high`, show the tier and its reason and ask the
+   user to confirm approval and merge at `HEAD_SHA`, even when a flag requested them.
+   A new head needs a new confirmation.
 3. **Ready**: if the MR/PR is a draft, mark it ready and read the state back.
    - GitHub: `gh pr ready <number>`; check `gh pr view <number> --json isDraft`.
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.

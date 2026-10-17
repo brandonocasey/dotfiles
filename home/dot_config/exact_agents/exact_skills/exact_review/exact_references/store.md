@@ -106,6 +106,8 @@ findings and killed ones, each killed one with its one-line reason.
 
 For a surviving finding, `scenario` is the step 3 comment text, suggestion block
 included, without its leading `**<type> (<severity>):**` label; `publish` adds it.
+Record a `pre-existing` finding as type `comment` with a scenario that starts
+`Pre-existing <type> (<severity>):`, so it never blocks approval or the step 7 gate.
 Line numbers refer to the pass's reviewed head, or its tree for uncommitted work. The output lists the new finding IDs under `added` and `killed`.
 
 ## Usage input

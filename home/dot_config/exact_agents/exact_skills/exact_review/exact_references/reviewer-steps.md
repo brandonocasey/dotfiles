@@ -88,18 +88,34 @@ read the diff looking for things that seem off — attack it:
   code relies on: event order and timing, naming and normalization, lifecycle
   (restart, resume, reconnect, compaction, eviction), and retries. Check each one
   against the host's source, docs, types, or binary. Do not assume the happy path.
+- **Read the history.** Run `git log -L` or `git blame` on the changed hunks. Report a
+  change that undoes an earlier fix or breaks the reason a line was added; cite that
+  commit.
+- **Obey the code's comments.** Read comments in the touched files that state a
+  contract ("call after init", "must hold the lock"). Report changes that break one.
 - **Exploit it.** Where the change touches a trust boundary (user input, URLs, HTML, file
-  paths, permissions), spend a pass thinking like an attacker, not a reviewer. Data
+  paths, permissions), spend a pass thinking like an attacker, not a reviewer. First
+  find how the repository already validates input, escapes output, and checks
+  permissions; report new code that skips or departs from those patterns. Check
+  injection (SQL, NoSQL, shell command, template, XXE, eval), path traversal, unsafe
+  deserialization (pickle, YAML, native object formats), XSS, auth or permission
+  bypass, privilege escalation, session and token handling, hardcoded secrets, weak
+  crypto or randomness, disabled certificate checks, and secrets or personal data in
+  logs, API responses, or debug output. Data
   from other systems is untrusted too: tool and API results, logs, chat messages,
   files, and model output. Report it when such data can steer behavior, such as being
-  used as an instruction, an ID, a path, or a trigger.
+  used as an instruction, an ID, a path, or a trigger. Start a security finding's
+  scenario with `Security (<class>):` and state the attack path. Find, explain, and
+  fix; never write working exploit code or payloads.
 - **Check the title and description are accurate** (MR/PR only). Report claims
   contradicted by the diff or violations of explicit repository requirements.
   Do not shorten a useful description just for length.
 - Report verified defects and violations of explicit repository requirements.
   Include optional style suggestions only when requested. A comment or name is a
   defect when it misstates a contract or behavior, not merely because it could be
-  shorter or styled differently.
+  shorter or styled differently. A `requirement` finding quotes the rule and names
+  its file: AGENTS.md, CLAUDE.md, or REVIEW.md at the root or in any changed
+  directory. Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown
 
@@ -109,7 +125,10 @@ for the guard, caller contract, or earlier check that makes the scenario unreach
 finding survives only if refutation fails and you can state the concrete input/state that
 triggers it. It must also pass all of these:
 
-- The change introduced it, or made an existing defect reachable.
+- The change introduced it, or made an existing defect reachable. Otherwise, a
+  defect in code you read for this review (changed files and their callers) is
+  `pre-existing`: verify it the same way and return it marked so. Do not hunt the
+  rest of the repository for old bugs.
 - It does not rely on unstated assumptions about the codebase or the author's intent.
 - When it claims other code breaks, name that code; speculation that something
   may break elsewhere does not count.
@@ -124,6 +143,15 @@ worse than no comment. Kill a finding that asks to restore behavior the user or 
 repository rules deliberately removed or forbade, such as a fallback under a no-fallback
 rule. If tests exist for the area, run the relevant ones when a finding
 claims broken behavior — a passing test that covers the exact scenario refutes the finding.
+
+For a security finding, also kill these known false alarms: attacks that need control
+of environment variables or CLI flags; XSS in React or Angular without
+`dangerouslySetInnerHTML`, `bypassSecurityTrustHtml`, or similar; missing auth checks
+in client-side code; SSRF that controls only the path; guessing UUIDs; log spoofing;
+regex injection; missing hardening or audit logs without a concrete attack; outdated
+dependencies; issues only in test or documentation files; and shell-script injection
+without a concrete untrusted input path. Keep resource-use and model-input findings;
+step 1 covers them as bugs.
 
 For a finding about rendered UI, use the `ui-verify` skill when browser evidence is
 needed. For a performance claim, use the repository's benchmark skill or command when
