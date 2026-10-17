@@ -138,6 +138,17 @@ def new_wait(keys: list[str], known: list[str]) -> bool:
     return any(not k.startswith("check:") or had_check for k in added)
 
 
+def completed_tasks(transcript: str) -> set[str]:
+    """Ids of background tasks whose notification says they exited 0.
+
+    A waiter exits 0 only when its check passed, so its job is done even
+    when the next job reuses the same check.
+    """
+    return set(re.findall(
+        r"<task-id>(\w+)</task-id>(?:(?!</task-notification>)[\s\S])*?"
+        r"<status>completed</status>", transcript))
+
+
 def clear(state_file: str) -> None:
     for path in (state_file, state_file + ".plain-handoff"):
         if os.path.exists(path):
@@ -206,20 +217,25 @@ def main() -> int:
         clear(state_file)
         return 0
 
-    # The clock covers waits on the same work. A new job or done-check
-    # (work done between waits) starts a new wait.
+    # The clock covers waits on the same work. A new job or done-check, or a
+    # waiter that saw its check pass (work done between waits), starts a new
+    # wait.
     now = time.time()
     keys = wait_keys(jobs)
     try:
         with open(state_file, encoding="utf-8") as f:
             state = json.load(f)
         since, known = float(state["since"]), state["jobs"]
+        waiters = set(state.get("waiters") or [])
     except (OSError, ValueError, KeyError, TypeError):
-        since, known = now, []
-    if new_wait(keys, known):
+        since, known, waiters = now, [], set()
+    passed = waiters & completed_tasks(transcript)
+    if new_wait(keys, known) or passed:
         since = now
+    waiters = (waiters - passed) | {
+        t["id"] for t in jobs if WAITER.search(t.get("command") or "")}
     with open(state_file, "w", encoding="utf-8") as f:
-        json.dump({"since": since, "jobs": keys}, f)
+        json.dump({"since": since, "jobs": keys, "waiters": sorted(waiters)}, f)
     waited = now - since
 
     if waited >= WARM_SECONDS:
