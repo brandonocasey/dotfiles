@@ -16,6 +16,6 @@
 - Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (choose checks, read failures), `manual-tester`, `reviewer`, `consult` (escalation).
 - Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Review only at its end points (finish with commits, push, integrate, deploy, land, remote test run), not per turn or intermediate commit; read-only tasks need none.
-- Before copyable output: `host-preflight/references/copyable-output.md`. Before links, ELI5, status updates, recaps, PR descriptions, review comments, tickets, or docs: `shared/writing-details.md`.
+- Before copyable output: `host-preflight/references/copyable-output.md`. Before links, ELI5, plans, long reports, option sets, status updates, recaps, PR descriptions, review comments, tickets, or docs: `shared/writing-details.md`.
 
 {{ template "writing-rules.md" . -}}
