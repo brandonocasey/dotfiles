@@ -121,6 +121,6 @@ related links, status, version, label, title.
 
 ## Ticket writing
 
-Use a summary under 10 words naming the outcome. Describe the problem,
-expected result, acceptance check, and links in 1–10 bullets, as few as possible.
+Use a short summary naming the outcome. Describe the problem, expected
+result, acceptance check, and links in as few bullets as cover them.
 Follow repository templates.

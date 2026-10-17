@@ -30,7 +30,7 @@ must post by hand still print in chat.
 4. **Pre-existing** — defects the change did not introduce, after the change's
    findings, in the same block format, each marked `pre-existing`. They are not the
    author's fault, never block approval, and are fixed only when the user names them.
-5. **What was checked and cleared** — up to 4 one-line bullets naming candidate issues that
+5. **What was checked and cleared** — one one-line bullet per candidate issue that
    did not survive verification and why each was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"

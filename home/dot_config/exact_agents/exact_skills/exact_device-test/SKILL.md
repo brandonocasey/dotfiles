@@ -31,7 +31,7 @@ their attention once: preflight, then one page, then read results.
 Write `scenarios.json` in the task scratch dir:
 `{"title","device","scenarios":[{"id","title","steps":[]}]}`.
 
-- Number every scenario; one sentence title, at most 3 short steps.
+- Number every scenario; one sentence title, short steps, as few as the check needs.
 - Put shared setup in the first scenario and teardown in the last, not in
   every scenario. For AirPlay, step 1 and the last step reset to the local
   device.

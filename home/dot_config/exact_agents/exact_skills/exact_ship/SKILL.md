@@ -75,8 +75,8 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
   - Otherwise run mr-ticket to find or create one; it picks the project.
     Skip the ticket for dx, docs, or test-only changes. Ask once only when two candidate tickets match.
 - **Description**: follow the repository template when present. Otherwise:
-  - Use 1–4 sentences on what changed and why, then 1–10 bullets, as few as
-    possible, for behavior changes, risks, and validation.
+  - Use a few sentences on what changed and why, then as few bullets as cover
+    behavior changes, risks, and validation.
   - Attach UI evidence for UI changes unless text or the diff suffices.
   - No checklists, file-by-file walkthroughs, or Summary/Changes/Testing headings.
   - Lead with the concrete problem and resulting behavior. Describe the final

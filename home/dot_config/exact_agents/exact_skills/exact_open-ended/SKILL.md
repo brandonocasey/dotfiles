@@ -65,5 +65,5 @@ Stop when any of these is true:
 
 Lead with the result: **ran dry** or **stopped at the cap**. At the cap, say
 whether the last round still found items. Then give the **Found** items as a
-list under the main rules' item limit, highest risk first. Add the
+list per the main rules, every item, highest risk first. Add the
 **Rejected** count, scope not yet checked, and the ledger path.
