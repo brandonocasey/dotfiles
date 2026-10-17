@@ -5,7 +5,7 @@ breaks, when, and the fix. Apply repository templates when present.
 
 Keep the full report in a file, per the long-output rule in
 [writing-details.md](../../shared/writing-details.md). Comment blocks the user
-must post still print in chat.
+must post by hand still print in chat.
 
 1. **TLDR line** — one sentence: how many findings survived, whether any are real bugs
    vs. minor notes, how many are pre-existing, and the risk tier with its reason.
