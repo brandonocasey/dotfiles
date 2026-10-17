@@ -15,6 +15,7 @@ import json
 import os
 import re
 import shlex
+import signal
 import sys
 
 POLL_LOOP = re.compile(
@@ -31,7 +32,7 @@ PROC_ARG_OPTS = {"--signal", "--pidfile", "--ns", "--nslist", "--euid", "--uid",
                  "--group", "--pgroup", "--parent", "--session", "--terminal",
                  "--delimiter", "--older", "--runstates", "--cgroup", "--queue"}
 PROC_ARG_LETTERS = "uUgGPstFdOrq"  # short options that take a value (procps-ng 4)
-BACKGROUNDED = re.compile(r"(?<!&)&\s*$")
+SIGNALS = {s.name.removeprefix("SIG") for s in signal.Signals}
 
 
 def proc_pattern(words: list[str]) -> str | None:
@@ -44,7 +45,7 @@ def proc_pattern(words: list[str]) -> str | None:
         if w in PROC_ARG_OPTS:
             i += 2
             continue
-        if re.fullmatch(r"-(?:[A-Z]{2,}|SIG\w+|\d+)", w):
+        if w[1:].removeprefix("SIG") in SIGNALS or re.fullmatch(r"-\d+", w):
             pass  # a signal such as -HUP or -9, not option letters
         elif re.fullmatch(r"-[A-Za-z]+", w):
             full = full or "f" in w[1:]
@@ -108,21 +109,45 @@ def code_only(cmd: str, keep_scripts: bool = True) -> str:
     return "".join(out)[:n]
 
 
-OPENERS = {"(": ")", "{": "}", "do": "done", "if": "fi", "case": "esac"}
+KEYWORDS = {"do": "done", "if": "fi", "case": "esac"}
+LEADS = {"do", "then", "else", "elif", "if", "while", "until", "!", "time"}
+SHELL_TOKEN = re.compile(
+    r"&&|\|\||;;|[;&|(){}\n]|(?:\d*[<>]&\d*-?|&>>?|[^\s;&|(){}])+"
+)
 
 
-def last_top_semicolon(line: str) -> int:
-    """Offset of the last `;` outside loops, groups, and case blocks, or -1."""
-    stack, last = [], -1
-    for m in re.finditer(r"(?<![\w./-])(?:do|done|if|fi|case|esac)\b|[(){};]", line):
+def foreground(code: str, bare: str) -> str:
+    """code with top-level backgrounded commands (`cmd &`) blanked.
+
+    bare is code with every quoted string blanked, so quoted separators do
+    not count. A `&` inside a loop or group leaves it: the loop still runs
+    in the foreground.
+    """
+    out, stack, start, cmd_pos = list(code), [], 0, True
+    for m in SHELL_TOKEN.finditer(bare):
         tok = m.group()
-        if tok in OPENERS and not (tok == "(" and stack and stack[-1] == "case"):
-            stack.append(tok)
-        elif stack and tok == OPENERS[stack[-1]]:
-            stack.pop()
-        elif tok == ";" and not stack:
-            last = m.start()
-    return last
+        if tok in ("(", "{"):
+            if not (tok == "(" and stack and stack[-1] == "case"):
+                stack.append(tok)
+            cmd_pos = True
+        elif tok in (")", "}"):
+            if stack and stack[-1] == {")": "(", "}": "{"}[tok]:
+                stack.pop()
+            cmd_pos = True  # also after a case pattern such as `a)`
+        elif tok in (";", "\n", "&", ";;", "&&", "||", "|"):
+            if not stack and tok in (";", "\n", "&"):
+                if tok == "&":
+                    for k in range(start, m.start()):
+                        out[k] = "\n" if out[k] == "\n" else " "
+                start = m.end()
+            cmd_pos = True
+        else:
+            if cmd_pos and tok in KEYWORDS:
+                stack.append(tok)
+            elif cmd_pos and stack and KEYWORDS.get(stack[-1]) == tok:
+                stack.pop()
+            cmd_pos = tok in LEADS
+    return "".join(out)
 
 
 HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)")
@@ -134,15 +159,9 @@ def problems(cmd: str, background: bool) -> list[str]:
     found = []
     code = code_only(cmd)
     if not background:
-        # The last command of a line ending in a single & runs in the
-        # background, like the detached `nohup setsid sh -c '...' &` form
-        # subagent-wait suggests. Earlier `;` commands stay in the foreground.
-        lines = []
-        for line, bare in zip(code.split("\n"), code_only(cmd, False).split("\n")):
-            if BACKGROUNDED.search(bare):
-                line = line[:last_top_semicolon(bare) + 1]
-            lines.append(line)
-        fg = "\n".join(lines)
+        # Commands ending in & run in the background, like the detached
+        # `nohup setsid sh -c '...' &` form subagent-wait suggests.
+        fg = foreground(code, code_only(cmd, False))
         if POLL_LOOP.search(fg):
             found.append(
                 "Foreground polling loop. Rerun it with run_in_background: true "
