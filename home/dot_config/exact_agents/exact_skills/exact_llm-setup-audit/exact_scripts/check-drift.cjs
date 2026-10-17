@@ -7,8 +7,8 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 
-const roots = ['.config/agents', '.codex/agents', '.local/libexec/agt'];
-const helpers = ['agent-task', 'agent-watch', 'agent-review', 'gl-ci', 'agent-preflight', 'agent-preview'];
+const roots = ['.config/agents', '.codex/agents'];
+const helpers = ['agent-preflight', 'agent-preview'];
 const hash = data => crypto.createHash('sha256').update(data).digest('hex');
 const permitted = name => roots.some(root => name === root || name.startsWith(`${root}/`)) ||
   helpers.some(helper => name === `.local/bin/${helper}`);

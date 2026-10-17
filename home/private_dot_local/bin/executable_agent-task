@@ -1,6 +1,0 @@
-#!/bin/sh
-# Use agt when it has the subcommand; else the legacy script (removed after the deprecation window).
-if command -v agt >/dev/null 2>&1 && agt task --help >/dev/null 2>&1; then
-  exec agt task "$@"
-fi
-exec "${AGT_LEGACY_DIR:-$HOME/.local/libexec/agt}/agent-task.legacy" "$@"

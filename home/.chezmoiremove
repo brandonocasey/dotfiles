@@ -8,3 +8,8 @@
 .gemini/hooks/lean-ctx-rewrite-gemini.sh
 .config/tmux/scripts/ipaddr.sh
 .local/bin/mr-overview
+.local/bin/agent-review
+.local/bin/agent-task
+.local/bin/agent-watch
+.local/bin/gl-ci
+.local/libexec/agt

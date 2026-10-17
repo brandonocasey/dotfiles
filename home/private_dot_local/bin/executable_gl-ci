@@ -1,6 +1,0 @@
-#!/bin/sh
-# Use agt when it has the subcommand; else the legacy script (removed after the deprecation window).
-if command -v agt >/dev/null 2>&1 && agt ci --help >/dev/null 2>&1; then
-  exec agt ci "$@"
-fi
-exec "${AGT_LEGACY_DIR:-$HOME/.local/libexec/agt}/gl-ci.legacy" "$@"
