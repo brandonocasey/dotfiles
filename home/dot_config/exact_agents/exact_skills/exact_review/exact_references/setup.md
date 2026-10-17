@@ -82,6 +82,10 @@ If the pinned diff is empty, report `empty` and stop.
   [ci-and-conflicts.md](ci-and-conflicts.md), without reading logs or diagnosing: each
   failed job with its label and both job URLs, the source SHA, pending jobs as pending,
   and mergeability.
+- Linked issue, for a GitHub or GitLab MR/PR: run `agt issue find --pr <n|url>`
+  (read-only; it reads the local copy, so never run `sync` or any write). Report each
+  issue's key, title, and body. Report nothing and continue when `agt` or a tracker
+  is missing, or the command fails.
 - Companion or linked MRs/PRs named in the request or description, as URLs.
 - Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
 - Prior reviews of the pinned head from the step 2 `status`: `reviews_at_head`, the
@@ -115,6 +119,7 @@ cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
 Never run `agt review`.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
+Linked issue (context only, omit the line when none): <key, title, and body>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
 Checks: <commands with their log paths, or `none`>
 Severity scale: `bug` (wrong behavior reachable in production), `question` (design
@@ -134,6 +139,6 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 At most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each command with its log path, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), the MR/PR facts, and `risk: <tier> (<rule or paths>)`. Then the filled
+none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`. Then the filled
 prompt in one fenced block. Or report `empty`, `checks: unclear`, or the blocker, with
 any worktree you created and any checks you started.

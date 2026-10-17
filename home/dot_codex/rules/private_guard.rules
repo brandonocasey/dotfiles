@@ -39,3 +39,11 @@ prefix_rule(
     match = [["jira-api", "POST", "/version"], ["jira-api", "DELETE", "/version/1"]],
     not_match = [["jira-api", "GET", "/myself"]],
 )
+
+prefix_rule(
+    pattern = ["agt", "issue", "push"],
+    decision = "prompt",
+    justification = "Pushing queued issue changes writes to GitHub or GitLab and needs explicit approval.",
+    match = [["agt", "issue", "push"], ["agt", "issue", "push", "--dry-run"]],
+    not_match = [["agt", "issue", "list"], ["agt", "issue", "sync"]],
+)

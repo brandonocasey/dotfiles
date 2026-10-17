@@ -1,7 +1,7 @@
 # agt availability
 
-`agt` is the single CLI for the review store, tasks, watching, and CI triage
-(`agt review`, `agt task`, `agt watch`, `agt ci`). The skill that points here names
+`agt` is the single CLI for the review store, issues, tasks, watching, and CI triage
+(`agt review`, `agt task`, `agt watch`, `agt ci`, `agt issue`). The skill that points here names
 the minimum version.
 
 Run `agt --version` once per run. When it fails or prints an older version than the
