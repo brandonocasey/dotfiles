@@ -150,7 +150,7 @@ candidates() {
         case "$wt" in "$repo"/.worktrees/*) ;; *) continue ;; esac
         [ -e "$wt/.git" ] || continue
         git -C "$wt" merge-base --is-ancestor HEAD "$base" 2>/dev/null || continue
-        [ -z "$(git -C "$wt" status --porcelain 2>/dev/null)" ] || continue
+        [ -z "$(git --no-optional-locks -C "$wt" status --porcelain 2>/dev/null)" ] || continue
         gd="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)"
         newest="$(git -C "$wt" log -1 --format=%ct 2>/dev/null)"
         for t in "$gd/HEAD" "$gd/index"; do
