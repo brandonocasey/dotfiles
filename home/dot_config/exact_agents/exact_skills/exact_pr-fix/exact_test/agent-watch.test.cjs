@@ -7,8 +7,8 @@ const test = require('node:test');
 
 const skillDir = path.resolve(__dirname, '..');
 // Use the chezmoi source helper; fall back to the installed one outside the source tree.
-const sourceWatcher = path.resolve(skillDir, '../../../../private_dot_local/bin/executable_agent-watch');
-const watcher = fs.existsSync(sourceWatcher) ? sourceWatcher : path.join(os.homedir(), '.local/bin/agent-watch');
+const sourceWatcher = path.resolve(skillDir, '../../../../private_dot_local/libexec/agt/executable_agent-watch.legacy');
+const watcher = fs.existsSync(sourceWatcher) ? sourceWatcher : path.join(os.homedir(), '.local/libexec/agt/agent-watch.legacy');
 const fixtures = path.join(__dirname, fs.existsSync(path.join(__dirname, 'exact_fixtures')) ? 'exact_fixtures' : 'fixtures');
 // The chezmoi source names executable fixtures with an `executable_` prefix.
 const fixture = (name) => {

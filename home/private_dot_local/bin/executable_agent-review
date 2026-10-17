@@ -1,0 +1,9 @@
+#!/bin/sh
+if ! command -v agt >/dev/null 2>&1; then
+  echo 'agent-review: agt not found; run: mise install github:brandonocasey/agent-review' >&2
+  exit 127
+fi
+case "${1-}" in
+  --version|-V) exec agt --version ;;
+esac
+exec agt review "$@"

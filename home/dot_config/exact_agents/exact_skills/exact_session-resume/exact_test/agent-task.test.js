@@ -8,8 +8,8 @@ const { execFileSync, spawnSync } = require('node:child_process');
 const test = require('node:test');
 
 // Use the chezmoi source helper; fall back to the installed one outside the source tree.
-const sourceCli = path.resolve(__dirname, '../../../../..', 'private_dot_local/bin/executable_agent-task');
-const cli = fs.existsSync(sourceCli) ? sourceCli : path.join(os.homedir(), '.local/bin/agent-task');
+const sourceCli = path.resolve(__dirname, '../../../../..', 'private_dot_local/libexec/agt/executable_agent-task.legacy');
+const cli = fs.existsSync(sourceCli) ? sourceCli : path.join(os.homedir(), '.local/libexec/agt/agent-task.legacy');
 
 function fixture() {
   const scratch = path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'agents', 'scratch', 'agent-task-tests');

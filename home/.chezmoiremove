@@ -7,3 +7,4 @@
 .gemini/hooks/lean-ctx-redirect-gemini.sh
 .gemini/hooks/lean-ctx-rewrite-gemini.sh
 .config/tmux/scripts/ipaddr.sh
+.local/bin/mr-overview
