@@ -256,7 +256,7 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "sh ~/.claude/hooks/agent-reap.sh session --apply",
+            "command": "nohup sh -c 'sleep 5; exec agt cleanup --only processes --only manual --yes' >/dev/null 2>&1 </dev/null &",
             "timeout": 2
           }
         ]
@@ -272,12 +272,12 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "sh ~/.claude/hooks/agent-reap.sh report --count",
+            "command": "agt cleanup --count",
             "timeout": 2
           },
           {
             "type": "command",
-            "command": "sh ~/.claude/hooks/prune-agent-output.sh",
+            "command": "agt cleanup --only output --yes >/dev/null",
             "timeout": 2
           }
         ]
