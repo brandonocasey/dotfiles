@@ -15,7 +15,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    surrounding context, since continuing after the cache expires rewrites their whole
    context. After one failed continuation, start fresh reviewers for that cycle's
    remaining fix checks. Send each reviewer:
-   - the output of `agent-review list --run <run> --cycle <n> --format prompt`
+   - the output of `agt review list --run <run> --cycle <n> --format prompt`
      ([store.md](store.md)): every surviving finding from this cycle, from any reviewer
      or the manual pass, with its applied fix, and each killed finding with its
      one-line reason;
@@ -45,7 +45,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
      `post-reveal`. Without continuation support, skip the reveal and say so.
    - Re-verify the blind and reveal findings together. A surviving `disagree` reopens
      its cycle 1 finding as `not fixed`. Kill a blind finding with
-     `agent-review finding kill <id> --reason <text>`. Count the surviving `agree` and
+     `agt review finding kill <id> --reason <text>`. Count the surviving `agree` and
      `disagree` marks for `run end --reveal-agree <n> --reveal-disagree <m>`.
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
@@ -67,7 +67,7 @@ Kill a finding that an earlier pass killed, unless its code changed since that p
 Before each pass, rerun setup per step 0–2 of [SKILL.md](../SKILL.md), passing the review worktree.
 For an MR/PR, push after each pass per [fix.md](fix.md) MR/PR items 1–6, but
 keep auto-merge paused for the whole loop. When item 5 opens a replacement MR/PR, later
-passes target it. On an own MR/PR, after each pass and its push, run `agent-review
+passes target it. On an own MR/PR, after each pass and its push, run `agt review
 publish` per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run
 once, after step 5's last pass and its fix commits, in this order: `run end` (in the
 same call as any scratch cleanup that needs no worktree), a last

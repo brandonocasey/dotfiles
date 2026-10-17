@@ -50,7 +50,7 @@ Skip check: <on for a run's first setup; off when the user asks to review again,
 - Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
-- On `skip` (own MR/PR only: `agent-review status --head <sha>` on its store target
+- On `skip` (own MR/PR only: `agt review status --head <sha>` on its store target
   shows `reviews_at_head` of 2 or more and 0 open threads; [store.md](references/store.md)),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
   Setup stops before checks; clean up any worktree it reports per
@@ -82,7 +82,7 @@ Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallba
 
 When reporting results, read [output.md](references/output.md). It owns the
 finding format, remote comment links, evidence, and cleanup. Post comments only on
-an own MR/PR, or when the user asks, and only with `agent-review publish`
+an own MR/PR, or when the user asks, and only with `agt review publish`
 (`publish --not-own --findings --only <ids>` on another person's MR/PR, per
 [output.md](references/output.md);
 [store.md](references/store.md)).

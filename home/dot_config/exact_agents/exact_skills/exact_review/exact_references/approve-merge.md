@@ -17,7 +17,7 @@ leaves drafts alone. A fix run with no flag runs only steps 1–3 here.
 Run this step last: after step 5's fix loop when `--fix` applies, otherwise after step 3.
 
 1. **Gate**: run only when no `bug`, `requirement`, or `question` finding remains
-   unfixed: count those open findings with `agent-review status` or `list --open`
+   unfixed: count those open findings with `agt review status` or `list --open`
    on the review's store target ([store.md](store.md)), after `sync`. Otherwise skip every flag, leave draft state
    alone, and name the blocking findings.
 2. **Head**: refresh the source SHA. If it moved since the review or fix push,
@@ -32,7 +32,7 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
    - Outside the checkout, add `-R` as in merge.md. If it stays a draft, skip
      steps 5–6 and report it as a blocker.
-4. **Approve** (`--approve`): run `agent-review approve` on the review's store
+4. **Approve** (`--approve`): run `agt review approve` on the review's store
    target, then `publish`, which posts an approval comment at `HEAD_SHA`. Only when
    the user asks for a formal approval, use `approve --formal`; it also submits the
    host's approval and never approves your own GitHub PR. On another author's MR/PR,

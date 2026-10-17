@@ -45,9 +45,9 @@ If the pinned diff is empty, report `empty` and stop.
   `git -C <worktree> submodule update --init --recursive`.
 - Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
 - From the review worktree, per [store.md](store.md): for a GitHub or GitLab MR/PR,
-  run `agent-review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
+  run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
   self-hosted GitLab) and keep the target key it prints. Then run
-  `agent-review status --head <head-sha>` with the store target: `--target <key>` for
+  `agt review status --head <head-sha>` with the store target: `--target <key>` for
   that MR/PR, `--range <pinned range>` for an MR/PR on another forge or a commit or
   range the user named, else no flag, also for a branch with a given base
   (`--default-branch <base branch>` when it is not the default branch; store.md
@@ -112,7 +112,7 @@ focus areas, or earlier findings. `<target>` is the user's target verbatim, foll
 ```text
 Review <target> for verified defects. Read-only: no edits, commits,
 cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
-Never run `agent-review`.
+Never run `agt review`.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>

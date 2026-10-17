@@ -1,35 +1,31 @@
 # Review store
 
 Review runs, passes, findings, threads, and MR/PR comments live in the
-`agent-review` CLI, one store per repository. `agent-review --help` and the README
+`agt review` CLI, one store per repository. `agt review --help` and the README
 of https://github.com/brandonocasey/agent-review document every command, flag,
 and output field. This file names what the review skill uses.
 
 ## Availability
 
-These rules need `agent-review` 0.3.0 or newer. Run `agent-review --version` once
-per run. When it fails or prints an older version, run
-`mise install github:brandonocasey/agent-review` (it reads the GitHub token of `gh`),
-then check again. When it still fails, stop and report: agent-review 0.3.0 missing:
-run `gh auth login`, then `mise install`; Windows is not supported.
+These rules need `agt` 0.5.0 or newer. Follow [agt.md](../../shared/agt.md).
 
 ## Commands
 
 Setup runs `sync` and `status`; the main session runs the rest. Reviewers never run
-`agent-review`. Run every store command from the review worktree, `sync` included.
+`agt review`. Run every store command from the review worktree, `sync` included.
 Run it bare: never pipe its output through `head`, `tail`, `rg`, or `jq`; the output
 is one short JSON line, and a filter hides IDs and errors. Errors start with
-`agent-review: error:` and name the valid run, pass, or reviewer IDs. Chain store
+`agt: error:` and name the valid run, pass, or reviewer IDs. Chain store
 commands whose output you do not need with `&&` in one call. Pass IDs are
 `c<cycle>p<n>`: `c1p0` is the first full review, `c1p1` its first fix check, `c2p0`
 the second cycle's full review.
 
 Pick the store target once per review:
 
-- GitHub or GitLab MR/PR: after checkout, setup runs `agent-review sync --pr <n|url>`,
+- GitHub or GitLab MR/PR: after checkout, setup runs `agt review sync --pr <n|url>`,
   which imports the MR/PR's threads and records and prints the target key (`gh-<n>` or
   `gl-<iid>`). Setup reports the key. For a self-hosted GitLab, prefix every
-  `agent-review` command with `GITLAB_HOST=<host>`. Runs that ended before the target
+  `agt review` command with `GITLAB_HOST=<host>`. Runs that ended before the target
   got its MR/PR do not count for it.
 - MR/PR on any other forge (Forgejo, unknown hosts): `--range <pinned range>`, read-only:
   no `sync`, no `publish`, no skip check.
