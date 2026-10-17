@@ -274,6 +274,11 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/agent-reap.sh report --count",
             "timeout": 2
+          },
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/prune-agent-output.sh",
+            "timeout": 2
           }
         ]
       },

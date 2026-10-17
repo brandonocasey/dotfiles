@@ -9,6 +9,7 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[2]
 PRUNE = REPO / "home/dot_claude/hooks/executable_prune-agent-dirs.sh"
+PRUNE_OUTPUT = REPO / "home/dot_claude/hooks/executable_prune-agent-output.sh"
 CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
 
 
@@ -56,6 +57,34 @@ class AgentConfigurationTests(unittest.TestCase):
             self.assertTrue(recent.exists())
             self.assertTrue(keep.exists())
             self.assertTrue(copy.exists(), "Unused copy files must survive age-based pruning")
+
+    def test_output_pruning_removes_only_expired_files(self):
+        scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
+        scratch.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=scratch) as directory:
+            root = Path(directory)
+            output = root / "cache/agents/output"
+            stale = output / "old-task/report.md"
+            recent = output / "new-task/report.md"
+            empty_old = output / "empty-old"
+            empty_new = output / "empty-new"
+            for path in (stale, recent):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("long output")
+            empty_old.mkdir()
+            empty_new.mkdir()
+            old = time.time() - 10 * 86400
+            for path in (stale, empty_old):
+                os.utime(path, (old, old))
+            env = dict(os.environ, HOME=str(root), XDG_CACHE_HOME=str(root / "cache"))
+            subprocess.run(["sh", str(PRUNE_OUTPUT)], env=env, check=True, timeout=10)
+            self.assertFalse(stale.exists())
+            self.assertTrue(recent.exists())
+            self.assertFalse(empty_old.exists())
+            # A task dir created moments before its first write MUST survive.
+            self.assertTrue(empty_new.exists())
+            env["XDG_CACHE_HOME"] = str(root / "missing")
+            subprocess.run(["sh", str(PRUNE_OUTPUT)], env=env, check=True, timeout=10)
 
 
     def test_codex_visibility_preserves_live_settings(self):
