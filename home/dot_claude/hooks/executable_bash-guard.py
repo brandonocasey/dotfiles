@@ -44,7 +44,9 @@ def proc_pattern(words: list[str]) -> str | None:
         if w in PROC_ARG_OPTS:
             i += 2
             continue
-        if re.fullmatch(r"-[A-Za-z]+", w):
+        if re.fullmatch(r"-(?:[A-Z]{2,}|SIG\w+|\d+)", w):
+            pass  # a signal such as -HUP or -9, not option letters
+        elif re.fullmatch(r"-[A-Za-z]+", w):
             full = full or "f" in w[1:]
             if w[-1] in PROC_ARG_LETTERS:  # -u root, -fu root: next word is a value
                 i += 2
@@ -106,6 +108,23 @@ def code_only(cmd: str, keep_scripts: bool = True) -> str:
     return "".join(out)[:n]
 
 
+OPENERS = {"(": ")", "{": "}", "do": "done", "if": "fi", "case": "esac"}
+
+
+def last_top_semicolon(line: str) -> int:
+    """Offset of the last `;` outside loops, groups, and case blocks, or -1."""
+    stack, last = [], -1
+    for m in re.finditer(r"(?<![\w./-])(?:do|done|if|fi|case|esac)\b|[(){};]", line):
+        tok = m.group()
+        if tok in OPENERS and not (tok == "(" and stack and stack[-1] == "case"):
+            stack.append(tok)
+        elif stack and tok == OPENERS[stack[-1]]:
+            stack.pop()
+        elif tok == ";" and not stack:
+            last = m.start()
+    return last
+
+
 HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)")
 
 
@@ -121,7 +140,7 @@ def problems(cmd: str, background: bool) -> list[str]:
         lines = []
         for line, bare in zip(code.split("\n"), code_only(cmd, False).split("\n")):
             if BACKGROUNDED.search(bare):
-                line = line[:bare.rfind(";") + 1]
+                line = line[:last_top_semicolon(bare) + 1]
             lines.append(line)
         fg = "\n".join(lines)
         if POLL_LOOP.search(fg):
