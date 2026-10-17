@@ -9,7 +9,7 @@ Usage: agent-probe (--prompt TEXT | --prompt-file FILE) [--variant NAME=ARGS]...
 Each run gets a new empty working directory, `--no-session-persistence`, and
 stream-json output kept apart from stderr. Variant arguments that name existing
 files are made absolute first. A run whose MCP servers are still
-pending or failed at start is retried. USD comes from agent-sessions and the
+pending or failed at start is retried. USD comes from `agt sessions` and the
 shared price file. Working directories are deleted afterwards; logs stay in
 --out. Runs use `claude` with the caller's CLAUDE_CONFIG_DIR.
 
@@ -48,8 +48,7 @@ LIVE_MCP_STATUSES = {'connected', 'pending'}
 
 
 def sessions_tool():
-    sibling = Path(__file__).resolve().with_name('agent-sessions')
-    return str(sibling) if sibling.exists() else shutil.which('agent-sessions')
+    return shutil.which('agt')
 
 
 def parse_variant(spec):
@@ -216,11 +215,11 @@ def run(args, prompt, name, flags, index):
 def add_usage(rows):
     tool = sessions_tool()
     if not tool:
-        sys.exit('agent-probe: agent-sessions not found next to this script or on PATH')
-    out = subprocess.run([sys.executable, tool, 'cost', '--by', 'file', '--json', *[r['log'] for r in rows]],
+        sys.exit('agent-probe: agt not found on PATH')
+    out = subprocess.run([tool, 'sessions', 'cost', '--by', 'file', '--json', *[r['log'] for r in rows]],
                          capture_output=True, text=True)
     if out.returncode:
-        sys.exit(f'agent-probe: agent-sessions failed: {out.stderr.strip()}')
+        sys.exit(f'agent-probe: agt sessions failed: {out.stderr.strip()}')
     data = json.loads(out.stdout)
     by_file = {r['file']: r for r in data['rows']}
     for r in rows:

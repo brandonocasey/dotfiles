@@ -4,7 +4,7 @@
 A subagent that stops while its own background shell job runs sits idle until
 the job ends, and its 5-minute prompt cache expires. This hook makes it wake
 every 4.5 minutes instead (one cheap cache read per wake), by requiring a
-running `agent-wait` waiter. After 20 minutes of waiting on the same jobs it
+running `agt wait` waiter. After 20 minutes of waiting on the same jobs it
 must write a handoff file and hand back with `HANDOFF: <path>`, so the main
 session can wait for free and start a fresh agent from that file.
 
@@ -25,7 +25,7 @@ STATE_ROOT = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/st
 STATE = os.path.join(STATE_ROOT, "agents", "subagent-wait")
 LOG = os.path.join(STATE_ROOT, "agents", "subagent-wait.log")
 WARM_SECONDS = 20 * 60
-WAITER = re.compile(r"\bagent-wait\b")
+WAITER = re.compile(r"\bagt\s+wait\b")
 HANDOFF = re.compile(r"HANDOFF:[*_`\s]*([^\s`*]+)")
 REPORT = (
     "If you have SubagentHandback, it delivers one report only, so call it "
@@ -247,7 +247,7 @@ def main() -> int:
             "allowed for read-only roles too; use a shell heredoc if you have no "
             "Write tool) with the task state, findings so far, the next step, "
             "each running job's log path, and the condition that means it is "
-            "done. Stop your agent-wait waiter with TaskStop if you have it; "
+            "done. Stop your agt wait waiter with TaskStop if you have it; "
             "otherwise leave it. Then end your report with the line "
             f"HANDOFF: {target}. {REPORT}",
             {**entry, "waited": int(waited)},
@@ -260,7 +260,7 @@ def main() -> int:
     return block(
         "Your background job is still running, and an idle wait lets your "
         "prompt cache expire. Before stopping, start a waiter with "
-        "run_in_background: true, e.g. `agent-wait --max 270 -- test -e <done-file>`. "
+        "run_in_background: true, e.g. `agt wait --max 270 -- test -e <done-file>`. "
         "It wakes you within 4.5 minutes; check the job, re-arm the waiter if "
         "it still runs, then stop again with a short plain-text note. "
         f"{REPORT} For jobs that may run past 20 "
