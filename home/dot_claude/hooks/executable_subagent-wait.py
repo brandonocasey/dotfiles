@@ -194,7 +194,8 @@ def main() -> int:
             open(asked, "w").close()
             return block(
                 "Plain reply text does not reach the main session. Send this "
-                "report, ending with the HANDOFF line, through SubagentHandback.",
+                "report, ending with the HANDOFF line, through SubagentHandback; "
+                "if it says your report was already delivered, use SendMessage.",
                 {**entry, "file": handoff},
             )
         clear(state_file)
