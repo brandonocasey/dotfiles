@@ -83,9 +83,11 @@ yourself. It refuses an MR/PR the user did not author. What it posts:
   finding, its lines mapped to and positioned on the latest MR head, each published
   by its own ID. Never use `bulk_publish`: it also publishes the user's own unfinished
   drafts.
-- **Outside the diff.** GitLab: a resolvable thread. GitHub: a general comment; it
-  cannot be resolved, so `publish` posts a reply to it as a new general comment
-  ending `Re: <finding id>`.
+- **Outside the diff.** Lines of a changed file that fit no hunk are skipped. A file
+  the MR/PR does not change, a whole-file finding, and on GitLab lines a later commit
+  changed post as a general comment naming the location. GitLab: a resolvable
+  thread. GitHub: a general comment; it cannot be resolved, so `publish` posts a
+  reply to it as a new general comment ending `Re: <finding id>`.
 - **Replies.** Fixed: `resolve <id>... --fixed <sha> --run <run> --pass <pass>
   --reviewer fix` adds the `Fixed in <sha>.` reply and resolves. Not fixed:
   `resolve <id> --not-fixed "<reason>"` with the fix-check reviewer's `--run`,

@@ -7,10 +7,10 @@ and output field. This file names what the review skill uses.
 
 ## Availability
 
-These rules need `agent-review` 0.2.0 or newer. Run `agent-review --version` once
+These rules need `agent-review` 0.3.0 or newer. Run `agent-review --version` once
 per run. When it fails or prints an older version, run
 `mise install github:brandonocasey/agent-review` (it reads the GitHub token of `gh`),
-then check again. When it still fails, stop and report: agent-review 0.2.0 missing:
+then check again. When it still fails, stop and report: agent-review 0.3.0 missing:
 run `gh auth login`, then `mise install`; Windows is not supported.
 
 ## Commands
@@ -52,16 +52,18 @@ in this store) still need `--target <key>`.
 |---|---|
 | Before the run's first reviewers start | `run start --kind full --base <base> --reviewers -`; prints the run ID and pass `c1p0` |
 | Before later reviewers start | `pass start --run <run> --kind full\|fix-check\|reveal --base <base> --reviewers -` |
-| After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; `--lock` for the blind review |
+| After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; `--lock` for the blind review; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a blind finding after the reveal | `finding kill <id> --reason <text>`; works on a locked pass |
 | Fixes applied | `resolve <id>... --fixed <sha> --run <run> --pass <pass> --reviewer fix`: replies `Fixed in <sha>.` and resolves each |
+| The user declines a finding, or it proves wrong after it was posted | `resolve <id> --rejected "<reason>"` with the main session's `--model`, `--effort`, `--harness` and `--harness-version`: replies `Rejected: <reason>.` and resolves; the record counts it as rejected, not fixed; a finding not yet posted stays unposted |
 | Fix check says not fixed | `resolve <id> --not-fixed "<reason>" --run <run> --pass <pass> --reviewer <id>`: replies and reopens |
 | Held question | `resolve <id> --triage question`; record the user's answer with `reply <id> --local --body <answer>` (never posted) |
 | Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
 | Reveal inputs | `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a commit or range target) |
 | Prior reviews, open items, review range | `status [--head <sha>]` (`--full` adds commits and runs), `list --open` |
 | Post to an MR/PR | `publish`, also the final record of each ended run; `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --findings --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
-| After the run's last fix commit | `run end --run <run>`, plus `--reveal-agree <n> --reveal-disagree <m>` after a reveal; records HEAD as reviewed and prints `status`, so skip a separate `status` call |
+| Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `approve`, then `publish`: posts `Approved at <sha>.` as a comment; `approve --formal` only when the user asks for a formal approval |
+| After the run's last fix commit | `run end --run <run>`, plus `--reveal-agree <n> --reveal-disagree <m>` after a reveal, and `--usage -` with the main session's usage when known; records HEAD as reviewed and prints `status` and `spent`, so skip a separate `status` call |
 
 Always pass `--base` to every full pass (`run start --kind full`, and `pass start
 --kind full` for the second cycle): the pinned range's start (`<review_from>` for
@@ -69,7 +71,7 @@ an end-point review), `HEAD` for a working-diff target, or the pinned merge-base
 MR/PR. Without it every branch commit counts as reviewed. For a commit or range target,
 also pass `--head HEAD` (the fix head) to every `pass start` after the first full
 review, to fix-check and reveal `list`, and to `run end`; `pass end`, `finding`, and
-`resolve` take no `--head`. Only `reply` and `resolve --fixed`/`--not-fixed`/`--reply`
+`resolve` take no `--head`. Only `reply` and `resolve --fixed`/`--not-fixed`/`--rejected`/`--reply`
 add text.
 
 `--reviewers -` reads a JSON array from stdin, one entry per reviewer: `model`,
@@ -105,3 +107,13 @@ findings and killed ones, each killed one with its one-line reason.
 For a surviving finding, `scenario` is the step 3 comment text, suggestion block
 included, without its leading `**<type> (<severity>):**` label; `publish` adds it.
 Line numbers refer to the pass's reviewed head, or its tree for uncommitted work. The output lists the new finding IDs under `added` and `killed`.
+
+## Usage input
+
+Record what each reviewer spent when the harness reports it, such as the
+`<usage>` line of a sub-agent result: one `usage` entry per reviewer, as
+`{"reviewer": "r1", "tokens": <total_tokens>, "duration_ms": <ms>, "tool_uses": <n>}`.
+Omit unknown fields; skip usage when none is reported. For `run end --usage -`,
+send an array with `role` (`fix`, `manual`, or `main`) in place of `reviewer`,
+only with numbers the harness reports. Never estimate. `run end` adds review and
+fix time to its output and the final record.

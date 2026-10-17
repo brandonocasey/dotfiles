@@ -3,7 +3,8 @@
 Each flag is the user's request to approve or merge the reviewed MR/PR
 ([git-policy.md](../../shared/git-policy.md)). Local targets: report `Merge: not run (local target)`.
 
-- `--approve`: approve the MR/PR at its reviewed head.
+- `--approve`: post an approval comment at the reviewed head; a formal host
+  approval only when the user asks for one (step 4).
 - `--auto-merge`: enable auto-merge, read the state back, and stop.
 - `--merge`: enable auto-merge, then watch until merged or blocked.
 
@@ -28,8 +29,16 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
    - Outside the checkout, add `-R` as in merge.md. If it stays a draft, skip
      steps 5–6 and report it as a blocker.
-4. **Approve** (`--approve`): follow the `ship` skill's
-   [merge.md](../../ship/references/merge.md#approve) **Approve** section with `HEAD_SHA`.
+4. **Approve** (`--approve`): run `agent-review approve` on the review's store
+   target, then `publish`, which posts an approval comment at `HEAD_SHA`. Only when
+   the user asks for a formal approval, use `approve --formal`; it also submits the
+   host's approval and never approves your own GitHub PR. On another author's MR/PR,
+   publish with `--not-own --only <approval id>`, after a `--dry-run` with the same
+   flags. When `skipped` lists the approval (head moved, or `<id>/formal` on your own
+   GitHub PR) or `posted` shows an approve `error`, report that instead of approved.
+   To retry a failed formal approval once, run `approve --formal` and `publish` again.
+   A comment does not satisfy required approvals; when the MR/PR needs one for
+   `--auto-merge` or `--merge`, report that blocker.
 5. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
    **Enable auto-merge** with `HEAD_SHA`.
 6. **Watch** (`--merge` only): follow merge.md **Watch**. Move the ticket only when
@@ -47,6 +56,6 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - Run `git -C <main-checkout> fetch --prune origin`, then `git -C <main-checkout> worktree prune`.
 
 End the report with one line:
-`Merge: marked ready; approved <sha>; auto-merge enabled; merged <sha>; cleaned <paths and branch>`
+`Merge: marked ready; approved <sha> (comment|formal); auto-merge enabled; merged <sha>; cleaned <paths and branch>`
 (only the parts that ran), or `Merge: not run (<reason>)`. Name any retained remnant
 and its reason.

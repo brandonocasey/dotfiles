@@ -60,6 +60,10 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
      back. Then refresh the source SHA, CI, and mergeability once, per [ci-and-conflicts.md](ci-and-conflicts.md).
   7. Continue into step 5's fix loop. [loop.md](loop.md) runs cleanup and step 7
      ([approve-merge.md](approve-merge.md)) once, after the loop ends.
+- **Committed fixes** (MR/PR, local branch, or commit): add each fix as a new commit,
+  even where the `commit` skill would amend. Until the review ends, never amend,
+  squash, or rebase reviewed commits, so threads and coverage stay on them. Only a
+  rebase the user authorizes ([ci-and-conflicts.md](ci-and-conflicts.md)) is exempt.
 - **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
   tests/lint, record the `Checked:` line, and commit per the `commit` skill. Read each
   file you will edit with the file-read tool, not `cat`. With a `--range` store target
