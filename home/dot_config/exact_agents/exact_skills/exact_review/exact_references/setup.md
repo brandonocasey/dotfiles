@@ -82,9 +82,12 @@ If the pinned diff is empty, report `empty` and stop.
   [ci-and-conflicts.md](ci-and-conflicts.md), without reading logs or diagnosing: each
   failed job with its label and both job URLs, the source SHA, pending jobs as pending,
   and mergeability.
-- Linked issue, for a GitHub or GitLab MR/PR: run `agt issue find --pr <n|url>`
-  (read-only; it reads the local copy, so never run `sync` or any write). Report each
-  issue's key, title, and body. Report nothing and continue when `agt` or a tracker
+- Linked issue, for a GitHub or GitLab MR/PR: run `agt issue find --pr <url>`. Use the
+  MR/PR URL, not a bare number: a number matches that PR in every synced tracker.
+  Add `--tracker <owner/repo>` when only a number is known. The command is read-only
+  and uses the local copy, so never run `sync` or any write. It returns no body. Report
+  each hit's key, title, and URL. For context, `agt issue show <key>` may add the
+  first few lines of the body. Report nothing and continue when `agt` or a tracker
   is missing, or the command fails.
 - Companion or linked MRs/PRs named in the request or description, as URLs.
 - Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
@@ -111,7 +114,8 @@ and `Skip:` path globs, and what counts as broken in that code.
 
 Fill this template. Fill the fields and add nothing else: no summary of the change,
 focus areas, or earlier findings. `<target>` is the user's target verbatim, followed by
-`(pinned <range or diff path>)`; an MR/PR target is its URL.
+`(pinned <range or diff path>)`; an MR/PR target is its URL. Drop the `Linked issue`
+line when there is none.
 
 ```text
 Review <target> for verified defects. Read-only: no edits, commits,
@@ -119,7 +123,7 @@ cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
 Never run `agt review`.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
-Linked issue (context only, omit the line when none): <key, title, and body>
+Linked issue: <key, title, URL, and a few body lines>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
 Checks: <commands with their log paths, or `none`>
 Severity scale: `bug` (wrong behavior reachable in production), `question` (design

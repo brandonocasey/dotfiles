@@ -32,11 +32,19 @@ question. Never invent a key, project, status, or version.
 - Remote: `gh` for GitHub, `glab` for GitLab (`GITLAB_HOST` for self-hosted),
   `fj` or the Forgejo REST API for Forgejo. Other platforms: unsupported; stop
   before any write.
-- GitHub and GitLab issues: `agt issue` when `agt --version` works and a
-  tracker for the repo is in `$XDG_CONFIG_HOME/agt/config.toml`
-  (see [agt.md](../shared/agt.md)). Reads use the local copy. Writes are queued
-  and go out only on `agt issue push`, and only for trackers with `push = true`.
-  Without `agt` or a matching tracker, use `gh` or `glab` as before.
+- GitHub and GitLab issues: `agt issue` (0.5.0 or newer) when `agt --version`
+  works and a tracker for the repo is in `$XDG_CONFIG_HOME/agt/config.toml`
+  (`~/.config` when unset). See [agt.md](../shared/agt.md).
+  - Do not install `agt` here. Without it, or without a matching tracker, use
+    `gh` or `glab`.
+  - Reads use the local copy. Writes are queued and go out only on
+    `agt issue push`, and only for trackers with `push = true`.
+  - Do not change `push` in the agt config.
+  - Run `agt issue sync --tracker <owner/repo>` before reads. On a sync error,
+    stop, or read with `gh` or `glab`. An empty `find` after a failed sync does
+    not mean "no ticket".
+  - The sync scope `involved` can miss issues. Read a key that is not in the
+    local copy with `gh` or `glab`.
 - Jira: the Atlassian MCP. If it fails, use `jira-api` per the Setup in
   [jira-versions](../jira-versions/SKILL.md); `JIRA_EMAIL` comes from the
   environment, as that Setup says.
@@ -47,9 +55,11 @@ question. Never invent a key, project, status, or version.
 
 1. Read the MR/PR: title, description, branch, author, state, labels, and changed files.
 2. Find keys with the regex in the branch, title, and description. For GitHub
-   and GitLab tickets, also run `agt issue sync`, then
-   `agt issue find --pr <n|url>` for the linked issues; skip it when `agt` or a
-   tracker is missing. Jira keys do not use `agt`.
+   and GitLab tickets, also run `agt issue sync --tracker <owner/repo>`, then
+   `agt issue find --pr <url>` for the linked issues. Use the MR/PR URL, or add
+   `--tracker <owner/repo>` to a number: a bare number matches that PR in every
+   synced tracker. Skip this when `agt` or a tracker is missing. Jira keys do
+   not use `agt`.
 3. Pick the action:
    - The user said `none`: skip steps 4-8. Change nothing in the tracker or
      the MR/PR. Report it.
@@ -70,16 +80,33 @@ question. Never invent a key, project, status, or version.
    - GitHub or GitLab ticket with a matching `agt` tracker: queue it with
      `agt issue create --tracker <owner/repo> --title <title> --body - --label <label>
      --assignee <login>`, reading the body from stdin. It prints a `local-` key.
-     Then `agt issue link-pr <key> --pr <n|url>` and `agt issue assign <key> <login>`.
-     Show `agt issue push --tracker <owner/repo> --dry-run`, then run
-     `agt issue push --tracker <owner/repo>`. When the tracker has `push = false`,
-     push reports it: report the queued issue and stop; do not use `gh` or `glab`
-     to bypass the setting. With no tracker, create the ticket with `gh` or `glab`.
+   - Then run `agt issue link-pr <key> --pr <url>`.
+   - Run `agt issue list --tracker <owner/repo> --pending`. Stop and ask when
+     anything besides this run's keys is pending.
+   - Run `agt issue push --tracker <owner/repo> --dry-run` and show it. Stop and
+     ask when it touches other issues.
+   - When `push = false`, the dry-run errors. Stop on that error and report the
+     queued issue. Do not use `gh` or `glab` to bypass the setting.
+   - Run `agt issue push --tracker <owner/repo>`. It sends every pending change
+     on that tracker, so the pending check above is required.
+   - Push exits 0 even with entries under `failed`, `deferred`, or `conflicts`.
+     Treat any of them as a failed write and report it.
+   - On success, the `local-` key becomes a number. Take `number` from the
+     `sent` entry with kind create. Use `<owner/repo>#<number>` from then on.
+     Never put a `local-` key in an MR/PR title.
+   - With no tracker, create the ticket with `gh` or `glab`.
 5. Link related keys from step 2 with the tracker's "relates" link.
-6. Move the status per the lifecycle. Never move a ticket backward. For a
-   GitHub or GitLab ticket with an `agt` tracker, queue a close with
-   `agt issue close <key>` (add `--reason completed` on GitHub), then dry-run and
-   push as in step 4.
+   - On a GitHub or GitLab tracker, `agt issue link` is local only. It does not
+     reach the host.
+   - `agt issue link-pr` queues a comment. Use it only for an MR/PR link.
+   - For issue-to-issue links, name the related key in the ticket body or a
+     comment. Queue it with `agt issue comment`, then push as in step 4.
+   - Do not bypass `push = false` with `gh` or `glab`.
+6. Move the status per the lifecycle. Never move a ticket backward.
+   - For a GitHub or GitLab ticket with an `agt` tracker, close only when the
+     lifecycle status is closed (the MR/PR is merged).
+   - Queue it with `agt issue close <key>` (add `--reason completed` on GitHub).
+   - Then run the pending check, dry-run, and push as in step 4.
 7. Set the version when the user gave one or an MR/PR label names one, and
    change the release label to match, per `jira-versions` (Move a ticket or MR).
    "Add to" keeps existing versions. Moving a merged MR/PR's ticket follows `jira-versions` Rules.
