@@ -154,6 +154,7 @@
         "wheeldown": "scroll:lineDown",
         "ctrl+home": "scroll:top",
         "ctrl+end": "scroll:bottom",
+        "ctrl+q": "scroll:bottom",
         "ctrl+shift+c": "selection:copy",
         "cmd+c": "selection:copy",
         "shift+left": "selection:extendLeft",
