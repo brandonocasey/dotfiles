@@ -59,11 +59,15 @@ the stop hook keeps blocking me over and over -> Fix repeated stop-hook blocks'
   # No settings sources means no hooks, so this call cannot trigger itself.
   (
     cd "$state" || exit 0
+    # A failed call (usage limit, auth, timeout) prints its error as the
+    # answer, so drop output from a non-zero exit or a limit message.
     title=$(printf '<message>\n%s\n</message>\n' "$prompt" |
       CLAUDE_CODE_DISABLE_CLAUDE_MDS=1 timeout 30 claude -p --model haiku \
         --system-prompt "$system" \
         --tools '' --setting-sources '' --strict-mcp-config --no-session-persistence \
-        --max-turns 1 2>/dev/null | head -n 1)
+        --max-turns 1 2>/dev/null) || title=
+    title=$(printf '%s\n' "$title" | head -n 1)
+    case $title in *[Hh]it\ your*limit* | *[Ll]imit\ reached* | *[Uu]sage\ limit*) title= ;; esac
     title=$(sh "$tmux_hook" slug "$title")
     if [ -z "$title" ]; then
       rm -f "$state/$sid.haiku"
