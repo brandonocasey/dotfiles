@@ -2,7 +2,7 @@
 
 ## Watch CI after shipping
 
-After each `ship` push, without waiting for its review, start one `agent-watch` with a `--target` for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--deadline-seconds 3300`.
+After each `ship` push, without waiting for its review, start one `agt watch` with a `--target` for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--deadline-seconds 3300`.
 Before starting it, stop any earlier CI watch this session started for the same MR/PR. A later push in the same task starts a new watch at the new head.
 Skip it, and give the reason in the report, for `ship --merge` (`merge.md` owns the watch), an explicit monitoring request, a user request not to watch, or a platform other than GitHub or GitLab.
 In Claude Code, run it as a background command in the main session; its exit is the only wake.

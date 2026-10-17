@@ -37,8 +37,8 @@ preview prototype (**Scope**).
   not mean nothing to review. Finish the implementation and the checks and manual
   check that can run before the end point. Checks that only run remotely or need
   a device or person may follow the review; report them as pending.
-- Each review run records its reviewed range in the `agent-review` store
-  ([store.md](store.md)). Skip the review only when `agent-review status` reports
+- Each review run records its reviewed range in the `agt review` store
+  ([store.md](store.md)). Skip the review only when `agt review status` reports
   `reviewed: true` and an empty `unreviewed_commits`, plus `worktree.reviewed: true`
   when the tree is dirty; report it as `✓ already reviewed at <head-sha>`. Otherwise
   review `<review_from>..HEAD` from `status`, or from the task's starting revision
@@ -52,7 +52,7 @@ preview prototype (**Scope**).
   earlier end points and review only there.
 - During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
-  Check `agent-review status` first, so a rebase alone triggers no second review.
+  Check `agt review status` first, so a rebase alone triggers no second review.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
   and rerun affected checks before reporting completion. Pushes and changes outside
   the intended behavior keep their existing authorization rules. Report the
@@ -85,7 +85,7 @@ preview prototype (**Scope**).
 - Follow-ups wait for the next end point (**Timing**), such as their own finished
   commit. Then review them together as one delta
   (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
-  one-line or prose-only edit. End the run with `agent-review run end` after the
+  one-line or prose-only edit. End the run with `agt review run end` after the
   last fix commit, so `status` counts the fix commits as reviewed.
 - The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
   Report unresolved findings explicitly. Do not rerun a review of the whole

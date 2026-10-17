@@ -183,7 +183,7 @@ def problems(cmd: str, background: bool) -> list[str]:
         if GH_WATCH.search(fg):
             found.append(
                 "Foreground gh watch. Rerun it with run_in_background: true, "
-                "or use agent-watch."
+                "or use agt watch."
             )
     for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:

@@ -4,8 +4,8 @@ When checks are pending, run one deterministic watcher for all selected pull
 requests. Pin each observed head SHA:
 
 ```sh
-agent-watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
-agent-watch --target 'GROUP/PROJECT!IID@HEAD_SHA' --deadline-seconds 3600
+agt watch --target OWNER/REPO#NUMBER@HEAD_SHA --deadline-seconds 3600
+agt watch --target 'GROUP/PROJECT!IID@HEAD_SHA' --deadline-seconds 3600
 ```
 
 Use the second form for GitLab; quote it because shells expand `!`. Repeat

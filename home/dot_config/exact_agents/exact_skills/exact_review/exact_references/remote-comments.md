@@ -46,12 +46,12 @@ posts a final review record. GitLab and GitHub only, and only in a repository in
 the user's organization; for an upstream or other outside repository, print as for
 other MRs/PRs. Never post on any other MR/PR unless the user asks; then post only
 the findings the user chose with
-`agent-review publish --not-own --findings --only <ids>` per [output.md](output.md). It never posts records.
+`agt review publish --not-own --findings --only <ids>` per [output.md](output.md). It never posts records.
 
 ### IDs and signature
 
 - Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run, from
-  `agent-review run start`.
+  `agt review run start`.
 - Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
 - Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
   keeps its ID.
@@ -66,7 +66,7 @@ the findings the user chose with
 ### Publishing
 
 After each pass and its fix push (or after the pass, when nothing was fixed), run
-`agent-review publish --target <key>` per [store.md](store.md); prefix
+`agt review publish --target <key>` per [store.md](store.md); prefix
 `GITLAB_HOST=<host>` when self-hosted. It syncs first, then posts every pending
 finding, reply, and resolve, plus the final record of each ended run not yet posted.
 A rerun matches posted items instead of posting again. Read only its returned links and failures; rerun a failure once
@@ -133,7 +133,7 @@ Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
 
 ### Syncing
 
-`agent-review sync --pr <n|url>` imports every thread, comment, and review record of
+`agt review sync --pr <n|url>` imports every thread, comment, and review record of
 the MR/PR. It trusts a `review-finding`, `agent-review`, or `review-record v2` marker
 only when its author is the authenticated user, its `editor` is null or that user, and
 it sits in the thread's first comment; it ignores the rest. Trusted records count in

@@ -77,7 +77,7 @@ Each event carries `answers`, keyed by question ID, with the chosen option `ids`
 
 For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. Picks whose IDs remain are kept. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
 
-Apply selections, notes, and requests for more options to the active task. When the choice must survive a resumed session, use `agent-task update --correction` to record the option IDs, feedback, and resulting correction. Continue the requested work after each response.
+Apply selections, notes, and requests for more options to the active task. When the choice must survive a resumed session, use `agt task update --correction` to record the option IDs, feedback, and resulting correction. Continue the requested work after each response.
 
 ## Stop
 

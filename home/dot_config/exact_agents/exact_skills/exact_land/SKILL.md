@@ -70,7 +70,7 @@ git rebase <TARGET>
   **Manual check** of `shared/git-flow.md` before proceeding — the branch was tested on its
   old base, not on top of the current `TARGET`. The same applies after a step 2 fix commit.
 - Then run any review that `review/references/when-to-run.md` triggers, pinned to
-  `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agent-review status`
+  `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status`
   reports `reviewed: true` and an empty `unreviewed_commits`; otherwise review from
   its `review_from`. A review fix
   commit repeats the step 2 tests and the **Manual check** before step 4.
