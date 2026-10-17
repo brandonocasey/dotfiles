@@ -3,6 +3,10 @@
 Each finding or comment covers one issue in at most three sentences: what
 breaks, when, and the fix. Apply repository templates when present.
 
+Keep the full report in a file, per the long-output rule in
+[writing-details.md](../../shared/writing-details.md). Comment blocks the user
+must post still print in chat.
+
 1. **TLDR line** — one sentence: how many findings survived, whether any are real bugs
    vs. minor notes, how many are pre-existing, and the risk tier with its reason.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No

@@ -156,7 +156,9 @@ When you cannot fix the issue, make it easy for the next person to fix:
 
 ## 7. Report
 
-Start with the result: **Fixed** or **Narrowed**. Then give, in this order:
+Keep the full report in a file, per the long-output rule in
+[writing-details.md](../shared/writing-details.md). Start with the result:
+**Fixed** or **Narrowed**. Then give, in this order:
 
 1. **Cause**: one or two sentences, with `file:line`.
 2. **Evidence**: log and console lines, requests, screenshots, and the commit
