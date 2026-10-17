@@ -17,7 +17,7 @@
 - Read ranges with `sed -n` or `rg`; the file-read tool's line-numbered output costs more tokens. In Claude Code, use the file-read tool for files you will edit: Edit and Write reject files seen only through Bash. Use `cat` to load whole skill files; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
-- Delete your own task dir at task end with `find <dir> -delete`. `agent-reap` handles leftovers. Do not append `; echo rc=$?` to commands.
+- Delete your own task dir at task end with `find <dir> -delete`. `agt cleanup` handles leftovers. Do not append `; echo rc=$?` to commands.
 - Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob. Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands.
 - To find a past session, run `agt task search` first.
 - If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.

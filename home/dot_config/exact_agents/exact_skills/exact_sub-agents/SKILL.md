@@ -20,7 +20,7 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 - Fetch diffs, logs, and browser evidence through `cheap` agents first; they write raw output under the task's scratch directory and pass paths on.
 - Delegate web page and doc reads (WebFetch) to an agent; return only the needed excerpt.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
-- A denied action stays denied. Never reach its effect through another command, script, or test. Test destructive tools against a fake root, such as `AGENT_REAP_TMP`, never live paths.
+- A denied action stays denied. Never reach its effect through another command, script, or test. Test destructive tools against a fake root, such as `AGT_CLEANUP_TMP`, never live paths.
 
 ## Prompt caching
 
