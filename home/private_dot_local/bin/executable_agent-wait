@@ -15,6 +15,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ $# -gt 0 ] || { echo "usage: agent-wait [--max S] [--every S] -- CHECK..." >&2; exit 2; }
+case "$max:$every" in
+  :*|*:|*[!0-9:]*) echo "agent-wait: --max and --every take whole seconds, e.g. --max 270" >&2; exit 2 ;;
+esac
 start=$(date +%s)
 while :; do
   if "$@" >/dev/null 2>&1; then

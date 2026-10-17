@@ -162,25 +162,26 @@ def main() -> int:
     entry = {"agent_id": agent_id, "agent_type": data.get("agent_type"),
              "jobs": [t.get("command") or t.get("description") for t in jobs]}
 
-    if not jobs:
-        clear(state_file)
-        return 0
-
     ended, handback, delivered, final = handbacks(transcript)
     if ended:
         # A block would be discarded; record what the handback did.
         handoff = handoff_file(handback) if delivered else ""
-        if handoff:
+        if handoff or not jobs:
             clear(state_file)
-        decision = "handoff" if handoff else ("handed-back" if delivered else "handback-rejected")
-        log({**entry, "decision": decision, "file": handoff})
+        if jobs:
+            decision = "handoff" if handoff else ("handed-back" if delivered else "handback-rejected")
+            log({**entry, "decision": decision, "file": handoff})
         return 0
     if final:
         # The report is out; a later wake (waiter or job exit) must not
         # restart the wait or rewrite the handoff file.
         clear(state_file)
-        log({**entry, "decision": "after-handback"})
+        if jobs:
+            log({**entry, "decision": "after-handback"})
         return 0
+
+    # Checked even with no tracked jobs: after a detached job's waiter is
+    # stopped, nothing would wake the agent to resend a plain-text handoff.
 
     handoff = handoff_file(data.get("last_assistant_message") or "")
     if handoff:
@@ -198,6 +199,10 @@ def main() -> int:
             )
         clear(state_file)
         log({**entry, "decision": "handoff", "file": handoff})
+        return 0
+
+    if not jobs:
+        clear(state_file)
         return 0
 
     # The clock covers waits on the same work. A new job or done-check
