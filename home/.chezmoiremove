@@ -13,3 +13,6 @@
 .local/bin/agent-watch
 .local/bin/gl-ci
 .local/libexec/agt
+.claude/hooks/agent-reap.sh
+.claude/hooks/prune-agent-output.sh
+.claude/hooks/prune-agent-dirs.sh

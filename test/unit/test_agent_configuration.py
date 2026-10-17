@@ -3,13 +3,10 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-import time
 import tomllib
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
-PRUNE = REPO / "home/dot_claude/hooks/executable_prune-agent-dirs.sh"
-PRUNE_OUTPUT = REPO / "home/dot_claude/hooks/executable_prune-agent-output.sh"
 CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
 
 
@@ -26,67 +23,6 @@ def render_codex_modifier(directory):
 
 
 class AgentConfigurationTests(unittest.TestCase):
-    def test_pruning_preserves_copy_files(self):
-        scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
-        scratch.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=scratch) as directory:
-            root = Path(directory)
-            cache = root / "cache"
-            stale = cache / "agents/scratch/old.txt"
-            recent = cache / "agents/scratch/recent.txt"
-            copy = cache / "agents/copy/unused.md"
-            keep = cache / "agents/scratch/.keep"
-            for path in (stale, recent, copy, keep):
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("preserve unless disposable and expired")
-            old = time.time() - 40 * 86400
-            for path in (stale, copy, keep):
-                os.utime(path, (old, old))
-            binary = root / "bin"
-            binary.mkdir()
-            fake_id = binary / "id"
-            fake_id.write_text("#!/bin/sh\nprintf '%s\n' agent-config-test-nonexistent\n")
-            fake_id.chmod(0o755)
-            # The hook's legacy harness path MUST not resolve to real sessions.
-            self.assertFalse(Path("/tmp/claude-agent-config-test-nonexistent").exists())
-            env = dict(os.environ, HOME=str(root), XDG_CACHE_HOME=str(cache),
-                       XDG_STATE_HOME=str(root / "state"), DAYS="30",
-                       PATH=str(binary) + os.pathsep + os.environ["PATH"])
-            subprocess.run(["bash", str(PRUNE)], env=env, check=True, timeout=10)
-            self.assertFalse(stale.exists())
-            self.assertTrue(recent.exists())
-            self.assertTrue(keep.exists())
-            self.assertTrue(copy.exists(), "Unused copy files must survive age-based pruning")
-
-    def test_output_pruning_removes_only_expired_files(self):
-        scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
-        scratch.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=scratch) as directory:
-            root = Path(directory)
-            output = root / "cache/agents/output"
-            stale = output / "old-task/report.md"
-            recent = output / "new-task/report.md"
-            empty_old = output / "empty-old"
-            empty_new = output / "empty-new"
-            for path in (stale, recent):
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("long output")
-            empty_old.mkdir()
-            empty_new.mkdir()
-            old = time.time() - 10 * 86400
-            for path in (stale, empty_old):
-                os.utime(path, (old, old))
-            env = dict(os.environ, HOME=str(root), XDG_CACHE_HOME=str(root / "cache"))
-            subprocess.run(["sh", str(PRUNE_OUTPUT)], env=env, check=True, timeout=10)
-            self.assertFalse(stale.exists())
-            self.assertTrue(recent.exists())
-            self.assertFalse(empty_old.exists())
-            # A task dir created moments before its first write MUST survive.
-            self.assertTrue(empty_new.exists())
-            env["XDG_CACHE_HOME"] = str(root / "missing")
-            subprocess.run(["sh", str(PRUNE_OUTPUT)], env=env, check=True, timeout=10)
-
-
     def test_codex_visibility_preserves_live_settings(self):
         scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
         scratch.mkdir(parents=True, exist_ok=True)
