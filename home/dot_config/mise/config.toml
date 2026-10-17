@@ -6,7 +6,7 @@ uv = ['latest']
 'forgejo:mergiraf/mergiraf' = 'latest'
 # Review store for the review skill; private releases, read with the gh token.
 # Pinned: bump it with the review rules that need it (review/references/store.md).
-'github:brandonocasey/agent-review' = { version = '0.5.0', os = ['macos', 'linux'] }
+'github:brandonocasey/agt' = { version = '0.5.0', os = ['macos', 'linux'] }
 
 [settings]
 experimental = true
@@ -20,7 +20,7 @@ trusted_config_paths = [
 ]
 idiomatic_version_file_enable_tools = ["node"]
 # Our own releases need no supply-chain wait.
-minimum_release_age_excludes = ['github:brandonocasey/agent-review']
+minimum_release_age_excludes = ['github:brandonocasey/agt']
 
 [_]
 file = { path = ".vt.env.local", required = false }

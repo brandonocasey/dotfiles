@@ -2,7 +2,7 @@
 
 Review runs, passes, findings, threads, and MR/PR comments live in the
 `agt review` CLI, one store per repository. `agt review --help` and the README
-of https://github.com/brandonocasey/agent-review document every command, flag,
+of https://github.com/brandonocasey/agt document every command, flag,
 and output field. This file names what the review skill uses.
 
 ## Availability

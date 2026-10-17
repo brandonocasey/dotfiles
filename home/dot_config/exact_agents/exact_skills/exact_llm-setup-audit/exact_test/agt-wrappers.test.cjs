@@ -61,7 +61,7 @@ test('agent-review exits 127 with an install hint when agt is missing', () => {
   const { env } = sandbox({ agtSubcommands: null });
   const result = run('agent-review', ['status'], env);
   assert.equal(result.status, 127);
-  assert.equal(result.stderr, 'agent-review: agt not found; run: mise install github:brandonocasey/agent-review\n');
+  assert.equal(result.stderr, 'agent-review: agt not found; run: mise install github:brandonocasey/agt\n');
   assert.equal(result.stdout, '');
 });
 
