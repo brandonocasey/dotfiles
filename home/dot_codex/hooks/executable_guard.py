@@ -6,6 +6,8 @@ matches rules only against plain commands with the flag right after `git push`.
 Codex already prompts for `rm` with a force flag in any form. This hook allows
 a force push only as one lone plain command in that form, and denies any other
 command whose text looks like a force push, quoted text and heredocs included.
+`--mirror` counts as a force flag: a mirror push force-updates and deletes
+remote refs without one (git-push(1)).
 """
 import json
 import re
@@ -13,11 +15,11 @@ import shlex
 import subprocess
 import sys
 
-FORCE = {"--force", "-f", "--force-with-lease", "--force-if-includes"}
+FORCE = {"--force", "-f", "--force-with-lease", "--force-if-includes", "--mirror"}
 # Characters that stop Codex from treating a script as plain commands.
 NOT_PLAIN = re.compile(r"[\n$`<>()\\#{}*?\[\]~^;&|'\"]|(^|\s)=")
 FORCE_ARG = re.compile(
-    r"(^|[\s\"'=(])(--force(-with-lease|-if-includes)?(=\S*)?|-[a-zA-Z]*f[a-zA-Z]*|\+\S+)(?=$|[\s\"');|&`<>])"
+    r"(^|[\s\"'=(])(--force(-with-lease|-if-includes)?(=\S*)?|--mirror|-[a-zA-Z]*f[a-zA-Z]*|\+\S+)(?=$|[\s\"');|&`<>])"
 )
 REASON = (
     "Codex rules only see a force push as one lone plain command with the force "
