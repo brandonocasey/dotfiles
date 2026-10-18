@@ -6,12 +6,12 @@ Start it once, with the same notice or tool.
 Use a `cheap` agent when the harness cannot monitor the process or interpretation is needed; it runs the watcher once and reports the outcome and relevant details.
 While the watcher runs, the main session never polls the same target.
 
-For a long run (workflow, build, or watcher), state an ETA in minutes at the start.
-Report a phase change in one line only when it changes the plan or the ETA.
+For a long run (workflow, build, or watcher), identify the running work at the start.
+Report a phase change in one line only when it changes the plan.
 Answer "status?" from the run's own log or journal, in three lines or fewer, state first.
 For a Workflow, use `agent-wf-status` per [workflows.md](workflows.md).
 Print timed progress lines (done/total, failures) only when the user asks for them.
-When background jobs start, give one line: `Waiting on: <thing>, ends by <time>`.
+When background jobs start, give one line: `Waiting on: <thing>`.
 When a job finishes and nothing needs the user or changes the plan, end the turn with no text.
 If something needs the user while jobs still run, report it and end with `Next:`.
 

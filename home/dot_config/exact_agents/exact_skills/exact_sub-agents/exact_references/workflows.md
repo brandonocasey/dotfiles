@@ -26,8 +26,8 @@ These rules keep a Workflow run's raw output out of the main session.
 
 - Wait for the completion notice. Never read the journal, agent transcripts, or the task output file by hand while the run is live.
 - For "status?", run `agent-wf-status <transcript-dir>` once and relay its lines. The launch output gives the transcript dir.
-- For a run with 2 or more phases or an ETA over 10 minutes, start one Monitor on `agent-wf-status <transcript-dir> --follow`.
-  Relay only failure and done lines, each as one sentence, plus phase lines the user asked for. Avoid idle wake-ups (scheduled checks, pings) during long runs. Set the Monitor timeout to the ETA plus 10 minutes, at most 1 hour; re-arm while the run is still going.
+- For a run with 2 or more phases or continuing background work, start one Monitor on `agent-wf-status <transcript-dir> --follow`.
+  Relay only failure and done lines, each as one sentence, plus phase lines the user asked for. Avoid idle wake-ups (scheduled checks, pings) during long runs. Set the Monitor timeout to at most 1 hour; re-arm while the run is still going.
 - When the user asks for updates every N minutes, add `--every <N>`. Keep that interval for the rest of the session.
 - Follow mode exits only if the journal disappears. Stop its Monitor when the completion notice arrives.
 
