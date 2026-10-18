@@ -100,20 +100,23 @@ config.keys = {
 
 -- Hyper+V: upload the clipboard image with ~/.local/bin/clipimg and insert
 -- the returned remote path into the current pane without pressing Enter.
-table.insert(config.keys, {
-	key = "v",
-	mods = "SUPER|CTRL|ALT|SHIFT",
-	action = wezterm.action_callback(function(window, pane)
-		local ok, stdout, stderr = wezterm.run_child_process({ wezterm.home_dir .. "/.local/bin/clipimg" })
-		local path = (stdout or ""):gsub("%s+$", "")
-		if ok and path ~= "" then
-			pane:send_paste(path)
-		else
-			local msg = (stderr or ""):gsub("%s+$", "")
-			window:toast_notification("clipimg failed", msg ~= "" and msg or "no output", nil, 8000)
-		end
-	end),
-})
+-- The Hyper key comes from Karabiner, and clipimg is installed only on macOS.
+if wezterm.target_triple:find("darwin") then
+	table.insert(config.keys, {
+		key = "v",
+		mods = "SUPER|CTRL|ALT|SHIFT",
+		action = wezterm.action_callback(function(window, pane)
+			local ok, stdout, stderr = wezterm.run_child_process({ wezterm.home_dir .. "/.local/bin/clipimg" })
+			local path = (stdout or ""):gsub("%s+$", "")
+			if ok and path ~= "" then
+				pane:send_paste(path)
+			else
+				local msg = (stderr or ""):gsub("%s+$", "")
+				window:toast_notification("clipimg failed", msg ~= "" and msg or "no output", nil, 8000)
+			end
+		end),
+	})
+end
 
 -- 4 mouse clicks to select between prompts
 config.mouse_bindings = {
