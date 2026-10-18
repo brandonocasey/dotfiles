@@ -65,11 +65,12 @@ def proc_pattern(words: list[str]) -> str | None:
     return None
 
 
-def code_only(cmd: str, keep_scripts: bool = True) -> str:
+def code_only(cmd: str, keep_scripts: bool = True, keep_double: bool = False) -> str:
     """Blank quoted data and comments, keeping offsets.
 
     Quoted arguments are data (search patterns, commit messages), except the
     script given to a shell's -c flag, which stays when keep_scripts is set.
+    keep_double keeps double-quoted text, where variables still expand.
     """
     out, words, word, i, n = [], [], "", 0, len(cmd)
     while i < n:
@@ -91,7 +92,8 @@ def code_only(cmd: str, keep_scripts: bool = True) -> str:
                 and re.fullmatch(r"-[A-Za-z]*c[A-Za-z]*", words[-1])
                 and any(os.path.basename(w) in SHELLS for w in words[:-1])
             )
-            out.append(c + (body if script else re.sub(r"[^\n]", " ", body)) + c)
+            keep = script or (keep_double and c == '"')
+            out.append(c + (body if keep else re.sub(r"[^\n]", " ", body)) + c)
             word += "x"
             i = j + 1
         elif c == "#" and not word:
@@ -159,28 +161,50 @@ HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*
 
 
 ZSH_EQUALS = re.compile(r"(?<![^\s;&|(])=[^\s;&|()]")
-TEST_BRACKETS = re.compile(r"\[\[[\s\S]*?\]\]")
+# [[ ... ]], (( ... )) and $(( ... )) keep == as a comparison operator.
+COMPARISONS = re.compile(r"\[\[[\s\S]*?\]\]|\$?\(\([\s\S]*?\)\)")
 CMD_START = r"(?:^|[;&|(\n{]|\b(?:then|do|else)\b)\s*(?:\S*=\S*\s+)*(?:\S*/)?"
+# The script given to a shell's -c flag starts a command too.
+SCRIPT_START = r"(?<!\S)-[A-Za-z]*c[A-Za-z]*\s+['\"]\s*(?:\S*=\S*\s+)*(?:\S*/)?"
+# Commands that run the next word as a command, with their options and durations.
+WRAPPERS = (r"(?:(?:nohup|setsid|exec|command|env|nice|time|g?timeout)(?:\s+(?:-\S+|\d\S*))*"
+            r"\s+(?:\S*=\S*\s+)*(?:\S*/)?)*")
 SEGMENT_END = re.compile(r"[;|]|(?<![<>])&(?!>)|(?<!\\)\n")
 PRINT_CMD = re.compile(CMD_START + r"(?:builtin\s+|command\s+)?(?:echo|printf)\b")
 # > or >> to a file, not a descriptor duplication such as >&2.
 FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
-CLAUDE_CMD = re.compile(CMD_START + r"claude(?:-two)?\b")
+CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)?\\b")
 PRINT_FLAG = re.compile(r"(?:^|\s)(?:-p|--print)(?=\s|$)")
-TOOLS_FLAG = re.compile(r"(?:^|\s)--tools(?:=|\s+)(\"[^\"]*\"|'[^']*'|\S*)")
+TOOLS_FLAG = re.compile(r"(?<!\S)--tools(?:=|(?=\s|$))")
 
 
-def segments(cmd: str, code: str, start: re.Pattern) -> list[str]:
-    """The original text after each command that start matches, up to its end.
+def segments(cmd: str, code: str, start: re.Pattern) -> list[tuple[str, str]]:
+    """The text after each command that start matches, up to its end.
 
     code is cmd with quoted data blanked, so quoted separators do not end a
-    command but the quoted arguments stay readable in cmd.
+    command. Each item pairs the original text with its code, so flags are
+    found in code and their quoted values read from the original.
     """
     out = []
     for m in start.finditer(code):
         end = SEGMENT_END.search(code, m.end())
-        out.append(cmd[m.end():end.start() if end else len(cmd)])
+        stop = end.start() if end else len(cmd)
+        out.append((cmd[m.end():stop], code[m.end():stop]))
     return out
+
+
+def tool_names(rest: str) -> list[str]:
+    """The names given to --tools: every word up to the next option."""
+    try:
+        words = shlex.split(rest)
+    except ValueError:
+        words = rest.split()
+    names = []
+    for w in words:
+        if w.startswith("-"):
+            break
+        names += re.split(r"[\s,]+", w)
+    return names
 
 
 def problems(cmd: str, background: bool) -> list[str]:
@@ -188,10 +212,11 @@ def problems(cmd: str, background: bool) -> list[str]:
     cmd = HEREDOC.sub("", cmd)
     found = []
     code = code_only(cmd)
+    bare = code_only(cmd, False)
     if not background:
         # Commands ending in & run in the background, like the detached
         # `nohup setsid sh -c '...' &` form subagent-wait suggests.
-        fg = foreground(code, code_only(cmd, False))
+        fg = foreground(code, bare)
         if POLL_LOOP.search(fg):
             found.append(
                 "Foreground polling loop. Rerun it with run_in_background: true "
@@ -215,34 +240,36 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "Foreground gh watch. Rerun it with run_in_background: true, "
                 "or run agt ci wait in the background."
             )
-    # [[ ... ]] keeps == as a comparison operator.
-    if ZSH_EQUALS.search(TEST_BRACKETS.sub(" ", code)):
+    # bare also blanks sh -c and bash -c scripts, which have no = expansion.
+    if ZSH_EQUALS.search(COMPARISONS.sub(" ", bare)):
         found.append(
             "An unquoted word starting with = is a zsh path expansion "
             "(`echo ===` fails with \"= not found\"). Print separators with "
             "printf '--- %s\\n' and quote any other word that starts with =."
         )
+    # Keeps "$?", where it still expands; drops '$?' and comments.
+    expanding = code_only(cmd, keep_double=True)
     for m in PRINT_CMD.finditer(code):
         end = SEGMENT_END.search(code, m.end())
         stop = end.start() if end else len(code)
-        args = cmd[m.end():stop]
         # Only a trailing echo repeats the status the tool reports. Echoes inside
         # groups or loops, or written to a file, record statuses it never shows.
         trailing = not code[stop:].strip(" \t\n;&|")
-        if trailing and "$?" in re.sub(r"'[^']*'", "", args) and not FILE_REDIRECT.search(
-            re.sub(r"'[^']*'|\"[^\"]*\"", "", args)
+        if (
+            trailing and "$?" in expanding[m.end():stop]
+            and not FILE_REDIRECT.search(code[m.end():stop])
         ):
             found.append(
                 "Do not print $?; the Bash tool already reports the exit code "
                 "of every command."
             )
             break
-    for args in segments(cmd, code, CLAUDE_CMD):
-        tools = TOOLS_FLAG.search(args)
-        if (
-            PRINT_FLAG.search(args) and tools and "ToolSearch" not in tools.group(1)
-            and "--strict-mcp-config" not in args
-        ):
+    for args, args_code in segments(cmd, code, CLAUDE_CMD):
+        tools = TOOLS_FLAG.search(args_code)
+        if not (tools and PRINT_FLAG.search(args_code)) or "--strict-mcp-config" in args_code:
+            continue
+        names = tool_names(args[tools.end():])
+        if "ToolSearch" not in names and "default" not in names:
             found.append(
                 "Headless claude with --tools but without ToolSearch sends every "
                 "connector tool in full (about 600k tokens per call). Add "
