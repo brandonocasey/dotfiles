@@ -36,6 +36,9 @@ node_modules/
 # Git worktrees
 .worktrees/
 
+# Repository issue and review data
+/.agt/
+
 # Disposable agent task resources at the checkout root
 /.cache/agents/scratch/
 
