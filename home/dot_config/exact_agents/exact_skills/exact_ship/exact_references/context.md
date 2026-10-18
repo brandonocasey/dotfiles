@@ -9,7 +9,7 @@ remote target details:
   and use the create-MR/PR URL the remote prints on push.
 - `TICKET` — issue/ticket key (e.g. `PUBS-1234`) from the branch name or unpushed commit
   subjects. Unset if none. When commits require a key and none is found, create the
-  ticket before the commit gate: read mr-ticket's conventions, then follow its step 4
+  ticket before the commit gate: read `ticket`'s conventions, then follow its step 4
   without the MR/PR URL. Step 3 then reuses that key.
 - `REMOTE_DEFAULT` — resolve `origin` through **Remote default name** in
   [default-branch.md](../../shared/default-branch.md).

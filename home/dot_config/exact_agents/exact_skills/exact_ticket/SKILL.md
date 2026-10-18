@@ -1,6 +1,6 @@
 ---
-name: mr-ticket
-description: "Find, create, link, and update tracker tickets for MR/PR work."
+name: ticket
+description: "Find, create, link, and update tracker tickets for MR/PR work; log pre-existing or found issues."
 ---
 
 Arguments: `[<MR/PR url|number|branch>...] [to <version>] [none]`.
@@ -119,6 +119,19 @@ question. Never invent a key, project, status, or version.
 
 One line per MR/PR: MR/PR URL, key (new or reused) with its ticket URL,
 related links, status, version, label, title.
+
+## Log found issues
+
+When work turns up an issue outside its task, suggest logging it: a pre-existing
+review finding, a check failure the change did not cause, or a new problem.
+
+- Put the suggestion in the `Separately:` line or the report, with the command:
+  `agt issue create --tracker <owner/repo> --title <title> --body -`.
+- Queue it only after the user agrees. Push it per step 4: pending check, dry-run, push.
+- Use the repo's tracker in `$XDG_CONFIG_HOME/agt/config.toml`. Without one, say so
+  and suggest adding the repo as a tracker.
+- For a Jira project, suggest a Jira ticket per step 4 instead.
+- Write the title and body per **Ticket writing**, with the evidence and `path:line`.
 
 ## Ticket writing
 

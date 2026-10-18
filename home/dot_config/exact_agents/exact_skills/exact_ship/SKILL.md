@@ -70,9 +70,9 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
   CONTRIBUTING for it. For conventional titles, choose the type with the `commit` skill's
   **Choosing the type** procedure; a squash merge makes the title the commit. Include `TICKET` when set. If the repo requires a ticket and there is
   none, never invent a key:
-  - The user asked for a ticket: run [mr-ticket](../mr-ticket/SKILL.md) and use its key.
+  - The user asked for a ticket: run [ticket](../ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
-  - Otherwise run mr-ticket to find or create one; it picks the project.
+  - Otherwise run `ticket` to find or create one; it picks the project.
     Skip the ticket for dx, docs, or test-only changes. Ask once only when two candidate tickets match.
 - **Description**: follow the repository template when present. Otherwise:
   - Use a few sentences on what changed and why, then as few bullets as cover
@@ -83,7 +83,7 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
     change for someone who has not read the conversation.
   - Reread before posting; drop sentences repeating another sentence, the title, or the diff.
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
-- When `TICKET` is set, move it to the open-MR/PR status per [mr-ticket](../mr-ticket/SKILL.md) step 6.
+- When `TICKET` is set, move it to the open-MR/PR status per [ticket](../ticket/SKILL.md) step 6.
 
 ## 4. Finish the requested scope
 
@@ -104,6 +104,6 @@ Before reporting shipping results: [report.md](references/report.md).
 ## Hard rules
 
 - Never merge, approve, close, or mark ready unless the user asks.
-- Create or transition tickets only through `mr-ticket`, per step 3. Reuse keys you find.
+- Create or transition tickets only through `ticket`, per step 3. Reuse keys you find.
   Transitions move `TICKET` forward only.
 - Everything in **Shared rules** of `shared/git-flow.md`.

@@ -21,4 +21,4 @@ Read when asked to release a hive package (npm) through Jenkins.
      (`https://npm-registry.longtailvideo.com/` and the GitLab package registry).
      Registry metadata can lag; recheck after about 30 s.
 - Each start needs approval unless the user asked for that release.
-- Follow-up tickets and fix versions: [mr-ticket](../../mr-ticket/SKILL.md).
+- Follow-up tickets and fix versions: [ticket](../../ticket/SKILL.md).
