@@ -6,16 +6,50 @@ set -euo pipefail
 
 . "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.brew/brew-env.sh"
 
-# Cleanup must see every Brewfile at once, or it would remove the other file's
-# packages. Write a real file: `brew bundle` reads it more than once, and a
-# /dev/stdin pipe is empty on the second read.
+# Read every Brewfile at once so mac.Brewfile's OS guard still applies.
 BREWFILE="$(mktemp)"
 trap 'rm -f "$BREWFILE"' EXIT
 cat "$(brewfile cli)" "$(brewfile mac)" >"$BREWFILE"
 
-# The dry run is fast; only force the slow cleanup and cache prune when it
-# finds something to remove.
-if [ -n "$(brew bundle cleanup --file="$BREWFILE")" ]; then
-  brew bundle cleanup --force --file="$BREWFILE"
+# `brew bundle cleanup` removes everything the Brewfiles do not list, including
+# packages installed by hand. Instead, record what the Brewfiles listed on the
+# last run and uninstall only entries that have since been dropped. The first
+# run only records.
+OWNED="${XDG_STATE_HOME:-$HOME/.local/state}/chezmoi/brew-owned.txt"
+CURRENT="$(for kind in formula cask; do
+  brew bundle list --"$kind" --file="$BREWFILE" | sed "s/^/$kind /"
+done | LC_ALL=C sort -u)"
+if [ -z "$CURRENT" ]; then
+  echo "brew bundle list found no packages; skipping cleanup" >&2
+  exit 1
+fi
+
+removed=0
+failed=""
+if [ -f "$OWNED" ]; then
+  while read -r kind name; do
+    brew list --"$kind" "$name" >/dev/null 2>&1 || continue
+    # A formula another installed package needs stays; keep it recorded so a
+    # later Brewfile change removes it once nothing needs it.
+    if [ "$kind" = formula ] && [ -n "$(brew uses --installed "$name")" ]; then
+      echo "Keeping $name: other installed packages need it"
+      failed+="$kind $name"$'\n'
+      continue
+    fi
+    if brew uninstall --"$kind" "$name"; then
+      removed=1
+    else
+      # Keep it recorded so the next Brewfile change retries it.
+      echo "brew uninstall $name failed (continuing)" >&2
+      failed+="$kind $name"$'\n'
+    fi
+  done < <(LC_ALL=C comm -23 "$OWNED" - <<<"$CURRENT")
+fi
+
+mkdir -p "$(dirname "$OWNED")"
+printf '%s\n%s' "$CURRENT" "$failed" | sed '/^$/d' | LC_ALL=C sort -u >"$OWNED"
+
+if [ "$removed" = 1 ]; then
+  brew autoremove
   brew cleanup --prune=all
 fi

@@ -260,4 +260,7 @@ via the native installer (`claude.ai/install.sh`) inside the Linux image; Codex
 and opencode come from the shared Homebrew bundle.
 
 ## Backup
-Run `bash ./backup-settings.sh`
+Run `bash ./backup-settings.sh`. It zips shell history, zoxide data, `~/.ssh`,
+local Git config, and `~/Projects` (without `node_modules`) into `~/Downloads`.
+Projects are not modified. If a step fails, it exits non-zero and keeps the
+staged copy, printing its path.
