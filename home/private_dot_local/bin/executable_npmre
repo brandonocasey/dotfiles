@@ -39,25 +39,47 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -n "$pnpm" ]; then
-  if ! command -v "pnpm" 2>/dev/null 1>/dev/null; then
-    npm i -g pnpm
-  fi
-fi
-
-
 root="$(find-root)"
 
-cd "$root"
+cd "$root" || exit 1
 
 DIRS=('.')
 
+# Print workspace globs, one per line, from pnpm-workspace.yaml (WORKSPACE_SOURCE=pnpm)
+# or package.json. Exclusions ("!glob") are skipped: only listed dirs are cleaned.
+read_workspaces='
+const fs = require("fs");
+const unquote = value => value.trim().replace(/^(["\x27])(.*)\1$/, "$2");
+let globs = [];
+if (process.env.WORKSPACE_SOURCE === "pnpm") {
+  const lines = fs.readFileSync("pnpm-workspace.yaml", "utf8").split(/\r?\n/);
+  const start = lines.findIndex(line => /^packages:/.test(line));
+  if (start !== -1) {
+    const inline = lines[start].replace(/\s+#.*$/, "").match(/^packages:\s*\[(.*)\]\s*$/);
+    if (inline) {
+      globs = inline[1].split(",").map(unquote).filter(Boolean);
+    } else {
+      for (const line of lines.slice(start + 1)) {
+        if (/^\s*(#.*)?$/.test(line)) continue;
+        const item = line.match(/^\s+-\s+(.*)$/);
+        if (!item) break;
+        globs.push(unquote(item[1].replace(/\s+#.*$/, "")));
+      }
+    }
+  }
+} else {
+  const workspaces = JSON.parse(fs.readFileSync("package.json", "utf8")).workspaces;
+  globs = Array.isArray(workspaces) ? workspaces : (workspaces && workspaces.packages) || [];
+  if (!Array.isArray(globs)) throw new Error("package.json workspaces must be an array or have a packages array");
+}
+for (const glob of globs) if (!glob.startsWith("!")) console.log(glob);
+'
+
+workspaces=""
 if [ "$pnpm" ] && [ -f "./pnpm-workspace.yaml" ]; then
-  # Extract packages array from pnpm-workspace.yaml using Node.js
-  workspaces="$(node -e "const fs=require('fs');const c=fs.readFileSync('./pnpm-workspace.yaml','utf8');const m=c.match(/^packages:\n((?:  - [^\n]*\n?)*)/m);if(m)m[1].match(/^  - (.+)$/gm).forEach(l=>console.log(l.replace(/^  - /,'')))" 2>/dev/null)"
+  workspaces="$(WORKSPACE_SOURCE=pnpm node -e "$read_workspaces")" || { echo "npmre: could not read pnpm-workspace.yaml" 1>&2; exit 1; }
 elif [ -f "./package.json" ]; then
-  # Extract workspaces array from package.json using Node.js
-  workspaces="$(node -e "const w=require('./package.json').workspaces;w&&w.forEach(x=>console.log(x))")"
+  workspaces="$(node -e "$read_workspaces")" || { echo "npmre: could not read package.json workspaces" 1>&2; exit 1; }
 fi
 
 if [ -n "$workspaces" ]; then
@@ -76,6 +98,12 @@ if [ -n "$list" ]; then
     echo "$d"
   done
   exit 0
+fi
+
+if [ -n "$pnpm" ] && [ -z "$skip_install" ]; then
+  if ! command -v "pnpm" 2>/dev/null 1>/dev/null; then
+    npm i -g pnpm
+  fi
 fi
 
 tmpdir="$(mktemp -d)"

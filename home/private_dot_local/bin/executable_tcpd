@@ -1,22 +1,39 @@
 #!/usr/bin/env bash
+# Captures packets on every interface with tcpdump until a key is pressed, then
+# prints the path of the capture file.
 
 pcap="$(mktemp).pcap"
-sudo test
-if ! (sudo tcpdump -q -s 0 -i any -w "$pcap" >/dev/null 2>&1 &); then
-  echo 'tcpdump failed to start'
-  return 1
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+sudo -v || exit 1
+sudo tcpdump -q -s 0 -i any -w "$pcap" >/dev/null 2>"$log" &
+pid=$!
+
+# tcpdump creates the file once it is capturing; give it up to 5 seconds.
+for _ in $(seq 50); do
+  [ -e "$pcap" ] && break
+  kill -0 "$pid" 2>/dev/null || break
+  sleep 0.1
+done
+if [ ! -e "$pcap" ] || ! kill -0 "$pid" 2>/dev/null; then
+  echo "tcpdump failed to start:" >&2
+  cat "$log" >&2
+  exit 1
 fi
 
 finish() {
-  sudo pkill -f "$pcap"
-  sudo chown "$(id -u -n)":"$(id -g -n)" "$pcap"
-  echo "$pcap"
   trap - SIGINT
-  trap
-  unset -f finish
+  sudo pkill -f "$pcap"
+  wait "$pid"
+  if ! sudo chown "$(id -u -n)":"$(id -g -n)" "$pcap"; then
+    echo "could not take ownership of $pcap" >&2
+    exit 1
+  fi
+  echo "$pcap"
+  exit 0
 }
 
-trap "echo && finish && return 0" SIGINT
-printf 'Hit [Any Key] to kill tcpdump'
+trap 'echo; finish' SIGINT
+printf 'Hit [Any Key] to kill tcpdump\n'
 read -r
 finish

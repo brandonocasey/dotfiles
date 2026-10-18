@@ -9,12 +9,14 @@ if [ -z "$baseBranch" ]; then
   exit 1
 fi
 
-if [ "$1" != "--delete" ]; then
+if [ "$1" = "--delete" ]; then
+  # Git cannot delete the checked-out branch, so move to the base branch first.
+  git checkout -q "$baseBranch" || exit 1
+else
   echo "doing dry run. Pass --delete to delete local branches"
   echo "Using base branch: $baseBranch"
 fi
 
-git checkout -q "$baseBranch"
 branches="$(git for-each-ref refs/heads/ "--format=%(refname:short)")"
 
 for branch in $branches; do
