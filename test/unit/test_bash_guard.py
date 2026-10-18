@@ -77,7 +77,9 @@ class ExitStatusEchoTests(GuardTestCase):
                         "make; exit $?", "echo '$?'", "echo done",
                         "cat <<EOF\nexit=$?\nEOF", "cat <<'EOF'\necho rc=$?\nEOF\necho ok",
                         'make > log 2>&1; echo "exit $?" >> log', "make; echo $? > done",
-                        "make; printf '%s\\n' \"$?\" >>\"$LOG\""):
+                        "make; printf '%s\\n' \"$?\" >>\"$LOG\"",
+                        '(make; echo "exit $?") > log 2>&1 &', "{ make; echo $?; } > log",
+                        'for f in a b; do make "$f"; echo "$f $?"; done'):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 

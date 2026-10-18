@@ -9,7 +9,7 @@
   always finds a match.
 - Unquoted words that start with `=`. The Bash tool runs zsh, which expands
   `=foo` to a path, so `echo ===` fails with "= not found".
-- echo or printf of `$?`. The Bash tool already reports the exit code.
+- A trailing echo or printf of `$?`. The Bash tool already reports the exit code.
 - Headless claude (-p/--print) with --tools but no ToolSearch. Every connector
   tool is then sent in full, about 600k tokens per call.
 
@@ -222,9 +222,14 @@ def problems(cmd: str, background: bool) -> list[str]:
             "(`echo ===` fails with \"= not found\"). Print separators with "
             "printf '--- %s\\n' and quote any other word that starts with =."
         )
-    for args in segments(cmd, code, PRINT_CMD):
-        # Writing $? to a file records a background job's status for later; allow it.
-        if "$?" in re.sub(r"'[^']*'", "", args) and not FILE_REDIRECT.search(
+    for m in PRINT_CMD.finditer(code):
+        end = SEGMENT_END.search(code, m.end())
+        stop = end.start() if end else len(code)
+        args = cmd[m.end():stop]
+        # Only a trailing echo repeats the status the tool reports. Echoes inside
+        # groups or loops, or written to a file, record statuses it never shows.
+        trailing = not code[stop:].strip(" \t\n;&|")
+        if trailing and "$?" in re.sub(r"'[^']*'", "", args) and not FILE_REDIRECT.search(
             re.sub(r"'[^']*'|\"[^\"]*\"", "", args)
         ):
             found.append(
