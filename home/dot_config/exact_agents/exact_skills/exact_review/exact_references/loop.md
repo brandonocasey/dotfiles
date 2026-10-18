@@ -4,7 +4,8 @@ Every review that fixes runs this loop: own work under [fix.md](fix.md) **Fix
 authorization**, `--fix`, or a `fix` reply. It runs up to two cycles. Each cycle has
 one full review and up to 3 fix checks. A pass is a full review or a fix check. A
 "major" finding is a `bug` of `high` or `medium` severity, as defined in
-[output.md](output.md).
+[output.md](output.md), that the change introduced or made reachable; a
+`pre-existing` finding is never major.
 
 1. **Full review.** Start fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the
    whole current target. Re-verify, report, and fix as in steps 2–4. Hold

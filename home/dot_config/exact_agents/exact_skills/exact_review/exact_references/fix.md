@@ -24,8 +24,10 @@ Run this step when **Fix authorization** skips the gate, the user asks (`--fix`,
 threads that the request covers (fix only those threads):
 
 - **Scope**: fix every surviving `bug` and `requirement`, unless the user names
-  a subset. Fix `nit` items only when style changes are requested. Fix
-  `pre-existing` findings only when the user names them.
+  a subset. Fix `nit` items only when style changes are requested. Never fix a
+  `pre-existing` finding on the reviewed branch. When the user names one, fix it on
+  its own branch and MR/PR from the default branch (`worktree` skill), outside this
+  review: that fix starts no fix check, run, or review of this target.
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.

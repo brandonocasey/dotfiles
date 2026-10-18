@@ -29,7 +29,8 @@ must post by hand still print in chat.
    A security finding keeps its `Security (<class>):` lead-in.
 4. **Pre-existing** — defects the change did not introduce, after the change's
    findings, in the same block format, each marked `pre-existing`. They are not the
-   author's fault, never block approval, and are fixed only when the user names them.
+   author's fault, never block approval, and are fixed only when the user names them,
+   on a separate branch and MR/PR ([fix.md](fix.md)), never in the reviewed change.
 5. **What was checked and cleared** — one one-line bullet per candidate issue that
    did not survive verification and why each was killed. This is the proof the review was real.
 
