@@ -55,14 +55,14 @@ def main():
     to_server = Writer(server.stdin)
     to_client = Writer(sys.stdout.buffer)
     ids = itertools.count(1)
-    pending = {}  # bridge request id -> (uri, retries)
-    open_documents = set()
+    pending = {}  # bridge request id -> (uri, document version when pulled, retries)
+    versions = {}  # open document uri -> latest version sent to the server
     lock = threading.Lock()
 
     def pull(uri, retries=0):
         request_id = f"lsp-pull-to-push-{next(ids)}"
         with lock:
-            pending[request_id] = (uri, retries)
+            pending[request_id] = (uri, versions.get(uri), retries)
         to_server.send({"jsonrpc": "2.0", "id": request_id, "method": "textDocument/diagnostic",
                         "params": {"textDocument": {"uri": uri}}})
 
@@ -72,7 +72,7 @@ def main():
                 # An edit can change other files' diagnostics; pull every open document again.
                 to_server.send({"jsonrpc": "2.0", "id": message["id"], "result": None})
                 with lock:
-                    uris = list(open_documents)
+                    uris = list(versions)
                 for uri in uris:
                     pull(uri)
                 continue
@@ -81,16 +81,21 @@ def main():
             if entry is None:
                 to_client.send(message)
                 continue
-            uri, retries = entry
+            uri, version, retries = entry
             error = message.get("error")
             if error:
                 if error.get("code") in RETRY_CODES and retries < MAX_RETRIES:
                     pull(uri, retries + 1)
                 continue
+            with lock:
+                # The document changed or closed since this pull; a newer pull follows the change.
+                stale = version != versions.get(uri)
             report = message.get("result") or {}
-            if report.get("kind") == "full":
-                to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
-                                "params": {"uri": uri, "diagnostics": report.get("items", [])}})
+            if not stale and report.get("kind") == "full":
+                params = {"uri": uri, "diagnostics": report.get("items", [])}
+                if version is not None:
+                    params["version"] = version
+                to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics", "params": params})
         # The server is gone. Exit so the client sees it and can restart the server;
         # the main thread is still blocked reading the client.
         os._exit(server.wait())
@@ -108,14 +113,17 @@ def main():
             capabilities.setdefault("workspace", {}).setdefault("diagnostics", {})["refreshSupport"] = True
         to_server.send(message)
         if method in PULL_TRIGGERS:
-            uri = message["params"]["textDocument"]["uri"]
+            document = message["params"]["textDocument"]
+            uri = document["uri"]
             with lock:
-                open_documents.add(uri)
+                # Record the version only after forwarding the change, so a pull tagged with
+                # it is answered from that change. didSave has no version; keep the last one.
+                versions[uri] = document.get("version", versions.get(uri))
             pull(uri)
         elif method == "textDocument/didClose":
             uri = message["params"]["textDocument"]["uri"]
             with lock:
-                open_documents.discard(uri)
+                versions.pop(uri, None)
             to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
                             "params": {"uri": uri, "diagnostics": []}})
     server.stdin.close()
