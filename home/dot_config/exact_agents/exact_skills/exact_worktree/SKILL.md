@@ -10,11 +10,11 @@ unset when the target branch is checked out nowhere.
 
 ## Create
 
-Before creating or attaching a worktree, read [create.md](references/create.md).
+Before creating or attaching a worktree (`agt worktree create`, needs `agt` 0.10.0), read [create.md](references/create.md).
 
 ## Prepare
 
-Before checks or commits that require setup, read [prepare.md](references/prepare.md).
+Before checks or commits that require setup (`agt worktree prepare`, `port`), read [prepare.md](references/prepare.md).
 
 ## Recover changes made in the main checkout
 
@@ -28,8 +28,8 @@ Before restoring a removed worktree, read [restore.md](references/restore.md).
 ## Remove
 
 Before removing a worktree or branch, read [remove.md](references/remove.md).
-It owns cleanup eligibility, preservation checks, and removal after push.
+It owns cleanup eligibility, `agt worktree remove`, and removal after push.
 Batch cleanup runs only when the user invokes `worktree-cleanup` or `disk-cleanup`.
 
 After **Remove**, read [removal-checks.md](references/removal-checks.md):
-**Submodules** for initialized submodules, **Blocked removal** when ordinary removal fails.
+**Submodules** for initialized submodules, **Blocked removal** when `agt worktree remove` refuses.

@@ -50,8 +50,9 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    remnant of the MR/PR per the `worktree` skill's **Remove** and
    `host-preflight/references/task-resources.md`, from `<main-checkout>`.
    - Remove the review worktree and any other clean worktree on the source branch,
-     including one that existed before this review. Keep a locked, dirty, or in-use
-     worktree and report it.
+     including one that existed before this review. Run `agt worktree remove <path>` (the
+     plan, no `--yes`) first. Keep a locked worktree, one whose plan's `snapshot_files` is
+     above 0 (dirty work), and one agt refuses, and report it.
    - Delete the local source branch per **Remove after push**. If the remote branch
      is gone and `branch -d` refuses the squash-merged tip, run
      `git branch -D <branch>` only when the local tip equals the merged MR/PR's

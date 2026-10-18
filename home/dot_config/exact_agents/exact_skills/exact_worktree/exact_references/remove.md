@@ -1,48 +1,55 @@
 ## Remove
 
+This needs `agt` 0.10.0 or newer. Follow [agt.md](../../shared/agt.md).
+
 Keep worktrees and branches for open MRs/PRs unless the user requests cleanup.
 Exception: remove a review worktree this review created when the review ends,
-even for an open MR/PR, unless the review installed dependencies in it. Its
-HEAD counts as preserved when `git -C <wt> rev-parse HEAD` equals the source SHA
-the review recorded at creation (no local commits). Otherwise fetch inside the
-worktree (FETCH_HEAD is per worktree): `git -C <wt> fetch origin
-<source-branch-or-head-ref>`, then `git -C <wt> merge-base --is-ancestor HEAD
-FETCH_HEAD` must exit 0. This proof replaces the HEAD proof below; the state
-checks still apply.
+even for an open MR/PR, unless the review installed dependencies in it.
 
-Remove a task worktree after merge or closure, or on explicit cleanup, only after
-the preservation checks below. Never remove the main checkout, a locked worktree,
-or one another task uses. Report retained paths and reasons or the removed path.
+Remove a task worktree after merge or closure, or on explicit cleanup. Never
+remove the main checkout, a locked worktree, or one another task uses. Report
+retained paths and reasons or the removed path.
 
-Before removal, check tracked, untracked, ignored, and submodule state. Preserve
-unknown files and requested deliverables; use **Blocked removal** (`removal-checks.md`) for classification
-and backups even when ignored files would not stop Git. Dirty work is a blocker.
-Prove the worktree's HEAD is preserved on a named local branch that will remain,
-a current remote source branch, or a fetched merge target containing that commit.
-For a detached worktree without that proof, keep it and report the commit ID.
-A squash merge does not prove the original commits are preserved.
+`agt worktree remove` backs the worktree up before it removes it, so dirty and
+untracked work and non-disposable ignored files (`.env*`, credentials, notes) are
+kept: no separate check of them is needed. For a remote MR/PR, fetch and refresh
+its state before using merged/closed status.
 
-For a remote MR/PR, fetch and refresh its state before using merged/closed status.
-Remove a local branch only through **Remove after push** below, `land`'s merged
-branch checks, or the `-D` exceptions in `review` step 7 and in a user-invoked
-`worktree-cleanup` run. If a deleted remote branch prevents that proof, retain the local
-branch; a clean worktree can still be removed when that retained branch preserves
-its HEAD. Outside those exceptions, never force-delete a branch to finish cleanup.
+Take `<worktree-path>` from `agt worktree list` (older worktrees can live
+elsewhere). Move your shell out first: a shell in the deleted directory makes
+later commands fail with "Unable to read current working directory". Then plan,
+read the plan, and remove:
+
+```sh
+cd <main-checkout>
+agt worktree remove <worktree-path>          # plan only: refusals, nothing changes
+agt worktree remove <worktree-path> --yes
+```
+
+- The plan lists what agt refuses: the main checkout, a locked worktree, a path
+  that is not a linked worktree, the current directory, a worktree where another
+  process or another Claude Code session runs (agt ignores your own session and its processes), and
+  a submodule problem. When it refuses, follow
+  **Blocked removal** in [removal-checks.md](removal-checks.md).
+- `--yes` snapshots the working tree as a commit pinned at `refs/agt/backups/<id>`,
+  copies the ignored files that are not disposable under
+  `~/.local/state/agents/backups/<repo>/<stamp>-worktree-<name>/`, then runs
+  `git worktree remove --force`. Report the backup `id`
+  and that `agt worktree restore <id>` brings the worktree back.
+- When the result reports `head_on_local_branch` and `head_on_remote_branch` both
+  false, the HEAD commit is on no branch. Report the HEAD commit ID and the backup ref
+  `refs/agt/backups/<id>`: those commits live only there.
+- It never deletes the branch. Delete a local branch only through **Remove after
+  push** below, `land`'s merged branch checks, or the `-D` exceptions in `review`
+  step 7 and in a user-invoked `worktree-cleanup` run. If a deleted remote branch
+  prevents that proof, retain the local branch; the worktree can still be removed.
+  A squash merge does not prove the original commits are on the branch. Outside
+  those exceptions, never force-delete a branch to finish cleanup.
 
 Follow [task-resources.md](../../host-preflight/references/task-resources.md) for
 task processes, scratch, and preview retention, even when retaining an open-PR
 worktree. Run that cleanup separately from approve, merge, ticket, or other outward
 steps, so a blocked outward step cannot prevent it.
-
-Take `<worktree-path>` from `git worktree list --porcelain`, because older
-worktrees can live elsewhere:
-
-```sh
-git -C <main-checkout> worktree remove <worktree-path>
-```
-
-Move your shell out before removal. A shell in the deleted directory makes
-later commands fail with "Unable to read current working directory".
 
 ### Remove after push
 
@@ -58,18 +65,16 @@ git -C <main-checkout> rev-parse <branch>                     # local tip; must 
 Pass the full ref: a bare `<branch>` pattern also matches
 `refs/heads/<prefix>/<branch>` and can print a second ID.
 If the IDs differ or the command fails, keep the worktree and the branch and
-report both IDs. When `ls-remote` prints nothing, keep the branch; remove a clean
-worktree per **Remove**. Otherwise:
+report both IDs. When `ls-remote` prints nothing, keep the branch; remove the
+worktree per **Remove**. Otherwise remove the worktree per **Remove**, then:
 
 ```sh
-git -C <main-checkout> worktree remove <worktree-path>
 git -C <main-checkout> branch -d <branch>
-git -C <main-checkout> worktree prune
 ```
 
 `branch -d` checks the branch against its upstream and refuses a tip the
 upstream lacks; report the refusal, never answer it with `-D`. The upstream
 must be set (`git push -u` sets it). Without one, `-d` checks against HEAD and
 refuses a pushed branch: run `git branch -u origin/<branch> <branch>` and retry
-`-d` once. Report the removed path and the branch's last commit ID; the remote
-branch keeps the history.
+`-d` once. Report the removed path, the backup id, and the branch's last commit
+ID; the remote branch keeps the history.

@@ -33,7 +33,8 @@ Get the LAN IP with `ipconfig getifaddr en0` on macOS, `hostname -I` on Linux,
 or `ipconfig` on Windows. Claude Code sessions reserve a block of ports:
 `$PORT`, `$PORT_1` … `$PORT_9`. The block is for servers the user opens.
 Give each such server the first block port that nothing listens on.
-Without `$PORT`, give each such server and worktree its own random free port.
+Without `$PORT`, give each such server and worktree its own port: `agt worktree port --env`
+for a worktree (stable per worktree; needs `agt` 0.10.0), otherwise a random free port.
 Automated tests and test runners never use the block. They pick their own
 random free port, such as port 0. Never rely on a tool's default port:
 parallel sessions and worktrees share it. Pass the same port to every start
@@ -50,8 +51,8 @@ and other tasks' directories; do not recursively remove a shared `.cache/agents/
 Delete with literal resolved task paths, never `rm -rf "$VAR"`.
 
 When removing a worktree, its remaining disposable `.cache/agents/scratch/` contents go with
-it, but directory removal does not stop processes. Run the `worktree` skill's
-preservation checks before removal, including its checks of ignored files.
+it, but directory removal does not stop processes. Remove it with
+`agt worktree remove`, which backs up the worktree, including ignored files that are not disposable.
 Keep requested files and copy files awaiting use. If a helper could serve a
 teammate or later task, propose a project path and let the user decide; never
 leave it in the repository without consent.
@@ -59,5 +60,5 @@ leave it in the repository without consent.
 Keep a server running, and retain the worktree it needs, while a requested deliverable or
 live preview depends on its URL. Report its address and purpose; stop it after the user
 finishes using it or requests shutdown. Never stop servers owned by other tasks. Follow
-`worktree` for branch/worktree retention and preservation checks; open-PR worktrees remain
+`worktree` for branch/worktree retention and removal checks; open-PR worktrees remain
 available for follow-up work.

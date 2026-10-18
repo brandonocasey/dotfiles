@@ -1,7 +1,7 @@
 ## Monitoring
 
 For a command this session started, use the harness's completion notice or monitor tool when available.
-For external targets, prefer a deterministic watcher such as `agt watch`.
+For external targets, prefer a deterministic watcher such as `agt ci wait`.
 Start it once, with the same notice or tool.
 Use a `cheap` agent when the harness cannot monitor the process or interpretation is needed; it runs the watcher once and reports the outcome and relevant details.
 While the watcher runs, the main session never polls the same target.
@@ -24,9 +24,9 @@ This applies only to waits; never add calls during active work to keep the cache
 
 After `ship`, follow `ship`'s [ci-repair.md](../../ship/references/ci-repair.md).
 Otherwise, never watch an MR/PR or pipeline for success unless the user asks; `pr-fix` counts as that request.
-"When it merges, do X" also counts. Start one watcher with a long `--deadline-seconds`.
+"When it merges, do X" also counts. Start one watcher with a long `--timeout`.
 Run the queued action only when the watcher reports reason `merged`.
 On any other result, such as `required_checks_passed`, a deadline, or a new head SHA, report it to the user.
-`agt watch` takes GitHub `OWNER/REPO#PR@SHA` and GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA` targets. For other platforms, say the watch is unsupported.
+`agt ci wait` (needs `agt` 0.10.0) takes GitHub `OWNER/REPO#PR@SHA`, GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA`, PR/MR URL, `#PR`/`!IID`, and GitLab pipeline targets. For other platforms, say the watch is unsupported.
 The queued action keeps its consent rules.
 Otherwise, report the pipeline status and stop: no watcher or polling.

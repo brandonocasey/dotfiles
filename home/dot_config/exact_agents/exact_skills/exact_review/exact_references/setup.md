@@ -82,7 +82,7 @@ If the pinned diff is empty, report `empty` and stop.
   [ci-and-conflicts.md](ci-and-conflicts.md), without reading logs or diagnosing: each
   failed job with its label and both job URLs, the source SHA, pending jobs as pending,
   and mergeability.
-- Linked issue, for a GitHub or GitLab MR/PR: run `agt issue find --pr <url>`. Use the
+- Linked issue, for a GitHub or GitLab MR/PR: run `agt issue --offline find --pr <url>`. Use the
   MR/PR URL, not a bare number: a number matches that PR in every synced tracker.
   Add `--tracker <owner/repo>` when only a number is known. The command is read-only
   and uses the local copy, so never run `sync` or any write. It returns no body. Report

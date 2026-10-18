@@ -107,16 +107,15 @@ defer worktree removal until the preview ends.
 
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
-  owns that rule (`git -C <MAIN_WT>` does not move your cwd):
+  owns that rule. Needs `agt` 0.10.0 ([agt.md](../shared/agt.md)); it backs the worktree up
+  first and prints the backup id, which the report repeats:
   ```sh
   cd <MAIN_WT>
-  git worktree remove <worktree-path>
-  git worktree prune
+  agt worktree remove <worktree-path> --yes
   ```
-  If removal refuses, follow the `worktree` skill's **Blocked removal** section. It
-  owns the classification, the backup, and the single `--force`; ask only when it says
-  to. A worktree with initialized submodules always refuses plain removal; the same
-  skill's **Submodules** section decides whether `--force` is allowed.
+  agt ignores your own session and its processes. If it refuses because another session or a process runs in
+  the worktree, keep the worktree and the branch and report the refusal. Follow the `worktree`
+  skill's **Blocked removal** section; ask only when it says to. Its **Submodules** section covers a submodule refusal.
 - Then delete the landed branch, from a checkout that is not on `BRANCH` (it is now an ancestor
   of `TARGET`, so `-d` is safe and refuses if it somehow is not):
   ```sh

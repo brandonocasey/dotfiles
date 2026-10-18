@@ -37,7 +37,8 @@ question. Never invent a key, project, status, or version.
   (`~/.config` when unset). See [agt.md](../shared/agt.md).
   - Do not install `agt` here. Without it, or without a matching tracker, use
     `gh` or `glab`.
-  - Reads use the local copy. Writes are queued and go out only on
+  - Reads use the local copy, synced first when it is stale (see
+    [agt.md](../shared/agt.md)). Writes are queued and go out only on
     `agt issue push`, and only for trackers with `push = true`.
   - Do not change `push` in the agt config.
   - Run `agt issue sync --tracker <owner/repo>` before reads. On a sync error,

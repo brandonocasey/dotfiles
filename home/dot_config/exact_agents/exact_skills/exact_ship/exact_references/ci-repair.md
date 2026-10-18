@@ -2,7 +2,7 @@
 
 ## Watch CI after shipping
 
-After each `ship` push, without waiting for its review, start one `agt watch` with a `--target` for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--deadline-seconds 3300`.
+After each `ship` push, without waiting for its review, start one `agt ci wait` with a `OWNER/REPO#PR@HEAD_SHA` or `GROUP/PROJECT!IID@HEAD_SHA` target for each MR/PR this run shipped, at its last recorded `HEAD_SHA`, and `--timeout 3300`. It needs `agt` 0.10.0 or newer ([agt.md](../../shared/agt.md)).
 Before starting it, stop any earlier CI watch this session started for the same MR/PR. A later push in the same task starts a new watch at the new head.
 Skip it, and give the reason in the report, for `ship --merge` (`merge.md` owns the watch), an explicit monitoring request, a user request not to watch, or a platform other than GitHub or GitLab.
 In Claude Code, run it as a background command in the main session; its exit is the only wake.
@@ -10,7 +10,7 @@ Add no periodic wakes, monitor timeouts, or status checks, and never poll the sa
 On another harness, or when the harness cannot notify on exit, run it through one `cheap` agent under the wake rule in [monitoring.md](../../sub-agents/references/monitoring.md).
 Do not wait for it before the ship report; give `Waiting on: CI watch, ends by <time>`.
 
-On exit, read the final event's top-level `reason`, then each target's `results[].reason`, and report once per watch exit:
+On exit, read the exit code (0 passed or merged, 1 needs action, 2 usage or query error, 3 timeout, 130/143 stopped), then the final event's top-level `reason`, then each target's `results[].reason`, and report once per watch exit:
 
 - `checks_complete`: one line per MR/PR with its target reason, such as `required_checks_passed` or `merged`.
 - `action_required`: for a target with `check_failed` or `check_cancelled`, list each failed or cancelled check with its job URL. For any other blocked target reason, give the reason and detail. Name any target that was still pending; it is no longer watched. Repair as below.
@@ -34,7 +34,7 @@ Before repairing a target, check that its checkout is on the shipped branch, `HE
 
 Retries follow [ci-and-conflicts.md](../../review/references/ci-and-conflicts.md): a proven runner or service failure permits one retry of the failed jobs per run (`glab ci retry <job>` / `gh run rerun <run-id> --failed`). A second failure is real.
 
-From a watch failure, delegate the diagnosis:
+From a CI failure, delegate the diagnosis:
 
 - For each failed target, give one `worker` agent, on its role pin, the failed job URLs, that target's checkout path and branch, and these limits: commit, never push, and change only files the failing jobs need.
 - It returns each job's first error, up to 20 log lines, and its cause: runner or service failure, this ship's change, or other. A cancelled job without an error is other.

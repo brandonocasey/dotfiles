@@ -47,8 +47,9 @@ that the platform is unsupported and stop before any mutation.
   # GitLab fork: fetch origin refs/merge-requests/<iid>/head, then add --detach from FETCH_HEAD
   ```
 
-  Record the worktree's starting SHA (`git -C <wt> rev-parse HEAD`); cleanup compares
-  against it.
+  At review cleanup, remove it with `agt worktree remove <wt> --yes` as `output.md` directs;
+  `output.md` keeps it in some cases. It backs up the worktree, so no starting-SHA comparison is
+  needed.
 
 ## Linked MRs/PRs
 

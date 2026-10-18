@@ -30,7 +30,7 @@ Read the evidence as follows:
 - `git cherry` marks a commit with `-` when its individual patch already exists
   in the target under another commit, for example after a cherry-pick. A squash
   of several commits can contain all branch changes without matching those
-  individual patch IDs; use the merged-PR evidence from step 3 for that case.
+  individual patch IDs; use the merged-PR evidence from the plan (step 3) for that case.
 - `git cherry` omits merge commits. Patch equivalence alone is insufficient
   when `git rev-list --merges <target>..<branch>` reports local-only merges.
   Those merges can contain unique conflict-resolution edits.
@@ -55,7 +55,9 @@ glab mr list --all --search "<branch>" --output json
 glab mr list --merged --target-branch <target> --search "<ticket-key>" --output json
 ```
 
-GitLab fields map as in step 3; `description` stands in for `body`.
+GitLab fields map onto the same checks: `source_branch` → `headRefName`, `sha` → `headRefOid`,
+`target_branch` → `baseRefName`, `merged_at` → `mergedAt`, `closed_at` → `closedAt`,
+`web_url` → `url`, `iid` → `number`; `description` stands in for `body`.
 
 Look for a merged PR whose title, body, or head name references the branch or its ticket key, or
 uses words such as "supersedes", "replaces", or "reland". For a closed-without-merge PR, read its
@@ -84,15 +86,16 @@ Assign one verdict per branch:
   closed-without-merge PR references the branch, and nothing in the target replaces them. Include recent commits and any open PR.
 - **Unknown**: forge, ticket, or merge-tree evidence was unavailable or contradictory. Say which.
 
-Show a table with `branch`, `tip`, `last commit`, `upstream`, `pr`, `verdict`, `recommend`, and
+Show a table with `branch`, `worktree`, `tip`, `last commit`, `upstream`, `pr`, `verdict`, `recommend`, and
 `evidence`. `pr` holds the closed-without-merge or superseding PR number and state, or `-`.
 `recommend` is `remove after confirmation` only for superseded or no-longer-useful branches whose
-worktree, if any, is clean and idle; otherwise `keep`. Quote the exact commands whose output backs
+worktree, if any, is clean and that agt would remove (it refuses a busy one); otherwise `keep`. Quote the exact commands whose output backs
 each verdict. Then ask:
 
 > These retained branches look superseded or no longer useful, including branches whose PR was
 > closed without merging. Name any you want removed with `git branch -D`; I will record each tip
-> SHA for recovery first. This does not remove remote branches or
+> SHA for recovery first. A named branch that has a worktree loses the worktree first, with a
+> backup (`agt worktree restore <id>` brings it back). This does not remove remote branches or
 > discard dirty or active work.
 
 Wait for the answer. Only branches the user names may be removed, one at a time, after a fresh

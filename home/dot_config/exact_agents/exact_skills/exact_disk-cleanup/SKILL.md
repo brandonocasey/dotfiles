@@ -123,8 +123,8 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
 - First run the required `worktree-cleanup` step to qualify whole merged/landed
   worktrees. An analysis-only run skips it unless the user asks. For retained
   checkouts, independently qualify inactive build outputs and linked scratch. See the
-  dependencies bullet above. Classify them under `worktree` preservation/removal
-  checks. Unknown files and requested deliverables still protect the checkout.
+  dependencies bullet above. Classify them under agent-resources **Build outputs and
+  linked scratch**. Unknown files and requested deliverables still protect the checkout.
 - Inventory each worktree's build targets and task scratch separately from the checkout.
   A process using any descendant protects the whole worktree from build cleanup.
   Unfinished durable tasks protect outputs they still need. Rules:

@@ -18,8 +18,9 @@ report its path.
 ## Removal (step 5)
 
 After the merge and source cleanup, move to the primary checkout and remove the
-temporary worktree from a surviving checkout outside that directory (the
-`worktree` skill's **Blocked removal** applies if it refuses). Do this even when
-the source branch must stay checked out in the primary checkout. If the
-temporary tree has become dirty or active, retain it and report its path. Never
+temporary worktree with `agt worktree remove <path> --yes` from a surviving checkout outside
+that directory (the `worktree` skill's **Blocked removal** applies if it refuses). Do this even when
+the source branch must stay checked out in the primary checkout. Run the
+plan first (`agt worktree remove <path>`, no `--yes`). If the plan's `snapshot_files` is above 0
+(dirty work) or agt refuses, retain the tree and report its path. Never
 remove a target worktree that existed before this run.

@@ -19,7 +19,7 @@
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
 - Delete your own task dir at task end with `find <dir> -delete`. `agt cleanup` handles leftovers. Do not append `; echo rc=$?` to commands.
 - Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob. Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands.
-- To find a past session, run `agt task search` first.
+- To find a past session, run `agt sessions search` first.
 - If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.
 
 ## Directories

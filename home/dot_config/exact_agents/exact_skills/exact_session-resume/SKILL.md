@@ -38,13 +38,14 @@ reconcile the newer record with the pending change, and retry with its revision.
 Set `--status complete` only after all task work
 is complete. Use `agt task list` to find active records.
 
-For old context, run `agt task index` to update the private incremental index and see scan
+These session commands need `agt` 0.10.0 or newer. Follow [agt.md](../shared/agt.md).
+For old context, run `agt sessions index` to update the private incremental index and see scan
 coverage (Codex and Claude history, transcripts, archives, alternate profiles, plus unreadable
 or malformed files). Omit `--max-files` and `--byte-limit` unless a bounded partial update is
-required. After a deliberate rewrite deep inside a growing log, run `agt task index --rebuild`.
+required. After a deliberate rewrite deep inside a growing log, run `agt sessions index --rebuild`.
 
-Use `agt task resolve --session <id>` to find an exact session. Use
-`agt task search --query <text> [--session <id>]` to search human turns. Each
+Use `agt sessions resolve --session <id>` to find an exact session. Use
+`agt sessions search --query <text> [--session <id>]` to search human turns. Each
 JSON-array result includes the host, session, source offset, and bounded context.
 Search writes coverage JSON to standard error, including when it finds no match.
 Resolve includes coverage in its JSON object. Use `--file <path>` to add or

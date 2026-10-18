@@ -42,17 +42,21 @@ remove; it removes nothing. Analysis-only runs skip it unless the user asks. Rea
 so the Skill tool cannot load it. The user's `disk-cleanup` request is the explicit batch-cleanup request. Follow its
 merge-evidence procedure for each repository, narrowed to merged/landed
 worktrees. Skip its relevance, closed-PR, and open-review
-removal paths. Apply the `worktree` preservation rules even when PR evidence qualifies.
+removal paths. `agt worktree remove` backs up each worktree, even when PR evidence qualifies.
 Show its step 4 table in the disk-cleanup preview. disk-cleanup's batch approval
 replaces its step 4 prompt only when that batch covers these worktrees;
 otherwise ask its step 4 question.
 
-- Qualification, idleness, preservation, and HEAD-reachability checks come from
-  `worktree-cleanup` and the `worktree` preservation rules; do not restate or loosen them.
+- Qualification and idleness checks come from `worktree-cleanup`. `agt worktree remove` snapshots
+  the worktree and refuses a busy one. Do not restate or loosen them.
 - Check nested worktrees before deleting an ancestor; process eligible children first and
   retain a parent containing any protected child.
 - Do not delete branch refs in this workflow, and never force-delete one to make cleanup
-  succeed.
+  succeed. Never run `agt worktree cleanup --yes` here: it also deletes landed branches.
+  Run `agt worktree cleanup` (plan only, needs agt 0.10.0) inside each repository that
+  disk-cleanup's own discovery found, never with `--all`. Take the worktrees from the `remove` rows
+  the user approved, and remove each with `agt worktree remove <path> --yes`, which keeps the
+  branch.
 
 ### Sessions inactive for at least 30 days
 
@@ -107,5 +111,6 @@ wipe entire profile or shared cache roots. Age alone does not prove a cache file
   remains. Removing a worktree does not authorize deleting its scratch. Never remove shared
   entries until every consumer is accounted for. After approved worktree removal, recheck
   and clean its approved scratch; on failure or new activity, retain it and report why.
-- Remove worktrees sequentially with Git from a surviving checkout; use `worktree` for
+- Remove worktrees with `agt worktree remove <path> --yes`, one at a time, from a surviving
+  checkout; use `worktree` for
   blockers and submodules.
