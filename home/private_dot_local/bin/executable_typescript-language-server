@@ -4,8 +4,9 @@
 # TypeScript 7 ships its own server in tsc. Fall back to the legacy server with
 # TypeScript 6 when the workspace has its own TypeScript below 6, or when a
 # tsconfig uses options TypeScript 7 removed (baseUrl, node/node10 resolution)
-# or silences their deprecation (ignoreDeprecations). Sub-projects up to 3 levels
-# down count, and so does TypeScript hoisted into a parent folder.
+# or silences their deprecation (ignoreDeprecations). Sub-projects up to 2 folders
+# down count, and so do TypeScript hoisted into a parent folder and tsconfig files
+# in parent folders up to the repository root.
 legacy="${XDG_DATA_HOME:-$HOME/.local/share}/typescript-ls-legacy/node_modules/.bin/typescript-language-server"
 
 # Prints the TypeScript package.json files that apply here: the nearest parent's
@@ -29,6 +30,20 @@ typescript_packages() {
     done
 }
 
+# Prints tsconfig files in parent folders up to the repository root, which
+# sub-project configs often extend.
+parent_tsconfigs() {
+  dir=$PWD
+  while [ ! -e "$dir/.git" ] && [ "$dir" != / ] && [ "$dir" != "$HOME" ]; do
+    dir=$(dirname "$dir")
+    for config in "$dir"/tsconfig*.json "$dir"/jsconfig.json; do
+      if [ -f "$config" ]; then
+        echo "$config"
+      fi
+    done
+  done
+}
+
 use_legacy() {
   [ -x "$legacy" ] || return 1
   # TypeScript 6 deprecates what 7 removes, so its projects check the same under 7.
@@ -38,12 +53,17 @@ use_legacy() {
       echo "$package"
     fi
   done | grep -q . && return 0
-  # Sub-project tsconfigs count too; skip dependency and build folders and
-  # commented-out options.
-  find . -maxdepth 3 \( -name node_modules -o -name dist -o -name build -o -name .git \) -prune -o \
-    \( -name 'tsconfig*.json' -o -name jsconfig.json \) -type f \
-    -exec grep -Eil '^[[:space:]]*("baseUrl"|"moduleResolution"[[:space:]]*:[[:space:]]*"node(10)?"|"ignoreDeprecations")' {} + 2>/dev/null |
-    grep -q .
+  # Sub-project and parent tsconfigs count too; skip dependency and build folders
+  # and commented-out options.
+  {
+    find . -maxdepth 3 \( -name node_modules -o -name dist -o -name build -o -name .git \) -prune -o \
+      \( -name 'tsconfig*.json' -o -name jsconfig.json \) -type f -print 2>/dev/null
+    parent_tsconfigs
+  } | while IFS= read -r config; do
+    if grep -Eiq '^[[:space:]]*("baseUrl"|"moduleResolution"[[:space:]]*:[[:space:]]*"node(10)?"|"ignoreDeprecations")' "$config"; then
+      echo "$config"
+    fi
+  done | grep -q .
 }
 
 if use_legacy; then
