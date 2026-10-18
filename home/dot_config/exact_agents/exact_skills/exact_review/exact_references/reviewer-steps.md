@@ -31,7 +31,8 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   Read [ci-and-conflicts.md](ci-and-conflicts.md) for CI status,
   mergeability, repair authorization, retries, and conflict handling.
 - **Local branch**: use its existing worktree if it has one (`git worktree list`);
-  otherwise `git -C <main-checkout> worktree add .worktrees/review-<branch> <branch>`.
+  otherwise follow the `worktree` skill's **Create** section. Check the intended
+  path before creating; report a conflict instead of adding a suffixed duplicate.
 - After you create a review worktree, follow the `worktree` skill's **Prepare** section
   before tests or a `--fix` commit. Never install in a worktree you were given; report
   missing dependencies instead. A server you start uses its own free port.

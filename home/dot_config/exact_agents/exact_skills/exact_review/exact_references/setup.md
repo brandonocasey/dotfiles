@@ -40,7 +40,12 @@ If the pinned diff is empty, report `empty` and stop.
   prompt gives one, else the current checkout.
 - MR/PR: **Source checkout** in [remote-target.md](remote-target.md). Branch: the
   checkout that already has it (`git worktree list`), else the `worktree` skill's
-  `references/create.md`. Reuse a review worktree from an earlier pass.
+  `references/create.md`.
+- Before creating a review worktree, inspect `git worktree list --porcelain` and
+  the intended path. Reuse a compatible existing checkout, including a named review
+  worktree from another session; discovery never depends on an earlier-pass path.
+  Preserve local changes and active work. If reuse is blocked, report the blocker;
+  never create a timestamped or suffixed duplicate to bypass an existing name.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
 - Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
