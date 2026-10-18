@@ -7,6 +7,11 @@ uv = ['latest']
 # Review store for the review skill; private releases, read with the gh token.
 # Pinned: bump it with the review rules that need it (review/references/store.md).
 'github:brandonocasey/agt' = { version = '0.10.2', os = ['macos', 'linux'] }
+# Language servers for Claude Code's LSP plugins. TypeScript 7's tsc serves
+# ~/.local/bin/typescript-language-server.
+'npm:typescript' = '7.0.2'
+'npm:pyright' = '1.1.414'
+rust-analyzer = '2026-10-12'
 
 [settings]
 experimental = true

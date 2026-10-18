@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Code intelligence for Claude Code: the official LSP plugins, plus the legacy TypeScript server that
+# ~/.local/bin/typescript-language-server uses where TypeScript 7 cannot check the workspace.
+# mise installs tsc 7, pyright, and rust-analyzer. Bump a version below to reinstall.
+legacy_packages=(typescript-language-server@6.0.2 typescript@6.0.3)
+# Keep in step with enabledPlugins in .chezmoitemplates/claude-settings-modify.sh.
+plugins=(typescript-lsp pyright-lsp rust-analyzer-lsp)
+# Changes once Claude Code registers the official marketplace, so a skipped first run happens again then.
+# official registered: {{ output "sh" "-c" "grep -qs '\"claude-plugins-official\"' \"$HOME/.claude/plugins/known_marketplaces.json\" && echo yes || echo no" | trim }}
+
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+failed=false
+
+if command -v npm >/dev/null; then
+  npm install --prefix "${XDG_DATA_HOME:-$HOME/.local/share}/typescript-ls-legacy" \
+    --no-save --no-audit --no-fund "${legacy_packages[@]}" || failed=true
+else
+  echo "npm not found; skipping the legacy TypeScript server."
+fi
+
+if ! command -v claude >/dev/null; then
+  echo "claude not found; skipping LSP plugins."
+elif ! grep -qs '"claude-plugins-official"' "$HOME/.claude/plugins/known_marketplaces.json"; then
+  echo "Official plugin marketplace not registered yet; start Claude Code once, then run chezmoi apply again."
+else
+  for plugin in "${plugins[@]}"; do
+    grep -qs "\"$plugin@claude-plugins-official\"" "$HOME/.claude/plugins/installed_plugins.json" ||
+      claude plugin install "$plugin@claude-plugins-official" || failed=true
+  done
+fi
+
+# A failure leaves the hash unrecorded, so the next apply tries again.
+[[ "$failed" == false ]]

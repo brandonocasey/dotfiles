@@ -383,7 +383,10 @@ managed=$(
     "playwright@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": false,
     "context-lean@local-mods": true,
-    "cc-plugin-sec-default@builtin": false
+    "cc-plugin-sec-default@builtin": false,
+    "typescript-lsp@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "local-mods": {
