@@ -124,7 +124,11 @@ end
 
 alias docker-compose-update 'docker-compose pull && docker-compose up --force-recreate --build -d && docker image prune -f'
 
-abbr --add cdroot cd "$(find-root)"
+# Resolve the root when the abbreviation expands, not when the shell starts.
+function _abbr_cdroot
+    echo cd (string escape -- (find-root))
+end
+abbr --add cdroot --function _abbr_cdroot
 
 if [ (uname) = Darwin ]
     alias ollama:start='sudo launchctl load /Library/LaunchDaemons/ollama.plist'

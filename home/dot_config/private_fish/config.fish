@@ -25,18 +25,19 @@ if status is-interactive
         end
     end
 
-    function fzf-fd-nvim -a cwd --description "Open nvm to Telescope find_files selector"
+    # LazyVim.pick opens LazyVim's configured picker (Snacks by default).
+    function fzf-fd-nvim -a cwd --description "Open nvim to the file picker"
         if [ -z "$cwd" ] || [ ! -d "$cwd" ]
             set cwd "$(find-root)"
         end
-        nvim -c "cd $cwd" -c "Telescope find_files"
+        nvim -c "cd $cwd" -c "lua LazyVim.pick('files', { root = false })()"
     end
 
-    function fzf-rg-nvim -a cwd --description "Open nvm to Telescope live_grep selector"
+    function fzf-rg-nvim -a cwd --description "Open nvim to the live grep picker"
         if [ -z "$cwd" ] || [ ! -d "$cwd" ]
             set cwd "$(find-root)"
         end
-        nvim -c "cd $cwd" -c "Telescope live_grep"
+        nvim -c "cd $cwd" -c "lua LazyVim.pick('live_grep', { root = false })()"
     end
 
     # * keybinds

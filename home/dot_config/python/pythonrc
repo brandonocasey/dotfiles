@@ -21,7 +21,11 @@ def setup_history():
 
 	history: Path = state_home / 'python_history'
 
-	readline.read_history_file(str(history))
+	history.parent.mkdir(parents=True, exist_ok=True)
+	try:
+		readline.read_history_file(str(history))
+	except FileNotFoundError:
+		pass
 	atexit.register(readline.write_history_file, str(history))
 
 
