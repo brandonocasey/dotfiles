@@ -169,6 +169,7 @@ that one directory. The entrypoint lays out and seeds its subdirs:
 | `projects/` | your work (the working dir) | bind mount |
 | `claude/` | Claude auth, sessions, MCP | `CLAUDE_CONFIG_DIR`, seeded |
 | `codex/` | Codex auth, config, sessions | `CODEX_HOME`, seeded |
+| `pi/`, `gemini/` | Pi and Gemini auth, sessions, config | symlinked from `~/.pi`, `~/.gemini`, seeded |
 | `opencode/` | opencode auth, sessions | symlinked |
 | `gh/` | GitHub CLI token | symlinked from `~/.config/gh` |
 | `gnupg/` | GPG keyring (signing) | symlinked from `$GNUPGHOME` |
@@ -215,7 +216,9 @@ to your host user so you can edit them back on the host:
 The image ships the Docker CLI (+ compose/buildx plugins) and the compose file
 mounts `/var/run/docker.sock`, so `docker` / `docker compose` inside the
 container drive the **host** daemon (sibling containers, no nested daemon). The
-entrypoint relaxes the socket permissions so the non-root user can use it.
+entrypoint grants the container user's UID access through an ACL (`setfacl`),
+leaving the socket's mode alone. If ACLs are unsupported it prints a warning;
+add the socket's group ID under `group_add` in `docker-compose.yml` instead.
 Security note: socket access is root-equivalent on the host — comment out the
 `docker.sock` mount if you don't want that.
 
@@ -249,8 +252,9 @@ Verify inside the container with `claude mcp list`.
 ### Architecture
 
 The image is **amd64-only**: the toolchain is Homebrew-based and Homebrew is
-unsupported on ARM64 Linux (no bottles), so an arm64 build ships empty. On Apple
-Silicon it runs under Docker Desktop's emulation — slower, but everything works.
+unsupported on ARM64 Linux (no bottles), so an arm64 build ships empty, and Google
+Chrome is amd64-only. `docker-compose.yml` sets `platform: linux/amd64`, so local
+builds match CI. On Apple Silicon it runs under Docker Desktop's emulation.
 
 ### Customization
 

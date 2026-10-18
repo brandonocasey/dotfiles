@@ -29,6 +29,7 @@ ENV CHROME_BIN="/usr/bin/google-chrome-stable"
 # Install base system dependencies
 RUN apt-get -y update && \
   apt-get install -y --no-install-recommends \
+    acl \
     curl \
     sudo \
     procps \

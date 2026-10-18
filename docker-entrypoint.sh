@@ -76,6 +76,12 @@ seed_state "$HOME/.claude" "$STATE_DIR/claude"
 link_state "$STATE_DIR/claude" "$HOME/.claude"
 seed_state "$HOME/.codex"  "$STATE_DIR/codex"
 link_state "$STATE_DIR/codex"  "$HOME/.codex"
+# Pi and Gemini keep auth and sessions beside their managed config, in default
+# dirs nothing relocates, so persist those dirs the same way.
+seed_state "$HOME/.pi"     "$STATE_DIR/pi"
+link_state "$STATE_DIR/pi"     "$HOME/.pi"
+seed_state "$HOME/.gemini" "$STATE_DIR/gemini"
+link_state "$STATE_DIR/gemini" "$HOME/.gemini"
 
 # npm writes auth tokens into its userconfig (the chezmoi-managed npmrc), so seed
 # the managed config into ~/state once, then symlink it. The modify_npmrc template
@@ -112,10 +118,14 @@ if command -v curl >/dev/null 2>&1 && [ ! -x "$WASI_SDK_DIR/bin/clang" ]; then
 fi
 link_state "$WASI_SDK_DIR" "$HOME/.local/share/wasi-sdk"
 
-# Docker-out-of-Docker: if the host Docker socket is mounted, make it usable by
-# this (non-root) user so `docker ...` works inside the container.
-if [ -S /var/run/docker.sock ]; then
-  sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
+# Docker-out-of-Docker: if the host Docker socket is mounted, let this (non-root)
+# user use it so `docker ...` works inside the container. On native Linux this
+# is the host's own socket file, so grant only this UID through an ACL; a mode
+# change would open the host daemon to every local user.
+DOCKER_SOCK=/var/run/docker.sock
+if [ -S "$DOCKER_SOCK" ] && [ ! -w "$DOCKER_SOCK" ]; then
+  sudo setfacl -m "u:$(id -u):rw" "$DOCKER_SOCK" 2>/dev/null ||
+    echo "entrypoint: cannot grant access to $DOCKER_SOCK; add its group ID under group_add in docker-compose.yml" >&2
 fi
 
 # Optional SSH/mosh access. Opt in with ENABLE_SSHD=1 and supply a public key

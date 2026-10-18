@@ -1,5 +1,8 @@
 services:
   dotfiles:
+    # The image installs amd64-only Google Chrome, so build and run it as amd64
+    # everywhere; Apple Silicon hosts use Docker Desktop's emulation.
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile

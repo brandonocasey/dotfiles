@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
+# Runs a throwaway container with the current directory mounted at the same path.
+# Containers get host devices, network, and user namespace by default; set
+# DOCKER_RUN_PRIVILEGED=0 to run without that host access.
+
+host_access=(--privileged --network=host --userns=host)
+[ "${DOCKER_RUN_PRIVILEGED:-1}" = 0 ] && host_access=()
 
 echo "NOTE: current directory will be mounted as $PWD"
 docker run --rm -it \
-  --privileged \
-  --network=host \
-  --userns=host \
+  "${host_access[@]}" \
   -v "$PWD:$PWD" \
   -w "$PWD" \
   "$@"
