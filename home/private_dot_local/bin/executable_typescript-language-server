@@ -1,20 +1,48 @@
 #!/bin/sh
-# Claude Code's typescript-lsp plugin runs typescript-language-server --stdio.
+# Claude Code's typescript-lsp plugin runs typescript-language-server --stdio in
+# the directory Claude Code started in.
 # TypeScript 7 ships its own server in tsc. Fall back to the legacy server with
 # TypeScript 6 when the workspace has its own TypeScript below 6, or when a
-# tsconfig up to 3 levels down uses options TypeScript 7 removed (baseUrl, node/node10 resolution)
-# or silences their deprecation (ignoreDeprecations).
+# tsconfig uses options TypeScript 7 removed (baseUrl, node/node10 resolution)
+# or silences their deprecation (ignoreDeprecations). Sub-projects up to 3 levels
+# down count, and so does TypeScript hoisted into a parent folder.
 legacy="${XDG_DATA_HOME:-$HOME/.local/share}/typescript-ls-legacy/node_modules/.bin/typescript-language-server"
+
+# Prints the TypeScript package.json files that apply here: the nearest parent's
+# and each sub-project's.
+typescript_packages() {
+  dir=$PWD
+  while :; do
+    if [ -f "$dir/node_modules/typescript/package.json" ]; then
+      echo "$dir/node_modules/typescript/package.json"
+      break
+    fi
+    [ "$dir" = / ] && break
+    dir=$(dirname "$dir")
+  done
+  find . -maxdepth 3 \( -name dist -o -name build -o -name .git \) -prune -o \
+    -name node_modules -type d -prune -print 2>/dev/null |
+    while IFS= read -r modules; do
+      if [ -f "$modules/typescript/package.json" ]; then
+        echo "$modules/typescript/package.json"
+      fi
+    done
+}
 
 use_legacy() {
   [ -x "$legacy" ] || return 1
   # TypeScript 6 deprecates what 7 removes, so its projects check the same under 7.
-  ts_major=$(sed -n 's/^ *"version": *"\([0-9]*\)\..*/\1/p' node_modules/typescript/package.json 2>/dev/null | head -n 1)
-  [ -n "$ts_major" ] && [ "$ts_major" -lt 6 ] && return 0
-  # Sub-project tsconfigs count too; skip dependency and build folders.
+  typescript_packages | while IFS= read -r package; do
+    major=$(sed -n 's/^ *"version": *"\([0-9]*\)\..*/\1/p' "$package" | head -n 1)
+    if [ -n "$major" ] && [ "$major" -lt 6 ]; then
+      echo "$package"
+    fi
+  done | grep -q . && return 0
+  # Sub-project tsconfigs count too; skip dependency and build folders and
+  # commented-out options.
   find . -maxdepth 3 \( -name node_modules -o -name dist -o -name build -o -name .git \) -prune -o \
     \( -name 'tsconfig*.json' -o -name jsconfig.json \) -type f \
-    -exec grep -Eil '"baseUrl"|"moduleResolution"[[:space:]]*:[[:space:]]*"node(10)?"|"ignoreDeprecations"' {} + 2>/dev/null |
+    -exec grep -Eil '^[[:space:]]*("baseUrl"|"moduleResolution"[[:space:]]*:[[:space:]]*"node(10)?"|"ignoreDeprecations")' {} + 2>/dev/null |
     grep -q .
 }
 
