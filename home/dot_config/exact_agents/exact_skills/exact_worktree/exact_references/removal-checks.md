@@ -13,7 +13,8 @@ when each of them holds nothing unique:
 - every commit its local branches, tags, stash, other refs and HEAD reach is on a
   remote-tracking branch or in the main checkout's clone (a tag may also be one
   its remote advertises);
-- it is at the commit the worktree records, clean, untracked files included, and
+- it is at the commit the worktree records, clean, untracked files included
+  (only an untracked `.DS_Store`, `Thumbs.db` or `desktop.ini` passes), and
   holds no non-disposable ignored files;
 - it has no linked worktrees and no unfinished rebase, merge or bisect.
 
