@@ -22,8 +22,8 @@ let port;
 let token;
 let serverErrors = '';
 
-function run(args) {
-  return spawnSync(process.execPath, [helper, ...args], { encoding: 'utf8' });
+function run(args, env = process.env) {
+  return spawnSync(process.execPath, [helper, ...args], { encoding: 'utf8', env });
 }
 
 function availablePort() {
@@ -111,6 +111,27 @@ test('one state directory rejects a second active server', () => {
   const result = run(['serve', '--config', config, '--state-dir', stateDir, '--port', String(port)]);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /state directory is in use/);
+});
+
+test('stale server state never signals a process that reused its PID', async () => {
+  const staleState = path.join(root, 'stale-state');
+  fs.mkdirSync(staleState, { recursive: true, mode: 0o700 });
+  const serverFile = path.join(staleState, 'server.json');
+  const unrelated = spawn('sleep', ['30'], { stdio: 'ignore' });
+  try {
+    const stale = { token: 'stale', port, config, pid: unrelated.pid, started: 0 };
+    fs.writeFileSync(serverFile, JSON.stringify(stale), { mode: 0o600 });
+    assert.match(run(['stop', '--state-dir', staleState]).stdout, /not running/);
+    assert.equal(fs.existsSync(serverFile), false);
+    fs.writeFileSync(serverFile, JSON.stringify(stale), { mode: 0o600 });
+    const reused = run(['serve', '--config', config, '--state-dir', staleState, '--port', String(port)]);
+    assert.doesNotMatch(reused.stderr, /state directory is in use/);
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.equal(unrelated.signalCode, null);
+    assert.equal(unrelated.exitCode, null);
+  } finally {
+    unrelated.kill();
+  }
 });
 
 test('latest select or reject removes the ID from the opposite set', async () => {
@@ -261,5 +282,6 @@ test('a detached server keeps its token across restarts and stops on request', a
   await waitFor(() => !fs.existsSync(path.join(detachedState, 'server.json')));
   const second = JSON.parse(start().stdout);
   assert.equal(second.token, first.token);
-  assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
+  // Stopping from a shell with another time zone still finds the server.
+  assert.match(run(['stop', '--state-dir', detachedState], { ...process.env, TZ: 'Asia/Tokyo' }).stdout, /stopped/);
 });

@@ -6,7 +6,7 @@ const http = require('node:http');
 const crypto = require('node:crypto');
 const path = require('node:path');
 const os = require('node:os');
-const { spawn } = require('node:child_process');
+const { execFileSync, spawn } = require('node:child_process');
 
 function fail(message) {
   process.stderr.write(`agent-preview: ${message}\n`);
@@ -319,20 +319,31 @@ function sendJson(response, status, value) {
   response.end(`${JSON.stringify(value)}\n`);
 }
 
-function processIsRunning(pid) {
-  if (!Number.isSafeInteger(pid) || pid < 1) return false;
+// The OS reuses PIDs, so a recorded server is identified by its PID plus its
+// start time in epoch seconds. ps reports the start time from a boot time that
+// moves when the clock is stepped, so allow a little drift.
+function processStart(pid) {
+  if (!Number.isSafeInteger(pid) || pid < 1) return null;
   try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    return error.code === 'EPERM';
+    const started = execFileSync('ps', ['-o', 'lstart=', '-p', String(pid)], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], env: { ...process.env, TZ: 'UTC', LC_ALL: 'C' },
+    }).trim();
+    const seconds = Date.parse(`${started} UTC`) / 1000;
+    return Number.isFinite(seconds) ? seconds : null;
+  } catch {
+    return null;
   }
+}
+
+function serverIsRunning(metadata) {
+  const started = processStart(metadata.pid);
+  return started !== null && typeof metadata.started === 'number' && Math.abs(started - metadata.started) <= 2;
 }
 
 function reserveServerFile(filename, metadata) {
   if (fs.existsSync(filename)) {
     const current = readJson(filename);
-    if (processIsRunning(current.pid)) throw new Error(`state directory is in use by process ${current.pid}`);
+    if (serverIsRunning(current)) throw new Error(`state directory is in use by process ${current.pid}`);
     fs.unlinkSync(filename);
   }
   fs.writeFileSync(filename, `${JSON.stringify(metadata, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
@@ -386,7 +397,7 @@ function serve(values) {
   const serverFile = path.join(stateDir, 'server.json');
   const token = persistentToken(path.join(stateDir, 'token'));
   if (!fs.existsSync(stateFile)) writePrivateJson(stateFile, { seq: 0, selected: [], rejected: [], events: [] });
-  reserveServerFile(serverFile, { token, port, config: configFile, pid: process.pid });
+  reserveServerFile(serverFile, { token, port, config: configFile, pid: process.pid, started: processStart(process.pid) });
   const eventClients = new Set();
   const server = http.createServer((request, response) => {
     let url;
@@ -531,8 +542,9 @@ function stop(values) {
   if (!values['state-dir']) throw new Error(`missing stop option\n${usage()}`);
   const serverFile = path.join(privateDirectory(values['state-dir']), 'server.json');
   if (!fs.existsSync(serverFile)) return process.stdout.write('not running\n');
-  const { pid } = readJson(serverFile);
-  if (!processIsRunning(pid)) {
+  const metadata = readJson(serverFile);
+  const { pid } = metadata;
+  if (!serverIsRunning(metadata)) {
     fs.unlinkSync(serverFile);
     return process.stdout.write('not running\n');
   }
