@@ -30,9 +30,10 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   comments, discussions, threads, or review records; skip its discussion commands.
   Read [ci-and-conflicts.md](ci-and-conflicts.md) for CI status,
   mergeability, repair authorization, retries, and conflict handling.
-- **Local branch**: use its existing worktree if it has one (`git worktree list`);
-  otherwise follow the `worktree` skill's **Create** section. Check the intended
-  path before creating; report a conflict instead of adding a suffixed duplicate.
+- **Local branch**: prefer its existing worktree when suitable (`git worktree list`);
+  reuse is optional. If it is unsuitable, create a detached review worktree at the
+  pinned branch SHA in an unused path, preserving the existing checkout. If the
+  branch is checked out nowhere, follow the `worktree` skill's **Create** section.
 - After you create a review worktree, follow the `worktree` skill's **Prepare** section
   before tests or a `--fix` commit. Never install in a worktree you were given; report
   missing dependencies instead. A server you start uses its own free port.

@@ -48,7 +48,7 @@ that the platform is unsupported and stop before any mutation.
   Pin the fetched commit and verify it matches the review's head SHA.
   Inspect `git -C <main-checkout> worktree list --porcelain` and the intended
   `<main-checkout>/.worktrees/review-<number>` path before adding anything.
-  Reuse a compatible earlier-pass checkout, existing source-branch worktree, or
+  Prefer a compatible earlier-pass checkout, existing source-branch worktree, or
   matching named review worktree, including one retained by another session.
   Reused checkouts must be outside the main checkout and match the pinned head.
 
@@ -56,8 +56,9 @@ that the platform is unsupported and stop before any mutation.
   `git -C <wt> switch --detach <head-sha>` only when clean and not in use.
   Never reset local changes or move an existing source branch to match the pin.
   If a matching checkout or path is dirty, locked, occupied, or incompatible,
-  report the blocker; never bypass it with a timestamped or suffixed duplicate.
-  Only when no reusable checkout or matching path exists, create the stable name:
+  leave it untouched. Reuse is optional; create another worktree when needed.
+  Prefer the stable name below when its path is available; otherwise choose an
+  unused name. Avoid extra names when safe reuse is possible.
 
   ```sh
   git -C <main-checkout> worktree add --detach .worktrees/review-<number> <head-sha>
