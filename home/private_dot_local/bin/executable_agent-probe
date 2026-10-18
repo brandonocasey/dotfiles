@@ -3,6 +3,8 @@
 
 Usage: agent-probe (--prompt TEXT | --prompt-file FILE) [--variant NAME=ARGS]... [-n RUNS] [options]
 
+NAME is letters, digits, '.', '_' or '-'; it names the run logs in --out.
+
   agent-probe --prompt 'Reply with OK only.' \\
       --variant base= --variant off='--settings off.json' -n 3
 
@@ -26,6 +28,7 @@ starts that way is marked failed. --allow-inline-tools turns all of this off.
 import argparse
 import json
 import os
+import re
 import shlex
 import shutil
 import statistics
@@ -45,6 +48,7 @@ OFF_VALUES = {'0', 'false', 'no', 'off'}
 # The API rejects this model unbilled, after Claude Code has printed its init event.
 CHECK_MODEL = 'claude-agent-probe-startup-check'
 LIVE_MCP_STATUSES = {'connected', 'pending'}
+VARIANT_NAME = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]*')
 
 
 def sessions_tool():
@@ -55,6 +59,10 @@ def parse_variant(spec):
     name, sep, flags = spec.partition('=')
     if not sep or not name:
         raise argparse.ArgumentTypeError(f'variant must be NAME=ARGS, got {spec!r}')
+    # NAME becomes part of the log file names, so it must stay inside --out.
+    if not VARIANT_NAME.fullmatch(name):
+        raise argparse.ArgumentTypeError(
+            f'variant name must be letters, digits, ".", "_" or "-", starting with a letter or digit; got {name!r}')
     return name, [absolute_if_file(arg) for arg in shlex.split(flags)]
 
 
