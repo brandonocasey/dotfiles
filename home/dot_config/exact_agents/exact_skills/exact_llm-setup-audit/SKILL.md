@@ -30,8 +30,9 @@ Files under `~/.config/agents/` reach multiple harnesses through links.
 State that shared impact before proposing a move.
 
 Read every target whole and record before/after tokens.
-Measure the starting context with `agent-probe --prompt 'Reply with OK only.'` in the project directory, before and after.
-When the rules, skill-listing, and agent breakdown matters, ask the user to run `/context` interactively.
+Measure global rules, skills, and agents with `agent-probe --prompt 'Reply with OK only.'`, before and after.
+It runs in an empty directory, so it never loads project files.
+For project files or a per-file breakdown, ask the user to run `/context` in the project, before and after.
 Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
 Before applying a safe rules or config item, copy the target to `~/.local/state/agents/backups/<name>/<stamp>/`.
 Skill edits need no backup.
