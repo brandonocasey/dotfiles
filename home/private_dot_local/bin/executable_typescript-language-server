@@ -21,4 +21,5 @@ use_legacy() {
 if use_legacy; then
   exec "$legacy" "$@"
 fi
-exec tsc --lsp "$@"
+# TypeScript 7 only answers pull diagnostics; the bridge pushes them to Claude Code.
+exec python3 -I "$HOME/.local/bin/lsp-pull-to-push" tsc --lsp "$@"

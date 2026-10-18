@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Run an LSP server that only answers pull diagnostics for a client that reads pushed ones.
+
+Usage: python3 -I lsp-pull-to-push <server command...>
+
+Claude Code reads textDocument/publishDiagnostics. TypeScript 7 (`tsc --lsp`) only answers
+textDocument/diagnostic requests. After each open, change, or save, this bridge pulls the
+document's diagnostics and pushes them to the client. Other messages pass through unchanged.
+"""
+import itertools
+import json
+import subprocess
+import sys
+import threading
+
+PULL_TRIGGERS = {"textDocument/didOpen", "textDocument/didChange", "textDocument/didSave"}
+# ContentModified and ServerCancelled: the document changed while the server worked; pull again.
+RETRY_CODES = {-32801, -32802}
+MAX_RETRIES = 3
+
+
+def read_message(stream):
+    length = None
+    while True:
+        line = stream.readline()
+        if not line:
+            return None
+        line = line.strip()
+        if not line:
+            break
+        name, _, value = line.partition(b":")
+        if name.strip().lower() == b"content-length":
+            length = int(value)
+    if length is None:
+        return None
+    return json.loads(stream.read(length))
+
+
+class Writer:
+    def __init__(self, stream):
+        self.stream = stream
+        self.lock = threading.Lock()
+
+    def send(self, message):
+        body = json.dumps(message, separators=(",", ":")).encode()
+        with self.lock:
+            self.stream.write(b"Content-Length: %d\r\n\r\n" % len(body) + body)
+            self.stream.flush()
+
+
+def main():
+    server = subprocess.Popen(sys.argv[1:], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    to_server = Writer(server.stdin)
+    to_client = Writer(sys.stdout.buffer)
+    ids = itertools.count(1)
+    pending = {}  # bridge request id -> (uri, retries)
+    lock = threading.Lock()
+
+    def pull(uri, retries=0):
+        request_id = f"lsp-pull-to-push-{next(ids)}"
+        with lock:
+            pending[request_id] = (uri, retries)
+        to_server.send({"jsonrpc": "2.0", "id": request_id, "method": "textDocument/diagnostic",
+                        "params": {"textDocument": {"uri": uri}}})
+
+    def from_server():
+        while (message := read_message(server.stdout)) is not None:
+            with lock:
+                entry = pending.pop(message.get("id"), None) if "method" not in message else None
+            if entry is None:
+                to_client.send(message)
+                continue
+            uri, retries = entry
+            error = message.get("error")
+            if error:
+                if error.get("code") in RETRY_CODES and retries < MAX_RETRIES:
+                    pull(uri, retries + 1)
+                continue
+            report = message.get("result") or {}
+            if report.get("kind") == "full":
+                to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                                "params": {"uri": uri, "diagnostics": report.get("items", [])}})
+        sys.stdout.close()
+
+    threading.Thread(target=from_server, daemon=True).start()
+
+    stdin = sys.stdin.buffer
+    while (message := read_message(stdin)) is not None:
+        method = message.get("method")
+        if method == "initialize":
+            # Declare pull support so the server answers textDocument/diagnostic.
+            capabilities = message.setdefault("params", {}).setdefault("capabilities", {})
+            capabilities.setdefault("textDocument", {}).setdefault("diagnostic", {"dynamicRegistration": False})
+        to_server.send(message)
+        if method in PULL_TRIGGERS:
+            pull(message["params"]["textDocument"]["uri"])
+        elif method == "textDocument/didClose":
+            to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                            "params": {"uri": message["params"]["textDocument"]["uri"], "diagnostics": []}})
+    server.stdin.close()
+    sys.exit(server.wait())
+
+
+if __name__ == "__main__":
+    main()
