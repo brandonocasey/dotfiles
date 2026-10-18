@@ -127,9 +127,10 @@ review finding, a check failure the change did not cause, or a new problem.
 
 - Put the suggestion in the `Separately:` line or the report, with the command:
   `agt issue create --tracker <owner/repo> --title <title> --body -`.
-- Queue it only after the user agrees. Push it per step 4: pending check, dry-run, push.
-- Use the repo's tracker in `$XDG_CONFIG_HOME/agt/config.toml`. Without one, say so
-  and suggest adding the repo as a tracker.
+- Without `agt` or a matching tracker, suggest `gh issue create` or
+  `glab issue create` instead, as step 4 does.
+- Create it only after the user agrees. For `agt`, push it per step 4: pending
+  check, dry-run, push.
 - For a Jira project, suggest a Jira ticket per step 4 instead.
 - Write the title and body per **Ticket writing**, with the evidence and `path:line`.
 
