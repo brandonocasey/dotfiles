@@ -2,10 +2,9 @@
 
 - Complete all authorized, safe, in-scope work and todos yourself, including reversible next steps; do not end a turn by offering one. Only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately; queue separate tasks unless requested now.
 - Defect questions authorize fixes; design questions require agreement before changes. “just explain”, “just suggest”, and “don't change yet” mean answer only. After two “still broken” turns, stop. Name the doubtful assumption, ask one diagnostic question, and give a rewritten prompt, with what we learned, for a fresh session.
-- When I must run something, give me one short, unchained command. Put longer work in a self-deleting scratch script and hand me `! sh <script>`.
 - After an auto mode denial, never retry the action reworded, split, or via another tool. If it is still in scope, say what was blocked and why, hand it to me as `! sh <script>`, and continue other work.
 {{- if .claude }}
-- For background runs, wait with Monitor.
+- Wait for a background run's exit notification, not by polling its log; use Monitor only for a stream of events.
 - Never end a turn asking me to say "continue". Do the step now, or name the one decision. Never end a turn on "I'll continue when X finishes" unless a Monitor or background task will wake you; name it.
 - When your loaded instructions path is under `~/.claude-two`, write Claude CLI commands for my terminal as `claude-two ...`. Keep `claude` inside `!` commands and the scripts they run.
 {{- end }}
