@@ -67,14 +67,17 @@ class ZshEqualsTests(GuardTestCase):
 class ExitStatusEchoTests(GuardTestCase):
     def test_printed_exit_status_is_blocked(self):
         for command in ("make; echo rc=$?", 'make; echo "exit=$?"', "make; echo $?",
-                        'make || printf "rc=%s\\n" "$?"', "make\necho rc=$?", "make && printf '%s\\n' $?"):
+                        'make || printf "rc=%s\\n" "$?"', "make\necho rc=$?", "make && printf '%s\\n' $?",
+                        "make; echo rc=$? >&2", "make; echo rc=$? 2>&1"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
     def test_status_in_tests_and_assignments_is_allowed(self):
         for command in ("make; rc=$?", "make; if [ $? -ne 0 ]; then exit 1; fi", "make || [ $? -eq 2 ]",
                         "make; exit $?", "echo '$?'", "echo done",
-                        "cat <<EOF\nexit=$?\nEOF", "cat <<'EOF'\necho rc=$?\nEOF\necho ok"):
+                        "cat <<EOF\nexit=$?\nEOF", "cat <<'EOF'\necho rc=$?\nEOF\necho ok",
+                        'make > log 2>&1; echo "exit $?" >> log', "make; echo $? > done",
+                        "make; printf '%s\\n' \"$?\" >>\"$LOG\""):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 

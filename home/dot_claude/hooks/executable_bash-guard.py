@@ -163,6 +163,8 @@ TEST_BRACKETS = re.compile(r"\[\[[\s\S]*?\]\]")
 CMD_START = r"(?:^|[;&|(\n{]|\b(?:then|do|else)\b)\s*(?:\S*=\S*\s+)*(?:\S*/)?"
 SEGMENT_END = re.compile(r"[;|]|(?<![<>])&(?!>)|(?<!\\)\n")
 PRINT_CMD = re.compile(CMD_START + r"(?:builtin\s+|command\s+)?(?:echo|printf)\b")
+# > or >> to a file, not a descriptor duplication such as >&2.
+FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
 CLAUDE_CMD = re.compile(CMD_START + r"claude(?:-two)?\b")
 PRINT_FLAG = re.compile(r"(?:^|\s)(?:-p|--print)(?=\s|$)")
 TOOLS_FLAG = re.compile(r"(?:^|\s)--tools(?:=|\s+)(\"[^\"]*\"|'[^']*'|\S*)")
@@ -221,7 +223,10 @@ def problems(cmd: str, background: bool) -> list[str]:
             "printf '--- %s\\n' and quote any other word that starts with =."
         )
     for args in segments(cmd, code, PRINT_CMD):
-        if "$?" in re.sub(r"'[^']*'", "", args):
+        # Writing $? to a file records a background job's status for later; allow it.
+        if "$?" in re.sub(r"'[^']*'", "", args) and not FILE_REDIRECT.search(
+            re.sub(r"'[^']*'|\"[^\"]*\"", "", args)
+        ):
             found.append(
                 "Do not print $?; the Bash tool already reports the exit code "
                 "of every command."
