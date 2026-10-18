@@ -19,7 +19,33 @@ env:
 # ARM64 Linux (no bottles), so an arm64 image ships empty. On Apple Silicon this
 # image runs fine under Docker Desktop's emulation.
 jobs:
+  # Regression tests run first; a failure stops the image from being published.
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fish tmux rsync zip
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Python tests
+        run: python3 -m unittest discover -s test/unit -v
+
+      - name: Node tests
+        run: node --test home/dot_config/exact_agents/exact_skills/*/exact_test/*.test.*js
+
   build_and_publish:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
