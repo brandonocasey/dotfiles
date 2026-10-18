@@ -199,12 +199,13 @@
 	directory = *
 [gpg "ssh"]
 	allowedSignersFile = ~/.config/git/allowed_signers
+# Use gh from PATH, else the Homebrew paths (cron and GUI apps may lack them on PATH).
 [credential "https://github.com"]
 	helper = 
-	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
+	helper = "!f() { for gh in gh /opt/homebrew/bin/gh /home/linuxbrew/.linuxbrew/bin/gh; do command -v \"$gh\" >/dev/null 2>&1 && exec \"$gh\" auth git-credential \"$@\"; done; }; f"
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/home/linuxbrew/.linuxbrew/bin/gh auth git-credential
+	helper = "!f() { for gh in gh /opt/homebrew/bin/gh /home/linuxbrew/.linuxbrew/bin/gh; do command -v \"$gh\" >/dev/null 2>&1 && exec \"$gh\" auth git-credential \"$@\"; done; }; f"
 # Forgejo has no HTTPS login here; fetch https:// remotes and submodules over SSH
 [url "git@forgejo.koof.win:"]
 	insteadOf = https://forgejo.koof.win/

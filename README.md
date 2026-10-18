@@ -5,6 +5,11 @@
 ### Linux/Mac
 `sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply brandonocasey; rm -rf ./bin/chezmoi && rmdir bin`
 
+On Linux, the bootstrap script installs Homebrew's prerequisites with `apt-get`,
+`dnf`, `yum`, or `pacman`. With another package manager, install a compiler,
+`curl`, `file`, `git`, `xsel`, and `unzip` first. If an agent installer fails,
+`chezmoi apply` reports the error and retries it on the next apply.
+
 ### Windows
 `Set-ExecutionPolicy RemoteSigned -scope CurrentUser; (irm -useb https://get.chezmoi.io/ps1) | powershell -c -; bin/chezmoi init --apply brandonocasey; rm -r ./bin -fo`
 

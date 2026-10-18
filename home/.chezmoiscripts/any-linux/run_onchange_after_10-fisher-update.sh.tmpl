@@ -9,7 +9,10 @@ fi
 
 if command -v fish 2>/dev/null 1>/dev/null; then
   echo "Updating fisher plugins"
-  if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ]; then
+  # `fisher update` installs and removes plugins to match fish_plugins.
+  if [ -f "$HOME/.config/fish/functions/fisher.fish" ]; then
+    fish -c "fisher update" 1>$OUTPUT
+  else
     fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher update" 1>$OUTPUT
   fi
   fish -c "fish_update_completions" 1>$OUTPUT

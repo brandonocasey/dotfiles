@@ -27,15 +27,20 @@ if cmd_exists sudo; then
   done &
 fi
 
-install_linux_pkg() {
-  if [ "$UNAME" = "Linux" ]; then
-    if cmd_exists apt-get; then
-      $SUDO_ME apt-get -y update && $SUDO_ME apt-get install -y "$@"
-    elif cmd_exists yum; then
-      $SUDO_ME yum install -y "$@"
-    elif cmd_exists pacman; then
-      $SUDO_ME pacman -S --no-confirm "$@"
-    fi
+# Homebrew's Linux prerequisites (https://docs.brew.sh/Homebrew-on-Linux), named
+# per package manager, plus the clipboard and unzip tools these dotfiles use.
+install_linux_prerequisites() {
+  local common=(curl file git xsel unzip)
+  if cmd_exists apt-get; then
+    $SUDO_ME apt-get -y update && $SUDO_ME apt-get install -y build-essential procps "${common[@]}"
+  elif cmd_exists dnf; then
+    $SUDO_ME dnf install -y @development-tools procps-ng "${common[@]}"
+  elif cmd_exists yum; then
+    $SUDO_ME yum groupinstall -y 'Development Tools' && $SUDO_ME yum install -y procps-ng "${common[@]}"
+  elif cmd_exists pacman; then
+    $SUDO_ME pacman -S --needed --noconfirm base-devel procps-ng "${common[@]}"
+  else
+    echo "No supported package manager (apt-get, dnf, yum, pacman); install a compiler, curl, file, git, xsel and unzip yourself" >&2
   fi
 }
 
@@ -47,7 +52,7 @@ if [ "$UNAME" = "Darwin" ]; then
     sleep 5
   done
 else
-  install_linux_pkg curl git build-essential xsel unzip
+  install_linux_prerequisites
 fi
 
 # install brew if not installed
