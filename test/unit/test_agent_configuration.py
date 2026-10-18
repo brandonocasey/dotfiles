@@ -1,6 +1,8 @@
 """Exercise agent configuration scripts with isolated user data."""
+import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import tomllib
@@ -23,6 +25,22 @@ def render_codex_modifier(directory):
 
 
 class AgentConfigurationTests(unittest.TestCase):
+    def test_claude_cleanup_skips_compaction(self):
+        template = (REPO / "home/.chezmoitemplates/claude-settings-modify.sh").read_text()
+        settings = json.loads(template.split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0])
+
+        def commands(event):
+            return [hook["command"] for group in settings["hooks"]["SessionStart"]
+                    if re.search(group.get("matcher", ".*"), event)
+                    for hook in group["hooks"]]
+
+        self.assertFalse(any("agt cleanup" in command for command in commands("compact")))
+        for event in ("startup", "resume", "fork", "clear"):
+            with self.subTest(event=event):
+                self.assertIn("agt cleanup --count", commands(event))
+                self.assertIn("agt cleanup --only output --yes >/dev/null", commands(event))
+        self.assertIn("sh ~/.claude/hooks/session-port.sh", commands("compact"))
+
     def test_codex_visibility_preserves_live_settings(self):
         scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
         scratch.mkdir(parents=True, exist_ok=True)

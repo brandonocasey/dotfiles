@@ -96,8 +96,9 @@ skill loads monitoring and escalation procedures only when those operations
 apply; its role pins, handoff rules, and verification requirements remain in
 the main skill.
 
-The session-start cleanup hook expires scratch files after 30 days. It preserves
-copy files awaiting use regardless of age.
+Claude's cleanup notice and output-expiry hooks run on startup, resume, fork,
+and clear. They skip compaction. Output cleanup removes disposable report copies
+untouched for seven days.
 
 To update `frontend-design`, copy the upstream files into
 `home/dot_config/exact_agents/exact_skills/exact_frontend-design/`. Keep the

@@ -269,7 +269,12 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/session-port.sh",
             "timeout": 5
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "startup|resume|fork|clear",
+        "hooks": [
           {
             "type": "command",
             "command": "agt cleanup --count",
