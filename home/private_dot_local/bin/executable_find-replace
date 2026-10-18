@@ -24,29 +24,24 @@ find_replace() {
         dir="$1"; shift
     fi
 
-
-    ORIG_GLOBIGNORE=$GLOBIGNORE
-    GLOBIGNORE=*.*
-
-    files="$(grep -lR "$find" "$dir" --exclude-dir 'node_modules' --exclude-dir '.git')"
-    if [ -z "$files" ]; then
+    local found=0 file tmp
+    # NUL-separated names keep paths with spaces intact. Writing sed's output
+    # back through a temp file keeps trailing newlines and the file's mode.
+    while IFS= read -r -d '' file; do
+        found=1
+        echo "Doing find replace in $file"
+        tmp="$(mktemp)"
+        if ! sed "s~$find~$replace~g" "$file" > "$tmp" || { [ -s "$file" ] && [ ! -s "$tmp" ]; }; then
+            echo "Failed to do find replace on $file, contents ended up null"
+            rm -f "$tmp"
+            continue
+        fi
+        cat "$tmp" > "$file"
+        rm -f "$tmp"
+    done < <(grep -lR --null "$find" "$dir" --exclude-dir 'node_modules' --exclude-dir '.git')
+    if [ "$found" = 0 ]; then
         echo "Found no files with the term $find"
     fi
-    for file in $(echo "$files"); do
-        if [ -z "$file" ]; then
-            continue
-        fi
-
-        echo "Doing find replace in $file"
-        local contents="$(cat "$file" | sed "s~$find~$replace~g")"
-        if [ -z "$contents" ]; then
-            echo "Failed to do find replace on $file, contents ended up null"
-            continue
-        fi
-        echo "$contents" > "$file"
-    done
-
-    GLOBIGNORE=$ORIG_GLOBIGNORE
 }
 
 find_replace "$@"

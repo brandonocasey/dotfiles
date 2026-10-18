@@ -1,12 +1,29 @@
 #!/usr/bin/env bash
+# Usage: rename FROM TO [FROM TO ...]
+# In the current directory, renames files whose names start or end with FROM,
+# replacing FROM with TO. Refuses to overwrite an existing file.
 
+if [ "$#" -eq 0 ] || [ $(($# % 2)) -ne 0 ]; then
+  echo "Usage: rename FROM TO [FROM TO ...]" >&2
+  exit 1
+fi
+
+status=0
 rename() {
-  for i in *$1 $1*; do
-    ! [ -f "$i" ] && continue
-    mv -v "$i" "${i/$1/$2}"
+  for i in *"$1" "$1"*; do
+    [ -f "$i" ] || continue
+    dest="${i/"$1"/"$2"}"
+    if [ -e "$dest" ]; then
+      echo "rename: not renaming '$i': '$dest' already exists" >&2
+      status=1
+      continue
+    fi
+    mv -v "$i" "$dest" || status=1
   done
 }
 
 while [ "$#" -gt 1 ]; do
-  rename "$1" "$2"; shift
+  rename "$1" "$2"
+  shift 2
 done
+exit "$status"

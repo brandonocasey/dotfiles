@@ -67,11 +67,12 @@ extract() {
     return $?
   }
 
+  local status=0
   while [ $# -gt 0 ]; do
     local file="$(cd $(dirname "$1") && pwd -P)/$(basename "$1")"; shift
 
     case "$file" in
-      (*.tar.gz|*.tgz) tar_ zxvf "$file" --directory ;;
+      (*.tar.gz|*.tgz) tar_ zxvf "$file" ;;
       (*.tar.bz2|*.tbz|*.tbz2) tar_ xvjf "$file";;
       (*.tar.xz|*.txz) tar_ --xz xvf "$file" || xzcat "$file" | tar_ xvf - ;;
       (*.tar.zma|*.tlz) tar_ --lzma xvf "$file" || lzcat "$file" | tar_ xvf - ;;
@@ -88,22 +89,23 @@ extract() {
       (*.deb) extract_deb "$file" ;;
       (*)
         echo "extract: '$file' cannot be extracted" 1>&2
+        status=1
         continue
       ;;
     esac
     if [ "$?" != "0" ]; then
       echo "extract: failed to extract '$file'" 1>&2
+      status=1
       continue
     fi
 
     if [ "$remove" = "1" ]; then
       rm "$file"
     fi
-
-    shift
   done
   unset -f extract_deb
   unset -f tar_
+  return "$status"
 }
 
 extract "$@"

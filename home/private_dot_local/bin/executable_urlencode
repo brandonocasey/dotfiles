@@ -7,7 +7,9 @@
 # * http://ruslanspivak.com/2010/06/02/urlencode-and-urldecode-from-a-command-line/
 # * https://github.com/robbyrussell/oh-my-zsh/blob/master/plugins/urltools/urltools.plugin.zsh
 #
-source "$DOTFILES_DIR/shell/index.sh"
+cmd_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
 
 if cmd_exists node; then
   urlencode() {
@@ -53,7 +55,7 @@ elif cmd_exists perl; then
   fi
 fi
 
-if ! cmd_exists urlencode; then
+if ! declare -F urlencode >/dev/null; then
   echo >&2 "No supported languages to encode url"
   exit 1
 fi
