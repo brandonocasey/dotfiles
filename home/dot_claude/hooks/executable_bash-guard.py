@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PreToolUse guard for Bash. Blocks two patterns that waste sessions.
+"""PreToolUse guard for Bash. Blocks patterns that waste sessions.
 
 - Foreground polling: until/while loops that sleep, sleeps of 20s or more,
   and gh watch commands. They hit the 10-minute tool cap and leave the context
@@ -7,6 +7,11 @@
 - pkill -f / pgrep -f with a plain pattern. The pattern also appears in this
   shell's own command line, so pkill kills its own shell (exit 144) and pgrep
   always finds a match.
+- Unquoted words that start with `=`. The Bash tool runs zsh, which expands
+  `=foo` to a path, so `echo ===` fails with "= not found".
+- echo or printf of `$?`. The Bash tool already reports the exit code.
+- Headless claude (-p/--print) with --tools but no ToolSearch. Every connector
+  tool is then sent in full, about 600k tokens per call.
 
 Exit 2 cancels the call and shows the message to the model.
 """
@@ -153,6 +158,29 @@ def foreground(code: str, bare: str) -> str:
 HEREDOC = re.compile(r"<<-?[ \t]*(['\"]?)(\w+)\1[^\n]*\n[\s\S]*?\n[ \t]*\2[ \t]*(?=\n|$)")
 
 
+ZSH_EQUALS = re.compile(r"(?<![^\s;&|(])=[^\s;&|()]")
+TEST_BRACKETS = re.compile(r"\[\[[\s\S]*?\]\]")
+CMD_START = r"(?:^|[;&|(\n{]|\b(?:then|do|else)\b)\s*(?:\S*=\S*\s+)*(?:\S*/)?"
+SEGMENT_END = re.compile(r"[;|]|(?<![<>])&(?!>)|(?<!\\)\n")
+PRINT_CMD = re.compile(CMD_START + r"(?:builtin\s+|command\s+)?(?:echo|printf)\b")
+CLAUDE_CMD = re.compile(CMD_START + r"claude(?:-two)?\b")
+PRINT_FLAG = re.compile(r"(?:^|\s)(?:-p|--print)(?=\s|$)")
+TOOLS_FLAG = re.compile(r"(?:^|\s)--tools(?:=|\s+)(\"[^\"]*\"|'[^']*'|\S*)")
+
+
+def segments(cmd: str, code: str, start: re.Pattern) -> list[str]:
+    """The original text after each command that start matches, up to its end.
+
+    code is cmd with quoted data blanked, so quoted separators do not end a
+    command but the quoted arguments stay readable in cmd.
+    """
+    out = []
+    for m in start.finditer(code):
+        end = SEGMENT_END.search(code, m.end())
+        out.append(cmd[m.end():end.start() if end else len(cmd)])
+    return out
+
+
 def problems(cmd: str, background: bool) -> list[str]:
     # Heredoc bodies are data (notes, scripts being written), not commands.
     cmd = HEREDOC.sub("", cmd)
@@ -185,6 +213,32 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "Foreground gh watch. Rerun it with run_in_background: true, "
                 "or run agt ci wait in the background."
             )
+    # [[ ... ]] keeps == as a comparison operator.
+    if ZSH_EQUALS.search(TEST_BRACKETS.sub(" ", code)):
+        found.append(
+            "An unquoted word starting with = is a zsh path expansion "
+            "(`echo ===` fails with \"= not found\"). Print separators with "
+            "printf '--- %s\\n' and quote any other word that starts with =."
+        )
+    for args in segments(cmd, code, PRINT_CMD):
+        if "$?" in re.sub(r"'[^']*'", "", args):
+            found.append(
+                "Do not print $?; the Bash tool already reports the exit code "
+                "of every command."
+            )
+            break
+    for args in segments(cmd, code, CLAUDE_CMD):
+        tools = TOOLS_FLAG.search(args)
+        if (
+            PRINT_FLAG.search(args) and tools and "ToolSearch" not in tools.group(1)
+            and "--strict-mcp-config" not in args
+        ):
+            found.append(
+                "Headless claude with --tools but without ToolSearch sends every "
+                "connector tool in full (about 600k tokens per call). Add "
+                "ToolSearch to the --tools list, or pass --strict-mcp-config."
+            )
+            break
     for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:
             continue  # inside quoted data or a comment
