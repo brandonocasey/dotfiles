@@ -13,9 +13,11 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 0
 fi
 
-# stdin flows straight to python so pass-through stays byte-exact,
-# including the trailing newline that $(cat) would strip.
-python3 - "$0" <<'PY2'
+# Pass the program with -c: a heredoc would take Python's stdin, which must
+# carry the live file so pass-through stays byte-exact, including the trailing
+# newline that $(cat) would strip. Use read, not a heredoc inside $(...): macOS bash
+# 3.2 mis-parses its quotes. read returns 1 at EOF.
+IFS= read -r -d '' program <<'PY2' || true
 import json, re, sys
 
 # Keys the app updates on its own; carried through from live, never enforced.
@@ -54,6 +56,7 @@ else:
     json.dump(out, sys.stdout, indent=2)
     sys.stdout.write("\n")
 PY2
+python3 -c "$program" "$0"
 exit 0
 # Managed settings (fallback + enforcement source). MUST stay valid JSON.
 __MANAGED__

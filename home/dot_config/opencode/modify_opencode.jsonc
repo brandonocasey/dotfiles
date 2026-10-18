@@ -163,16 +163,18 @@ if not isinstance(live, dict) or not isinstance(managed, dict):
     sys.stdout.write(live_text)
     raise SystemExit(0)
 
-live_mcp = live.get("mcp")
-managed_mcp = managed.get("mcp")
-if not isinstance(live_mcp, dict):
-    live_mcp = {}
-if not isinstance(managed_mcp, dict):
-    managed_mcp = {}
+def merge(base, override):
+    """Recursively merge objects like jq's `*`: override wins except inside nested objects."""
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(merged.get(key), dict) and isinstance(value, dict):
+            merged[key] = merge(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
 
-merged = dict(live)
-merged.update(managed)
-merged["mcp"] = {**live_mcp, **managed_mcp}
+
+merged = merge(live, managed)
 sys.stdout.write(json.dumps(merged, indent=2, ensure_ascii=False) + "\n")
 PY
   exit 0
