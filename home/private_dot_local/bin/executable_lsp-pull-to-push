@@ -5,10 +5,12 @@ Usage: python3 -I lsp-pull-to-push <server command...>
 
 Claude Code reads textDocument/publishDiagnostics. TypeScript 7 (`tsc --lsp`) only answers
 textDocument/diagnostic requests. After each open, change, or save, this bridge pulls the
-document's diagnostics and pushes them to the client. Other messages pass through unchanged.
+document's diagnostics and pushes them to the client. When the server asks for a refresh, it
+pulls every open document again. Other messages pass through unchanged.
 """
 import itertools
 import json
+import os
 import subprocess
 import sys
 import threading
@@ -54,6 +56,7 @@ def main():
     to_client = Writer(sys.stdout.buffer)
     ids = itertools.count(1)
     pending = {}  # bridge request id -> (uri, retries)
+    open_documents = set()
     lock = threading.Lock()
 
     def pull(uri, retries=0):
@@ -65,6 +68,14 @@ def main():
 
     def from_server():
         while (message := read_message(server.stdout)) is not None:
+            if message.get("method") == "workspace/diagnostic/refresh":
+                # An edit can change other files' diagnostics; pull every open document again.
+                to_server.send({"jsonrpc": "2.0", "id": message["id"], "result": None})
+                with lock:
+                    uris = list(open_documents)
+                for uri in uris:
+                    pull(uri)
+                continue
             with lock:
                 entry = pending.pop(message.get("id"), None) if "method" not in message else None
             if entry is None:
@@ -80,7 +91,9 @@ def main():
             if report.get("kind") == "full":
                 to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
                                 "params": {"uri": uri, "diagnostics": report.get("items", [])}})
-        sys.stdout.close()
+        # The server is gone. Exit so the client sees it and can restart the server;
+        # the main thread is still blocked reading the client.
+        os._exit(server.wait())
 
     threading.Thread(target=from_server, daemon=True).start()
 
@@ -88,15 +101,23 @@ def main():
     while (message := read_message(stdin)) is not None:
         method = message.get("method")
         if method == "initialize":
-            # Declare pull support so the server answers textDocument/diagnostic.
+            # Declare pull support so the server answers textDocument/diagnostic, and refresh
+            # support so it says when other documents' diagnostics change. The bridge handles both.
             capabilities = message.setdefault("params", {}).setdefault("capabilities", {})
             capabilities.setdefault("textDocument", {}).setdefault("diagnostic", {"dynamicRegistration": False})
+            capabilities.setdefault("workspace", {}).setdefault("diagnostics", {})["refreshSupport"] = True
         to_server.send(message)
         if method in PULL_TRIGGERS:
-            pull(message["params"]["textDocument"]["uri"])
+            uri = message["params"]["textDocument"]["uri"]
+            with lock:
+                open_documents.add(uri)
+            pull(uri)
         elif method == "textDocument/didClose":
+            uri = message["params"]["textDocument"]["uri"]
+            with lock:
+                open_documents.discard(uri)
             to_client.send({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
-                            "params": {"uri": message["params"]["textDocument"]["uri"], "diagnostics": []}})
+                            "params": {"uri": uri, "diagnostics": []}})
     server.stdin.close()
     sys.exit(server.wait())
 
