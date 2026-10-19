@@ -56,8 +56,9 @@ supplied a base. Do not recreate or rebase existing branches or PR/MR heads.
    not proof of divergence: resolve missing or shallow history first, or report
    that it could not be checked.
 
-After step 3 or 4 selects a base, fast-forward the local target as
-[ff-local-target.md](ff-local-target.md) allows; otherwise skip and report.
+After step 3 or 4 selects a base for a new branch, fast-forward the local target as
+[ff-local-target.md](ff-local-target.md) allows; a skip is a warning in the final report.
+A base for a review comparison leaves the local target alone: reviews only read.
 
 Report the selected base ref and commit, and any fast-forward or skip. Do not
 claim that a cached remote ref is current. If the user requires offline or

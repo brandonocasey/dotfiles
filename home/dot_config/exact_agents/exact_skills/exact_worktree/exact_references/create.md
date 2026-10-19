@@ -10,6 +10,12 @@ tracking branch. For an independent new branch, pass no `--base`: agt starts it 
 default base (remote defaults and the local default branch, compared by ancestry). When the JSON
 reports `base.diverged` (candidates that disagree), report the candidates to the user.
 
+agt then fast-forwards the local default branch and reports `local_default`. For `updated`,
+report one line: the branch and how many commits it moved. Report each `warnings` entry in the
+final report as `⚠ <warning>`, with `behind` and any `retry` command. When the JSON has no
+`warnings` field, agt predates this step: after a new branch without `--base`, fast-forward per
+[ff-local-target.md](../../shared/ff-local-target.md) instead.
+
 ```sh
 agt worktree create <branch> [--base <commit-ish>] [--prepare] [--port]
 ```
