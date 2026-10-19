@@ -26,9 +26,12 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   directory. Do not redo its checks by hand, and never delete a branch or force-remove a
   worktree it kept, except under the confirmations below.
 - Pass `--offline` only when the forge is unreachable; the plan then trusts local ancestry only.
-  Pass `--all` only when the user asked for every repository. Pass `--dirty` or `--recent` only
-  when the user asks for them: the snapshot backup keeps dirty work, but `recent` guards work
-  in progress.
+  Pass `--all` only when the user asked for every repository. Always pass `--dirty` and
+  `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their work.
+  Report each removed dirty worktree's changed files with its backup id.
+- When removal fails with "does not point back", the worktree belongs to another clone: its
+  `.git` file names the owning repository. Run the plan and removal from that repository, then
+  `git worktree prune` in the first one.
 - **Closed-without-merge exception**: `git branch -D` only after the user names the branch in
   the step 5 confirmation and the exact local tip equals the closed PR head.
 - **Review-worktree confirmation**: may remove every worktree whose HEAD exactly matches a remote
@@ -60,7 +63,7 @@ agt worktree list          # dirty counts, ahead/behind, merged state
 Run the plan, which changes nothing but fetching PR heads into the object store:
 
 ```sh
-agt worktree cleanup [--all] [--offline]
+agt worktree cleanup --dirty --recent [--all] [--offline]
 ```
 
 Record the checkout in which the skill is running. Resolve **Local target name** in
@@ -104,8 +107,10 @@ those task processes per
 [task-resources.md](../host-preflight/references/task-resources.md), or keep a worktree that a
 live preview still needs. Every `keep` row
 then goes through step 5. If the user asked for a dry run, show the step 5 assessment, ask
-nothing, and stop. Otherwise ask the user to approve the `remove` and `delete` rows before step 6.
-Ask in the same message as the step 5 question when step 5 asks one. Include each named
+nothing, and stop. Otherwise the `remove` and `delete` rows with verdict `merged` or
+`squash-merged` are approved by the cleanup request: run step 6 on them without asking. Ask
+approval only for the other rows and exceptions, in the same message as the step 5 question
+when step 5 asks one. Include each named
 detached-baseline exception with its HEAD-preservation proof. Only the approved rows and
 dispositions are authorized; changed scope needs a new preview.
 
@@ -116,7 +121,7 @@ Complete its assessment and required confirmations before removal.
 
 ### 6. Remove
 
-After the user confirms, run the same plan flags with `--yes`, limited to the approved rows. Pass
+Run the same plan flags with `--yes`, limited to the approved rows. Pass
 `--only` once for each approved branch or path. Never run a bare `--yes`: the plan may have
 changed since the user approved it. Naming a branch also removes its worktree, because git cannot
 delete a checked-out branch. When the user approved the branch but not its worktree, ask before
@@ -125,7 +130,7 @@ this step. With `--all`, run this step inside each repository without
 branch. When the user approved only the worktree, run `agt worktree remove <path> --yes` instead.
 
 ```sh
-agt worktree cleanup [--offline] --yes --only <branch-or-path> [--only <branch-or-path> ...]
+agt worktree cleanup --dirty --recent [--offline] --yes --only <branch-or-path> [--only <branch-or-path> ...]
 ```
 
 It snapshots each worktree (a commit pinned at `refs/agt/backups/<id>` plus copies of
