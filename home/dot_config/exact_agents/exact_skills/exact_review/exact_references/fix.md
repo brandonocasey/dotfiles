@@ -67,7 +67,10 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   even where the `commit` skill would amend. Until the review ends, never amend,
   squash, or rebase reviewed commits, so threads and coverage stay on them. Only a
   rebase the user authorizes ([ci-and-conflicts.md](ci-and-conflicts.md)) is exempt.
-- **Local branch or commit**: apply the fixes in the branch's worktree, run the repo's
+- **Local branch or commit**: for a detached local-branch review, first attach the
+  review worktree to a new fix branch at its pinned head. Preserve the original
+  branch and checkout, and keep the selected range store target. Report the fix branch.
+  Apply the fixes in the branch's worktree, run the repo's
   tests/lint, record the `Checked:` line, and commit per the `commit` skill. Read each
   file you will edit with the file-read tool, not `cat`. With a `--range` store target
   ([store.md](store.md)), never amend or rebase the pinned commits; add fix commits. For a commit

@@ -54,8 +54,9 @@ If the pinned diff is empty, report `empty` and stop.
   run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
   self-hosted GitLab) and keep the target key it prints. Then run
   `agt review status --head <head-sha>` with the store target: `--target <key>` for
-  that MR/PR, `--range <pinned range>` for an MR/PR on another forge or a commit or
-  range the user named, else no flag, also for a branch with a given base
+  that MR/PR, `--range <pinned range>` for an MR/PR on another forge, a commit or
+  range the user named, or a detached local-branch checkout; otherwise no flag,
+  also for a branch with a given base
   (`--default-branch <base branch>` when it is not the default branch; store.md
   **Commands**). Run it bare, never filtered. For an own GitHub or
   GitLab MR/PR only, when the prompt says `Skip check: on`,

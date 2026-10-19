@@ -32,6 +32,8 @@ Pick the store target once per review:
 - Commit or range the user named, or work on the default branch itself (its fixes go
   on a fix branch, [fix.md](fix.md)): `--range <from>..<to>` (or `--range <sha>`). It
   pins those commits: never amend, squash, or rebase them; add fix commits on top.
+- Local branch reviewed from a detached checkout: `--range <pinned range>` throughout
+  the run. Keep this target if repairs later attach the checkout to a fix branch.
 - A branch, also with a user-given base ("branch X against Y"), and anything else,
   including an end-point review of the session's own work (`<review_from>..HEAD` plus
   uncommitted work, [when-to-run.md](when-to-run.md)): no target flag, so the branch
