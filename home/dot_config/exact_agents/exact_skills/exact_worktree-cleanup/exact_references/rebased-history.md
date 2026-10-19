@@ -24,7 +24,7 @@ Associate the branch with a verified merged PR by source repository and branch
 name, or by an explicit PR reference in its name or commits. A matching title
 can suggest a PR to investigate; it does not establish identity on its own.
 Review aliases such as `fix/pr780-progress` need not match the PR's source
-branch for relevance assessment. They still cannot count as merged under `agt worktree cleanup`, which
+branch for relevance assessment. They still cannot count as merged under `agt cleanup --only worktrees`, which
 requires the PR's source branch to be the local branch.
 
 Run against the recorded commits:

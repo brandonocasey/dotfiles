@@ -1,6 +1,6 @@
 # Forge edge cases
 
-Read from step 3 of [SKILL.md](../SKILL.md) when a candidate that `agt worktree cleanup` kept involves a fork MR, a PR head
+Read from step 3 of [SKILL.md](../SKILL.md) when a candidate that `agt cleanup --only worktrees` kept involves a fork MR, a PR head
 missing locally, a PR closed without merge, or a worktree that may be a remote-PR review checkout.
 
 ## Fork MRs

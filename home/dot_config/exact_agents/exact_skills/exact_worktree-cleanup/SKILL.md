@@ -9,7 +9,7 @@ description: "Clean verified merged worktrees and branches; assess retained work
 `disk-cleanup` also runs this skill as a required step, under the limits in
 [agent-resources.md](../disk-cleanup/references/agent-resources.md).
 
-This needs `agt` 0.10.0 or newer ([agt.md](../shared/agt.md)). `agt worktree cleanup` finds, judges,
+This needs `agt` 0.14.0 or newer ([agt.md](../shared/agt.md)). `agt cleanup --only worktrees` finds, judges,
 backs up, and removes landed worktrees and branches; this skill adds what it does not do.
 
 Clean only local state proven safe to remove. Use live PR state for GitHub or
@@ -20,13 +20,13 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 
 - Work locally. Never delete a remote branch, close a pull request, push, force-push, reset, or
   discard files as part of this skill.
-- `agt worktree cleanup` owns the inventory, idle checks (processes and live Claude Code sessions),
+- `agt cleanup --only worktrees` owns the inventory, idle checks (processes and live Claude Code sessions),
   merge evidence, `git branch -d`/`-D` rules, and worktree removal. It never touches the default
   branch, the main checkout's branch, the current branch, or the worktree holding the current
   directory. Do not redo its checks by hand, and never delete a branch or force-remove a
   worktree it kept, except under the confirmations below.
 - Pass `--offline` only when the forge is unreachable; the plan then trusts local ancestry only.
-  Pass `--all` only when the user asked for every repository. Always pass `--dirty` and
+  Pass `--all-repos` only when the user asked for every repository. Always pass `--dirty` and
   `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their work.
   Report each removed dirty worktree's changed files with its backup id.
 - When removal fails with "does not point back", the worktree belongs to another clone: its
@@ -63,7 +63,7 @@ agt worktree list          # dirty counts, ahead/behind, merged state
 Run the plan, which changes nothing but fetching PR heads into the object store:
 
 ```sh
-agt worktree cleanup --dirty --recent [--all] [--offline]
+agt cleanup --only worktrees --dirty --recent [--all-repos] [--offline]
 ```
 
 Record the checkout in which the skill is running. Resolve **Local target name** in
@@ -71,7 +71,7 @@ Record the checkout in which the skill is running. Resolve **Local target name**
 
 ### 2. Read the plan
 
-The plan lists, per repository, `remove` and `delete` candidates (each with its `verdict`,
+The plan lists under `worktrees`, per repository, `remove` and `delete` candidates (each with its `verdict`,
 `evidence`, and exact `action`), `kept` rows with reasons, and `warnings`. The verdicts are `merged`,
 `squash-merged`, `open`, `closed`, `diverged`, `unknown`, and `unmerged`. A worktree is kept as `dirty`,
 `recent`, locked, in use by another process or Claude Code session, or holding a submodule `remove`
@@ -122,15 +122,15 @@ Complete its assessment and required confirmations before removal.
 ### 6. Remove
 
 Run the same plan flags with `--yes`, limited to the approved rows. Pass
-`--only` once for each approved branch or path. Never run a bare `--yes`: the plan may have
+`--worktree` once for each approved branch or path. Never run a bare `--yes`: the plan may have
 changed since the user approved it. Naming a branch also removes its worktree, because git cannot
 delete a checked-out branch. When the user approved the branch but not its worktree, ask before
-this step. With `--all`, run this step inside each repository without
-`--all`, and pass only that repository's approved names. Naming a worktree also deletes its landed
+this step. With `--all-repos`, run this step inside each repository without
+`--all-repos`, and pass only that repository's approved names. Naming a worktree also deletes its landed
 branch. When the user approved only the worktree, run `agt worktree remove <path> --yes` instead.
 
 ```sh
-agt worktree cleanup --dirty --recent [--offline] --yes --only <branch-or-path> [--only <branch-or-path> ...]
+agt cleanup --only worktrees --dirty --recent [--offline] --yes --worktree <branch-or-path> [--worktree <branch-or-path> ...]
 ```
 
 It snapshots each worktree (a commit pinned at `refs/agt/backups/<id>` plus copies of
