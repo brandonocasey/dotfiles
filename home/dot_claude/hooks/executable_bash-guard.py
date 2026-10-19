@@ -171,8 +171,13 @@ WRAPPERS = (r"(?:(?:nohup|setsid|exec|command|env|nice|time|g?timeout)(?:\s+(?:-
             r"\s+(?:\S*=\S*\s+)*(?:\S*/)?)*")
 SEGMENT_END = re.compile(r"[;|]|(?<![<>])&(?!>)|(?<!\\)\n")
 PRINT_CMD = re.compile(CMD_START + r"(?:builtin\s+|command\s+)?(?:echo|printf)\b")
-# Commands that check a log or file, as a sleep-then-check poll does.
-READ_CMD = re.compile(CMD_START + r"(?:(?:tail|cat|head|ls|test|rg|grep|wc|stat)\b|\[\s)")
+# Commands that check a log or file, as a sleep-then-check poll does. A pipe
+# does not start one (`curl ... | head` reads no file), and a path such as
+# ./test.sh is not the test builtin.
+READ_CMD = re.compile(
+    r"(?:^|\|\||[;&(\n{]|\b(?:then|do|else|elif|if)\b|!)\s*(?:\S*=\S*\s+)*"
+    r"(?:(?:tail|cat|head|less|ls|test|rg|grep|wc|stat|sed|awk|jq)(?=\s|$)|\[\[?\s)"
+)
 # > or >> to a file, not a descriptor duplication such as >&2.
 FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
 CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)?\\b")

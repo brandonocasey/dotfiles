@@ -52,13 +52,17 @@ class SleepPollTests(GuardTestCase):
     def test_sleep_then_check_is_blocked(self):
         for command in ("sleep 19; tail -3 run.log", "sleep 15 && cat out.txt",
                         "sleep 15; cd /w; tail -2 a.log | cut -c1-80", "sleep 10; [ -f done ] && echo ok",
-                        "sleep 18; ls -la /w/.cache", "sleep 12; rg -c ok run.log"):
+                        "sleep 18; ls -la /w/.cache", "sleep 12; rg -c ok run.log",
+                        "sleep 15; sed -n '1,40p' run.log", "sleep 15; [[ -s run.log ]] && echo ok",
+                        "sleep 15; if grep -q PASS run.log; then echo ok; fi", "sleep 15; jq .status out.json"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "Sleep-then-check polling")
 
     def test_short_or_unchecked_sleeps_are_allowed(self):
         for command in ("sleep 5; tail -3 run.log", "sleep 15", "sleep 15 && curl -s localhost:3000",
-                        "tail -3 run.log; sleep 15", "echo 'sleep 15; cat x'"):
+                        "tail -3 run.log; sleep 15", "echo 'sleep 15; cat x'",
+                        "sleep 15 && curl -s localhost:3000 | head -20", "sleep 10 && ./test.sh",
+                        "sleep 10; ./scripts/test-e2e.sh", "sleep 12; cd /repo/test && make"):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
