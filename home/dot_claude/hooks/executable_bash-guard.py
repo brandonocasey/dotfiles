@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """PreToolUse guard for Bash. Blocks patterns that waste sessions.
 
-- Foreground polling: until/while loops that sleep, sleeps of 20s or more,
-  and gh watch commands. They hit the 10-minute tool cap and leave the context
+- Foreground polling: until/while/for loops that sleep, sleeps of 20s or more in all,
+  sleeps of 10s or more followed by a log or file check, and gh watch commands. They hit the 10-minute tool cap and leave the context
   idle while its cache expires. Background runs pass.
 - pkill -f / pgrep -f with a plain pattern. The pattern also appears in this
   shell's own command line, so pkill kills its own shell (exit 144) and pgrep
@@ -24,7 +24,7 @@ import signal
 import sys
 
 POLL_LOOP = re.compile(
-    r"(?:^|[;&|({\n'\"]|\b(?:do|then|else)\b)\s*(until|while)\b"
+    r"(?:^|[;&|({\n'\"]|\b(?:do|then|else)\b)\s*(until|while|for)\b"
     r"(?:(?!\bdone\b)[\s\S])*?\bdo\b(?:(?![;&\n]\s*done\b)[\s\S])*?\bsleep\b"
 )
 SLEEP = re.compile(r"\bsleep\s+(\d+(?:\.\d+)?)([smhd]?)\b")
@@ -171,6 +171,8 @@ WRAPPERS = (r"(?:(?:nohup|setsid|exec|command|env|nice|time|g?timeout)(?:\s+(?:-
             r"\s+(?:\S*=\S*\s+)*(?:\S*/)?)*")
 SEGMENT_END = re.compile(r"[;|]|(?<![<>])&(?!>)|(?<!\\)\n")
 PRINT_CMD = re.compile(CMD_START + r"(?:builtin\s+|command\s+)?(?:echo|printf)\b")
+# Commands that check a log or file, as a sleep-then-check poll does.
+READ_CMD = re.compile(CMD_START + r"(?:(?:tail|cat|head|ls|test|rg|grep|wc|stat)\b|\[\s)")
 # > or >> to a file, not a descriptor duplication such as >&2.
 FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
 CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)?\\b")
@@ -222,11 +224,22 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "Foreground polling loop. Rerun it with run_in_background: true "
                 "and wait for its exit, or use Monitor for a stream of events."
             )
+        total = 0.0
         for m in SLEEP.finditer(fg):
-            if float(m.group(1)) * UNIT[m.group(2)] >= 20:
+            seconds = float(m.group(1)) * UNIT[m.group(2)]
+            total += seconds  # chained sleeps (sleep 19; sleep 19) add up
+            if total >= 20:
                 found.append(
-                    f"Foreground sleep {m.group(1)}{m.group(2)}. Wait on a condition in a "
-                    "background command instead of a fixed sleep."
+                    f"Foreground sleep {m.group(1)}{m.group(2)}"
+                    f"{f' ({total:g}s in all)' if total > seconds else ''}. Wait on a "
+                    "condition in a background command instead of a fixed sleep."
+                )
+                break
+            if seconds >= 10 and READ_CMD.search(fg, m.end()):
+                found.append(
+                    f"Sleep-then-check polling (sleep {m.group(1)}{m.group(2)}, then a read). "
+                    "Wait for the job's exit notification, or run agt wait with "
+                    "run_in_background: true and stop; it wakes you when it exits."
                 )
                 break
         # Also with a trailing &: the harness tracks only run_in_background jobs.
