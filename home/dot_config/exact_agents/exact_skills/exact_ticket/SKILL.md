@@ -32,7 +32,7 @@ question. Never invent a key, project, status, or version.
 - Remote: `gh` for GitHub, `glab` for GitLab (`GITLAB_HOST` for self-hosted),
   `fj` or the Forgejo REST API for Forgejo. Other platforms: unsupported; stop
   before any write.
-- GitHub and GitLab issues: `agt issue` (0.5.0 or newer) when `agt --version`
+- GitHub and GitLab issues: `agt issue` (0.13.0 or newer) when `agt --version`
   works and a tracker for the repo is in `$XDG_CONFIG_HOME/agt/config.toml`
   (`~/.config` when unset). See [agt.md](../shared/agt.md).
   - Do not install `agt` here. Without it, or without a matching tracker, use
@@ -81,7 +81,7 @@ question. Never invent a key, project, status, or version.
    - GitHub or GitLab ticket with a matching `agt` tracker: queue it with
      `agt issue create --tracker <owner/repo> --title <title> --body - --label <label>
      --assignee <login>`, reading the body from stdin. It prints a `local-` key.
-   - Then run `agt issue link-pr <key> --pr <url>`.
+   - Then run `agt issue link <key> --pr <url> --comment`.
    - Run `agt issue list --tracker <owner/repo> --pending`. Stop and ask when
      anything besides this run's keys is pending.
    - Run `agt issue push --tracker <owner/repo> --dry-run` and show it. Stop and
@@ -99,14 +99,14 @@ question. Never invent a key, project, status, or version.
 5. Link related keys from step 2 with the tracker's "relates" link.
    - On a GitHub or GitLab tracker, `agt issue link` is local only. It does not
      reach the host.
-   - `agt issue link-pr` queues a comment. Use it only for an MR/PR link.
+   - `agt issue link --pr <url> --comment` also queues a comment. Use it only for an MR/PR link.
    - For issue-to-issue links, name the related key in the ticket body or a
      comment. Queue it with `agt issue comment`, then push as in step 4.
    - Do not bypass `push = false` with `gh` or `glab`.
 6. Move the status per the lifecycle. Never move a ticket backward.
    - For a GitHub or GitLab ticket with an `agt` tracker, close only when the
      lifecycle status is closed (the MR/PR is merged).
-   - Queue it with `agt issue close <key>` (add `--reason completed` on GitHub).
+   - Queue it with `agt issue edit <key> --state closed` (add `--reason completed` on GitHub).
    - Then run the pending check, dry-run, and push as in step 4.
 7. Set the version when the user gave one or an MR/PR label names one, and
    change the release label to match, per `jira-versions` (Move a ticket or MR).
