@@ -31,6 +31,9 @@ agt worktree remove <worktree-path> --yes
   process or another Claude Code session runs (agt ignores your own session and its processes), and
   a submodule problem. When it refuses, follow
   **Blocked removal** in [removal-checks.md](removal-checks.md).
+- When the plan's `hooks.remove` lists commands, `--yes` runs them first; a failing one stops the
+  removal: report its command and log. Report `hooks.untrusted` as
+  [prepare.md](prepare.md) says. Pass `--no-hooks` only when the user asks.
 - `--yes` snapshots the working tree as a commit pinned at `refs/agt/backups/<id>`,
   copies the ignored files that are not disposable under
   `~/.local/state/agents/backups/<repo>/<stamp>-worktree-<name>/`, then runs

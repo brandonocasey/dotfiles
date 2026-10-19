@@ -1,6 +1,7 @@
 ## Create
 
-This needs `agt` 0.10.0 or newer. Follow [agt.md](../../shared/agt.md).
+Use `agt` 0.10.0 or newer; [agt.md](../../shared/agt.md) installs it. When agt is still missing
+after that install step, use **Without agt** below instead of stopping.
 
 For a separate task that depends on an unmerged MR/PR, first read
 [dependent-branches.md](../../shared/dependent-branches.md). Use its parent base
@@ -17,7 +18,7 @@ final report as `⚠ <warning>`, with `behind` and any `retry` command. When the
 [ff-local-target.md](../../shared/ff-local-target.md) instead.
 
 ```sh
-agt worktree create <branch> [--base <commit-ish>] [--prepare] [--port]
+agt worktree create <branch> [--base <commit-ish>] [--prepare] [--port] [--background]
 ```
 
 It prints JSON with the worktree `path`. Work in that path for the whole task. Check the JSON:
@@ -43,7 +44,8 @@ remote branch, check that `git -C <path> rev-parse --abbrev-ref @{u}` prints `or
   a branch there: `git -C <sub-path> switch -c <branch>`. This gives the commit
   a pushable ref and prevents the next update from orphaning it.
 - `--prepare` runs `agt worktree prepare`; `--port` runs `agt worktree port`.
-  Add them only when [prepare.md](prepare.md) says setup is needed.
+  Add them only when [prepare.md](prepare.md) says setup is needed; it also owns
+  `--background` and the repository's `create` hooks.
 
 In zsh, `$B:refs/...` applies the `:r` modifier and mangles the refspec. Write
 `${B}` and quote refspecs, for example
@@ -51,3 +53,21 @@ In zsh, `$B:refs/...` applies the `:r` modifier and mangles the refspec. Write
 
 Repository `worktree add` examples do not override this location or base.
 Follow a repository location only when it is stated as a requirement.
+
+### Without agt
+
+Use the same path. Keep any parent base from a dependent branch; otherwise pick the base per
+**Newest default base** in [default-branch.md](../../shared/default-branch.md). In order:
+
+1. A worktree that already has the branch (`git -C <main-checkout> worktree list --porcelain`): reuse it.
+2. A local branch: `git -C <main-checkout> worktree add <path> <branch>`.
+3. When `origin` exists, `git -C <main-checkout> ls-remote --exit-code origin "refs/heads/${B}"`.
+   Exit 0: run `git -C <main-checkout> fetch origin "+refs/heads/${B}:refs/remotes/origin/${B}"`,
+   then `git -C <main-checkout> worktree add --track -b <branch> <path> "origin/${B}"`. Any exit
+   other than 0 or 2 is a blocker; report it.
+4. Otherwise a new branch: `git -C <main-checkout> worktree add <path> -b <branch> <base-commit>`.
+
+Run `git submodule update --init --recursive` in it when `.gitmodules` exists. For setup, run the
+repository's documented setup, else the install for each lockfile that [prepare.md](prepare.md)
+lists, in the background with a log. agt's `[worktree.hooks]` do not run; report that to the user.
+Never remove this worktree without agt: there is no backup, so report it as kept.
