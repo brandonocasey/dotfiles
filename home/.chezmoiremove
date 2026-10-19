@@ -18,3 +18,4 @@
 .claude/hooks/prune-agent-dirs.sh
 .local/bin/agent-sessions
 .local/bin/agent-wait
+.codex/hooks/guard.py
