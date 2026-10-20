@@ -360,45 +360,73 @@ countdown_str() {
   }'
 }
 
-# --- Draw a usage gauge: "▕<bar>▏<pct>% <gap>" ---
-# $1 = used percentage, $2 = reset epoch, $3 = window length in seconds,
-# $4 = pace colour from rate_seg. The bar has 10 cells of 10% each; fill is
-# drawn in eighths (1.25% steps). Unfilled cells show "▒" up to where an even
-# pace would put usage now (budget still free at this pace) and "░" after; a
-# cell straddling pace shows "▒" when pace covers most of it. A fill cell is
-# green while most of its fill lies within pace; fill mostly past pace takes
-# the pace colour, never green. A full bar turns the bar, percentage, and gap
-# red. The gap is usage minus pace in points: "+12" in the pace colour when
-# ahead, "-8" grey otherwise.
+# --- Draw a usage gauge: "▕<bar>▏ <pct>% <gap>[→<time>|+<time>]" ---
+# $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
+# step, in seconds, $5 = pace colour from rate_seg. The bar has 56 cells, two
+# per 7-day budget step; fill is drawn in eighths of a cell. The bar marks the
+# same zones rate_seg colours by: up to one step's share past the budget is
+# fine, the next step's share is yellow, and beyond that is red. Fill takes the
+# colour of the zone holding most of its cell's fill; a full bar is all red.
+# Unfilled cells show "▒" up to where an even pace would put usage now (budget
+# still free at this pace), then "░" tinted by zone, so the track shows how far
+# ahead turns yellow or red right now. Each unfilled cell takes the zone of its
+# middle. The gap is usage minus pace in points: "↑12" in the pace colour when
+# ahead, "↓8" grey when behind, "↕0" grey on pace. Once the pace colour is
+# yellow or red and the bar is not full, "→<time>" estimates when usage reaches
+# 100% at the window's average rate so far; running ahead of pace always gets
+# there before the reset. Behind pace, "+<time>" is the spare time: how long
+# usage could stay flat before pace catches up.
 pace_gauge() {
-  awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v c="$4" -v dim="$rl_dim" 'BEGIN {
+  awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" '
+  # Seconds as the largest unit, rounded down to one decimal: "1.4d", "15h", "9m".
+  function dur(s) {
+    if (s >= 86400) return int(s / 8640) / 10 "d"
+    if (s >= 3600)  return int(s / 360) / 10 "h"
+    return int(s / 60) "m"
+  }
+  # Zone colour at x percent of the limit: 0 within budget, else yellow or red.
+  function zone(x) { return x > red ? 31 : x > yellow ? 33 : 0 }
+  BEGIN {
     split("▏ ▎ ▍ ▌ ▋ ▊ ▉ █", g, " ")
+    N = 56; cw = 100 / N
     pre = "\033[" dim
     e = w - (r - n)
     if (e < 0) e = 0
     if (e > w) e = w
     pace = 100 * e / w
-    t = int(pace * 0.8 + 0.5)
-    u = int(p * 0.8 + 0.5)
-    if (u > 80) u = 80
-    if (u == 80) c = 31
-    fc = c == 32 ? 33 : c
+    # Same budget as rate_seg: counted to the start of the current step.
+    s = 100 * t / w
+    b = int((e >= w ? w - 1 : e) / t) * s
+    yellow = b + s; red = b + 2 * s
+    u = int(p * N * 8 / 100 + 0.5)
+    # Full once the shown percentage reads 100.
+    if (u > N * 8 || p >= 99.5) u = N * 8
+    full = u == N * 8
+    if (full) c = 31
     out = pre "38;5;245m▕"
-    for (i = 0; i < 10; i++) {
+    for (i = 0; i < N; i++) {
       q = u - 8 * i
       if (q > 8) q = 8
-      if (q <= 0) {
-        out = out (t - 8 * i >= 4 ? pre "38;5;245m▒" : pre "38;5;240m░")
+      if (q > 0) {
+        z = full ? 31 : zone(cw * i + cw * q / 16)
+        out = out pre (z ? z : 32) "m" g[q]
         continue
       }
-      mid = 10 * i + 1.25 * q / 2
-      out = out pre (u == 80 ? 31 : mid > pace ? fc : 32) "m" g[q]
+      x = cw * (i + 0.5)
+      if (x < pace) { out = out pre "38;5;245m▒"; continue }
+      z = zone(x)
+      out = out pre (z == 31 ? "38;5;124" : z == 33 ? "38;5;136" : "38;5;240") "m░"
     }
     out = out pre "38;5;245m▏\033[0m"
     d = p - pace
     d = d < 0 ? -int(-d + 0.5) : int(d + 0.5)
-    gap = d > 0 ? pre c "m+" d : pre "38;5;245m" (d < 0 ? d : "±0")
-    printf "%s%s%sm%d%%\033[0m %s\033[0m", out, pre, c, int(p + 0.5), gap
+    # Percentage and gap are right-aligned ("  5%", " ↓9") so stacked gauges
+    # line up their numbers and the times after them.
+    ad = d < 0 ? -d : d
+    gap = (ad < 10 ? " " : "") (d > 0 ? pre c "m↑" d : pre "38;5;245m" (d < 0 ? "↓" ad : "↕0"))
+    if (c != 32 && p > 0 && !full && e > 0) gap = gap "→" dur((100 - p) * e / p)
+    if (d < 0) gap = gap "+" dur((pace - p) * w / 100)
+    printf "%s %s%sm%3d%%\033[0m %s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
 
@@ -414,7 +442,7 @@ pace_gauge() {
 # than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
 # and red mark only usage warnings and an expiring prompt cache.
 rate_seg() {
-  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c
+  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c vis
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
     seg=$(countdown_str "$reset")
   fi
@@ -429,7 +457,10 @@ rate_seg() {
         b = int(e / t) * s
         print (p >= 100 || p > b + 2 * s ? 31 : p > b + s ? 33 : 32)
       }')
-      seg="$seg$(pace_gauge "$pct" "$reset" "$window" "$c")"
+      # Right-align the countdown to its widest form ("23.9h") so stacked bars
+      # line up.
+      vis=$(printf '%s' "$seg" | sed $'s/\033\\[[0-9;]*m//g')
+      seg="$(printf '%*s' $((5 - ${#vis})) '')$seg $(pace_gauge "$pct" "$reset" "$window" "$step" "$c")"
     elif [ -n "$seg" ]; then
       c=$(color_for_pct "$p")
       seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
@@ -560,8 +591,11 @@ lan_ip() {
   printf '%s' "$host"
 }
 srv_detect() {
-  local listen pids cwds titles procs rows ports host assigned shown row
+  local listen pids cwds titles procs rows ports host tail assigned shown row
   host=$(lan_ip)
+  # Only the last octet is shown: "7:48990", or ".7" without a port. Links keep
+  # the full address.
+  tail=${host##*.}
   listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
     /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
   ')
@@ -642,7 +676,7 @@ srv_detect() {
     shown=${row%%$'\t'*}
   fi
   if [ -z "$shown" ]; then
-    [ -n "$host" ] && printf '\033[35m%s\033[0m' "$host"
+    [ -n "$tail" ] && printf '\033[35m.%s\033[0m' "$tail"
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -650,14 +684,14 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "$host:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "35" "$tail:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m%s:%s\033[0m' "$host" "$shown"
+    printf '\033[31m%s:%s\033[0m' "$tail" "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m%s:%s\033[0m' "$host" "$shown"
+    printf '\033[2;35m%s:%s\033[0m' "$tail" "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   fi
   return 0
@@ -673,7 +707,7 @@ srv_link() {
 srv_seg=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m%s\033[0m' "$srv_ip")
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m.%s\033[0m' "${srv_ip##*.}")
 else
   srv_cache="$rl_dir/servers-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
@@ -721,8 +755,7 @@ else
   fi
 fi
 
-# The account (grey) leads the line and links to claude.ai; where the session
-# runs, "<ip>:<port>", follows it.
+# The account (grey) leads the first line and links to claude.ai.
 who_seg=""
 [ -n "$account_name" ] && who_seg=$(printf '\033]8;;https://claude.ai\a\033[38;5;247m%s\033[0m\033]8;;\a' "$account_name")
 
@@ -814,15 +847,16 @@ if [ -n "$git_info" ]; then
   loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033]8;;%s\a\033[97m%s\033[0m\033]8;;\a' "$loc_seg" "$loc_link" "$git_info")
 fi
 
-# 5-hour and 7-day windows: "<countdown> <gauge>" each, no labels. Each links
-# to the claude.ai usage page.
-usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
+# 5-hour and 7-day windows: "<countdown> <gauge>" each, no labels, one line
+# each so their bars line up. Each links to the claude.ai usage page.
+usage_link() { printf '\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a' "$1"; }
+gauges=""
 rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
-[ -n "$fh_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$fh_seg")
+[ -n "$fh_seg" ] && gauges="\n$(usage_link "$fh_seg")"
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
-[ -n "$sd_seg" ] && parts=$(printf "%s%s$usage_link" "$parts" "$sep" "$sd_seg")
+[ -n "$sd_seg" ] && gauges="$gauges\n$(usage_link "$sd_seg")"
 
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
 # <usage%>", then the dollars spent of the limit when the gateway reports them.
@@ -835,12 +869,9 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# Project and branch end the line. They move to a line of their own when the
-# whole line would pass 80 columns, since a long branch name runs longest.
-# Width counts only visible characters.
-if [ -n "$loc_seg" ]; then
-  line=$(printf '%b' "$parts$sep$loc_seg" | sed $'s/\033\\][^\a]*\a//g; s/\033\\[[0-9;]*m//g')
-  if [ "${#line}" -gt 80 ]; then parts="$parts\n$loc_seg"; else parts="$parts$sep$loc_seg"; fi
-fi
+# The first line is "<account>|<last IP octet>:<port>|", the model, context,
+# and any spend limit, then "<project>#<branch>", which ends the line since a
+# long branch name runs longest. The gauge lines follow.
+[ -n "$loc_seg" ] && parts="$parts$sep$loc_seg"
 
-printf '%b' "$parts"
+printf '%b' "$parts$gauges"
