@@ -11,7 +11,7 @@ These rules need `agt` 0.18.0 or newer. Follow [agt.md](../../shared/agt.md).
 
 ## Commands
 
-Setup runs `sync` and `status`; the main session runs the rest. Reviewers never run
+Setup runs `sync` and `status`; later steps run the rest. Reviewers never run
 `agt review`. Run every store command from the review worktree, `sync` included.
 Run it bare: never pipe its output through `head`, `tail`, `rg`, or `jq`; the output
 is one short JSON line, and a filter hides IDs and errors. Errors start with

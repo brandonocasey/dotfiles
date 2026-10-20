@@ -32,22 +32,18 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Before the spawn, the main session reads no review references except when-to-run.md, and it never reviews
-the code itself. Start one `cheap` sub-agent with exactly this prompt:
-
-```text
-Set up a review pass per <absolute path of references/setup.md>.
-Target: <the user's target verbatim; a range or MR/PR the calling skill or loop names; or none>.
-Scratch: <task scratch directory>. Earlier worktree: <path or none>.
-Skip check: <on for a run's first setup; off when the user asks to review again, and for later passes>.
-```
+Before the spawn, the main session reads no review references except when-to-run.md
+and [setup.md](references/setup.md), and it never reviews the code itself. Run setup
+yourself per setup.md, with `agt`, `git`, and `gh`/`glab` commands; no sub-agent.
+Its inputs: the user's target verbatim (a range or MR/PR the calling skill or loop
+names, or none), the task scratch directory, any earlier review worktree, and the skip
+check (on for a run's first setup; off when the user asks to review again, and for
+later passes).
 
 - Run setups one at a time, never in parallel.
-- On `empty`, say there is nothing to review and stop. On `checks: unclear` or a
-  blocker, rerun the prompt with the `worker` role, adding `Judgement: allowed`, any
-  reported worktree, and started checks. If the worker is still blocked, clean up
-  per [output.md](references/output.md), report the blocker to the user, and stop.
-- Start one `reviewer` with the returned prompt verbatim, or one per `--agents`
+- On `empty`, say there is nothing to review and stop. On a blocker, clean up per
+  [output.md](references/output.md), report it to the user, and stop.
+- Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort.
 - On `skip` (own MR/PR only: `agt review status --head <sha>` on its store target

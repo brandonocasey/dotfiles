@@ -1,14 +1,14 @@
 # Review setup
 
-You prepare one review pass for the main session, so it needs no review references
-before the spawn. Edit no tracked files. First read the repository's AGENTS.md or
-CLAUDE.md; their rules override this file, such as a ban on worktrees (then use the
-current checkout). When a step needs judgement this file does not
-settle, stop and report the blocker instead of guessing. When the prompt says
-`Judgement: allowed`, decide it yourself instead and list each choice in the report.
+The main session prepares one review pass itself with `agt`, `git`, and `gh`/`glab`
+commands; no sub-agent. Read file paths, metadata, and CI status only, never the
+changed code or diff content. Edit no tracked files. The repository's AGENTS.md or
+CLAUDE.md override this file, such as a ban on worktrees (then use the current
+checkout). When a step needs judgement this file does not settle, decide it and list
+each choice in the report.
 
 Input: the target as the user gave it, the task scratch directory, any
-review worktree from an earlier pass, and `Skip check: on` or `off`. With several targets, set up one at a time:
+review worktree from an earlier pass, and the skip check, on or off. With several targets, set up one at a time:
 parallel fetches share `FETCH_HEAD`.
 
 ## 1. Pin the target
@@ -41,7 +41,7 @@ If the pinned diff is empty, report `empty` and stop.
 - MR/PR: **Source checkout** in [remote-target.md](remote-target.md). Branch: prefer
   a suitable existing checkout (`git worktree list`). If it is unsuitable, create
   a detached review worktree at the pinned head without disturbing that checkout.
-  If the branch is checked out nowhere, use the `worktree` skill's `references/create.md`.
+  If the branch is checked out nowhere, run `agt worktree create <branch> --prepare`.
 - Before creating a review worktree, inspect `git worktree list --porcelain` and
   the intended path. Prefer a compatible existing checkout, including a named review
   worktree from another session; discovery never depends on an earlier-pass path.
@@ -49,7 +49,7 @@ If the pinned diff is empty, report `empty` and stop.
   create another worktree when needed. Avoid extra names when safe reuse is possible.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
-- Prepare a new worktree per the `worktree` skill's `references/prepare.md`.
+- Create and prepare new worktrees with `agt worktree create <branch> --prepare`.
 - From the review worktree, per [store.md](store.md): for a GitHub or GitLab MR/PR,
   run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
   self-hosted GitLab) and keep the target key it prints. Then run
@@ -59,7 +59,7 @@ If the pinned diff is empty, report `empty` and stop.
   also for a branch with a given base
   (`--default-branch <base branch>` when it is not the default branch; store.md
   **Commands**). Run it bare, never filtered. For an own GitHub or
-  GitLab MR/PR only, when the prompt says `Skip check: on`,
+  GitLab MR/PR only, when the skip check is on,
   `reviews_at_head` is 2 or more, and 0 threads are open, report `skip` with the
   count, run IDs, and any worktree you created, and stop before checks. Never skip
   another target on `reviews_at_head`.
@@ -69,16 +69,14 @@ If the pinned diff is empty, report `empty` and stop.
 - Take the test, lint, and typecheck commands from the repository's CI config or its
   documented scripts (package scripts, Makefile, justfile, CONTRIBUTING). If none are
   documented, fill `Checks` with `none documented; choose and run relevant checks yourself`
-  and continue. Report `checks: unclear` only when documented commands conflict.
-  Copy commands as written; this is a lookup, not a choice. With `Judgement: allowed`,
-  choose among conflicting commands and list the choice.
-- In a worktree you created, install dependencies per `prepare.md` whenever the
-  repository has a lockfile or dependency manifest, so reviewers and the manual pass
-  never install there. In an existing checkout, install only when dependencies are
+  and continue. Copy commands as written. When documented commands conflict, choose
+  and list the choice.
+- `agt worktree create --prepare` installs dependencies in a new worktree, so
+  reviewers and the manual pass never install there. In an existing checkout, install only when dependencies are
   missing. Build only when the commands need it.
 - Name each log `<check>-<pin-id>.log`, where `<pin-id>` is the head SHA, plus a short
   hash of the diff file for any pin saved as a diff file. Skip a command whose log for this pin
-  exists or that the prompt reports as started.
+  exists or that an earlier setup started.
 - Start each command once, detached (`nohup`), on the pinned target. Write its full log
   to the scratch directory, ending with an `exit N` line. Do not wait for them.
 
@@ -145,11 +143,11 @@ evidence, tests run. End with `Risk: low|medium|high - <one-line reason>`.
 Keep the severity scale in sync with [output.md](output.md). The main session converts
 the returned prose to `pass end --findings` JSON per [store.md](store.md).
 
-## Report
+## Record
 
-At most 15 lines: the pin, worktree path, whether you created or reused it, starting
+Keep for later steps and report in at most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each command with its log path, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`. Then the filled
-prompt in one fenced block. Or report `empty`, `checks: unclear`, or the blocker, with
-any worktree you created and any checks you started.
+none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`.
+Or report `empty` or the blocker, with any worktree you created and any checks you
+started.
