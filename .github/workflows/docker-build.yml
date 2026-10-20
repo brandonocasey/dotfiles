@@ -45,6 +45,7 @@ jobs:
         run: node --test home/dot_config/exact_agents/exact_skills/*/exact_test/*.test.*js
 
   build_and_publish:
+    if: false
     needs: test
     runs-on: ubuntu-latest
     permissions:
