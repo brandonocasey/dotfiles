@@ -340,9 +340,9 @@ color_for_pct() {
 
 # --- Format a reset timestamp as a short countdown from now ---
 # Shows only the largest unit, rounded down to one decimal so it never
-# overstates the time left: "6.5d", "4.2h", "45m", "9.5m", "0m". Minutes get
-# the decimal only under 10. The unit sets the hue (days violet, hours teal,
-# minutes blue).
+# overstates the time left: "6.5d", "4.2h", "45m". Under 10 minutes it shows
+# seconds too: "5m27s", "0m05s". The unit sets the hue (days violet, hours
+# teal, minutes blue).
 countdown_str() {
   awk -v r="$1" -v n="$(date +%s)" -v dim="$rl_dim" '
   function part(v, u, c) {
@@ -357,7 +357,7 @@ countdown_str() {
     if (d >= 86400)     out = part(d / 86400, "d", DAYS)
     else if (d >= 3600) out = part(d / 3600, "h", HOURS)
     else if (d >= 600)  out = MINS int(d / 60) "m\033[0m"
-    else                out = part(d / 60, "m", MINS)
+    else                out = MINS sprintf("%dm%02ds", int(d / 60), d % 60) "\033[0m"
     printf "%s", out
   }'
 }
