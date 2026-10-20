@@ -578,6 +578,9 @@ sep=$(printf '\033[38;5;245m|\033[0m')
 # shows the machine's LAN IPv4 address, joined by the session's port when it
 # has one ("192.168.73.7:43750").
 # Detection takes ~250 ms, so each session reuses its result for 5 s.
+# The segment holds the markers "@IP@" and "@.IP@" for the address; the last
+# step fills them with the full address, or only its last octet when the line
+# would not fit the terminal.
 lan_ip() {
   local iface host=""
   iface=$(route -n get default 2>/dev/null | awk '/interface:/ { print $2 }')
@@ -593,11 +596,10 @@ lan_ip() {
   printf '%s' "$host"
 }
 srv_detect() {
-  local listen pids cwds titles procs rows ports host tail assigned shown row
+  local listen pids cwds titles procs rows ports host assigned shown row
   host=$(lan_ip)
-  # Only the last octet is shown: "7:48990", or ".7" without a port. Links keep
-  # the full address.
-  tail=${host##*.}
+  # The first output line is the address; the segment follows.
+  printf '%s\n' "$host"
   listen=$(lsof -nP -iTCP -sTCP:LISTEN -Fpn 2>/dev/null | awk '
     /^p/ { p = substr($0, 2) } /^n/ { print p "\t" substr($0, 2) }
   ')
@@ -678,7 +680,7 @@ srv_detect() {
     shown=${row%%$'\t'*}
   fi
   if [ -z "$shown" ]; then
-    [ -n "$tail" ] && printf '\033[35m.%s\033[0m' "$tail"
+    [ -n "$host" ] && printf '\033[35m@.IP@\033[0m'
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -686,14 +688,14 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "$tail:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "35" "@IP@:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m%s:%s\033[0m' "$tail" "$shown"
+    printf '\033[31m@IP@:%s\033[0m' "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m%s:%s\033[0m' "$tail" "$shown"
+    printf '\033[2;35m@IP@:%s\033[0m' "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   fi
   return 0
@@ -707,15 +709,16 @@ srv_link() {
   printf '\033]8;;http://%s:%s\a\033[%sm%s\033[0m\033]8;;\a' "$url_host" "$1" "$3" "$4"
 }
 srv_seg=""
+srv_ip=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m.%s\033[0m' "${srv_ip##*.}")
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m@.IP@\033[0m')
 else
-  srv_cache="$rl_dir/servers-$rl_sid"
+  srv_cache="$rl_dir/servers-ip-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
   case $srv_mtime in '' | *[!0-9]*) srv_mtime=0 ;; esac
   if [ $((now - srv_mtime)) -lt 5 ]; then
-    srv_seg=$(cat "$srv_cache" 2>/dev/null)
+    srv_out=$(cat "$srv_cache" 2>/dev/null)
   else
     # session-port.sh releases a block whose port file is untouched for an
     # hour once the recorded cache expiry has passed, and this script's
@@ -751,10 +754,12 @@ else
       rmdir "$port_lock" 2>/dev/null
       port_lock=""
     fi
-    srv_seg=$(srv_detect)
-    rl_write "$srv_cache" "$srv_seg"
+    srv_out=$(srv_detect)
+    rl_write "$srv_cache" "$srv_out"
     touch -c "$srv_port_file" "$srv_known_file"
   fi
+  srv_ip=${srv_out%%$'\n'*}
+  [ "$srv_out" = "$srv_ip" ] || srv_seg=${srv_out#*$'\n'}
 fi
 
 # The account (grey) leads the first line and links to claude.ai.
@@ -871,9 +876,26 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# The first line is "<account>|<last IP octet>:<port>|", the model, context,
-# and any spend limit, then "<project>#<branch>", which ends the line since a
-# long branch name runs longest. The gauge lines follow.
+# The first line is "<account>|<IP>:<port>|", the model, context, and any
+# spend limit, then "<project>#<branch>", which ends the line since a long
+# branch name runs longest. The gauge lines follow.
 [ -n "$loc_seg" ] && parts="$parts$sep$loc_seg"
+
+# Show the full IP address while the first line fits the terminal's $COLUMNS,
+# else only its last octet: "7:48990", or ".7" without a port. Links keep the
+# full address. Without $COLUMNS the line stays short.
+srv_full=${parts//@.IP@/$srv_ip}
+srv_full=${srv_full//@IP@/$srv_ip}
+srv_vis=$(printf '%s' "$srv_full" | sed -E $'s/\033\\[[0-9;]*m//g; s/\033\\]8;;[^\a]*\a//g')
+case $COLUMNS in
+  '' | *[!0-9]*) srv_fits="" ;;
+  *) [ "${#srv_vis}" -le "$COLUMNS" ] && srv_fits=1 || srv_fits="" ;;
+esac
+if [ -n "$srv_fits" ]; then
+  parts=$srv_full
+else
+  parts=${parts//@.IP@/.${srv_ip##*.}}
+  parts=${parts//@IP@/${srv_ip##*.}}
+fi
 
 printf '%b' "$parts$gauges"
