@@ -354,12 +354,57 @@ countdown_str() {
   }'
 }
 
-# --- Build an unlabeled "<countdown>:<pct>%" rate-limit segment ---
+# --- Draw a 10-cell usage bar on a pace-shaded track ---
+# $1 = used percentage, $2 = reset epoch, $3 = window length in seconds,
+# $4 = pace colour from rate_seg. Each cell is 10% of the limit, drawn in
+# eighths (1.25% steps). The track is light grey up to where an even pace would
+# put usage now and dark grey after, so light track ahead of the fill is budget
+# still free at this pace. A cell is green while most of its fill lies within
+# pace; fill mostly past pace takes the pace colour, never green. A full bar is
+# all red. A partial fill cell has one track colour behind it: light when most
+# of its unfilled part is within pace.
+pace_bar() {
+  awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v c="$4" -v dim="$rl_dim" 'BEGIN {
+    split("▏ ▎ ▍ ▌ ▋ ▊ ▉ █", g, " ")
+    LIGHT = 240; DARK = 236
+    e = w - (r - n)
+    if (e < 0) e = 0
+    if (e > w) e = w
+    pace = 100 * e / w
+    t = int(pace * 0.8 + 0.5)
+    u = int(p * 0.8 + 0.5)
+    if (u > 80) u = 80
+    if (c == 32) c = 33
+    for (i = 0; i < 10; i++) {
+      q = u - 8 * i
+      if (q > 8) q = 8
+      k = t - 8 * i
+      if (k < 0) k = 0
+      if (k > 8) k = 8
+      pre = "\033[" dim
+      if (q <= 0) {
+        if (k == 0)      out = out pre "48;5;" DARK "m "
+        else if (k == 8) out = out pre "48;5;" LIGHT "m "
+        else             out = out pre "48;5;" DARK ";38;5;" LIGHT "m" g[k]
+        continue
+      }
+      mid = 10 * i + 1.25 * q / 2
+      fg = u == 80 ? 31 : mid > pace ? c : 32
+      bg = 2 * (k - q) >= 8 - q ? LIGHT : DARK
+      out = out pre "48;5;" bg ";" fg "m" g[q]
+    }
+    printf "%s\033[0m", out
+  }'
+}
+
+# --- Build an unlabeled rate-limit segment ---
 # $1 = reset epoch (may be empty), $2 = used percentage (may be empty),
 # $3 = window length and $4 = budget step, in seconds (may be empty)
-# The countdown colours itself per unit. With a window, step, and reset, the
-# percentage is coloured by an even budget across the window (1/7 a day for 7
-# days, 1/5 an hour for 5 hours), counted to the start of the current step:
+# With a window, step, and reset it reads "<countdown> <pace bar> <pct>%";
+# otherwise "<countdown>:<pct>%". The countdown colours itself per unit. With a
+# window, step, and reset, the percentage is coloured by an even budget across
+# the window (1/7 a day for 7 days, 1/5 an hour for 5 hours), counted to the
+# start of the current step:
 # yellow once usage runs more than one step's share ahead of it, red once more
 # than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
 # and red mark only usage warnings and an expiring prompt cache.
@@ -379,12 +424,12 @@ rate_seg() {
         b = int(e / t) * s
         print (p >= 100 || p > b + 2 * s ? 31 : p > b + s ? 33 : 32)
       }')
-    else
+      seg=$(printf '%s %s \033[%s%sm%d%%\033[0m' "$seg" "$(pace_bar "$pct" "$reset" "$window" "$c")" "$rl_dim" "$c" "$p")
+    elif [ -n "$seg" ]; then
       c=$(color_for_pct "$p")
-    fi
-    if [ -n "$seg" ]; then
       seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
     else
+      c=$(color_for_pct "$p")
       seg=$(printf '\033[%s%sm%d%%\033[0m' "$rl_dim" "$c" "$p")
     fi
   fi
@@ -764,7 +809,7 @@ if [ -n "$git_info" ]; then
   loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033]8;;%s\a\033[97m%s\033[0m\033]8;;\a' "$loc_seg" "$loc_link" "$git_info")
 fi
 
-# 5-hour and 7-day windows: "<countdown>:<usage%>" each, no labels. Each links
+# 5-hour and 7-day windows: "<countdown> <pace bar> <usage%>" each, no labels. Each links
 # to the claude.ai usage page.
 usage_link='\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a'
 rl_dim=$five_hour_dim
