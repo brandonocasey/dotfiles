@@ -15,7 +15,10 @@ account_name="${account%%@*}"
 now=${EPOCHSECONDS:-$(date +%s)}
 
 # Read every input field in one jq run; each extra run costs about 4 ms.
-# Missing fields come out empty.
+# Missing fields come out empty; so do all of them when jq fails.
+cwd="" transcript="" model_raw="" model_id="" effort_raw="" ctx_remaining=""
+ctx_total="" ctx_used_tokens="" rl_sid="" rl_live="" pc_state="" pc_expires=""
+pc_ttl=""
 eval "$(printf '%s' "$input" | jq -r --argjson now "$now" '
   def s: if . == null then "" else tostring end | @sh;
   "cwd=\(.workspace.current_dir // .cwd | s)",
@@ -267,6 +270,9 @@ rl_cached=$(jq -cs '.[0] // null' "$rl_cache" 2>/dev/null)
 rl_prev=""
 [ -n "$rl_prev_file" ] && rl_prev=$(jq -cs '.[0] // null' "$rl_prev_file" 2>/dev/null)
 # Values this session has no live copy of come from the cache and are dimmed.
+rl_cache_json="" rl_live_json="" five_hr="" five_hour_reset="" five_hour_dim=""
+seven_day="" seven_day_reset="" seven_day_dim="" spend_pct="" spend_reset=""
+spend_used="" spend_cap="" spend_dim=""
 eval "$(jq -nrS --argjson now "$now" --argjson live "${rl_live:-null}" \
   --argjson cache "${rl_cached:-null}" --argjson prev "${rl_prev:-null}" '
   def fresh: type == "object" and (.resets_at | type) == "number" and .resets_at > $now;
@@ -503,7 +509,7 @@ fi
 if [ $is_1m -eq 0 ]; then
   case "$model_id$model_raw" in
     # Opus/Sonnet carry an explicit [1m] beta flag; Fable is natively 1M.
-    *1m*|*1M*|*\[1m\]*|*[Ff]able*) is_1m=1 ;;
+    *1m*|*1M*|*[Ff]able*) is_1m=1 ;;
   esac
 fi
 
