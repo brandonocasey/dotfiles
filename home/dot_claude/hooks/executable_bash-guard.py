@@ -4,6 +4,8 @@
 - Foreground polling: until/while/for loops that sleep, sleeps of 20s or more in all,
   sleeps of 10s or more followed by a log or file check, and gh watch commands. They hit the 10-minute tool cap and leave the context
   idle while its cache expires. Background runs pass.
+- Sub-agent foreground calls with a timeout over 4.5 minutes. A sub-agent's cache
+  lasts 5 minutes, so a longer call rewrites its whole context when it returns.
 - pkill -f / pgrep -f with a plain pattern. The pattern also appears in this
   shell's own command line, so pkill kills its own shell (exit 144) and pgrep
   always finds a match.
@@ -29,6 +31,7 @@ POLL_LOOP = re.compile(
 )
 SLEEP = re.compile(r"\bsleep\s+(\d+(?:\.\d+)?)([smhd]?)\b")
 UNIT = {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}
+SUBAGENT_MAX_MS = 270_000
 SHELLS = {"sh", "bash", "zsh", "dash", "ksh"}
 GH_WATCH = re.compile(r"\bgh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch)\b")
 PROC_TOOL = re.compile(r"\b(pkill|pgrep)\b")
@@ -328,12 +331,32 @@ def problems(cmd: str, background: bool) -> list[str]:
     return found
 
 
+def long_subagent_call(tool_input: dict) -> list[str]:
+    """A sub-agent foreground call allowed to outlast its 5-minute cache."""
+    if tool_input.get("run_in_background"):
+        return []
+    try:
+        limit = float(tool_input.get("timeout") or 0)
+    except (TypeError, ValueError):
+        return []
+    if limit <= SUBAGENT_MAX_MS:
+        return []
+    return [
+        f"Sub-agent foreground call with a {limit / 60000:.1f}-minute timeout. Your "
+        "prompt cache expires after 5 idle minutes, so a longer call rewrites your "
+        f"whole context when it returns. Use a timeout of {SUBAGENT_MAX_MS} or less, "
+        "or rerun it with run_in_background: true and stop."
+    ]
+
+
 def main() -> int:
     data = json.load(sys.stdin)
     tool_input = data.get("tool_input") or {}
     found = problems(
         tool_input.get("command") or "", bool(tool_input.get("run_in_background"))
     )
+    if data.get("agent_id"):
+        found += long_subagent_call(tool_input)
     if found:
         print("bash-guard: " + " ".join(found), file=sys.stderr)
         return 2

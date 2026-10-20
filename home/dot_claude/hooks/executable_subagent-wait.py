@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""SubagentStop hook: keep waiting subagents warm for 20 minutes, then hand off.
+"""SubagentStop hook: keep waiting subagents warm for 10 minutes, then hand off.
 
 A subagent that stops while its own background shell job runs sits idle until
 the job ends, and its 5-minute prompt cache expires. This hook makes it wake
 every 4.5 minutes instead (one cheap cache read per wake), by requiring a
-running `agt wait` waiter. After 20 minutes of waiting on the same jobs it
+running `agt wait` waiter. After 10 minutes of waiting on the same jobs it
 must write a handoff file and hand back with `HANDOFF: <path>`, so the main
 session can wait for free and start a fresh agent from that file.
 
@@ -24,7 +24,7 @@ import time
 STATE_ROOT = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
 STATE = os.path.join(STATE_ROOT, "agents", "subagent-wait")
 LOG = os.path.join(STATE_ROOT, "agents", "subagent-wait.log")
-WARM_SECONDS = 20 * 60
+WARM_SECONDS = 10 * 60
 WAITER = re.compile(r"\bagt\s+wait\b")
 HANDOFF = re.compile(r"HANDOFF:[*_`\s]*([^\s`*]+)")
 REPORT = (
@@ -263,11 +263,14 @@ def main() -> int:
         "run_in_background: true, e.g. `agt wait --timeout 270 -- test -e <done-file>`. "
         "It wakes you within 4.5 minutes; check the job, re-arm the waiter if "
         "it still runs, then stop again with a short plain-text note. "
-        f"{REPORT} For jobs that may run past 20 "
+        f"{REPORT} For jobs that may run past 10 "
         "minutes, start them detached instead of with run_in_background, so a "
         "handoff does not leave you parked until they end: "
         "`nohup setsid sh -c '<cmd> > <log> 2>&1; echo $? > <done-file>' "
-        ">/dev/null 2>&1 &` returns at once.",
+        ">/dev/null 2>&1 &` returns at once. Then hand off now instead of "
+        "waiting: write a handoff file in your scratch directory with the task "
+        "state, findings so far, the next step, the job's log path, and its "
+        "done condition, and end your report with the line HANDOFF: <path>.",
         {**entry, "waited": int(waited)},
     )
 

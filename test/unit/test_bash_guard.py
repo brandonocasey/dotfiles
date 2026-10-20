@@ -139,5 +139,27 @@ class HeadlessClaudeTests(GuardTestCase):
                 self.assertAllowed(command)
 
 
+class SubagentTimeoutTests(GuardTestCase):
+    def run_call(self, timeout: int | None, agent_id: str | None = "a1", background: bool = False):
+        tool_input = {"command": "npm test", "timeout": timeout, "run_in_background": background}
+        payload = {"tool_name": "Bash", "tool_input": tool_input}
+        if agent_id:
+            payload["agent_id"] = agent_id
+        return subprocess.run([sys.executable, "-I", str(HOOK)], env=self.env, capture_output=True, text=True,
+                              input=json.dumps(payload), timeout=30)
+
+    def test_long_subagent_foreground_call_is_blocked(self):
+        result = self.run_call(590000)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("Sub-agent foreground call with a 9.8-minute timeout", result.stderr)
+
+    def test_short_or_background_or_main_calls_are_allowed(self):
+        for name, outcome in (("short", self.run_call(270000)), ("default", self.run_call(None)),
+                              ("background", self.run_call(590000, background=True)),
+                              ("main session", self.run_call(590000, agent_id=None))):
+            with self.subTest(name):
+                self.assertEqual(outcome.returncode, 0, outcome.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

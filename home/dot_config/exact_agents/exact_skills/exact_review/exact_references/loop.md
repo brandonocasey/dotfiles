@@ -44,7 +44,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
      its comment link, fix commit, and fix-check result, plus held `question` items with
      any answers. Ask it to mark each fix or answer `agree` or `disagree`
      with evidence, and to return new findings in the usual format, tagged
-     `post-reveal`. Without continuation support, skip the reveal and say so.
+     `post-reveal`. Without continuation support, or when `continue-guard` blocks a
+     late continuation, skip the reveal and say so.
    - Re-verify the blind and reveal findings together. A surviving `disagree` reopens
      its cycle 1 finding as `not fixed`. Kill a blind finding with
      `agt review finding kill <id> --reason <text>`. Count the surviving `agree` and
