@@ -2,7 +2,8 @@
 
 - Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
   beside it found nothing extra. In a real-bug A/B test, Sonnet `xhigh` alone
-  caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet does not review.
+  caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only `low`
+  risk tiers and fresh fix checks, to save cost.
 - The review skill's step 0–2 owns `--agents` and per-target reviewer sets.
 
 An external tool's findings go through the same re-verification.

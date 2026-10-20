@@ -15,7 +15,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
    surrounding context, since continuing after the cache expires rewrites their whole
    context. After one failed continuation, start fresh reviewers for that cycle's
-   remaining fix checks. Send each reviewer:
+   remaining fix checks. Start fresh fix-check reviewers with `model: sonnet` (effort
+   stays `xhigh`); `--agents` overrides this. Send each reviewer:
    - the output of `agt review list --run <run> --cycle <n> --format prompt`
      ([store.md](store.md)): every surviving finding from this cycle, from any reviewer
      or the manual pass, with its applied fix, and each killed finding with its
@@ -32,8 +33,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    but never start another fix check. A held `question` or a `pre-existing` finding
    that a later pass re-raises is not new.
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
-   from the first cycle. Skip it when the first full review found no major finding that
-   survived verification. Its full review runs blind, then reveals:
+   from the first cycle. Skip it when the first full review found no `high` severity
+   major finding that survived verification. Its full review runs blind, then reveals:
    - **Lock.** When the reviewers return, record their findings as reported with
      `pass end --lock --findings -`. The store refuses changes to them after that. Do not
      `publish` from the lock until the reveal re-verification ends.

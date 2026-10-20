@@ -28,7 +28,7 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | `tester` | Select relevant tests, inspect failures, and validate evidence; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for test selection only | gpt-6.1-sol, low |
 | `manual-tester` | Exercise manual workflows; read-only | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, xhigh |
-| `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh | gpt-6-astra, xhigh |
+| `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh; the `review` skill passes `model: sonnet` for `low` risk tiers and fresh fix checks | gpt-6-astra, xhigh |
 
 Routing:
 

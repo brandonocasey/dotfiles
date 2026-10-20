@@ -45,7 +45,8 @@ later passes).
   [output.md](references/output.md), report it to the user, and stop.
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
-  per target. Otherwise the `sub-agents` skill sets model and effort.
+  per target. Otherwise the `sub-agents` skill sets model and effort; when the
+  current risk tier is `low`, pass `model: sonnet` (effort stays `xhigh`).
 - On `skip` (own MR/PR only: `agt review status --head <sha>` on its store target
   shows `reviews_at_head` of 2 or more and 0 open threads; [store.md](references/store.md)),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
