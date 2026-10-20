@@ -14,7 +14,7 @@ when its code revision, inputs, and environment match.
 Create a record with the objective and exact authorization provenance and scope:
 
 ```sh
-agt task create --id <id> --objective <text> --authorization <source> --scope <scope>
+agt task create <id> --objective <text> --authorization <source> --scope <scope>
 ```
 
 Use `--parent-pr`, `--target-branch`, and `--task-boundary` when those fields
@@ -27,8 +27,8 @@ Update with the revision returned by `show`; stale updates fail:
 
 ```sh
 agt task update <id> --revision <n> --next-step <text>
-agt task check <id> --revision <n> --name <check> --result <result> \
-  --code-revision <sha> --inputs <inputs> --environment <environment>
+agt task update <id> --revision <n> --check-name <check> --check-result <result> \
+  --check-code-revision <sha> --check-inputs <inputs> --check-environment <environment>
 ```
 
 Add each user correction with `--correction <text>` so later sessions do not
@@ -38,13 +38,12 @@ reconcile the newer record with the pending change, and retry with its revision.
 Set `--status complete` only after all task work
 is complete. Use `agt task list` to find active records.
 
-These session commands need `agt` 0.10.0 or newer. Follow [agt.md](../shared/agt.md).
-For old context, run `agt sessions index` to update the private incremental index and see scan
+These session commands need `agt` 0.18.0 or newer. Follow [agt.md](../shared/agt.md).
+For old context, run `agt sessions search` without `--query` to update the private incremental index and see scan
 coverage (Codex and Claude history, transcripts, archives, alternate profiles, plus unreadable
-or malformed files). Omit `--max-files` and `--byte-limit` unless a bounded partial update is
-required. After a deliberate rewrite deep inside a growing log, run `agt sessions index --rebuild`.
+or malformed files). After a deliberate rewrite deep inside a growing log, run `agt sessions search --rebuild`.
 
-Use `agt sessions resolve --session <id>` to find an exact session. Use
+Use `agt sessions search --session <id>` (no `--query`) to find an exact session. Use
 `agt sessions search --query <text> [--session <id>]` to search human turns. Each
 JSON-array result includes the host, session, source offset, and bounded context.
 Search writes coverage JSON to standard error, including when it finds no match.

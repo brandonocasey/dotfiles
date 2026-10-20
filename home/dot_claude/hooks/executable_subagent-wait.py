@@ -260,7 +260,7 @@ def main() -> int:
     return block(
         "Your background job is still running, and an idle wait lets your "
         "prompt cache expire. Before stopping, start a waiter with "
-        "run_in_background: true, e.g. `agt wait --max 270 -- test -e <done-file>`. "
+        "run_in_background: true, e.g. `agt wait --timeout 270 -- test -e <done-file>`. "
         "It wakes you within 4.5 minutes; check the job, re-arm the waiter if "
         "it still runs, then stop again with a short plain-text note. "
         f"{REPORT} For jobs that may run past 20 "

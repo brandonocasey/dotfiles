@@ -55,8 +55,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    name the recurring cause in one line and suggest rethinking the approach before
    more fixes.
 
-Keep the loop state in the store per [store.md](store.md): `run start --kind full
---base <pinned base>` (or `pass start`, with `--base` for a full pass) with each
+Keep the loop state in the store per [store.md](store.md): `pass start --kind full
+--base <pinned base>` with each
 reviewer, plus `manual` for the manual pass and `fix` for
 fixes; one `pass end --findings -` with the pass's verified and killed findings;
 `resolve <ids> --fixed <sha>` for the fixes; `resolve <id> --not-fixed <reason>` as the

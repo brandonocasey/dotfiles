@@ -32,14 +32,14 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
    - Outside the checkout, add `-R` as in merge.md. If it stays a draft, skip
      steps 5–6 and report it as a blocker.
-4. **Approve** (`--approve`): run `agt review approve` on the review's store
-   target, then `publish`, which posts an approval comment at `HEAD_SHA`. Only when
-   the user asks for a formal approval, use `approve --formal`; it also submits the
+4. **Approve** (`--approve`): run `agt review publish --approve` on the review's store
+   target, which posts an approval comment at `HEAD_SHA`. Only when
+   the user asks for a formal approval, use `publish --approve --formal`; it also submits the
    host's approval and never approves your own GitHub PR. On another author's MR/PR,
-   publish with `--not-own --only <approval id>`, after a `--dry-run` with the same
+   publish with `--approve --not-own`, after a `--dry-run` with the same
    flags. When `skipped` lists the approval (head moved, or `<id>/formal` on your own
    GitHub PR) or `posted` shows an approve `error`, report that instead of approved.
-   To retry a failed formal approval once, run `approve --formal` and `publish` again.
+   To retry a failed formal approval once, run `publish --approve --formal` again.
    A comment does not satisfy required approvals; when the MR/PR needs one for
    `--auto-merge` or `--merge`, report that blocker.
 5. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and

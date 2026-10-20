@@ -38,7 +38,7 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
      (`file:line` or URL), evidence, and the reason it is new;
    - re-raise a rejected item only with new evidence;
    - list the areas it checked;
-   - for Claude session evidence, use `agt sessions` (cost, errors,
+   - for Claude session evidence, use `agt sessions report` (cost, errors,
      denials, friction) before writing a new transcript parser;
    - not edit, commit, or spawn agents.
 2. From round 2, replace each angle that returned nothing with a new angle aimed

@@ -32,7 +32,7 @@ question. Never invent a key, project, status, or version.
 - Remote: `gh` for GitHub, `glab` for GitLab (`GITLAB_HOST` for self-hosted),
   `fj` or the Forgejo REST API for Forgejo. Other platforms: unsupported; stop
   before any write.
-- GitHub and GitLab issues: `agt issue` (0.13.0 or newer) when `agt --version`
+- GitHub and GitLab issues: `agt issue` (0.18.0 or newer) when `agt --version`
   works and a tracker for the repo is in `$XDG_CONFIG_HOME/agt/config.toml`
   (`~/.config` when unset). See [agt.md](../shared/agt.md).
   - Do not install `agt` here. Without it, or without a matching tracker, use
@@ -57,7 +57,7 @@ question. Never invent a key, project, status, or version.
 1. Read the MR/PR: title, description, branch, author, state, labels, and changed files.
 2. Find keys with the regex in the branch, title, and description. For GitHub
    and GitLab tickets, also run `agt issue sync --tracker <owner/repo>`, then
-   `agt issue find --pr <url>` for the linked issues. Use the MR/PR URL, or add
+   `agt issue list --pr <url>` for the linked issues. Use the MR/PR URL, or add
    `--tracker <owner/repo>` to a number: a bare number matches that PR in every
    synced tracker. Skip this when `agt` or a tracker is missing. Jira keys do
    not use `agt`.

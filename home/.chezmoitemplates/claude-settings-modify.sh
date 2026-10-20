@@ -73,12 +73,8 @@ managed=$(
       "Bash(agt issue list *)",
       "Bash(agt issue show)",
       "Bash(agt issue show *)",
-      "Bash(agt issue search)",
-      "Bash(agt issue search *)",
       "Bash(agt issue status)",
       "Bash(agt issue status *)",
-      "Bash(agt issue find)",
-      "Bash(agt issue find *)",
       "Bash(mise run quality-architecture)",
       "Bash(mise ls)",
       "Bash(agt sessions *)",
@@ -282,7 +278,7 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "agt cleanup --only output --yes >/dev/null",
+            "command": "agt cleanup --only files --yes >/dev/null",
             "timeout": 2
           }
         ]

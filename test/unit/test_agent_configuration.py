@@ -38,7 +38,7 @@ class AgentConfigurationTests(unittest.TestCase):
         for event in ("startup", "resume", "fork", "clear"):
             with self.subTest(event=event):
                 self.assertIn("agt cleanup --count", commands(event))
-                self.assertIn("agt cleanup --only output --yes >/dev/null", commands(event))
+                self.assertIn("agt cleanup --only files --yes >/dev/null", commands(event))
         self.assertIn("sh ~/.claude/hooks/session-port.sh", commands("compact"))
 
     def test_codex_visibility_preserves_live_settings(self):

@@ -18,7 +18,7 @@ final report as `⚠ <warning>`, with `behind` and any `retry` command. When the
 [ff-local-target.md](../../shared/ff-local-target.md) instead.
 
 ```sh
-agt worktree create <branch> [--base <commit-ish>] [--prepare] [--port] [--background]
+agt worktree create <branch> [--base <commit-ish>] [--prepare] [--background]
 ```
 
 It prints JSON with the worktree `path`. Work in that path for the whole task. Check the JSON:
@@ -43,8 +43,8 @@ remote branch, check that `git -C <path> rev-parse --abbrev-ref @{u}` prints `or
   This leaves submodules on detached HEADs. Before a submodule commit, create
   a branch there: `git -C <sub-path> switch -c <branch>`. This gives the commit
   a pushable ref and prevents the next update from orphaning it.
-- `--prepare` runs `agt worktree prepare`; `--port` runs `agt worktree port`.
-  Add them only when [prepare.md](prepare.md) says setup is needed; it also owns
+- `--prepare` runs `agt worktree prepare`; for a dev-server port run `agt worktree port`.
+  Add `--prepare` only when [prepare.md](prepare.md) says setup is needed; it also owns
   `--background` and the repository's `create` hooks.
 
 In zsh, `$B:refs/...` applies the `:r` modifier and mangles the refspec. Write

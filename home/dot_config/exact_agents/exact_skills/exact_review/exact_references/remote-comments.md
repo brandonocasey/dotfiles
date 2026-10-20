@@ -46,12 +46,12 @@ posts a final review record. GitLab and GitHub only, and only in a repository in
 the user's organization; for an upstream or other outside repository, print as for
 other MRs/PRs. Never post on any other MR/PR unless the user asks; then post only
 the findings the user chose with
-`agt review publish --not-own --findings --only <ids>` per [output.md](output.md). It never posts records.
+`agt review publish --not-own --only <ids>` per [output.md](output.md). It never posts records.
 
 ### IDs and signature
 
 - Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run, from
-  `agt review run start`.
+  `agt review pass start --kind full`.
 - Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
 - Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
   keeps its ID.
@@ -88,10 +88,10 @@ yourself. It refuses an MR/PR the user did not author. What it posts:
   changed post as a general comment naming the location. GitLab: a resolvable
   thread. GitHub: a general comment; it cannot be resolved, so `publish` posts a
   reply to it as a new general comment ending `Re: <finding id>`.
-- **Replies.** Fixed: `resolve <id>... --fixed <sha> --run <run> --pass <pass>
-  --reviewer fix` adds the `Fixed in <sha>.` reply and resolves. Not fixed:
-  `resolve <id> --not-fixed "<reason>"` with the fix-check reviewer's `--run`,
-  `--pass`, and `--reviewer` adds the `Not fixed: <reason>.` reply and reopens.
+- **Replies.** Fixed: `resolve <id>... --fixed <sha>
+  --reviewer <run>.<pass>.fix` adds the `Fixed in <sha>.` reply and resolves. Not fixed:
+  `resolve <id> --not-fixed "<reason>"` with the fix-check reviewer's
+  `--reviewer <run>.<pass>.<id>` adds the `Not fixed: <reason>.` reply and reopens.
   `publish` posts each reply with its author's signature, then resolves or reopens
   the thread.
 - **Final record.** GitLab: a note with `resolvable=false`, so it never blocks

@@ -54,7 +54,7 @@ On an own GitHub or GitLab MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the store. Otherwise do not
 post anything to the MR/PR unless the user asks. Then show the user
-`agt review publish --not-own --findings --only <finding ids the user chose> --dry-run`,
+`agt review publish --not-own --only <finding ids the user chose> --dry-run`,
 and run it without `--dry-run` only when the dry-run writes match the request. Step 6 lists what `--threads` may
 post. Print for the user to post, per `host-preflight/references/copyable-output.md`:
 one fenced block per comment, numbered by finding. Report CI and

@@ -6,7 +6,7 @@ worktrees, live agents, and issues (`agt review`, `agt task`, `agt sessions`, `a
 the minimum version.
 
 From 0.13.0 it also covers PRs/MRs on GitHub and GitLab (`agt pr view|list|create|update|merge|auto-merge`),
-branch push and landing checks (`agt branch pushed|landable`), a secret scan that never prints
+branch push and landing checks (`agt branch check [--checks pushed,landable]`), a secret scan that never prints
 values (`agt secrets [PATH...] [--staged]`), a read-only setup check (`agt doctor`), and blocked-session
 events (`agt ps --watch`). Each command's `--help` documents its JSON fields and exit codes.
 

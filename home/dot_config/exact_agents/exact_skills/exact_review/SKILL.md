@@ -83,7 +83,7 @@ Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallba
 When reporting results, read [output.md](references/output.md). It owns the
 finding format, remote comment links, evidence, and cleanup. Post comments only on
 an own MR/PR, or when the user asks, and only with `agt review publish`
-(`publish --not-own --findings --only <ids>` on another person's MR/PR, per
+(`publish --not-own --only <ids>` on another person's MR/PR, per
 [output.md](references/output.md);
 [store.md](references/store.md)).
 

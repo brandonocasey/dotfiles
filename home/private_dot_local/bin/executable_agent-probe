@@ -224,7 +224,7 @@ def add_usage(rows):
     tool = sessions_tool()
     if not tool:
         sys.exit('agent-probe: agt not found on PATH')
-    out = subprocess.run([tool, 'sessions', 'cost', '--by', 'file', '--json', *[r['log'] for r in rows]],
+    out = subprocess.run([tool, 'sessions', 'report', '--sections', 'cost', '--by', 'file', '--json', *[r['log'] for r in rows]],
                          capture_output=True, text=True)
     if out.returncode:
         sys.exit(f'agent-probe: agt sessions failed: {out.stderr.strip()}')

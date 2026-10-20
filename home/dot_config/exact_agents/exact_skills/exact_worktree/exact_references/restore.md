@@ -6,7 +6,7 @@ by `agt worktree remove` or `cleanup`, restore it from its backup (needs `agt` 0
 
 ```sh
 agt worktree restore <id>            # the id remove printed
-agt worktree backups                 # find the id; `backups show <id>` for one record
+agt worktree backups                 # find the id; `backups <id>` for one record
 ```
 
 It recreates the worktree at its original path (or `--path`) with its branch

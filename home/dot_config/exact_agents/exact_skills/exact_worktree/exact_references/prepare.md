@@ -15,7 +15,7 @@ When `agt worktree create --help` lists `--background`, agt does this for you:
 - Only after a `--background` create, before the first check or commit that needs setup, run
   `agt worktree prepare --wait <path>` as a background command. It prints the setup report.
   `no background setup` means none was started: run `agt worktree prepare <path>` instead. Exit 3
-  means setup still runs after `--max` seconds (default 270): run it again. Another exit 1 means
+  means setup still runs after `--timeout` seconds (default 270): run it again. Another exit 1 means
   a step or hook failed: treat it as a failed Prepare.
 - `create` and `remove` hooks come from `[worktree.hooks]` in `~/.config/agt/config.toml` or the
   main checkout's `.config/agt.toml`; a repository key replaces the global one. `create` hooks run
