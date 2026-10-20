@@ -54,13 +54,27 @@ class ContinueGuardTests(unittest.TestCase):
                 self.assertIn("stopped 12 minutes ago", outcome.stderr)
                 self.assertIn("152k-token context", outcome.stderr)
 
+    def test_error_and_interrupted_stops_are_blocked(self):
+        text = [{"type": "text", "text": "done"}]
+        synthetic = assistant(11, [{"type": "text", "text": "API Error"}], {"input_tokens": 0})
+        synthetic["message"]["model"] = "<synthetic>"
+        stopped = {"type": "user", "message": {"content": [{"type": "text", "text": "[Request interrupted by user]"}]}}
+        for log in ([assistant(12, text), synthetic],
+                    [assistant(12, [{"type": "tool_use", "id": "b", "name": "Bash"}]), result("b"), stopped]):
+            with self.subTest(log=log):
+                outcome = self.run_hook(log)
+                self.assertEqual(outcome.returncode, 2, outcome.stderr)
+                self.assertIn("stopped 12 minutes ago", outcome.stderr)
+
     def test_recent_small_running_or_woken_agents_pass(self):
         text = [{"type": "text", "text": "done"}]
         woken = {"type": "user", "message": {"content": "more work"}}
         for log in ([assistant(2, text)],
                     [assistant(12, text, {"input_tokens": 20_000})],
                     [assistant(12, [{"type": "tool_use", "id": "b", "name": "Bash"}])],
-                    [assistant(12, text), woken]):
+                    [assistant(12, text), woken],
+                    [assistant(12, text), {"type": "user", "message": {"content": "[Request interrupted by user]"}},
+                     woken]):
             with self.subTest(log=log):
                 self.assertEqual(self.run_hook(log).returncode, 0)
 

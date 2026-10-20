@@ -20,6 +20,7 @@ IDLE_SECONDS = 5 * 60
 # Below this, a rewrite costs about what a fresh agent's first request does.
 MIN_CONTEXT = 50_000
 TAIL_BYTES = 4_000_000
+INTERRUPT = "[Request interrupted by user"
 
 
 def entries(path: str) -> list[dict]:
@@ -45,28 +46,52 @@ def parts(entry: dict) -> list[dict]:
     return [p for p in content if isinstance(p, dict)] if isinstance(content, list) else []
 
 
-def last_stop(path: str) -> tuple[float, int] | None:
-    """(time, context tokens) of a stopped agent's last request; None while it runs."""
-    log = entries(path)
-    last = next((i for i in range(len(log) - 1, -1, -1)
-                 if log[i].get("type") == "assistant" and (log[i].get("message") or {}).get("usage")), None)
-    if last is None or not log[last].get("timestamp"):
-        return None
+def context(entry: dict) -> int:
+    usage = (entry.get("message") or {}).get("usage") or {}
+    return sum(usage.get(k) or 0 for k in (
+        "input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
+
+
+def interrupted(entry: dict) -> bool:
+    """TaskStop or Escape leaves this user entry last in the transcript."""
+    content = (entry.get("message") or {}).get("content")
+    texts = [content] if isinstance(content, str) else [
+        str(p.get("text", "")) for p in parts(entry) if p.get("type") == "text"]
+    return any(t.startswith(INTERRUPT) for t in texts)
+
+
+def running(log: list[dict]) -> bool:
+    """Whether the agent's last turn is still going or a newer message woke it."""
+    users = [e for e in log if e.get("type") == "user"]
+    if users and interrupted(users[-1]):
+        return False
+    # Error turns are <synthetic> assistant entries; they end a turn too.
+    last = next((i for i in range(len(log) - 1, -1, -1) if log[i].get("type") == "assistant"), None)
+    if last is None:
+        return True
     calls = [p for p in parts(log[last]) if p.get("type") == "tool_use"]
     handbacks = {p.get("id") for p in calls if p.get("name") == "SubagentHandback"}
     if any(p.get("name") != "SubagentHandback" for p in calls):
-        return None  # a tool call is still running
+        return True  # a tool call is still running
     for e in log[last + 1:]:
         if e.get("type") != "user":
             continue
         results = [p for p in parts(e) if p.get("type") == "tool_result"]
         if not results or any(p.get("tool_use_id") not in handbacks for p in results):
-            return None  # a newer message or result woke it
-    usage = log[last]["message"]["usage"]
-    context = sum(usage.get(k) or 0 for k in (
-        "input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"))
-    stamp = datetime.fromisoformat(log[last]["timestamp"].replace("Z", "+00:00")).timestamp()
-    return stamp, context
+            return True
+    return False
+
+
+def last_stop(path: str) -> tuple[float, int] | None:
+    """(time, context tokens) of a stopped agent's last real request; None while it runs."""
+    log = entries(path)
+    # The cache was last touched by a real request: <synthetic> error entries report 0 tokens.
+    real = next((e for e in reversed(log) if e.get("type") == "assistant" and e.get("timestamp")
+                 and (e.get("message") or {}).get("model") != "<synthetic>" and context(e)), None)
+    if real is None or running(log):
+        return None
+    stamp = datetime.fromisoformat(real["timestamp"].replace("Z", "+00:00")).timestamp()
+    return stamp, context(real)
 
 
 def main() -> int:
