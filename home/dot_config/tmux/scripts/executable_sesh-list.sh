@@ -1,5 +1,5 @@
 #!/bin/sh
-# Feeds the sesh picker (prefix + T in tmux.conf). Colors each tmux session's
+# Feeds the sesh picker (sesh-pick.sh). Colors each tmux session's
 # name with its @session_color, as in the status line, and adds its
 # agent state after the name, colored like the window list: a yellow ●
 # when any pane waits for input, else a green ● when any pane works.
