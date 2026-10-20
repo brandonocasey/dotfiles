@@ -124,11 +124,11 @@ managed=$(
       "When the user asked to test on a LAN device in this session: serve a repo dev server or local build on 0.0.0.0. A static file server never serves a repo root or home directory. Stop the server when testing ends."
     ]
   },
-  "model": "opus",
+  "model": "sonnet",
   "autoCompactWindow": 433000,
   "promptCacheTtl": "1h",
   "env": {
-    "BASH_MAX_OUTPUT_LENGTH": "12000",
+    "BASH_MAX_OUTPUT_LENGTH": "6000",
     "CLAUDE_CODE_DISABLE_FILE_MENTIONS": "1",
     "CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS": "1",
     "LEFTHOOK_OUTPUT": "failure,summary",
@@ -399,9 +399,9 @@ managed=$(
   },
   "feedbackSurveyRate": 0,
   "syntaxHighlightingDisabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "high",
   "modelSettings": {
-    "claude-sonnet-5-5": { "effortLevel": "medium" },
+    "claude-sonnet-5-5": { "effortLevel": "high" },
     "claude-opus-5-5": { "effortLevel": "medium" },
     "claude-haiku-5-5": { "effortLevel": "xhigh" }
   },
