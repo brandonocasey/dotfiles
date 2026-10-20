@@ -15,8 +15,12 @@ class SkillSyncTests(unittest.TestCase):
     def test_apply_removes_deleted_skills_and_nested_files(self):
         binary = shutil.which("chezmoi")
         self.assertIsNotNone(binary, "Install chezmoi to run the skill sync regression")
-        scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
-        scratch.mkdir(parents=True, exist_ok=True)
+        # This disposable fixture SHOULD use memory-backed storage when available.
+        # Disk flushes can exceed the apply timeout.
+        scratch = Path("/dev/shm")
+        if not scratch.is_dir() or not os.access(scratch, os.W_OK | os.X_OK):
+            scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
+            scratch.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="skill-sync-test-", dir=scratch) as directory:
             root = Path(directory)
             source = root / "source"
