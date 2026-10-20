@@ -8,6 +8,7 @@ end
 # Keep these tide items on every machine, even after `tide configure` resets them
 functions -q _tide_detect_os || return
 
+set -U tide_context_hostname_parts 0
 test -n "$tide_os_icon" || _tide_detect_os | read -U tide_os_icon
 contains os $tide_left_prompt_items || set -U tide_left_prompt_items os $tide_left_prompt_items
 
@@ -20,7 +21,6 @@ if not contains shlvl $tide_right_prompt_items
     end
 end
 
-# LAN IP, right of the user@host context
 set -q tide_ip_color || set -U tide_ip_color D787D7
 set -q tide_ip_bg_color || set -U tide_ip_bg_color 1C1C1C
 if not contains ip $tide_right_prompt_items
