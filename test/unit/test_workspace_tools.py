@@ -117,14 +117,16 @@ class TcpdTests(FixtureTestCase):
 
 class GitDeleteSquashedTests(FixtureTestCase):
     def git(self, *args, cwd=None):
-        return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.invalid",
-                               "-c", "commit.gpgsign=false", *args], cwd=cwd or self.work, env=self.env,
+        return subprocess.run(["git", "-c", "commit.gpgsign=false", *args], cwd=cwd or self.work, env=self.env,
                               capture_output=True, text=True, timeout=30, check=True).stdout.strip()
 
     def setUp(self):
         super().setUp()
         self.work = self.root / "work"
         self.git("init", "-q", "-b", "main", str(self.work), cwd=self.root)
+        self.git("config", "user.useConfigOnly", "true")
+        self.git("config", "user.name", "t")
+        self.git("config", "user.email", "t@example.invalid")
         (self.work / "f").write_text("base\n")
         self.git("add", "f")
         self.git("commit", "-qm", "base")
