@@ -67,7 +67,8 @@ Always pass `--base` to every full pass (`pass start --kind full`, also for the 
 an end-point review), `HEAD` for a working-diff target, or the pinned merge-base for an
 MR/PR. Without it every branch commit counts as reviewed. For a commit or range target,
 also pass `--head HEAD` (the fix head) to every `pass start` after the first full
-review, to fix-check and reveal `list`, and to `run end`; `pass end`, `finding`, and
+review, and to the first one when testing-stage fixes moved HEAD
+([testing.md](testing.md) step 6), to fix-check and reveal `list`, and to `run end`; `pass end`, `finding`, and
 `resolve` take no `--head`. Only `reply` and `resolve --fixed`/`--not-fixed`/`--rejected`/`--reply`
 add text.
 

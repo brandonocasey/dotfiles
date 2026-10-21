@@ -88,17 +88,21 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
    path, `--env key=value` per fact, and `--note` for blocked or skipped reasons.
    A retest reuses the earlier name, so its result replaces the old one.
 3. One `agt qa finding --check <check-id> --type bug --severity <high|medium|low>
-   --body <text>` per verified failure, with the severity scale of
-   [output.md](output.md); `--type question` for a behavior change the user must confirm.
+   --body <text>` per verified failure the change caused, with the severity scale of
+   [output.md](output.md); `--type question` for a behavior change the user must
+   confirm. File a `pre-existing` failure as `--type comment` with a body that starts
+   `Pre-existing bug (<severity>):`, so it never blocks approval.
 4. `agt qa run end --run <run>`, with `--usage -` when the harness reports usage.
    An ended run accepts no more checks, so record everything first.
-5. When a retest passes a check that had a QA finding, resolve the finding with
-   `agt review resolve <thread-id> --fixed <sha>` and the main session's `--model`,
-   `--effort`, and `--harness`.
+5. After stage 5 commits the fixes, resolve each QA finding whose check passed a
+   retest: `agt review resolve <thread-id> --fixed <fix-sha>` with the main
+   session's `--model`, `--effort`, and `--harness`. A working-diff target has no
+   fix commit: leave its findings open and report them as fixed in the working tree.
 
-`agt qa check` has no `--head`: on a `--range <from>..<to>` target it stamps every
-check at `<to>`, even after fix commits. Keep the same target, and add
-`--env head=<tested-sha>` to each retest check so the tested commit is on record.
+`agt qa check` has no `--head`: on a `--range <from>..<to>` or `--range <sha>` target
+it stamps every check at `<to>` or `<sha>`, even after fix commits. Keep the same
+target, and add `--env head=<tested-sha>` to each retest check, or
+`--env head=<last-tested-sha>+uncommitted` for a retest of uncommitted fixes.
 
 Report the outcomes from `agt qa list`, not from memory.
 
