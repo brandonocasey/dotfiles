@@ -34,8 +34,9 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 ## 0–2. Target, review, verify
 
 Before the spawn, the main session reads no review references except when-to-run.md,
-[setup.md](references/setup.md), and [testing.md](references/testing.md), and it
-never reviews or tests the code itself. Run setup
+[setup.md](references/setup.md), [testing.md](references/testing.md), and the
+references testing.md names for verifying and fixing test failures. It never reviews
+or tests the code itself, except in testing.md's inline fallback. Run setup
 yourself per setup.md, with `agt`, `git`, and `gh`/`glab` commands; no sub-agent.
 Its inputs: the user's target verbatim (a range or MR/PR the calling skill or loop
 names, or none), the task scratch directory, any earlier review worktree, and the skip

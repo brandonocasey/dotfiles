@@ -17,17 +17,23 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
 
 1. **Test.** After setup, start one fresh `tester` with the prompt below on the
    whole target.
-2. **Record.** Record its results (**Record**), then re-verify each failure as
-   [delegation.md](delegation.md) re-verifies findings: read the cited log lines or
-   evidence and the code they point to. Mark a failure the change did not cause as
-   `pre-existing` in its check note.
-3. **Fix.** With fix authorization ([fix.md](fix.md)), fix verified failures and
-   commit them per fix.md step 4. Without it, report them beside the review findings.
-4. **Retest.** After fixes, start a fresh `tester` on the changed code only
-   (**Retest**). Record, re-verify, and fix again. Stop after 3 retests and report
-   failures that remain.
-5. **Review.** Start the reviewer per steps 0–2 of [SKILL.md](../SKILL.md) only
-   after the last retest. Never pass test results to reviewers.
+2. **Verify.** Re-verify each failure as [delegation.md](delegation.md) re-verifies
+   findings: read the cited log lines or evidence and the code they point to. Mark
+   a failure the change did not cause as `pre-existing`.
+3. **Record.** Record the results (**Record**), with `pre-existing` in the check note.
+4. **Fix.** With fix authorization ([fix.md](fix.md)), fix verified failures and
+   leave them uncommitted. Without it, report them beside the review findings.
+5. **Retest.** Start a fresh `tester` on the uncommitted fixes only (**Retest**).
+   Verify, record, and fix again. Stop after 3 retests and report failures that
+   remain. Then commit the fixes as fix.md's **4. Optional: --fix** section commits
+   review fixes (its commit item, not its retest item).
+6. **Review.** When step 5 committed fixes, rerun setup so the pin ends at the new
+   head. Then start the reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
+   steps 0–2. Never pass test results to reviewers.
+
+If a tester stalls or returns nothing, start one fresh tester. If that fails too,
+or no sub-agent is available, run **Tester steps** inline and report the tests as
+not independent.
 
 After review fixes, retest before each fix check and before the second cycle's
 full review ([loop.md](loop.md)). Feed test failures into the same verification
@@ -35,9 +41,15 @@ pass; they never start another review cycle.
 
 ## Tester prompt
 
-Fill this template and add nothing else. `<scope>` is `whole change` for step 1,
-or `changed code only: <last-tested-sha>..<new-head-sha>` for a retest; for a
-working-diff target, give the old and new diff paths.
+Fill this template and add nothing else. `<scope>` is one of:
+
+- `whole change` for step 1;
+- `changed code only: uncommitted fixes on <last-tested-sha>` for a retest of
+  uncommitted fixes;
+- `changed code only: <last-tested-sha>..<new-head-sha>` for committed changes,
+  such as a CI fix, a conflict merge, or a moved head.
+
+For a working-diff target, give the old and new diff paths instead.
 
 ```text
 Test <target> (pinned <range or diff path>). Read-only: no edits, commits,
@@ -61,14 +73,20 @@ Record each tester pass in the QA store, with the same store target flag as the
 review (`--target <key>` or `--range <range>`; [store.md](store.md)):
 
 1. `agt qa run start` with the tester's `--model`, `--effort`, and `--harness`;
-   keep the printed run ID.
+   keep the `run` field of the printed JSON.
 2. One `agt qa check --run <run> --name <name> --outcome <outcome> --kind <kind>`
    per returned check or case, with `--command` or `--steps -`, `--evidence` per
    path, `--env key=value` per fact, and `--note` for blocked or skipped reasons.
    A retest reuses the earlier name, so its result replaces the old one.
-3. One `agt qa finding --check <check-id> --type bug --body <text>` per verified
-   failure; `--type question` for a behavior change the user must confirm.
+3. One `agt qa finding --check <check-id> --type bug --severity <high|medium|low>
+   --body <text>` per verified failure, with the severity scale of
+   [output.md](output.md); `--type question` for a behavior change the user must confirm.
 4. `agt qa run end --run <run>`, with `--usage -` when the harness reports usage.
+   An ended run accepts no more checks, so record everything first.
+
+`agt qa check` has no `--head`. For a `--range <from>..<to>` target with fix commits
+on top, record retests with `--range <from>..<new-head>`, so results are not stamped
+at the pre-fix `<to>`.
 
 Report the outcomes from `agt qa list`, not from memory.
 
