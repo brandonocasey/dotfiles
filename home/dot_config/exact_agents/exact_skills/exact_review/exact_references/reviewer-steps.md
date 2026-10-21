@@ -39,6 +39,7 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   missing dependencies instead. A server you start uses its own free port.
 - With `.gitmodules`, the `worktree` skill's **Create** and **Submodules** sections
   own submodule init and removal.
+- An inline fallback runs after the testing stage too; it also runs no checks.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
 
 Read the surrounding code of every changed hunk you intend to comment on.
@@ -74,14 +75,9 @@ read the diff looking for things that seem off — attack it:
   selector, export, flag, route, or file path, grep the whole repository, including unit,
   E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
   in suites the author did not run were the most common CI-only failure after a review.
-- **Run what CI runs.** Run the repository's full test, lint, and typecheck commands when
-  they finish in a few minutes, not only the focused tests. When the prompt gives check
-  logs, read them instead of rerunning those commands. Wait for a log's `exit N` line
-  for up to about 10 minutes, then report that check as not run. Rerun only focused
-  tests a finding hinges on and checks the logs lack. When the repo enforces size,
-  accessibility, or performance budgets, check whether the change moves them. Where the
-  change is runtime-only (workers, WASM, a server route, a CLI), exercise it once with a
-  realistic input; reviewers that ran the code found the most severe defects.
+- **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
+  code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
+  depends on runtime behavior, name the check that would confirm it.
 - **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
   or subtly wrong? Report missing or ineffective coverage only when you can name
   the important uncovered behavior. Preserve the ban on weakening existing tests.
@@ -143,8 +139,8 @@ behavior you could not check, report it as an `unverified` question that names t
 assumption and how to check it. Do not drop it. A plausible-sounding comment that turns out false is
 worse than no comment. Kill a finding that asks to restore behavior the user or the
 repository rules deliberately removed or forbade, such as a fallback under a no-fallback
-rule. If tests exist for the area, run the relevant ones when a finding
-claims broken behavior — a passing test that covers the exact scenario refutes the finding.
+rule. When tests cover the area, read them: a test that covers the exact scenario
+and asserts the right result refutes the finding. Do not run it.
 
 For a security finding, also kill these known false alarms: attacks that need control
 of environment variables or CLI flags; XSS in React or Angular without
@@ -155,10 +151,9 @@ dependencies; issues only in test or documentation files; and shell-script injec
 without a concrete untrusted input path. Keep resource-use and model-input findings;
 step 1 covers them as bugs.
 
-For a finding about rendered UI, use the `ui-verify` skill when browser evidence is
-needed. For a performance claim, use the repository's benchmark skill or command when
-measurements are needed. Reuse results for the same revision and inputs; these checks return
-evidence to this review, not another review cycle.
+For a finding about rendered UI, other user-facing output, or performance that needs
+runtime evidence, report it with the check that would confirm it: a `ux-verify` case
+or the repository's benchmark. The main session has the tester run it.
 
 ## Budget
 
@@ -172,7 +167,4 @@ Cut both without skipping any step above:
   Still read all needed context: the whole changed function, its callers, and the
   contracts a finding depends on. Read whole config files, small modules, and files
   you need most of.
-- Write test, lint, and build output to a scratch log. Search the whole log for
-  failures, errors, and warnings, and match the failure count to the summary line.
-  Do not judge a log from its tail alone.
 - Review the highest-risk hunks first.

@@ -74,9 +74,9 @@ add text.
 `--reviewers -` reads a JSON array from stdin, one entry per reviewer: `model`,
 `effort`, `harness`, `harness_version`, and `starting_context` (see **IDs and
 signature** in [remote-comments.md](remote-comments.md)). A continued reviewer gives
-only its `id` and `starting_context`. Add the main session as reviewer `manual` when
-it runs the manual pass and as reviewer `fix` when it fixes, each with its model,
-effort, harness, and harness version.
+only its `id` and `starting_context`. Add the main session as reviewer `fix` when
+it fixes, with its model, effort, harness, and harness version. Test results go to
+`agt qa` per [testing.md](testing.md) **Record**.
 
 ## Finding input
 
@@ -99,7 +99,7 @@ findings and killed ones, each killed one with its one-line reason.
 | `post_reveal` | boolean | no | Found during the cycle 2 reveal |
 | `killed` | boolean | no | `true` stores it as a killed finding on the pass |
 | `reason` | string | when `killed` | Why it was killed; only for killed findings |
-| `reviewer` | string | no | Reviewer ID (`r1`, `manual`); default `--reviewer` |
+| `reviewer` | string | no | Reviewer ID (`r1`, `fix`); default `--reviewer` |
 
 For a surviving finding, `scenario` is the step 3 comment text, suggestion block
 included, without its leading `**<type> (<severity>):**` label; `publish` adds it.
@@ -113,6 +113,6 @@ Record what each reviewer spent when the harness reports it, such as the
 `<usage>` line of a sub-agent result: one `usage` entry per reviewer, as
 `{"reviewer": "r1", "tokens": <total_tokens>, "duration_ms": <ms>, "tool_uses": <n>}`.
 Omit unknown fields; skip usage when none is reported. For `run end --usage -`,
-send an array with `role` (`fix`, `manual`, or `main`) in place of `reviewer`,
+send an array with `role` (`fix` or `main`) in place of `reviewer`,
 only with numbers the harness reports. Never estimate. `run end` adds review and
 fix time to its output and the final record.

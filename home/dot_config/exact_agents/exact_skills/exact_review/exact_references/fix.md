@@ -9,7 +9,8 @@ Own work skips the `--fix` gate, whether auto-triggered or user-requested:
 - an MR/PR whose author is the authenticated user (`gh api user --jq .login` or
   `GITLAB_HOST=<host> glab api user`'s `username`, compared with the MR/PR author).
 
-For own work, apply verified fixes at once per step 4. Re-run tests/lint; step 5's
+For own work, apply verified fixes at once per step 4. Retest them per **Retest** in
+[testing.md](testing.md); step 5's
 fix loop owns follow-up reviews. An own MR/PR gets the full MR/PR flow of step 4, including the push
 ([git-policy.md](../../shared/git-policy.md)).
 For any other target, print the comments and wait for `--fix`. End with:
@@ -46,9 +47,8 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
      or style cleanup unless requested.
   3. Resolve clear conflicts with the target branch and fix `new in this change` CI
      failures, per [ci-and-conflicts.md](ci-and-conflicts.md).
-  4. Run the repo's tests/lint. Check the fixed HEAD per `shared/git-flow.md`
-     **Manual check** (methods in [manual-testing.md](manual-testing.md)
-     **Exercise the actual behavior**). Record `Checked: <steps, page or command, config> -> <result>`;
+  4. Retest the fixed HEAD per **Retest** in [testing.md](testing.md), which covers
+     `shared/git-flow.md` **Manual check**. Record `Checked: <steps, page or command, config> -> <result>`;
      text-only fixes record `Checked: diff only`.
   5. Commit through the `commit` skill. Keep the branch's scope and ticket style, but take
      the type from its **Choosing the type** procedure; carry any issue-tracker reference
@@ -70,12 +70,13 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
 - **Local branch or commit**: for a detached local-branch review, first attach the
   review worktree to a new fix branch at its pinned head. Preserve the original
   branch and checkout, and keep the selected range store target. Report the fix branch.
-  Apply the fixes in the branch's worktree, run the repo's
-  tests/lint, record the `Checked:` line, and commit per the `commit` skill. Read each
+  Apply the fixes in the branch's worktree, retest per **Retest** in
+  [testing.md](testing.md), record the `Checked:` line, and commit per the `commit` skill. Read each
   file you will edit with the file-read tool, not `cat`. With a `--range` store target
   ([store.md](store.md)), never amend or rebase the pinned commits; add fix commits. For a commit
   or the default branch, first create a fix branch per the `worktree` skill. Do not push.
-- **Working diff**: apply the fixes in place, record the `Checked:` line, and leave them
+- **Working diff**: apply the fixes in place, retest per **Retest** in
+  [testing.md](testing.md), record the `Checked:` line, and leave them
   uncommitted unless the user asks to commit.
 
 Report the commits, the `Checked:` line, and the MR/PR link. Clean up per step 3.

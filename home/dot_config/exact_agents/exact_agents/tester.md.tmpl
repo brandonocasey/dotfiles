@@ -1,9 +1,11 @@
 ---
 name: tester
-description: "Select relevant checks, inspect test/build failures, and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
+description: "Run checks, manual cases, and UX checks; inspect test/build failures and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
 model: claude-sonnet-5-5
 effort: medium
-tools: Read, Grep, Glob, Bash
+tools: >
+  Read, Grep, Glob, Bash, ToolSearch,
+  mcp__chrome-devtools__*, mcp__firefox-devtools__*, mcp__safari__*
 disallowedTools: Edit, Write, NotebookEdit, Agent
 omitClaudeMd: true
 ---

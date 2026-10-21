@@ -7,10 +7,12 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 [output.md](output.md), that the change introduced or made reachable; a
 `pre-existing` finding is never major.
 
-1. **Full review.** Start fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the
-   whole current target. Re-verify, report, and fix as in steps 2–4. Hold
+1. **Full review.** Run the testing stage in [testing.md](testing.md) first: the whole
+   target in the first cycle, a retest of the changed code in the second. Then start
+   fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the whole current target. Re-verify, report, and fix as in steps 2–4. Hold
    behavior-change `question` items for the user.
-2. **Fix check.** Run only when the previous pass fixed a major finding. Continue the same
+2. **Fix check.** Run only when the previous pass fixed a major finding. First retest
+   the fix delta per **Retest** in [testing.md](testing.md). Then continue the same
    reviewers when the harness supports it (Claude Code: `SendMessage`) and their last
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
    surrounding context, since continuing after the cache expires rewrites their whole
@@ -18,10 +20,9 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    remaining fix checks. Start fresh fix-check reviewers with `model: sonnet` (effort
    stays `xhigh`); `--agents` overrides this. Send each reviewer:
    - the output of `agt review list --run <run> --cycle <n> --format prompt`
-     ([store.md](store.md)): every surviving finding from this cycle, from any reviewer
-     or the manual pass, with its applied fix, and each killed finding with its
-     one-line reason;
-   - the fix delta and the new check logs. The delta is
+     ([store.md](store.md)): every surviving finding from this cycle, from any reviewer,
+     with its applied fix, and each killed finding with its one-line reason;
+   - the fix delta. The delta is
      `<last-reviewed-sha>..<new-head-sha>`; for a working-diff target, save the new
      working diff to a file and send both the old and new diff paths.
 
@@ -59,8 +60,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 
 Keep the loop state in the store per [store.md](store.md): `pass start --kind full
 --base <pinned base>` with each
-reviewer, plus `manual` for the manual pass and `fix` for
-fixes; one `pass end --findings -` with the pass's verified and killed findings;
+reviewer, plus `fix` for fixes; one `pass end --findings -` with the pass's verified and killed findings;
 `resolve <ids> --fixed <sha>` for the fixes; `resolve <id> --not-fixed <reason>` as the
 fix-check reviewer; `resolve --triage question` for held items, and `reply --local`
 with the user's answer when it comes. For a commit or range target, pass `--head HEAD`
@@ -79,6 +79,5 @@ step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5
 closing question. Run step 7 and the restore only when the list is empty or the user's
 answer resolves or accepts every item; otherwise leave auto-merge off. Keep the
 review worktree until then. If no sub-agent is available, stop after the first
-full review and say that the next reviewer is not independent. Run the full manual pass
-in each full review. In fix checks, rerun only manual cases whose behavior the fixes
-under check changed.
+full review and say that the next reviewer is not independent. Test results go to
+the QA store ([testing.md](testing.md) **Record**), never to the review store.

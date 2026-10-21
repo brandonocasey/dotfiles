@@ -22,7 +22,8 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    alone, and name the blocking findings.
 2. **Head**: refresh the source SHA. If it moved since the review or fix push,
    review the changed commits through steps 0–2 and recheck affected findings.
-   Run affected checks and manual cases, then repeat the gate above.
+   Retest the changed commits per **Retest** in [testing.md](testing.md), then repeat
+   the gate above.
    Use only that verified SHA as `HEAD_SHA`.
    **Risk**: when the risk tier is `high`, show the tier and its reason and ask the
    user to confirm approval and merge at `HEAD_SHA`, even when a flag requested them.

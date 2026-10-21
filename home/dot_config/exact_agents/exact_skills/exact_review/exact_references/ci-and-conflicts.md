@@ -61,8 +61,8 @@ Prefer merging the current target branch into the source branch.
 This preserves published history and permits a normal source-branch push.
 Do not use blanket `ours` or `theirs` resolutions.
 Regenerate generated files with their owning tool after resolving source changes.
-Run the checks needed for the merged result, including affected manual cases
-unless manual testing was skipped.
+Retest the merged result per **Retest** in [testing.md](testing.md), including
+affected manual and UX cases unless `--no-test` skipped them.
 
 For an existing merge or rebase, resolve clear conflicts and continue that operation.
 For local reviews, do not start a branch update without an explicit target or request.

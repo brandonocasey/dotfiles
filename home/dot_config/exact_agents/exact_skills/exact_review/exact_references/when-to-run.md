@@ -34,9 +34,10 @@ preview prototype (**Scope**).
   `⚠ Not reviewed yet: reviews at finish with commits, push, integrate, deploy, land, or remote test run.`
 - At an end point, review the combined diff since the last review (or the task's
   recorded starting revision), committed and uncommitted alike. A clean tree does
-  not mean nothing to review. Finish the implementation and the checks and manual
-  check that can run before the end point. Checks that only run remotely or need
-  a device or person may follow the review; report them as pending.
+  not mean nothing to review. Finish the implementation; the review's testing stage
+  ([testing.md](testing.md)) runs the checks and the manual and UX check. Checks that
+  only run remotely or need a device or person may follow the review; report them
+  as pending.
 - Each review run records its reviewed range in the `agt review` store
   ([store.md](store.md)). Skip the review only when `agt review status` reports
   `reviewed: true` and an empty `unreviewed_commits`, plus `worktree.reviewed: true`
@@ -54,7 +55,7 @@ preview prototype (**Scope**).
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
   Check `agt review status` first, so a rebase alone triggers no second review.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
-  and rerun affected checks before reporting completion. Pushes and changes outside
+  and retest them ([testing.md](testing.md) **Retest**) before reporting completion. Pushes and changes outside
   the intended behavior keep their existing authorization rules. Report the
   verified outcome, including defects fixed, never relabeling it clean after repairs.
   Disclose any inline fallback ([delegation.md](delegation.md)).

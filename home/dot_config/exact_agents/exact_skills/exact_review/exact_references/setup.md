@@ -68,17 +68,13 @@ If the pinned diff is empty, report `empty` and stop.
 
 - Take the test, lint, and typecheck commands from the repository's CI config or its
   documented scripts (package scripts, Makefile, justfile, CONTRIBUTING). If none are
-  documented, fill `Checks` with `none documented; choose and run relevant checks yourself`
+  documented, fill the tester prompt's `Checks` with `none documented; choose relevant ones`
   and continue. Copy commands as written. When documented commands conflict, choose
   and list the choice.
 - `agt worktree create --prepare` installs dependencies in a new worktree, so
-  reviewers and the manual pass never install there. In an existing checkout, install only when dependencies are
+  reviewers and the tester never install there. In an existing checkout, install only when dependencies are
   missing. Build only when the commands need it.
-- Name each log `<check>-<pin-id>.log`, where `<pin-id>` is the head SHA, plus a short
-  hash of the diff file for any pin saved as a diff file. Skip a command whose log for this pin
-  exists or that an earlier setup started.
-- Start each command once, detached (`nohup`), on the pinned target. Write its full log
-  to the scratch directory, ending with an `exit N` line. Do not wait for them.
+- Run none of the commands. The tester runs them ([testing.md](testing.md)).
 
 ## 4. MR/PR facts
 
@@ -125,19 +121,19 @@ line when there is none.
 ```text
 Review <target> for verified defects. Read-only: no edits, commits,
 cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
-Never run `agt review`.
+Never run `agt review` or `agt qa`. Review code only: run no tests, lint, builds,
+browsers, or the changed code.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Linked issue: <key, title, URL, and a few body lines>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
-Checks: <commands with their log paths, or `none`>
 Severity scale: `bug` (wrong behavior reachable in production), `question` (design
 choice worth confirming with the author), `requirement` (an explicit repository
 rule violation), or `nit` (optional style feedback, only when requested). Give each
 `bug` a severity: `high` (data loss, security hole, crash, or a broken main path),
 `medium` (wrong result on a common path), or `low` (rare edge case or minor effect).
 Return raw data: file, line, severity, `pre-existing` when marked, failure scenario,
-evidence, tests run. End with `Risk: low|medium|high - <one-line reason>`.
+evidence, and any runtime check that would confirm it. End with `Risk: low|medium|high - <one-line reason>`.
 ```
 
 Keep the severity scale in sync with [output.md](output.md). The main session converts
@@ -146,8 +142,7 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 ## Record
 
 Keep for later steps and report in at most 15 lines: the pin, worktree path, whether you created or reused it, starting
-SHA, whether you installed dependencies, each command with its log path, the store
+SHA, whether you installed dependencies, each check command, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
 none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`.
-Or report `empty` or the blocker, with any worktree you created and any checks you
-started.
+Or report `empty` or the blocker, with any worktree you created.

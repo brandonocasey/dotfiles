@@ -52,7 +52,7 @@ retrying on that page hangs again.
 ## Proof
 
 Check the observable that proves the claim: frames, pixels, or DOM state, not `currentTime`.
-Assert preconditions, and run a control that must fail. See `ui-verify`.
+Assert preconditions, and run a control that must fail. See `ux-verify`.
 
 ## Screenshots
 
@@ -64,6 +64,6 @@ below are `chrome-devtools`; use the matching tool on other engines.
 - Save evidence screenshots with `filePath`. Do not `Read` them back unless you must judge them by eye.
 - Browser MCPs write only inside allowed roots. In Claude Code, that is the session's project root: in a repo, save under `<worktree>/.cache/agents/scratch/<task>/`, never `~/.cache`. Codex offers no roots: save `chrome-devtools` and Firefox screenshots under `$TMPDIR`, and `safari` or `safari-headed` ones under `~/.cache/agents/playwright-mcp`.
 - Capture an element by `uid` or the viewport. Use `fullPage`, without `uid`, only when the check needs the whole page.
-- In the main session, delegate more than three visual checks to the `manual-tester` sub-agent. It returns findings and file paths, not images.
+- In the main session, delegate more than three visual checks to the `tester` sub-agent. It returns findings and file paths, not images.
 
 Clean up per [task-resources.md](../host-preflight/references/task-resources.md), on every exit path including failure.

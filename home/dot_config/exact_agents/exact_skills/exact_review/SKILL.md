@@ -9,7 +9,7 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-Arguments: `--test` and `--no-test` (**Manual testing**), `--fix` (steps 4–5), and
+Arguments: `--test` and `--no-test` (**Testing**), `--fix` (steps 4–5), and
 `--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to fix,
 approve, or merge, or that names reviewer models counts as the matching flag.
 
@@ -21,10 +21,11 @@ For automatic reviews of this session's work, read [when-to-run.md](references/w
 
 Every review runs through the `reviewer` sub-agent. After the reviewers return, read [delegation.md](references/delegation.md).
 
-## Manual testing
+## Testing
 
-Manually test the changed behavior by default; `--no-test` skips it. Read
-[manual-testing.md](references/manual-testing.md) for skip rules, cases, and evidence.
+A `tester` sub-agent runs the checks and the manual and UX cases before the
+reviewer starts; `--no-test` skips only the cases. Read
+[testing.md](references/testing.md) for the stage order, retests, and `agt qa` records.
 
 ## Fix authorization
 
@@ -32,8 +33,9 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 ## 0–2. Target, review, verify
 
-Before the spawn, the main session reads no review references except when-to-run.md
-and [setup.md](references/setup.md), and it never reviews the code itself. Run setup
+Before the spawn, the main session reads no review references except when-to-run.md,
+[setup.md](references/setup.md), and [testing.md](references/testing.md), and it
+never reviews or tests the code itself. Run setup
 yourself per setup.md, with `agt`, `git`, and `gh`/`glab` commands; no sub-agent.
 Its inputs: the user's target verbatim (a range or MR/PR the calling skill or loop
 names, or none), the task scratch directory, any earlier review worktree, and the skip
@@ -43,6 +45,8 @@ later passes).
 - Run setups one at a time, never in parallel.
 - On `empty`, say there is nothing to review and stop. On a blocker, clean up per
   [output.md](references/output.md), report it to the user, and stop.
+- Run the testing stage in [testing.md](references/testing.md) first. Start the
+  reviewers only after its last retest.
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when the
@@ -61,7 +65,7 @@ later passes).
 - Never add a summary of the change, focus areas, what already passed, or earlier
   findings. That framing steers reviewers away from the code. Only a fix check and
   the cycle 2 reveal add the inputs [loop.md](references/loop.md) lists.
-- Use the returned worktree; the manual pass uses it too.
+- Use the returned worktree; the tester uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
 - Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,
   approval, and merge only to MRs/PRs that the user named or authored.
