@@ -24,7 +24,7 @@ Before you start, list what this session can use for this issue:
   `docker`, `kubectl`, and the language's debugger and profiler.
 - Repository tools: package scripts, test suites, linters, debug builds, and
   run skills.
-- Skills: `browser`, `real-safari`, `ui-verify`, `worktree`, `code-standards`,
+- Skills: `browser`, `real-safari`, `ux-verify`, `worktree`, `code-standards`,
   `review`, `commit`, and `sub-agents`.
 
 Report a failed MCP connection or authentication to the user in one line, with
@@ -69,7 +69,7 @@ Use the smallest environment that shows the issue, in this order:
 ### Browser issues
 
 Load `browser` before any browser MCP call. Pick the engine from the report. Use
-`real-safari` for Safari-only issues or FairPlay DRM. Use `ui-verify` for layout
+`real-safari` for Safari-only issues or FairPlay DRM. Use `ux-verify` for layout
 and interaction defects.
 
 Open the console and network panels before the page loads, so early requests and

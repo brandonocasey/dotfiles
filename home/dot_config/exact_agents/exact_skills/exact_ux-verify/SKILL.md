@@ -1,16 +1,38 @@
 ---
-name: ui-verify
-description: "Verify UI changes, responsive layouts, themes, and interaction states in a browser."
+name: ux-verify
+description: "Verify user-facing output: CLI and service output, messages, errors, generated files, and UI changes, responsive layouts, themes, and interaction states in a browser."
 ---
 
-Check the affected user journeys against the requested behavior. Scale coverage
-to the change: a shared navigation change needs more routes than a local label
-edit. Keep the existing design direction unless a redesign is part of the task.
+Check the affected user journeys against the requested behavior. A user-facing
+result is anything a person reads or acts on: UI, command output, help text,
+prompts, logs meant for people, error messages, notifications, and generated
+files or reports. Scale coverage to the change: a shared navigation change needs
+more routes than a local label edit. Keep the existing design direction unless a
+redesign is part of the task.
 
-When resuming from a `session-resume` record, reuse UI evidence only when its
-revision, inputs, browser environment, viewport, theme, and state still match.
+When resuming from a `session-resume` record, reuse evidence only when its
+revision, inputs, environment, and state still match; for UI also the browser,
+viewport, and theme.
 
-## Choose the checks
+## Check every user-facing output
+
+Run the changed path with representative inputs, plus empty, long, invalid, and
+error inputs. For each output the change touches, check:
+
+- **Accuracy:** it states what actually happened, with correct names, counts,
+  paths, and units. Compare it against the resulting state.
+- **Clarity:** a user can tell what happened and what to do next. Errors name
+  the cause and a fix, not only a code or stack trace.
+- **Consistency:** wording, casing, and format match nearby output, and docs or
+  help text match the behavior.
+- **Format:** wrapping at narrow terminal widths, alignment, colors with and
+  without a TTY (`NO_COLOR`), machine-readable output (JSON, exit status), and
+  generated files that open in their target tool.
+
+Quote the observed output in the evidence. When the change has no UI, stop here
+and return the evidence.
+
+## Choose the UI checks
 
 Record the checkout or preview URL and the changed code revision. Read the
 relevant components, styles, and existing browser tests. Select the viewports,

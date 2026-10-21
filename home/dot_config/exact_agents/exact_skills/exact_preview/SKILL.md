@@ -16,7 +16,7 @@ and cleanup.
 Reuse a suitable running app server, or start the project's documented preview
 or development server per `task-resources.md`. Share its LAN URL with the route
 that shows the work. Verify the page and relevant interactions before sharing
-it, following `browser` and `ui-verify` where applicable.
+it, following `browser` and `ux-verify` where applicable.
 
 If the app cannot run here, use a faithful local HTML preview when practical
 and label its limitations. If neither is possible, explain the blocker;
@@ -28,7 +28,7 @@ Keep the server running after the response while the user needs the URL.
 
 Capture preview screenshots only when the user requests them.
 
-This does not change screenshot evidence required by `ui-verify` for UI fixes.
+This does not change screenshot evidence required by `ux-verify` for UI fixes.
 Use the actual app at the requested viewport and state. Attach them natively when available;
 otherwise serve them through HTTP.
 

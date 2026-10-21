@@ -43,11 +43,11 @@ chezmoi apply --exclude=scripts ~/.config/agents/skills
 Chezmoi manages `frontend-design`, copied from
 [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
 with local changes: a shorter description, a `Scope:` line, and an explicit-only
-rule that hands verification to `ui-verify`. Its `agents/openai.yaml` makes Codex require an
+rule that hands verification to `ux-verify`. Its `agents/openai.yaml` makes Codex require an
 explicit invocation. The managed Claude settings apply the same restriction to
 the skill and to its plugin.
 
-Chezmoi also manages `ui-verify` in the shared skills directory. Codex and
+Chezmoi also manages `ux-verify` in the shared skills directory. Codex and
 Claude can select it automatically.
 
 Codex keeps the synced `docs` and `google-workspace` bodies disabled and exposes
