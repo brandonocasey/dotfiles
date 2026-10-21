@@ -2,8 +2,8 @@
 
 Every review tests the target before the reviewer starts. A fresh `tester`
 sub-agent runs the repository's checks and the manual and UX cases in one pass.
-The main session never tests itself; it records the results with `agt qa`, as it
-records reviewer findings with `agt review`.
+The main session tests itself only in the inline fallback below; it records the
+results with `agt qa`, as it records reviewer findings with `agt review`.
 
 The tester always runs the automated checks. `--no-test` skips its manual and UX
 cases, as does a change with no runnable behavior: text-only edits, or internal
@@ -21,14 +21,23 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
    findings: read the cited log lines or evidence and the code they point to. Mark
    a failure the change did not cause as `pre-existing`.
 3. **Record.** Record the results (**Record**), with `pre-existing` in the check note.
-4. **Fix.** With fix authorization ([fix.md](fix.md)), fix verified failures and
-   leave them uncommitted. Without it, report them beside the review findings.
+4. **Fix.** With fix authorization ([fix.md](fix.md)), fix verified failures the
+   change caused and leave them uncommitted. Report `pre-existing` ones; fix.md's
+   **Scope** rule for them applies. Without authorization, report all of them
+   beside the review findings.
 5. **Retest.** Start a fresh `tester` on the uncommitted fixes only (**Retest**).
    Verify, record, and fix again. Stop after 3 retests and report failures that
    remain. Then commit the fixes as fix.md's **4. Optional: --fix** section commits
    review fixes (its commit item, not its retest item).
-6. **Review.** When step 5 committed fixes, rerun setup so the pin ends at the new
-   head. Then start the reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
+6. **Review.** When steps 4–5 changed the target, committed or not, re-pin it so
+   the reviewers see the fixes:
+   - MR/PR or branch: rerun setup; its pin ends at the new head.
+   - Working diff: rerun setup; it saves a new diff file.
+   - Commit, range, or detached branch: keep the store target, but pin the
+     reviewer prompt to `<from>..HEAD` (the fix branch's HEAD for a detached
+     branch), and pass `--head HEAD` to the first `pass start` too.
+
+   Then start the reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
    steps 0–2. Never pass test results to reviewers.
 
 If a tester stalls or returns nothing, start one fresh tester. If that fails too,
@@ -83,10 +92,13 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
    [output.md](output.md); `--type question` for a behavior change the user must confirm.
 4. `agt qa run end --run <run>`, with `--usage -` when the harness reports usage.
    An ended run accepts no more checks, so record everything first.
+5. When a retest passes a check that had a QA finding, resolve the finding with
+   `agt review resolve <thread-id> --fixed <sha>` and the main session's `--model`,
+   `--effort`, and `--harness`.
 
-`agt qa check` has no `--head`. For a `--range <from>..<to>` target with fix commits
-on top, record retests with `--range <from>..<new-head>`, so results are not stamped
-at the pre-fix `<to>`.
+`agt qa check` has no `--head`: on a `--range <from>..<to>` target it stamps every
+check at `<to>`, even after fix commits. Keep the same target, and add
+`--env head=<tested-sha>` to each retest check so the tested commit is on record.
 
 Report the outcomes from `agt qa list`, not from memory.
 

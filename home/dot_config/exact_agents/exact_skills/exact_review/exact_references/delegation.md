@@ -20,7 +20,8 @@ deliberately removed, and security findings on the false-alarm list in
 or nit unless you are certain. A passing test that covers the exact scenario refutes a
 finding. When a finding hinges on a test, `ux-verify` case, or benchmark, check
 `agt qa list` first. When it lacks that result, start a fresh `tester` for only that
-check and record it per [testing.md](testing.md) **Record**; never run it yourself.
+check and record it per [testing.md](testing.md) **Record**. Run it yourself only
+under testing.md's inline fallback.
 The main session then runs steps 3–5 itself; output.md and loop.md own worktree removal. If a reviewer
 stalls or returns nothing, start one fresh reviewer, on another model when available, before
 any fallback. If a reviewer could not access the target (missing auth, no checkout) or the
