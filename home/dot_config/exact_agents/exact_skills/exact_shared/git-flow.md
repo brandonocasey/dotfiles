@@ -54,12 +54,12 @@ manual-check rule; refactors also need passing relevant tests. For behavior
 changes, use the repository's documented harness. For test changes, run the
 changed tests and inspect their results. Classify configuration by its effect.
 Reuse evidence while its code, inputs, and environment remain unchanged; a clean
-rebase, with no conflicts or edits, keeps it valid. Never
-manually test commits a review's tester or an earlier check already tested; per
-`review/references/testing.md`, test only untested commits, unless a verified
-`high` severity bug needs a retest. Record
-`Checked: <checks> -> <result>`. Do not push or land when required verification
-is missing.
+rebase, with no conflicts or edits, keeps it valid. Never manually test commits
+a review's tester or an earlier check already tested; test only untested
+commits, with the exceptions in `review/references/testing.md`. Record
+`Checked: <checks> -> <result>`, and record each manual case in `agt qa` per
+that file's **Record**, so a later review's tester skips those commits. Do not
+push or land when required verification is missing.
 
 ## Shared rules
 

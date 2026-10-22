@@ -11,14 +11,25 @@ refactors. State the skip reason in the report. `--test` forces the cases even
 then.
 
 Never run manual or UX cases twice on the same commits, just as reviews never
-repeat. Before testing, run `agt qa status` and `agt qa list`; commits up to the
-last tested head with passing, non-stale cases count as tested. Test only the
-untested commits and uncommitted work. A clean rebase (no conflicts or edits)
-keeps earlier results valid, even though `agt qa status` then marks them stale;
-retest only code changed by conflict resolution or edits. The one exception: after a `high`
-severity bug survives verification, retest the cases its fix affects, and the
-second cycle ([loop.md](loop.md)) retests as it says. Automated checks are not
-limited by this rule.
+repeat. Before testing, run `agt qa list`. A commit counts as tested when a
+passing case ran at it or at a later commit of the branch (the check's head, or
+its `--env head=`). `agt qa status` marks a case stale once later commits change
+the tree; that alone never untests earlier commits. Test only untested commits
+and uncommitted work. Review and CI fix commits are new work: retest the cases
+they affect (**Retest**).
+
+A rebase rewrites commits. It is clean when
+`git range-diff --creation-factor=100 <old-base>..<old-head> <new-base>..<new-head>`
+shows no changed commit; then earlier results stay valid. Otherwise retest only
+the cases the changed commits affect.
+
+Retest already tested commits only when:
+
+- a `high` severity bug survives verification: retest the cases it affects;
+- the second cycle ([loop.md](loop.md)) retests as it says;
+- the user asks to test again.
+
+Automated checks are not limited by these rules.
 
 Keep the review worktree until testing and authorized repairs are complete.
 When resuming from a `session-resume` record, apply `session-resume`'s reuse rules.
