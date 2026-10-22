@@ -262,7 +262,7 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "nohup sh -c 'sleep 5; exec agt cleanup --only processes --only manual --yes' >/dev/null 2>&1 </dev/null &",
+            "command": "nohup sh -c 'sleep 5; exec agt cleanup --only reviews --only issues --only tasks --only backups --only processes --only manual --yes' >/dev/null 2>&1 </dev/null &",
             "timeout": 2
           }
         ]
