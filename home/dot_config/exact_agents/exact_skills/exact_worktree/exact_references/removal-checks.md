@@ -14,8 +14,7 @@ when each of them holds nothing unique:
   remote-tracking branch or in the main checkout's clone (a tag may also be one
   its remote advertises);
 - it is at the commit the worktree records, clean, untracked files included
-  (only an untracked `.DS_Store`, `Thumbs.db` or `desktop.ini` passes), and
-  holds no non-disposable ignored files;
+  (only an untracked `.DS_Store`, `Thumbs.db` or `desktop.ini` passes);
 - it has no linked worktrees and no unfinished rebase, merge or bisect.
 
 This holds whatever `git submodule status` prints, deinitialized submodules
@@ -26,8 +25,9 @@ initialized. Each refusal names the path and the reason.
 
 ### Blocked removal
 
-Dirty tracked files, untracked files, and non-disposable ignored files do not
-block removal: the backup keeps them. Only an agt refusal does. For each
+Dirty tracked files and untracked files do not block removal: the backup keeps
+them. Ignored files do not block it either, but no backup keeps them: check
+`ignored_lost` in the plan. Only an agt refusal blocks. For each
 refusal in the plan:
 
 - Main checkout, a path that is not a linked worktree, or a locked worktree:

@@ -28,7 +28,9 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
 - Pass `--offline` only when the forge is unreachable; the plan then trusts local ancestry only.
   Pass `--all-repos` only when the user asked for every repository. Always pass `--dirty` and
   `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their work.
-  Report each removed dirty worktree's changed files with its backup id.
+  `--dirty` also lets worktrees go whose `ignored_lost` is not empty, since no backup keeps ignored
+  files; list each row's `ignored_lost` in the plan preview. Report each removed dirty worktree's
+  changed files with its backup id.
 - When removal fails with "does not point back", the worktree belongs to another clone: its
   `.git` file names the owning repository. Run the plan and removal from that repository, then
   `git worktree prune` in the first one.
@@ -133,8 +135,8 @@ branch. When the user approved only the worktree, run `agt worktree remove <path
 agt cleanup --only worktrees --dirty --recent [--offline] --yes --worktree <branch-or-path> [--worktree <branch-or-path> ...]
 ```
 
-It snapshots each worktree (a commit pinned at `refs/agt/backups/<id>` plus copies of
-non-disposable ignored files), removes it, then deletes the branches that qualify with `-d`, or
+It snapshots each worktree (a commit pinned at `refs/agt/backups/<id>`; ignored files are not
+kept), removes it, then deletes the branches that qualify with `-d`, or
 `-D` for a verified squash merge, and prints `removed` (with the backup `id`), `deleted` (with
 each `tip` and the `git branch <name> <tip>` that restores it), `kept`, and `warnings`. A named row
 that no longer qualifies with the same verdict is skipped. Report each skipped row and why. Show a

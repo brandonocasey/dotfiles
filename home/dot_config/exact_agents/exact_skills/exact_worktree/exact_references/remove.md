@@ -11,9 +11,11 @@ remove the main checkout, a locked worktree, or one another task uses. Report
 retained paths and reasons or the removed path.
 
 `agt worktree remove` backs the worktree up before it removes it, so dirty and
-untracked work and non-disposable ignored files (`.env*`, credentials, notes) are
-kept: no separate check of them is needed. For a remote MR/PR, fetch and refresh
-its state before using merged/closed status.
+untracked work is kept: no separate check of it is needed. Ignored files are not
+backed up. The plan and the result list the ones no build recreates (`.env*`,
+credentials, notes) as `ignored_lost`; read that list before `--yes` (needs `agt`
+0.21.0) and copy out what is needed. For a remote MR/PR, fetch and refresh its
+state before using merged/closed status.
 
 Take `<worktree-path>` from `agt worktree list` (older worktrees can live
 elsewhere). Move your shell out first: a shell in the deleted directory makes
@@ -29,15 +31,16 @@ agt worktree remove <worktree-path> --yes
 - The plan lists what agt refuses: the main checkout, a locked worktree, a path
   that is not a linked worktree, the current directory, a worktree where another
   process or another Claude Code session runs (agt ignores your own session and its processes), and
-  a submodule problem. When it refuses, follow
+  a submodule problem, or a directory git could not empty (unreadable or read-only; fix its
+  permissions with the `chmod -R u+rwX` the error names). When it refuses, follow
   **Blocked removal** in [removal-checks.md](removal-checks.md).
 - When the plan's `hooks.remove` lists commands, `--yes` runs them first; a failing one stops the
   removal: report its command and log. Report `hooks.untrusted` as
   [prepare.md](prepare.md) says. Pass `--no-hooks` only when the user asks.
 - `--yes` snapshots the working tree as a commit pinned at `refs/agt/backups/<id>`,
-  copies the ignored files that are not disposable under
+  saves its record under
   `~/.local/state/agents/backups/<repo>/<stamp>-worktree-<name>/`, then runs
-  `git worktree remove --force`. Report the backup `id`
+  `git worktree remove --force`, which deletes the ignored files. Report the backup `id`
   and that `agt worktree restore <id>` brings the worktree back.
 - When the result reports `head_on_local_branch` and `head_on_remote_branch` both
   false, the HEAD commit is on no branch. Report the HEAD commit ID and the backup ref

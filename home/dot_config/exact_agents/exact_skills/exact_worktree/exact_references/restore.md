@@ -10,8 +10,8 @@ agt worktree backups                 # find the id; `backups <id>` for one recor
 ```
 
 It recreates the worktree at its original path (or `--path`) with its branch
-and its uncommitted and non-disposable ignored files, and refuses an existing
-path. Reinstall dependencies per [prepare.md](prepare.md).
+and its uncommitted work, and refuses an existing path. Ignored files are not
+restored, except from backups made by agt 0.20.0 or older. Reinstall dependencies per [prepare.md](prepare.md).
 
 Without a backup, check `git worktree list --porcelain` and whether the local
 branch still exists. Read [create.md](create.md) for an existing branch. Only
