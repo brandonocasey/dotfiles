@@ -66,10 +66,12 @@ git rebase <TARGET>
   combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
   how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
-- A clean rebase, with no conflicts or edits, needs no new tests, manual check, or
-  review. Only when it needed conflict resolution or edits, re-run the step 2 tests
-  and the **Manual check** of `shared/git-flow.md` before proceeding. The same
-  applies after a step 2 fix commit.
+- A clean rebase, with no conflicts or edits, needs no new tests or manual
+  check, and keeps earlier review records (the review bullet below still runs a
+  review the change never had). Only when it needed conflict resolution or
+  edits, re-run the step 2 tests and the **Manual check** of
+  `shared/git-flow.md` before proceeding. The same applies after a step 2 fix
+  commit.
 - Then run any review that `review/references/when-to-run.md` triggers, pinned to
   `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status`
   reports `reviewed: true` and an empty `unreviewed_commits`; otherwise review from
