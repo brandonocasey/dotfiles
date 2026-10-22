@@ -53,7 +53,11 @@ move.
 manual-check rule; refactors also need passing relevant tests. For behavior
 changes, use the repository's documented harness. For test changes, run the
 changed tests and inspect their results. Classify configuration by its effect.
-Reuse evidence while its code, inputs, and environment remain unchanged. Record
+Reuse evidence while its code, inputs, and environment remain unchanged; a clean
+rebase, with no conflicts or edits, keeps it valid. Never
+manually test commits a review's tester or an earlier check already tested; per
+`review/references/testing.md`, test only untested commits, unless a verified
+`high` severity bug needs a retest. Record
 `Checked: <checks> -> <result>`. Do not push or land when required verification
 is missing.
 

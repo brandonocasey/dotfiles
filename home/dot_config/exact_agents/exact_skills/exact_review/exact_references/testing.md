@@ -10,13 +10,24 @@ cases, as does a change with no runnable behavior: text-only edits, or internal
 refactors. State the skip reason in the report. `--test` forces the cases even
 then.
 
+Never run manual or UX cases twice on the same commits, just as reviews never
+repeat. Before testing, run `agt qa status` and `agt qa list`; commits up to the
+last tested head with passing, non-stale cases count as tested. Test only the
+untested commits and uncommitted work. A clean rebase (no conflicts or edits)
+keeps earlier results valid, even though `agt qa status` then marks them stale;
+retest only code changed by conflict resolution or edits. The one exception: after a `high`
+severity bug survives verification, retest the cases its fix affects, and the
+second cycle ([loop.md](loop.md)) retests as it says. Automated checks are not
+limited by this rule.
+
 Keep the review worktree until testing and authorized repairs are complete.
 When resuming from a `session-resume` record, apply `session-resume`'s reuse rules.
 
 ## Stage order
 
 1. **Test.** After setup, start one fresh `tester` with the prompt below on the
-   whole target.
+   whole target, or on only its untested part when earlier commits are already
+   tested (see above).
 2. **Verify.** Re-verify each failure as [delegation.md](delegation.md) re-verifies
    findings: read the cited log lines or evidence and the code they point to. Mark
    a failure the change did not cause as `pre-existing`.
