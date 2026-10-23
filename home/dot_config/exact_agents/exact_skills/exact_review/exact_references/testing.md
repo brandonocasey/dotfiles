@@ -95,7 +95,8 @@ Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md at the root 
 Return per check and case, failures first: name, kind (automated, manual, or
 exploratory), command or steps, inputs, expected and observed result, outcome
 (pass, fail, blocked, or skipped), evidence paths, and environment (engine,
-viewport, theme, OS).
+viewport, theme, OS). For each failure, also the file and line that cause it
+when known, and a possible fix.
 ```
 
 ## Record
@@ -109,17 +110,36 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
    per returned check or case, with `--command` or `--steps -`, `--evidence` per
    path, `--env key=value` per fact, and `--note` for blocked or skipped reasons.
    A retest reuses the earlier name, so its result replaces the old one.
-3. One `agt qa finding --check <check-id> --type bug --severity <high|medium|low>
-   --body <text>` per verified failure the change caused, with the severity scale of
+3. One `agt qa comment --check <check-id> --type bug --severity <high|medium|low>
+   --body <text>` per verified failure the change caused, posted as a review comment: add
+   `--path <file> --line <n>` (and `--commit <tested-sha>`) when the failure points to
+   a line, and put the possible fix in the body, as a suggestion block when it is a
+   line change ([remote-comments.md](remote-comments.md)). Use the severity scale of
    [output.md](output.md); `--type question` for a behavior change the user must
    confirm. File a `pre-existing` failure as `--type comment` with a body that starts
-   `Pre-existing bug (<severity>):`, so it never blocks approval.
-4. `agt qa run end --run <run>`, with `--usage -` when the harness reports usage.
+   `Pre-existing bug (<severity>):`, so it never blocks approval. The tester's
+   identity comes from the check's run.
+4. A retest that still fails, or a tester note on an open QA thread (another possible
+   fix, a narrower cause), goes on that thread: `agt qa reply <thread-id> --body <text>`
+   with the tester's `--model`, `--effort`, and `--harness`. Without them the reply
+   posts as the user.
+5. `agt qa run end --run <run>`, with `--usage -` when the harness reports usage.
    An ended run accepts no more checks, so record everything first.
-5. After stage 5 commits the fixes, resolve each QA finding whose check passed a
+6. After stage 5 commits the fixes, resolve each QA thread whose check passed a
    retest: `agt review resolve <thread-id> --fixed <fix-sha>` with the main
-   session's `--model`, `--effort`, and `--harness`. A working-diff target has no
-   fix commit: leave its findings open and report them as fixed in the working tree.
+   session's `--model`, `--effort`, and `--harness`. A failed retest of a committed
+   fix: `agt review resolve <thread-id> --not-fixed "<reason>"` with the tester's
+   flags. A working-diff target has no fix commit: leave its threads open and report
+   them as fixed in the working tree.
+7. **Approve.** After the last retest of the run's final head, run `agt qa status`;
+   when `approvable` is true, run `agt qa approve` with the same target flag. It
+   records the approval for the summary headline (`🧪 QA approved`) and sends no host
+   approval. It refuses a dirty tree, a failing, blocked, or stale check, and an open
+   bug, requirement, or question from a check: report its reason instead. A
+   working-diff target is never QA approved.
+
+On an own MR/PR, the review's `agt review publish` ([loop.md](loop.md)) posts the QA
+comments, replies, and resolves with the review's, signed `🧪 agt QA · <check> · <model>`.
 
 `agt qa check` has no `--head`: on a `--range <from>..<to>` or `--range <sha>` target
 it stamps every check at `<to>` or `<sha>`, even after fix commits. Keep the same
