@@ -3,8 +3,8 @@
 Each flag is the user's request to approve or merge the reviewed MR/PR
 ([git-policy.md](../../shared/git-policy.md)). Local targets: report `Merge: not run (local target)`.
 
-- `--approve`: post an approval comment at the reviewed head; a formal host
-  approval only when the user asks for one (step 4).
+- `--approve`: record an approval of the reviewed head, shown in the summary
+  headline; a formal host approval only when the user asks for one (step 4).
 - `--auto-merge`: enable auto-merge, read the state back, and stop.
 - `--merge`: enable auto-merge, then watch until merged or blocked.
 
@@ -34,14 +34,15 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - Outside the checkout, add `-R` as in merge.md. If it stays a draft, skip
      steps 5–6 and report it as a blocker.
 4. **Approve** (`--approve`): run `agt review publish --approve` on the review's store
-   target, which posts an approval comment at `HEAD_SHA`. Only when
+   target, which records the approval at `HEAD_SHA` and posts no comment; the summary
+   headline shows `🔍 approved`. Only when
    the user asks for a formal approval, use `publish --approve --formal`; it also submits the
    host's approval and never approves your own GitHub PR. On another author's MR/PR,
    publish with `--approve --not-own`, after a `--dry-run` with the same
    flags. When `skipped` lists the approval (head moved, or `<id>/formal` on your own
    GitHub PR) or `posted` shows an approve `error`, report that instead of approved.
    To retry a failed formal approval once, run `publish --approve --formal` again.
-   A comment does not satisfy required approvals; when the MR/PR needs one for
+   An approval without `--formal` does not satisfy required approvals; when the MR/PR needs one for
    `--auto-merge` or `--merge`, report that blocker.
 5. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
    **Enable auto-merge** with `HEAD_SHA`.
@@ -61,6 +62,6 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    - Run `git -C <main-checkout> fetch --prune origin`, then `git -C <main-checkout> worktree prune`.
 
 End the report with one line:
-`Merge: marked ready; approved <sha> (comment|formal); auto-merge enabled; merged <sha>; cleaned <paths and branch>`
+`Merge: marked ready; approved <sha> (summary|formal); auto-merge enabled; merged <sha>; cleaned <paths and branch>`
 (only the parts that ran), or `Merge: not run (<reason>)`. Name any retained remnant
 and its reason.

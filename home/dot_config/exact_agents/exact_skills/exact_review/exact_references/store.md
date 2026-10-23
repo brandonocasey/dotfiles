@@ -52,7 +52,7 @@ in this store) still need `--target <key>`.
 | Before later reviewers start | `pass start --run <run> --kind full\|fix-check\|reveal --base <base> --reviewers -` |
 | After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; `--lock` for the blind review; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a blind finding after the reveal | `finding kill <id> --reason <text>`; works on a locked pass |
-| Fixes applied | `resolve <id>... --fixed <sha> --reviewer <run>.<pass>.fix`: replies `Fixed in <sha>.` and resolves each |
+| Fixes applied | `resolve <id>... --fixed <sha> --reviewer <run>.<pass>.fix`: replies `✅ Fixed in <sha> <subject>.` and resolves each |
 | The user declines a finding, or it proves wrong after it was posted | `resolve <id> --rejected "<reason>"` with the main session's `--model`, `--effort`, `--harness` and `--harness-version`: replies `Won't fix: <reason>.` and resolves; the record counts it as rejected, not fixed; a finding not yet posted stays unposted |
 | Fix check says not fixed | `resolve <id> --not-fixed "<reason>" --reviewer <run>.<pass>.<id>`: replies and reopens |
 | Held question | `resolve <id> --triage question`; record the user's answer with `reply <id> --local --body <answer>` (never posted) |
