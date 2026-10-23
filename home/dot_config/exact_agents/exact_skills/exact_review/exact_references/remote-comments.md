@@ -42,11 +42,11 @@ GitHub (replaces the line(s) the comment anchors to):
 
 Every review of an MR/PR authored by the authenticated user ([fix.md](fix.md) **Fix
 authorization** names the lookup) posts its findings, resolves fixed ones, and
-posts a final review record. GitLab and GitHub only, and only in a repository inside
+keeps the review summary current. GitLab and GitHub only, and only in a repository inside
 the user's organization; for an upstream or other outside repository, print as for
 other MRs/PRs. Never post on any other MR/PR unless the user asks; then post only
 the findings the user chose with
-`agt review publish --not-own --only <ids>` per [output.md](output.md). It never posts records.
+`agt review publish --not-own --only <ids>` per [output.md](output.md). It never posts the summary.
 
 ### IDs and signature
 
@@ -55,10 +55,11 @@ the findings the user chose with
 - Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
 - Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
   keeps its ID.
-- Signature: `<model-id> <effort> <harness> <run>.<pass>.<reviewer>`, such as
-  `claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1`. Harness is `claude-code` or
-  `codex`. Write `default` for an unknown effort. Add ` post-reveal` to findings
-  from the cycle 2 reveal. The fixer signs with reviewer ID `fix`.
+- Signature: the reviewer's `model`, `effort` and `harness` (`claude-code` or
+  `codex`), recorded by `pass start`. Write `default` for an unknown effort. Mark
+  findings from the cycle 2 reveal `post_reveal`. The fixer is reviewer ID `fix`.
+  Posted comments carry only the footer `> <sub>🔍 agt review · <model></sub>`;
+  the summary footer names every reviewer and model.
 - Harness version: run `claude --version` or `codex --version` once per run.
 - Starting context, per reviewer and pass: the starting SHA plus `fresh`,
   `continued <pass> + <N> findings, fix diff`, or `blind, threads after lock`.
@@ -68,68 +69,70 @@ the findings the user chose with
 After each pass and its fix push (or after the pass, when nothing was fixed), run
 `agt review publish --target <key>` per [store.md](store.md); prefix
 `GITLAB_HOST=<host>` when self-hosted. It syncs first, then posts every pending
-finding, reply, and resolve, plus the final record of each ended run not yet posted.
+finding, reply, and resolve, and updates the summary when a run ended or its text changed.
 A rerun matches posted items instead of posting again. Read only its returned links and failures; rerun a failure once
 yourself. It refuses an MR/PR the user did not author. What it posts:
 
-- Each finding body holds the step 3 comment text, the finding's signatures (one per
-  reviewer that raised it), and the marker
+- **Finding body.** The kind on its own line (`**🐛 bug (high)**`, `**❓ question**`,
+  `**🎯 requirement**`, `**✏️ nit**`), the step 3 comment text, and the footer
+  `> <sub>🔍 agt review · <model></sub>`. Finding threads carry the marker
   `<!-- review-finding v1 id=<finding id> sha=<reviewed-sha> -->`. Every posted body,
-  replies and the final record included, also ends with
-  `<!-- agent-review id=<local-id> -->`.
-- **Findings, as one review.** GitHub: one review with `commit_id` set to the reviewed
-  SHA, `event` `COMMENT`, `body` `Review findings.`, and one comment per in-diff
-  finding (`side` `LEFT` for old, else `RIGHT`). GitLab: one draft note per in-diff
-  finding, its lines mapped to and positioned on the latest MR head, each published
-  by its own ID. Never use `bulk_publish`: it also publishes the user's own unfinished
-  drafts.
-- **Outside the diff.** Lines of a changed file that fit no hunk are skipped. A file
-  the MR/PR does not change, a whole-file finding, and on GitLab lines a later commit
-  changed post as a general comment naming the location. GitLab: a resolvable
-  thread. GitHub: a general comment; it cannot be resolved, so `publish` posts a
-  reply to it as a new general comment ending `Re: <finding id>`.
-- **Replies.** Fixed: `resolve <id>... --fixed <sha>
-  --reviewer <run>.<pass>.fix` adds the `Fixed in <sha>.` reply and resolves. Not fixed:
-  `resolve <id> --not-fixed "<reason>"` with the fix-check reviewer's
-  `--reviewer <run>.<pass>.<id>` adds the `Not fixed: <reason>.` reply and reopens.
-  `publish` posts each reply with its author's signature, then resolves or reopens
-  the thread.
-- **Final record.** GitLab: a note with `resolvable=false`, so it never blocks
-  merging. GitHub: a general comment.
+  replies and the summary included, also ends with
+  `<!-- agent-review id=<local-id> attempt=<attempt> -->`.
+- **Findings, as one review.** GitHub: one `COMMENT` review per reviewed commit, one
+  comment per in-diff finding (`side` `LEFT` for old, else `RIGHT`). GitLab: one draft
+  note per in-diff finding, its lines mapped to and positioned on the latest MR head,
+  each published by its own ID. Never use `bulk_publish`: it also publishes the user's
+  own unfinished drafts.
+- **Outside the diff.** Lines of a changed file that the diff does not show post as a
+  resolvable thread on the whole file whose first line names the lines: GitHub a
+  file-level review comment, GitLab a file discussion (or a diff discussion on the
+  unchanged line). A GitLab position the host refuses falls back to a general thread.
+  A file the MR/PR does not change posts as a general comment naming the location.
+  On GitHub an agent never posts a general comment: on your own PR such a finding is
+  listed in the summary with its whole text; on someone else's PR it goes in the
+  review body.
+- **Replies.** `resolve` posts the outcome as a reply, then resolves or reopens:
+  `✅ Fixed in <sha> <subject>.`, `❌ Not fixed: <reason>.`, `🚫 Won't fix: <reason>.`,
+  `➖ No longer applies: the code changed.`, `💬 Answered above.`, `📋 Moved to <issue>.`,
+  or `✅ Resolved.` for a bare resolve. Agent replies end with the same footer. The
+  user's reply to a GitHub general comment quotes it and links it.
+- **Approval.** No comment. `--formal` is the host's approval only: a GitHub `APPROVE`
+  review whose body is the marker, or GitLab's approve call.
 
 ````markdown
-**bug (medium):** <what breaks, when, and the fix>
+**🐛 bug (medium)**
+<what breaks, when, and the fix>
 
 ```suggestion
 <replacement lines>
 ```
 
-claude-opus-5-5 xhigh claude-code rv-7k2m.c1p0.r1
+> <sub>🔍 agt review · claude-opus-5-5</sub>
 <!-- review-finding v1 id=rv-7k2m.c1p0.r1.f1 sha=<reviewed-sha> -->
-<!-- agent-review id=rv-7k2m.c1p0.r1.f1 -->
+<!-- agent-review id=rv-7k2m.c1p0.r1.f1 attempt=<attempt> -->
 ````
 
-### Final record
+### Summary
 
-Post one general comment after the review ends, even with open items. One row per
-reviewer per pass; a fix check row may list several continued reviewers.
-`reviews-at-head` counts the passes whose reviewed SHA is the final head: full
-reviews, plus a fix check that found no major finding.
+One general comment per MR/PR, posted with the first ended run and edited in place
+after that. GitLab: a plain note, so it never blocks merging. Past 65,000 characters
+it continues in linked part comments. Its headline is the only status:
 
-```markdown
-**Review rv-7k2m:** review-fixed at <short-head>. <C> cycles, <F> found, <X> fixed, <O> open.
+- `**⚠️ <N> to fix** at <head>`: open findings and failed or blocked QA checks
+  that no open thread explains;
+- `**⏳ <n> new commits not reviewed** at <head>`: nothing open, but no run read
+  some commits;
+- `**✅ Nothing to fix** at <head>`;
+- then ` · <n> commits not reviewed`, ` · 🔍 approved` and ` · 🧪 QA approved` as
+  they apply.
 
-| Pass | Reviewed | Starting context | Reviewer |
-|---|---|---|---|
-| c1p0 full | 1a2b3c4 | fresh | r1 claude-opus-5-5 xhigh · Claude Code 2.1.296 |
-| c1p1 fix check | 1a2b3c4..5d6e7f8 | continued c1p0 + 2 findings, fix diff | r1 |
-| c2p0 full | 5d6e7f8 | blind, threads after lock | r2 gpt-6-astra xhigh · codex-cli 0.162.1 |
-| c2p1 fix check | 5d6e7f8..9e8d7c6 | continued c2p0 + 1 finding, fix diff | r2 |
-
-Reveal: 2 agree, 0 disagree.
-Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
-<!-- review-record v2 id=rv-7k2m head=<full-head-sha> reviews-at-head=<N> open=<O> -->
-```
+Each open item takes two lines: the emoji and first sentence in bold, then severity,
+place, and its thread link. A collapsed Details section holds the QA checks table and
+the closed findings; after approval only the QA table stays. The summary ends with
+one `<!-- review-record v2 id=<run> head=<head> reviews-at-head=<N> open=<O> -->`
+per run it covers. `reviews-at-head` counts the passes whose reviewed SHA is the
+final head: full reviews, plus a fix check that found no major finding.
 
 ### Syncing
 
@@ -137,6 +140,5 @@ Fixed by: claude-opus-5-5 high · Claude Code 2.1.296
 the MR/PR. It trusts a `review-finding`, `agent-review`, or `review-record v2` marker
 only when its author is the authenticated user, its `editor` is null or that user, and
 it sits in the thread's first comment; it ignores the rest. Trusted records count in
-`reviews_at_head`. A marked GitHub general comment stays open until a later comment by
-that user ends with `Re: <its finding id>` after `Fixed in`. The record's `open` value
-is informational only.
+`reviews_at_head`. A user's reply to a GitHub general comment reads back as `Fixed in`
+or `Won't fix:` and resolves the comment. The record's `open` value is informational only.

@@ -74,7 +74,7 @@ passes target it. On an own MR/PR, after each pass and its push, run `agt review
 publish` per **Own MR/PR comments** in [remote-comments.md](remote-comments.md). Run
 once, after step 5's last pass and its fix commits, in this order: `run end` (in the
 same call as any scratch cleanup that needs no worktree), a last
-`publish` with the final record (own MR/PR only), the auto-merge restore,
+`publish` with the final summary (own MR/PR only), the auto-merge restore,
 step 7, then step 4's per-run report, `Ship:` line, and worktree removal. Step 5's ask replaces step 4's
 closing question. Run step 7 and the restore only when the list is empty or the user's
 answer resolves or accepts every item; otherwise leave auto-merge off. Keep the

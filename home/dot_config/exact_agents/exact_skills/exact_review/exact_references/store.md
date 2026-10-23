@@ -116,4 +116,4 @@ Record what each reviewer spent when the harness reports it, such as the
 Omit unknown fields; skip usage when none is reported. For `run end --usage -`,
 send an array with `role` (`fix` or `main`) in place of `reviewer`,
 only with numbers the harness reports. Never estimate. `run end` adds review and
-fix time to its output and the final record.
+fix time to its output and the summary.
