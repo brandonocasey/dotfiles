@@ -7,7 +7,7 @@ and output field. This file names what the review skill uses.
 
 ## Availability
 
-These rules need `agt` 0.18.0 or newer. Follow [agt.md](../../shared/agt.md).
+These rules need `agt` 0.22.0 or newer. Follow [agt.md](../../shared/agt.md).
 
 ## Commands
 
@@ -53,14 +53,14 @@ in this store) still need `--target <key>`.
 | After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; `--lock` for the blind review; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a blind finding after the reveal | `finding kill <id> --reason <text>`; works on a locked pass |
 | Fixes applied | `resolve <id>... --fixed <sha> --reviewer <run>.<pass>.fix`: replies `Fixed in <sha>.` and resolves each |
-| The user declines a finding, or it proves wrong after it was posted | `resolve <id> --rejected "<reason>"` with the main session's `--model`, `--effort`, `--harness` and `--harness-version`: replies `Rejected: <reason>.` and resolves; the record counts it as rejected, not fixed; a finding not yet posted stays unposted |
+| The user declines a finding, or it proves wrong after it was posted | `resolve <id> --rejected "<reason>"` with the main session's `--model`, `--effort`, `--harness` and `--harness-version`: replies `Won't fix: <reason>.` and resolves; the record counts it as rejected, not fixed; a finding not yet posted stays unposted |
 | Fix check says not fixed | `resolve <id> --not-fixed "<reason>" --reviewer <run>.<pass>.<id>`: replies and reopens |
 | Held question | `resolve <id> --triage question`; record the user's answer with `reply <id> --local --body <answer>` (never posted) |
 | Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
 | Reveal inputs | `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a commit or range target) |
 | Prior reviews, open items, review range | `status [--head <sha>]` (`--full` adds commits and runs), `list --open` |
-| Post to an MR/PR | `publish`, also the final record of each ended run; `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
-| Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`: records and posts `Approved at <sha>.` as a comment; `publish --approve --formal` only when the user asks for a formal approval |
+| Post to an MR/PR | `publish`, also the review summary (one per MR/PR, updated for each ended run); `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
+| Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`: records the approval of the head and posts no comment; the summary headline shows `🔍 approved`; `publish --approve --formal` only when the user asks for a formal approval |
 | After the run's last fix commit | `run end --run <run>`, plus `--reveal-agree <n> --reveal-disagree <m>` after a reveal, and `--usage -` with the main session's usage when known; records HEAD as reviewed and prints `status` and `spent`, so skip a separate `status` call |
 
 Always pass `--base` to every full pass (`pass start --kind full`, also for the second cycle): the pinned range's start (`<review_from>` for
