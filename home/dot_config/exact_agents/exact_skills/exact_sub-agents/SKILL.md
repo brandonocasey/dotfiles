@@ -13,6 +13,7 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 - Spawn independent tasks without conversation history. In Codex, explicitly set `fork_turns="none"`; its omission can inherit the full conversation. Use a Claude named role rather than a conversation fork (forks inherit the parent model); fork only when a skill requests inherited context.
 - Give independent reviewers only the context permitted by the `review` skill.
 - For roles with `omitClaudeMd: true`, include applicable repository constraints, required checks, allowed output paths, and any relevant global consent, destination, resource, or test protections absent from the role. Pass only what the assignment needs; do not paste the global rules or transcript.
+- The spawning session owns testing and review (see After they return). Give an implementing agent only the fast checks scoped to its owned files (targeted tests, lint or type checks for those paths) and the repository constraints that govern them; keep repo-wide gates, review, and manual or UX checks out of its prompt.
 - Paste inputs under about 2k tokens (8k characters). Pass larger ones (diffs, logs, data, file contents) as file paths, and tell the agent to search or read only the parts it needs. Workflow scripts write large computed inputs under the task's scratch directory and pass the path.
 - When passing `model: opus`, state the reason in the prompt's first line.
 - Request raw results: data, findings, and paths, not prose for the user.
@@ -39,4 +40,5 @@ A sub-agent that stops while its own background job runs must keep a background 
 
 - Check high-risk claims inline. Give bulk checking to a fresh agent that writes a verdict file; read only its failed or unverified lines.
 - Fix or redo failed results inline. Do not respawn for the same part more than once.
+- When an agent changed code, tests, or config, before committing or reporting done: for an orchestrated task, follow the `orchestrate` skill; otherwise run the repository's required pre-commit checks inline, then the `review-fix` skill on the diff (it runs the tester and reviewer). Feed the agent's open problems and `decisions.md` into it.
 - Clean up per [task-resources.md](../host-preflight/references/task-resources.md). Keep evidence awaiting re-verification.

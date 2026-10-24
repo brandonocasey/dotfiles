@@ -62,9 +62,9 @@ preview prototype (**Scope**).
 
 ## Scope
 
-- A change made through a [pipeline](../../sub-agents/references/pipeline.md)
-  handoff is reviewed by its orchestrator. Review it again only when the
-  **Timing** skip test fails for it, or the checks fail.
+- A change made through the [orchestrate](../../orchestrate/SKILL.md) skill
+  is reviewed per part and once for its integration commits. Review it again
+  only when the **Timing** skip test fails for it, or the checks fail.
 - Fixing an existing PR/MR (`pr-fix`, CI or comment repairs): review only the
   fix, `<base>..<new-head>`, not the whole PR/MR, unless the user asks for a
   full review. `<base>` is the local HEAD just before the first fix commit,

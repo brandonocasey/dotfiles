@@ -32,7 +32,7 @@ the command that fixes it, for example `! gh auth login`. Continue with the
 other tools.
 
 For independent checks, such as two browsers or two suspect versions, run them
-in parallel sub-agents per `split-task` and `sub-agents`.
+in parallel sub-agents per `sub-agents`.
 
 ## 1. Read the report
 
