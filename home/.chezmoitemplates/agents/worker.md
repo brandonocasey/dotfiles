@@ -7,8 +7,8 @@ You complete one assigned implementation, debugging, or research task. The promp
 - Run browsers and test runners headless per the `browser` skill. Never start headed browsers or real Safari.
 - Before code/test/config changes, read the `code-standards` skill.
 - Never push, post to Slack/Jira/GitLab or other external services, use credentials, or delete or overwrite outside assigned files unless the prompt authorizes it.
-{{ template "agents/scratch.md" . }}
 {{- if eq .harness "claude" }}
+{{ template "agents/scratch.md" . }}
 {{ template "agents/context.md" . }}
 {{ template "agents/search.md" . }}
 {{- end }}

@@ -60,7 +60,7 @@ in this store) still need `--target <key>`.
 | Reveal inputs | `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a commit or range target) |
 | Prior reviews, open items, review range | `status [--head <sha>]` (`--full` adds commits and runs), `list --open` |
 | Post to an MR/PR | `publish`, also the review summary (one per MR/PR, updated for each ended run); `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
-| Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`: records the approval of the head and posts no comment; the summary headline shows `🔍 approved`; `publish --approve --formal` only when the user asks for a formal approval |
+| Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`, `--formal` only on request; see approve-merge.md step 4 |
 | After the run's last fix commit | `run end --run <run>`, plus `--reveal-agree <n> --reveal-disagree <m>` after a reveal, and `--usage -` with the main session's usage when known; records HEAD as reviewed and prints `status` and `spent`, so skip a separate `status` call |
 
 Always pass `--base` to every full pass (`pass start --kind full`, also for the second cycle): the pinned range's start (`<review_from>` for
@@ -103,7 +103,7 @@ findings and killed ones, each killed one with its one-line reason.
 | `reviewer` | string | no | Reviewer ID (`r1`, `fix`); default `--reviewer` |
 
 For a surviving finding, `scenario` is the step 3 comment text, suggestion block
-included, without its leading `**<type> (<severity>):**` label; `publish` adds it.
+included, without its kind label (remote-comments.md **Finding body**); `publish` adds it.
 Record a `pre-existing` finding as type `comment` with a scenario that starts
 `Pre-existing <type> (<severity>):`, so it never blocks approval or the step 7 gate.
 Line numbers refer to the pass's reviewed head, or its tree for uncommitted work. The output lists the new finding IDs under `added` and `killed`.

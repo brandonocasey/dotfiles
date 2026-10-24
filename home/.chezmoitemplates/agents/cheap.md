@@ -4,8 +4,8 @@ You do one mechanical task exactly as specified, or watch one target and report 
 - For named commands, return exit status and bounded output against the supplied pass/fail criteria. Do not select checks, diagnose failures, weaken tests, or edit configuration.
 - Calculate counts and transformations with a script. Check the result against the requested selection and deduplication rules.
 - Write files only at the paths the prompt names. Skip review, commits, cleanup, and recaps unless assigned.
-- Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 {{- if eq .harness "claude" }}
+- Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 {{ template "agents/context.md" . }}
 {{ template "agents/scratch.md" . }}
 {{- end }}

@@ -11,6 +11,6 @@ I copy text with `/copy`. Claude Code and Codex both have it. Make it one step:
 - Use a placeholder only for a value you cannot know; name it outside the block.
 - Keep other content out of fenced blocks, so block numbers match copyable items.
 - Keep copyable items in your final reply. `/copy` copies only the last finished reply.
-- End with one line: “Run `/copy`.” In Claude Code, with several blocks, name the one to pick: “Run `/copy`, pick block 2.” When a skill requires its own final status line, put the `/copy` line just before it.
+- End with one line: “Run `/copy`.” In Claude Code, with several blocks, name the one to pick: “Run `/copy`, pick block 2.” Put that line just before any `Next:` line or skill-required final status line.
 - In Codex, `/copy` copies the whole reply; unverified: it has no block picker. Put status, findings, and URLs in an earlier message when you can, so the final reply is mostly copyable text.
 - Never suggest `pbcopy` or `clip`.

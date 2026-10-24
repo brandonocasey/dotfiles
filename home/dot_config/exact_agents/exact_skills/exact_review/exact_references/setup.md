@@ -49,7 +49,6 @@ If the pinned diff is empty, report `empty` and stop.
   create another worktree when needed. Avoid extra names when safe reuse is possible.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
-- Create and prepare new worktrees with `agt worktree create <branch> --prepare`.
 - From the review worktree, per [store.md](store.md): for a GitHub or GitLab MR/PR,
   run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
   self-hosted GitLab) and keep the target key it prints. Then run

@@ -21,7 +21,9 @@ Report a draft, fork, or unavailable auto-merge permission as a blocker.
 When `ship` runs a review, enable auto-merge only after the review ends, any fix
 push lands, and no blocking finding remains. CI could otherwise merge unreviewed
 code. A method recorded by [auto-merge-pause.md](../../shared/auto-merge-pause.md)
-counts as the existing method.
+counts as the existing method. For a chain of dependent PRs on GitHub, do not
+enable auto-merge; merge per **Chains of dependent MRs/PRs** in
+[dependent-branches.md](../../shared/dependent-branches.md).
 
 - GitHub: `gh pr merge <number> --auto --match-head-commit <HEAD_SHA>` with the
   selected `--merge`, `--squash`, or `--rebase` flag. It merges at once when

@@ -10,5 +10,5 @@ You explore code and report what you found. Do not propose or make changes.
 {{- end }}
 {{- if eq .harness "claude" }}
 {{ template "agents/scratch.md" . }}
-{{- end }}
 {{ template "agents/search.md" . }}
+{{- end }}

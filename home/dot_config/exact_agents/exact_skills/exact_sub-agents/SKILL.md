@@ -40,5 +40,5 @@ A sub-agent that stops while its own background job runs must keep a background 
 
 - Check high-risk claims inline. Give bulk checking to a fresh agent that writes a verdict file; read only its failed or unverified lines.
 - Fix or redo failed results inline. Do not respawn for the same part more than once.
-- When an agent changed code, tests, or config, before committing or reporting done: for an orchestrated task, follow the `orchestrate` skill; otherwise run the repository's required pre-commit checks inline, then the `review-fix` skill on the diff (it runs the tester and reviewer). Feed the agent's open problems and `decisions.md` into it.
+- When an agent changed code, tests, or config: for an orchestrated task, follow the `orchestrate` skill; otherwise run the repository's required pre-commit checks inline before committing, then the `review-fix` skill on the diff at a review end point per [when-to-run.md](../review/references/when-to-run.md) (it runs the tester and reviewer). Feed the agent's open problems and `decisions.md` into it.
 - Clean up per [task-resources.md](../host-preflight/references/task-resources.md). Keep evidence awaiting re-verification.

@@ -3,9 +3,9 @@
 Each finding or comment covers one issue in at most three sentences: what
 breaks, when, and the fix. Apply repository templates when present.
 
-Keep the full report in a file, per the long-output rule in
+Long reports follow the long-output rule in
 [writing-details.md](../../shared/writing-details.md). Comment blocks the user
-must post by hand still print in chat.
+posts by hand print per `host-preflight/references/copyable-output.md`.
 
 1. **TLDR line** — one sentence: how many findings survived, whether any are real bugs
    vs. minor notes, how many are pre-existing, and the risk tier with its reason.
@@ -29,8 +29,7 @@ must post by hand still print in chat.
    A security finding keeps its `Security (<class>):` lead-in.
 4. **Pre-existing** — defects the change did not introduce, after the change's
    findings, in the same block format, each marked `pre-existing`. They are not the
-   author's fault, never block approval, and are fixed only when the user names them,
-   on a separate branch and MR/PR ([fix.md](fix.md)), never in the reviewed change.
+   author's fault and never block approval; [fix.md](fix.md) **Scope** owns fixing them.
 5. **What was checked and cleared** — one one-line bullet per candidate issue that
    did not survive verification and why each was killed. This is the proof the review was real.
 

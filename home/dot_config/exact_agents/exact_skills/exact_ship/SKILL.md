@@ -92,8 +92,7 @@ Before finishing the requested shipping scope: [finish-scope.md](references/fini
 ## 5. Clean up
 
 Follow [task-resources.md](../host-preflight/references/task-resources.md),
-except keep a running CI watch from step 4. Keep a worktree and its branch while
-the MR/PR is open, unless the user requests cleanup; after merge or closure, use
+except keep a running CI watch from step 4. Retain or remove the worktree per
 the `worktree` skill's **Remove** section. If `IN_WORKTREE` is false, leave the
 main checkout and its branch in place. Report retained paths and reasons.
 

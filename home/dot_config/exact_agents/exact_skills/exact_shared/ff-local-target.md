@@ -6,7 +6,6 @@ it for a review comparison. When no fetched commit is
 recorded, fetch the upstream per **Fetch and pin** first. For a base that
 `agt worktree create` selected and reported with `local_default`, agt already
 did this: report it per the `worktree` skill's create.md and do not repeat it.
-After a merge into the target, always run it.
 
 Use the commit fetched from the target's upstream: `branch.<target>.remote` and
 `branch.<target>.merge`, else `origin`'s branch of the same name. A commit from

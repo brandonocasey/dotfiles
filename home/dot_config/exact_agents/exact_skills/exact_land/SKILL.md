@@ -66,18 +66,15 @@ git rebase <TARGET>
   combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
   how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
-- A clean rebase, with no conflicts or edits, needs no new tests or manual
-  check, and keeps earlier review records (the review bullet below still runs a
-  review the change never had). Only when it needed conflict resolution or
-  edits, re-run the step 2 tests and the **Manual check** of
-  `shared/git-flow.md` before proceeding. The same applies after a step 2 fix
-  commit.
+- Re-run the step 2 tests and the **Manual check** of `shared/git-flow.md` only
+  when the rebase needed conflict resolution or edits; a clean rebase keeps
+  earlier evidence and review records (the review bullet below still runs a
+  review the change never had). The same applies after a step 2 fix commit.
 - Then run any review that `review/references/when-to-run.md` triggers, pinned to
   `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status`
   reports `reviewed: true` and an empty `unreviewed_commits`; otherwise review from
   its `review_from`. A review fix
-  commit repeats the step 2 tests before step 4. The review's retest already
-  covers its manual cases; skip the **Manual check** for commits it tested.
+  commit repeats the step 2 tests before step 4.
 
 ## 4. Fast-forward the target to the branch
 
@@ -111,15 +108,12 @@ defer worktree removal until the preview ends.
 
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
-  owns that rule. Needs `agt` 0.10.0 ([agt.md](../shared/agt.md)); it backs the worktree up
-  first and prints the backup id, which the report repeats:
+  owns that rule. Needs `agt` 0.10.0 ([agt.md](../shared/agt.md)):
   ```sh
   cd <MAIN_WT>
   agt worktree remove <worktree-path> --yes
   ```
-  agt ignores your own session and its processes. If it refuses because another session or a process runs in
-  the worktree, keep the worktree and the branch and report the refusal. Follow the `worktree`
-  skill's **Blocked removal** section; ask only when it says to. Its **Submodules** section covers a submodule refusal.
+  Report the backup id it prints. If it refuses, follow the `worktree` skill's **Blocked removal** and **Submodules** sections, keep the branch, and report the refusal.
 - Then delete the landed branch, from a checkout that is not on `BRANCH` (it is now an ancestor
   of `TARGET`, so `-d` is safe and refuses if it somehow is not):
   ```sh

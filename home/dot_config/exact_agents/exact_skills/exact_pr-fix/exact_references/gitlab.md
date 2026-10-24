@@ -14,7 +14,7 @@ self-hosted GitLab. Verify flags with `glab <command> --help` before use.
 | Job log | `glab ci trace JOB_ID` |
 | One retry | `glab ci retry JOB_ID` |
 | Failure triage | `agt ci failures N`: failed and retried jobs, failing specs, and a new, pre-existing, or flaky verdict from the last 10 default-branch pipelines (`--limit`) |
-| Wait for a pipeline | `agt ci wait PIPELINE_ID`, or after a push `agt ci wait "!N@$(git rev-parse HEAD)"`, in the background; exit 0 is passed or merged, 1 needs action, 2 a usage or query error, 3 timeout (`--timeout SEC`) |
+| Wait for a pipeline | `agt ci wait PIPELINE_ID`, or after a push `agt ci wait "!N@$(git rev-parse HEAD)"`, in the background; exit codes per [watch.md](watch.md) |
 
 Map the `glab mr view` JSON to the blockers in SKILL.md:
 

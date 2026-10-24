@@ -135,9 +135,8 @@ On every exit path, follow
 [task-resources.md](../host-preflight/references/task-resources.md). Remove only
 worktrees this invocation created, never a pre-existing one. Keep a repository
 watcher running while other selected pull requests in that repository still need
-it. Keep task-created worktrees while their pull requests remain open, including
-review or policy blockers; after merge or closure, or on explicit cleanup, use
-the `worktree` skill's **Remove** section and report retained paths and blockers.
+it. Retain or remove task-created worktrees per the `worktree` skill's **Remove**
+section (including review or policy blockers), and report retained paths and blockers.
 
 ## Report
 

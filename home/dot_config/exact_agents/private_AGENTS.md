@@ -23,8 +23,8 @@
 - Read ranges with `sed -n` or `rg`; the file-read tool's line-numbered output costs more tokens. In Claude Code, use the file-read tool for files you will edit: Edit and Write reject files seen only through Bash. Use `cat` to load whole skill files; heredocs are fine. Read a code file over about 200 lines whole only when you need most of it.
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
-- Delete your own task dir at task end with `find <dir> -delete`. `agt cleanup` handles leftovers. Do not append `; echo rc=$?` to commands.
-- Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob. Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands.
+- Delete your own task dir at task end; `agt cleanup` handles leftovers. Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob.
+- Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands. Do not append `; echo rc=$?` to commands.
 - To find a past session, run `agt sessions search` first.
 - If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.
 
@@ -42,4 +42,4 @@ Load relevant skills and rule files whole, once. Read each action's rule files i
 - Skill paths in global rules, and unlisted `<name>/SKILL.md` skills, are under `~/.config/agents/skills/`.
 - Skill commands use POSIX sh; on Windows use Git Bash, else PowerShell. Run skill Git commands with every flag shown.
 - Before servers/resources and at cleanup: `host-preflight/references/task-resources.md`.
-- Before Git work: `shared/git-policy.md`; it owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates. Before branch work, including sequential tasks, also read `worktree/SKILL.md`, `worktree/references/create.md`, and `shared/default-branch.md`; add `worktree/references/prepare.md` before checks or commits. Create and set up worktrees yourself with `agt worktree create <branch> --prepare`, never through a `cheap` agent. Never switch branches in the main checkout.
+- Before Git work: `shared/git-policy.md`; it owns Git consent, commits, remote-state verification, conflict resolution, and MR/PR updates. Before branch work, including sequential tasks, also read `worktree/SKILL.md`, `worktree/references/create.md`, and `shared/default-branch.md`; add `worktree/references/prepare.md` before checks or commits. Create and set up worktrees yourself with `agt worktree create <branch>` (add `--prepare` per `worktree/references/prepare.md`), never through a `cheap` agent. Never switch branches in the main checkout.

@@ -43,8 +43,8 @@ If it cannot be disabled, report why and push only after the user agrees.
 
 ## Restore
 
-Re-enable it once the work's pushes are complete: in `ship`, after the review, any
-follow-up review, and their fix pushes end; otherwise right after the push. Use the
+Re-enable it once the work's pushes are complete: in `ship`, per its
+[finish-scope.md](../ship/references/finish-scope.md); otherwise right after the push. Use the
 recorded method and the last `HEAD_SHA`, with the commands in ship's
 [merge.md](../ship/references/merge.md) **Enable auto-merge**. Read the state back
 and report it. Restoring needs no new merge consent; it returns the user's setting.

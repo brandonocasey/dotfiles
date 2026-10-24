@@ -35,7 +35,7 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 
 Before the spawn, the main session reads no review references except when-to-run.md,
 [setup.md](references/setup.md), [testing.md](references/testing.md), and the
-references testing.md names for verifying and fixing test failures. It never reviews
+references those files name (for setup, remote-target.md, store.md, ci-and-conflicts.md; for test failures, the ones testing.md names). It never reviews
 or tests the code itself, except in testing.md's inline fallback. Run setup
 yourself per setup.md, with `agt`, `git`, and `gh`/`glab` commands; no sub-agent.
 Its inputs: the user's target verbatim (a range or MR/PR the calling skill or loop
@@ -52,8 +52,7 @@ later passes).
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when the
   current risk tier is `low`, pass `model: sonnet` (effort stays `xhigh`).
-- On `skip` (own MR/PR only: `agt review status --head <sha>` on its store target
-  shows `reviews_at_head` of 2 or more and 0 open threads; [store.md](references/store.md)),
+- On `skip` (setup.md owns the test),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
   Setup stops before checks; clean up any worktree it reports per
   [output.md](references/output.md).
@@ -63,8 +62,7 @@ later passes).
 - With `own: yes`, the review posts and resolves MR/PR comments per **Own MR/PR
   comments** in [remote-comments.md](references/remote-comments.md). With `own: no`,
   it posts nothing unless the user asks.
-- Never add a summary of the change, focus areas, what already passed, or earlier
-  findings. That framing steers reviewers away from the code. Only a fix check and
+- Add nothing to the reviewer prompt beyond setup.md's template; only a fix check and
   the cycle 2 reveal add the inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the tester uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.

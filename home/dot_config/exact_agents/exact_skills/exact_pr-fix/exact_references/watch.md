@@ -22,8 +22,7 @@ retries, comments, changes pull request state, or merges.
 2 a usage or query error, 3 the `--timeout`.
 
 Decide by the final `reason`, not the exit code: `action_required` exits 1, or 2 when a query
-error is among the blocked targets. Handle it per [ci-repair.md](../../ship/references/ci-repair.md)
-and repair the failed targets.
+error is among the blocked targets.
 
 When the watcher reports `action_required`, inspect the reported state in the
 main session and apply the SKILL.md **Diagnose and repair** section under the

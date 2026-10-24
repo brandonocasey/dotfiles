@@ -54,7 +54,7 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
      the type from its **Choosing the type** procedure; carry any issue-tracker reference
      from the MR/PR title. Never mention the review, its passes, or its findings in
      the commit message or MR/PR description. Handle auto-merge per `shared/auto-merge-pause.md`
-     (pause at start, restore after the push, new MR/PR when queued). Push to the source branch — the review
+     (pause at start, restore after the push, new MR/PR when queued; inside the fix loop keep it paused per loop.md). Push to the source branch — the review
      worktree is detached, so use `git push origin HEAD:<source-branch>`. For a fork MR/PR,
      `origin` is the base repo: push to the fork's URL instead
      (`git push <fork-url> HEAD:<source-branch>`). That needs push access to the fork and
@@ -72,8 +72,7 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   branch and checkout, and keep the selected range store target. Report the fix branch.
   Apply the fixes in the branch's worktree, retest per **Retest** in
   [testing.md](testing.md), record the `Checked:` line, and commit per the `commit` skill. Read each
-  file you will edit with the file-read tool, not `cat`. With a `--range` store target
-  ([store.md](store.md)), never amend or rebase the pinned commits; add fix commits. For a commit
+  file you will edit with the file-read tool, not `cat`. For a commit
   or the default branch, first create a fix branch per the `worktree` skill. Do not push.
 - **Working diff**: apply the fixes in place, retest per **Retest** in
   [testing.md](testing.md), record the `Checked:` line, and leave them

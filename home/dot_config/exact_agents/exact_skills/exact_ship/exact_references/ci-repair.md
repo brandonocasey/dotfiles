@@ -8,7 +8,7 @@ Skip it, and give the reason in the report, for `ship --merge` (`merge.md` owns 
 In Claude Code, run it as a background command in the main session; its exit is the only wake.
 Add no periodic wakes, monitor timeouts, or status checks, and never poll the same targets.
 On another harness, or when the harness cannot notify on exit, run it through one `cheap` agent under the wake rule in [monitoring.md](../../sub-agents/references/monitoring.md).
-Do not wait for it before the ship report; give `Waiting on: CI watch`.
+Do not wait for it before the ship report; give `Waiting on: CI watch, about <expected duration>`.
 
 On exit, read the exit code (0 passed or merged, 1 needs action, 2 usage or query error, 3 timeout, 130/143 stopped), then the final event's top-level `reason`, then each target's `results[].reason`, and report once per watch exit:
 

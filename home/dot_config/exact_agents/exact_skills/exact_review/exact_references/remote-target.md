@@ -64,12 +64,10 @@ that the platform is unsupported and stop before any mutation.
   git -C <main-checkout> worktree add --detach .worktrees/review-<number> <head-sha>
   ```
 
-  Report whether the checkout was created or reused. At review cleanup, follow
-  `output.md`: remove only a worktree this review created, unless its retention
-  rules apply. Never remove a pre-existing checkout during ordinary review cleanup.
+  Report whether the checkout was created or reused.
 
 ## Linked MRs/PRs
 
 When the request or the MR/PR description names a companion or linked MR/PR, review it in
 the same run. Do not ask first. Report each one separately. Apply `--fix`, `--threads`,
-and merge only to MRs/PRs that the user names or authored; review the others read-only.
+approval, and merge only to MRs/PRs that the user names or authored; review the others read-only.

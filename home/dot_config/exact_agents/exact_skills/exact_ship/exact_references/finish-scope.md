@@ -14,8 +14,7 @@
   and hold CI repairs.
 - After it ends, if the CI watch reported a failure, run its repair before applying
   any review fix; keep the tree clean until the repair commit passes its checks.
-  Then commit verified review fixes. The review already retested them; run the
-  **Manual check** of `shared/git-flow.md` only for commits no test covered.
+  Then commit verified review fixes.
   Push once per `ship` step 2; ship's push authorization covers it.
   Restart the CI watch at the new head. Count that push toward ci-repair.md's
   fix-push cap only when it carries a CI repair.

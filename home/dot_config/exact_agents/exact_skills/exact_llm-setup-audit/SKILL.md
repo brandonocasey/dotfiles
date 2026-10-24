@@ -19,7 +19,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   Tag each proposal (see **Safe and gating**); ask only about gating ones.
 - Use the invocation's scope; without one, audit every target above.
-  “Talk before making changes” applies the rules flow to every target and follows the talk-first path of **Safe and gating**.
+  “Talk before making changes” applies the rules flow to every target.
 - A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
   **Left alone** includes every unedited target and unresolved finding, with reasons.
 
@@ -34,7 +34,7 @@ Measure global rules, skills, and agents with `agent-probe --prompt 'Reply with 
 It runs in an empty directory, so it never loads project files.
 For project files or a per-file breakdown, ask the user to run `/context` in the project, before and after.
 Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
-Before applying a safe rules or config item, copy the target to `~/.local/state/agents/backups/<name>/<stamp>/`.
+Before applying a safe rules or config item, copy the target to the AGENTS.md backup path.
 Skill edits need no backup.
 
 Find each target's source before editing: chezmoi or another repository. Update that source too.
@@ -94,6 +94,8 @@ One harness's setting does not control another.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
   Example: “The `commit` skill owns commit splitting.”
+- **Reader context:** for each role, per harness, list what loads together: rules (Codex roles load `AGENTS.md`; Claude roles with `omitClaudeMd: true` do not), the role body with its partials, and skills the role names.
+  Check each set for duplicates, gaps, and contradictions. Estimate each role's load as bytes ÷ 3.
 - **Invocation conflicts:** find each rule or skill that tells the model to run an explicit-only skill.
   Propose one fix: make the skill model-invocable, or change the rule.
 - **Orphans:** list each file under `references/` or `shared/` that no skill links. Propose a link or a removal.
@@ -109,7 +111,6 @@ One harness's setting does not control another.
 - **Language:** apply [writing.md](../shared/writing.md).
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
-- **Setup claims:** for a Claude Code or setup question, read the current setting first and test it. Otherwise mark the answer unverified.
 - **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.
   Do not leave it as an open question.
 
@@ -179,7 +180,7 @@ Never add tool-specific commands there.
 
 1. Complete setup. Present the full analysis under **Combine / Simplify / Remove / Session evidence / Left alone**, numbered within each group.
 2. Show every proposal's exact final wording.
-3. Apply safe proposals first, unless the user asked to talk first or you started the run without the user asking; then apply none. Ask unresolved gating questions next. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
+3. Apply safe proposals per **Safe and gating**. Ask unresolved gating questions next. Use the harness's question tool for judgement calls with real options; otherwise ask in text.
    Free text overrides offered choices.
 4. Apply approved items (gating, or safe ones held back by talk-first): numbers, groups, or “do all.” Reread first; use targeted edits that preserve the user's intervening changes.
 5. Report changes. List each unapplied item with its before/after text so skipped work is explicit.
