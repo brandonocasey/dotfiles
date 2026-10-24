@@ -63,7 +63,8 @@ preview prototype (**Scope**).
 ## Scope
 
 - A change made through the [orchestrate](../../orchestrate/SKILL.md) skill
-  is reviewed per part and once for its integration commits. Review it again
+  is reviewed by its handoff session, or per part and once for its integration
+  commits. Review it again
   only when the **Timing** skip test fails for it, or the checks fail.
 - Fixing an existing PR/MR (`pr-fix`, CI or comment repairs): review only the
   fix, `<base>..<new-head>`, not the whole PR/MR, unless the user asks for a

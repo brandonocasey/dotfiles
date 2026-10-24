@@ -1,21 +1,30 @@
 ---
 name: orchestrate
-description: "Run large implementation work as parallel parts, one worktree each, with per-part test and review and one integration pass. Rarely needed."
+description: "Run implementations of 15+ files in one background Sonnet session, or independent parts in parallel worktrees."
 ---
 
-Do implementation work inline by default. Orchestrate only when the user asks,
-or when the task divides into independent parts that each need substantial
-reading or editing on their own (broad multi-file migrations, repetitive edits
-across many files). Run inline when the parts share most of their context, or
-the task is small or sequential: each part re-pays the shared context and gets
-its own tester and reviewer.
+Do implementation work inline by default. Pick the first mode that applies:
+
+1. **Parallel parts**, when the user asks for them.
+2. **Handoff** (Claude Code only), for an implementation that will change 15 or
+   more files: one background Sonnet session runs it per
+   [handoff.md](references/handoff.md). In the 2026-10-23 probes it cost 24%
+   less than inline at 18 and 31 files, with equal or better test results.
+3. **Parallel parts**, when the task divides into independent parts that each
+   need substantial reading or editing on their own (broad multi-file
+   migrations, repetitive edits across many files). Untested against inline:
+   each part re-pays the shared context and gets its own tester and reviewer.
+4. **Inline** otherwise, including small or sequential tasks and parts that
+   share most of their context.
+
+## Parallel parts
 
 The main session runs every stage; no agent orchestrates another. Spawn per
 `sub-agents`. Each part moves through its stages on its own timeline: start a
 part's next stage as soon as its current one returns, without waiting for the
 other parts.
 
-## Setup
+### Setup
 
 1. Write the plan to a file, per the long-output rule in
    [writing-details.md](../shared/writing-details.md): parts, non-overlapping
@@ -24,7 +33,7 @@ other parts.
    `worktree/SKILL.md`: `agt worktree create <task>-<n> --base <base> --prepare --background`.
    Collect each with `agt worktree prepare --wait` before spawning into it.
 
-## Stages (per part, in its own worktree)
+### Stages (per part, in its own worktree)
 
 1. **Implement.** A background `worker` given its worktree path, owned files,
    and scoped checks. It writes `<scratch>/<task>/part-<n>/decisions.md` per
@@ -38,7 +47,7 @@ other parts.
 5. **Review.** Run `review-fix` on the part's branch against `<base>`; delegate
    its fixes as in stage 4.
 
-## Integrate (once all parts finish)
+### Integrate (once all parts finish)
 
 1. Merge the part branches into the task branch, per the Git policy's conflict
    rules.
