@@ -10,9 +10,10 @@ the orchestrator, so run the stages below.
 
 1. Create a fresh directory with `mktemp -d <scratch>/handoff-XXXXXX` and use its printed path as `<dir>` below. Write the full request, constraints, and consents to `<dir>/request.md`.
 2. Start with Bash in the background, from the worktree:
-   `claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/sub-agents/references/pipeline.md --output-format json "$(cat <dir>/request.md)" > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
+   `claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/sub-agents/references/pipeline.md --output-format json < <dir>/request.md > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
+   The request goes on stdin: a positional prompt that starts with `-` fails as an unknown option.
 3. Wait for its exit notification.
-4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator ran `review-fix`. That review covers the change; run another only when it did not run or your checks fail. Report its open questions to the user.
+4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm with `agt review status --head HEAD` that the orchestrator's `review-fix` covers HEAD. That review covers the change; run another only when it does not or your checks fail. Report its open questions to the user.
 
 ## Stages (orchestrator)
 
@@ -24,5 +25,8 @@ the orchestrator, so run the stages below.
 4. **Review.** Run `review-fix`; delegate its fixes as in stage 3.
 5. **Docs.** Only when user-facing behavior, CLI, config, setup, or a public API
    changed: a fresh `worker` following `write-docs`, given the diff and
-   `decisions.md`. Then `review-fix` on the docs commits.
-6. **Report.** Final report: commits, checks, and every open question.
+   `decisions.md`. For new or changed tutorials and how-tos, run the reader pass
+   from `write-docs` yourself, since the worker cannot spawn agents, and send its
+   findings back to the docs worker. Then `review-fix` on the docs commits.
+6. **Report.** Final report: commits, checks, the `review-fix` result with its
+   reviewed head, and every open question.

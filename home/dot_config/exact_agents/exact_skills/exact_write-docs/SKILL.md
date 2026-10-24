@@ -18,4 +18,5 @@ description: "Create or edit documentation, one page at a time, using Diátaxis 
   given only the page paths, no diff or intent. Tell it to follow every step exactly
   without guessing or reading code, to work in a scratch directory with `HOME` set
   inside it, and to report each failing or confusing step as step, expected, and
-  actual. Fix its findings, then rerun once.
+  actual. Fix its findings, then rerun once. A sub-agent cannot spawn the tester:
+  list the pages that need the pass in its result instead.

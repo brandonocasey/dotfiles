@@ -63,8 +63,8 @@ preview prototype (**Scope**).
 ## Scope
 
 - A change made through a [pipeline](../../sub-agents/references/pipeline.md)
-  handoff is reviewed by its orchestrator. Review it again only when that review
-  did not run or the checks fail.
+  handoff is reviewed by its orchestrator. Review it again only when
+  `agt review status --head HEAD` shows no review of HEAD, or the checks fail.
 - Fixing an existing PR/MR (`pr-fix`, CI or comment repairs): review only the
   fix, `<base>..<new-head>`, not the whole PR/MR, unless the user asks for a
   full review. `<base>` is the local HEAD just before the first fix commit,
