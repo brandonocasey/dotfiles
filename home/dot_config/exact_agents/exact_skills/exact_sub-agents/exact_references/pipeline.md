@@ -13,7 +13,7 @@ the orchestrator, so run the stages below.
    `claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/sub-agents/references/pipeline.md --output-format json < <dir>/request.md > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
    The request goes on stdin: a positional prompt that starts with `-` fails as an unknown option.
 3. Wait for its exit notification.
-4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm with `agt review status --head HEAD` that the orchestrator's `review-fix` covers HEAD. That review covers the change; run another only when it does not or your checks fail. Report its open questions to the user.
+4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator's `review-fix` covers the change: `agt review status` reports `reviewed: true` and an empty `unreviewed_commits`. Run another review only when it does not or your checks fail. Report its open questions to the user.
 
 ## Stages (orchestrator)
 
