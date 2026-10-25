@@ -322,7 +322,7 @@ if [ -n "$rl_locked" ]; then
   fi
   # Session files last past every window they hold (7 days at most); temp
   # files are left only by runs killed outright.
-  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name 'session-*.port' -mtime +8 \
+  find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name 'session-*.port' -mtime +8 -o -name 'idle-*' -mtime +8 \
     -o -name '*.json.*' -mmin +60 -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
   rmdir "$rl_lock" 2>/dev/null
   rl_locked=""
@@ -822,18 +822,65 @@ case $pc_state in
     ;;
 esac
 
+# Time since the last turn ended (grey: "42s", "12m", "1h05m", "2d"), to judge
+# how long a wait on background work has run; empty while a turn runs. Each
+# turn ends with a turn_duration entry or an interrupt; turns woken by
+# hooks/cache-keepalive.sh don't count. Parsing takes ~15 ms, so each session
+# reuses its result until the transcript changes.
+idle_val=""
+if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
+  idle_key=$(stat -c %s:%Y "$transcript" 2>/dev/null || stat -f %z:%m "$transcript" 2>/dev/null)
+  idle_cache="$rl_dir/idle-$rl_sid"
+  idle_line=""
+  { read -r idle_line < "$idle_cache"; } 2>/dev/null
+  if [ -n "$idle_key" ] && [ "${idle_line% *}" = "$idle_key" ]; then
+    idle_end=${idle_line##* }
+  else
+    idle_end=$(tail -n 400 "$transcript" | jq -nrR '
+      reduce (inputs | fromjson? | select(.type == "user" or .type == "assistant" or .subtype == "turn_duration")) as $e
+        ({end: null, busy: false, ka: false};
+         ($e.message.content // "") as $c
+         | if $e.subtype == "turn_duration" then
+             (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false
+           elif $e.type == "user" and ($c | type) == "string"
+             and ($c | contains("cache-keepalive: the session is idle")) then .ka = true
+           elif .ka then .
+           elif $e.type == "user" and ($c | type) == "array"
+             and any($c[]; .type == "text" and (.text // "" | startswith("[Request interrupted by user")))
+             then .end = $e.timestamp | .busy = false
+           else .busy = true end)
+      | if .busy or .end == null then "" else .end | sub("\\.[0-9]+Z$"; "Z") | fromdate end' 2>/dev/null)
+    [ -n "$idle_key" ] && printf '%s %s\n' "$idle_key" "$idle_end" > "$idle_cache"
+  fi
+  case $idle_end in
+    '' | *[!0-9]*) ;;
+    *)
+      idle_s=$((now - idle_end))
+      [ "$idle_s" -lt 0 ] && idle_s=0
+      if [ "$idle_s" -lt 60 ]; then idle_val="${idle_s}s"
+      elif [ "$idle_s" -lt 3600 ]; then idle_val="$((idle_s / 60))m"
+      elif [ "$idle_s" -lt 86400 ]; then idle_val=$(printf '%dh%02dm' $((idle_s / 3600)) $((idle_s % 3600 / 60)))
+      else idle_val="$((idle_s / 86400))d"
+      fi
+      idle_val=$(printf '\033[38;5;247m%s\033[0m' "$idle_val")
+      ;;
+  esac
+fi
+
 # Context window usage, led by the window only when unusual ("40%",
-# "200k:40%"), then the prompt cache's time to live in the same segment once
-# 30 minutes or less remain ("40%:25m", "40%:cold").
+# "200k:40%"), then in the same segment the idle time and the prompt cache's
+# time to live once 30 minutes or less remain ("40%:12m", "40%:47m:13m",
+# "40%:3h10m:cold").
 ctx_seg=""
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
   ctx_seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$ctx_used_pct")
   [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
 fi
-if [ -n "$pc_val" ]; then
-  if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$pc_val"); else ctx_seg=$pc_val; fi
-fi
+for v in "$idle_val" "$pc_val"; do
+  [ -n "$v" ] || continue
+  if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$v"); else ctx_seg=$v; fi
+done
 [ -n "$ctx_seg" ] && parts="$parts$sep$ctx_seg"
 
 # Project and branch as "project#branch": the project (green) is the git
