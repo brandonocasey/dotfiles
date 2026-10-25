@@ -19,7 +19,7 @@ def render_codex_modifier(directory):
     config.write_text("")
     script.write_text(subprocess.run(
         ["chezmoi", "--source", str(REPO), "--config", str(config), "execute-template"],
-        stdin=CODEX_MODIFIER.open(), text=True, capture_output=True,
+        input=CODEX_MODIFIER.read_text(), text=True, capture_output=True,
         check=True, timeout=10).stdout)
     return script
 
