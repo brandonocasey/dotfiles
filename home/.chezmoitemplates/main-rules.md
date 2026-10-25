@@ -15,7 +15,7 @@
 - Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `consult` (escalation).
 {{- end }}
 {{- if .claude }}
-- For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it.
+- Before an implementation that will change 15 or more files: `orchestrate`.
 {{- end }}
 - Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Review only at its end points (finish with commits, push, integrate, deploy, land, remote test run), not per turn or intermediate commit; read-only tasks need none.
