@@ -87,19 +87,25 @@ class NpmrcModifierTests(unittest.TestCase):
         scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
         scratch.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="npmrc-test-", dir=scratch) as directory:
-            home = Path(directory)
+            root = Path(directory)
+            # Only the npmrc source: the full repository's archive externals download on read.
+            source = root / "source/dot_config/npm/modify_npmrc"
+            source.parent.mkdir(parents=True)
+            source.write_bytes((REPO / "home/dot_config/npm/modify_npmrc").read_bytes())
+            home = root / "home"
             target = home / ".config/npm/npmrc"
             target.parent.mkdir(parents=True)
             if live is not None:
                 target.write_bytes(live)
-            config = home / "chezmoi.toml"
+            config = root / "chezmoi.toml"
             config.write_text("")
             env = {key: value for key, value in os.environ.items()
                    if key not in ("XDG_CACHE_HOME", "XDG_DATA_HOME")}
             env["HOME"] = str(home)
             output = subprocess.run(
-                ["chezmoi", "--source", str(REPO), "--config", str(config), "-D", str(home),
-                 "cat", str(target)],
+                ["chezmoi", "--source", str(root / "source"), "--config", str(config),
+                 "--cache", str(root / "cache"), "--persistent-state", str(root / "state.boltdb"),
+                 "-D", str(home), "cat", str(target)],
                 env=env, capture_output=True, check=True, timeout=30).stdout
             return output.decode(), str(home)
 
