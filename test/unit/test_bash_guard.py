@@ -123,7 +123,8 @@ class HeadlessClaudeTests(GuardTestCase):
                         "claude -p 'x' --tools Bash 2>&1 | tail -5", "timeout 300 claude -p --tools Bash 'x'",
                         "nohup claude -p --tools Bash 'x' > log 2>&1 &", "timeout -k 5 5m claude -p --tools Bash x",
                         "nohup setsid sh -c 'claude -p --tools Bash x > log 2>&1' &",
-                        "claude -p --tools Bash Read 'x'"):
+                        "claude -p --tools Bash Read 'x'", "claude -pc --tools Bash x",
+                        "claude -p<r.md --tools Bash"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "ToolSearch")
 
