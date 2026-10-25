@@ -1,18 +1,22 @@
 // chezmoi:modify-template
 // chezmoi:template:line-endings=crlf
 // chezmoi:template:left-delimiter=//{{
-//{{- $currentConfig := .chezmoi.stdin | fromIni -}}
-//{{- $modifiedConfig := .chezmoi.stdin | fromIni -}}
-
-//{{- $_ := set $modifiedConfig "prefix" "${XDG_DATA_HOME}/npm" -}}
-//{{- $_ := set $modifiedConfig "cache" "${XDG_CACHE_HOME}/npm" -}}
-//{{- $_ := set $modifiedConfig "init-version" "0.0.0" -}}
-//{{- $_ := set $modifiedConfig "init-author-name" "Brandon Casey" -}}
-//{{- $_ := set $modifiedConfig "save-exact" "true" -}}
-//{{- $_ := set $modifiedConfig "fund" "false" -}}
-
-//{{- if deepEqual $currentConfig $modifiedConfig -}}
-//{{-   .chezmoi.stdin }}
-//{{- else -}}
-//{{-   $modifiedConfig | toIni }}
+//{{- /* Edit only the managed lines: an INI round trip splits `//host/:_authToken=` keys at the colon. */ -}}
+//{{- /* Absolute paths: npm leaves an unset ${XDG_*} literal and creates that folder in the cwd. */ -}}
+//{{- $dataHome := env "XDG_DATA_HOME" | default (joinPath .chezmoi.homeDir ".local" "share") -}}
+//{{- $cacheHome := env "XDG_CACHE_HOME" | default (joinPath .chezmoi.homeDir ".cache") -}}
+//{{- $managed := dict "prefix" (joinPath $dataHome "npm") "cache" (joinPath $cacheHome "npm") "init-version" "0.0.0" "init-author-name" "Brandon Casey" "save-exact" "true" "fund" "false" -}}
+//{{- $text := .chezmoi.stdin -}}
+//{{- range $key, $value := $managed -}}
+//{{-   $pattern := printf "(?m)^%s[ \t]*=[^\r\n]*" $key -}}
+//{{-   $line := printf "%s=%s" $key $value -}}
+//{{-   if regexMatch $pattern $text -}}
+//{{-     $text = regexReplaceAllLiteral $pattern $text $line -}}
+//{{-   else -}}
+//{{-     if and $text (not (hasSuffix "\n" $text)) -}}
+//{{-       $text = printf "%s\n" $text -}}
+//{{-     end -}}
+//{{-     $text = printf "%s%s\n" $text $line -}}
+//{{-   end -}}
 //{{- end -}}
+//{{- $text -}}

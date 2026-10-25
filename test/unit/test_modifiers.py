@@ -1,7 +1,9 @@
 """Check chezmoi modify_ scripts preserve live settings."""
 import json
+import os
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
@@ -75,6 +77,51 @@ class OpenCodeModifierTests(unittest.TestCase):
     def test_jsonc_keeps_custom_server_settings(self):
         live = "// user comment\n" + json.dumps(self.LIVE, indent=2).replace('"present"', '"present",', 1)
         self.check(json.loads(modify(OPENCODE, live)))
+
+
+class NpmrcModifierTests(unittest.TestCase):
+    MANAGED = {"prefix", "cache", "init-version", "init-author-name", "save-exact", "fund"}
+
+    def render(self, live=None):
+        """Render npmrc through chezmoi in a fresh home, with XDG data and cache unset."""
+        scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
+        scratch.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="npmrc-test-", dir=scratch) as directory:
+            home = Path(directory)
+            target = home / ".config/npm/npmrc"
+            target.parent.mkdir(parents=True)
+            if live is not None:
+                target.write_bytes(live)
+            config = home / "chezmoi.toml"
+            config.write_text("")
+            env = {key: value for key, value in os.environ.items()
+                   if key not in ("XDG_CACHE_HOME", "XDG_DATA_HOME")}
+            env["HOME"] = str(home)
+            output = subprocess.run(
+                ["chezmoi", "--source", str(REPO), "--config", str(config), "-D", str(home),
+                 "cat", str(target)],
+                env=env, capture_output=True, check=True, timeout=30).stdout
+            return output.decode(), str(home)
+
+    def test_keeps_auth_lines_and_writes_absolute_paths(self):
+        live = (b"; user comment\r\n"
+                b"cache=${XDG_CACHE_HOME}/npm\r\n"
+                b"//registry.example/:_authToken=FAKE\r\n"
+                b"prefix=${XDG_DATA_HOME}/npm\r\n")
+        output, home = self.render(live)
+        lines = output.split("\r\n")
+        self.assertEqual(lines[:4], ["; user comment", f"cache={home}/.cache/npm",
+                                     "//registry.example/:_authToken=FAKE",
+                                     f"prefix={home}/.local/share/npm"])
+        self.assertNotIn("${", output)
+        self.assertEqual(output.count("\n"), output.count("\r\n"))
+
+    def test_fresh_host_gets_every_managed_key(self):
+        output, home = self.render()
+        lines = output.splitlines()
+        self.assertEqual({line.split("=", 1)[0].strip() for line in lines}, self.MANAGED)
+        self.assertIn(f"cache={home}/.cache/npm", lines)
+        self.assertEqual(output.count("\n"), output.count("\r\n"))
 
 
 if __name__ == "__main__":
