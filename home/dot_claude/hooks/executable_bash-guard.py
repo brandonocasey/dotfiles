@@ -14,6 +14,8 @@
 - A trailing echo or printf of `$?`. The Bash tool already reports the exit code.
 - Headless claude (-p/--print) with --tools but no ToolSearch. Every connector
   tool is then sent in full, about 600k tokens per call.
+- Headless claude inside a handoff session (AGENT_HANDOFF=1). The session reads
+  the same rules as its parent, so it would hand the task off again, and again.
 
 Exit 2 cancels the call and shows the message to the model.
 """
@@ -297,6 +299,13 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "ToolSearch to the --tools list, or pass --strict-mcp-config."
             )
             break
+    # The handoff command sets AGENT_HANDOFF=1, and this hook runs in its session.
+    if os.environ.get("AGENT_HANDOFF") == "1":
+        if any(PRINT_FLAG.search(args_code) for _, args_code in segments(cmd, code, CLAUDE_CMD)):
+            found.append(
+                "This is a handoff session (AGENT_HANDOFF=1), so do not start another "
+                "claude -p session. Run the handoff stages here, in this session."
+            )
     for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:
             continue  # inside quoted data or a comment

@@ -18,6 +18,7 @@ class GuardTestCase(unittest.TestCase):
         self.env = dict(os.environ, HOME=str(root / "home"), XDG_CONFIG_HOME=str(root / "config"),
                         XDG_CACHE_HOME=str(root / "cache"), XDG_STATE_HOME=str(root / "state"),
                         TMPDIR=str(root))
+        self.env.pop("AGENT_HANDOFF", None)
 
     def tearDown(self):
         self.directory.cleanup()
@@ -137,6 +138,25 @@ class HeadlessClaudeTests(GuardTestCase):
                         "timeout 300 claude -p --tools Bash,ToolSearch 'x'", "grep -c 'claude -p --tools Bash' log"):
             with self.subTest(command=command):
                 self.assertAllowed(command)
+
+    def test_handoff_session_cannot_start_claude(self):
+        self.env["AGENT_HANDOFF"] = "1"
+        for command in ("claude -p --model sonnet --append-system-prompt-file h.md --output-format json"
+                        " < r.md > o.json 2> o.err",
+                        "D=.cache/h && claude -p --model sonnet < $D/request.md > $D/o.json",
+                        "cd app && claude --print 'x'", "nohup claude -p x > log 2>&1 &",
+                        "AGENT_HANDOFF=1 claude -p --model sonnet < r.md"):
+            with self.subTest(command=command):
+                self.assertBlocked(command, "handoff session")
+
+    def test_handoff_session_allows_other_commands(self):
+        self.env["AGENT_HANDOFF"] = "1"
+        for command in ("git status", "echo claude -p", "grep -c 'claude -p' log", "claude --version"):
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_main_session_can_start_handoff(self):
+        self.assertAllowed("AGENT_HANDOFF=1 claude -p --model sonnet --append-system-prompt-file h.md < r.md > o.json")
 
 
 class SubagentTimeoutTests(GuardTestCase):
