@@ -187,13 +187,16 @@ class KillScopeTests(GuardTestCase):
                         "pkill -f '[/]work/repo/.worktrees/fix-a/server.js'",
                         "pkill -f '[n]ode /tmp/claude/5e55-1d/scratchpad/s.js'",
                         "pkill -f '[v]ite|[/]work/repo/.worktrees/fix-a/x'", "echo x | xargs pkill -f node",
-                        "xargs -r pkill -f '[n]ode' < names"):
+                        "xargs -r pkill -f '[n]ode' < names",
+                        # A value attached to -u is not option letters: the s in bcasey is not -s.
+                        "pkill -ubcasey node", "pkill -uroot -f '[n]ode'", "pkill -f '[n]ode' -ubcasey"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "in every session")
 
     def test_scoped_kills_are_allowed(self):
         for command in ("kill $PID", "kill 1234", "kill %1", "pkill -P $$", "pkill -F /work/server.pid",
                         "pkill -P 123 -f '[n]ode'", "pkill --parent=123 -f '[n]ode'",
+                        "pkill -P123 node", "pkill -fP123 '[n]ode'", "pkill -F/work/s.pid", "pkill -u root -P 1 node",
                         "pgrep -f '[n]ode'", "pgrep -fl '[n]ode'",
                         "pgrep -f '[n]ode' | wc -l", "kill -0 $(pgrep -f '[n]ode')",
                         "echo 'pkill node'", "rg -n pkill hooks", "grep -c killall log"):

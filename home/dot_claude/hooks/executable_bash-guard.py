@@ -72,12 +72,16 @@ def proc_args(words: list[str]) -> tuple[str | None, bool, bool, list[str]]:
             continue
         if w[1:].removeprefix("SIG") in SIGNALS or re.fullmatch(r"-\d+", w):
             pass  # a signal such as -HUP or -9, not option letters
-        elif re.fullmatch(r"-[A-Za-z]+", w):
-            full = full or "f" in w[1:]
-            scoped = scoped or any(c in PROC_SCOPE_LETTERS for c in w[1:])
-            if w[-1] in PROC_ARG_LETTERS:  # -u root, -fu root: next word is a value
-                i += 2
-                continue
+        elif re.match(r"-[A-Za-z]", w):
+            # Letters up to the first that takes a value; the rest of the word is
+            # that value (-uroot, -P123), or else the next word is (-u root, -fu root).
+            for j, c in enumerate(w[1:], 1):
+                full = full or c == "f"
+                if c in PROC_ARG_LETTERS:
+                    scoped = scoped or c in PROC_SCOPE_LETTERS
+                    if j == len(w) - 1:
+                        i += 1  # skip the value in the next word
+                    break
         elif w == "--full":
             full = True
         elif not w.startswith("-"):
