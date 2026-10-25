@@ -129,6 +129,7 @@ review finding, a check failure the change did not cause, or a new problem.
   `agt issue create --tracker <owner/repo> --title <title> --body -`.
   Put its `local-` key in the `Separately:` line or the report.
 - Push it only after the user agrees, per step 4: pending check, dry-run, push.
+- When the user declines, drop it with `agt issue discard <key>` (agt 0.25.0 or newer).
 - Without `agt` or a matching tracker, suggest `gh issue create` or
   `glab issue create` instead, as step 4 does.
 - For a Jira project, suggest a Jira ticket per step 4 instead.
