@@ -12,6 +12,8 @@ HOOK = REPO / "home/dot_claude/hooks/executable_bash-guard.py"
 
 
 class GuardTestCase(unittest.TestCase):
+    fields = {}  # more hook input, such as cwd and session_id
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory(prefix="bash-guard-")
         root = Path(self.directory.name)
@@ -26,8 +28,9 @@ class GuardTestCase(unittest.TestCase):
     def run_hook(self, command, background=False):
         """Run the hook as Claude Code does: JSON on stdin, exit 2 plus stderr to block."""
         tool_input = {"command": command, "run_in_background": background}
+        payload = {"tool_name": "Bash", "tool_input": tool_input, **self.fields}
         return subprocess.run([sys.executable, "-I", str(HOOK)], env=self.env, capture_output=True, text=True,
-                              input=json.dumps({"tool_name": "Bash", "tool_input": tool_input}), timeout=30)
+                              input=json.dumps(payload), timeout=30)
 
     def assertBlocked(self, command, hint):
         result = self.run_hook(command)
@@ -167,6 +170,34 @@ class HeadlessClaudeTests(GuardTestCase):
 
     def test_main_session_can_start_handoff(self):
         self.assertAllowed("AGENT_HANDOFF=1 claude -p --model sonnet --append-system-prompt-file h.md < r.md > o.json")
+
+
+class KillScopeTests(GuardTestCase):
+    fields = {"cwd": "/work/repo/.worktrees/fix-a", "session_id": "5e55-1d"}
+
+    def test_kills_by_name_are_blocked(self):
+        # The first three stopped other A/B runs, whose prompts were on their command lines.
+        for command in ("pkill -f '[u]nittest discover'; sleep 1", "pkill -f '[s]tock'; true",
+                        "pkill -f '[o]rchestrate/references/handoff.md'", "pkill node", "pkill -9 -f '[v]ite'",
+                        "sudo pkill -f '[n]ode'", "pkill -f '[/]work/repo/other/server.js'",
+                        "pgrep -f '[n]ode' | xargs kill", "pgrep -f '[n]ode' | xargs -r kill -9",
+                        "kill $(pgrep -f '[n]ode')", "kill -9 `pgrep -f '[n]ode'`", "killall node",
+                        "bash -c 'pkill -f [n]ode'"):
+            with self.subTest(command=command):
+                self.assertBlocked(command, "in every session")
+
+    def test_scoped_kills_are_allowed(self):
+        for command in ("kill $PID", "kill 1234", "kill %1", "pkill -P $$", "pkill -F /work/server.pid",
+                        "pkill -f '[/]work/repo/.worktrees/fix-a/server.js'",
+                        "pkill -f '[n]ode /tmp/claude/5e55-1d/scratchpad/s.js'",
+                        "pgrep -f '[n]ode'", "pgrep -f '[n]ode' | wc -l", "kill -0 $(pgrep -f '[n]ode')",
+                        "echo 'pkill node'", "rg -n pkill hooks", "grep -c killall log"):
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+
+    def test_shared_working_directory_does_not_scope(self):
+        self.fields = {"cwd": self.env["HOME"]}
+        self.assertBlocked(f"pkill -f '[/]{self.env['HOME'][1:]}/server.js'", "in every session")
 
 
 class SubagentTimeoutTests(GuardTestCase):

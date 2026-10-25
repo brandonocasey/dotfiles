@@ -179,12 +179,14 @@ def mcp_state(events):
 
 def run_once(args, prompt, flags, log, err):
     cwd = Path(tempfile.mkdtemp(prefix='cwd-', dir=args.out))
-    cmd = ['claude', '-p', prompt, '--output-format', 'stream-json', '--verbose',
+    # The prompt goes on stdin. On the command line, another session's pkill -f on any of its words stops the run.
+    cmd = ['claude', '-p', '--output-format', 'stream-json', '--verbose',
            '--no-session-persistence', '--max-turns', str(args.max_turns), *flags]
     start = time.monotonic()
     try:
         with open(log, 'w') as out, open(err, 'w') as errfh:
-            proc = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=errfh, timeout=args.timeout)
+            proc = subprocess.run(cmd, cwd=cwd, input=prompt, text=True, stdout=out, stderr=errfh,
+                                  timeout=args.timeout)
         code = proc.returncode
     except subprocess.TimeoutExpired:
         code = 'timeout'
