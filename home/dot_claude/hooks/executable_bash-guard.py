@@ -206,7 +206,7 @@ CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)
 HEADLESS_FLAG = re.compile(r"(?:^|\s)(?:--print(?:=\S*)?|-[A-Za-z0-9]*p[A-Za-z0-9]*)(?![\w=-])")
 TOOLS_FLAG = re.compile(r"(?<!\S)--tools(?:=|(?=\s|$))")
 # pkill, pgrep and killall where a command starts, also inside $(...) and `...`.
-KILL_CMD = re.compile(f"(?:{CMD_START}|`|{SCRIPT_START}){WRAPPERS}(?:sudo\\s+(?:-\\S+\\s+)*)?(pkill|pgrep|killall)\\b")
+KILL_CMD = re.compile(f"(?:{CMD_START}|`|{SCRIPT_START}){WRAPPERS}(?:(?:sudo|xargs)\\s+(?:-\\S+\\s+)*)*(pkill|pgrep|killall)\\b")
 # pgrep output fed to kill: `pgrep ... | xargs kill` or `kill $(pgrep ...)`. kill -0 only checks.
 KILL_AFTER = re.compile(r"[^;&\n|]*\|\s*xargs\b[^;&\n|]*\bkill\b(?!\s+-0\b)")
 KILL_BEFORE = re.compile(r"\bkill\b(?!\s+-0\b)[^;&\n|]*(?:\$\(|`)\s*$")
@@ -241,15 +241,16 @@ def tool_names(rest: str) -> list[str]:
     return names
 
 
-def broad_kills(cmd: str, code: str) -> list[str]:
-    """Kills by a name or pattern that also reach other sessions' processes.
+def broad_kills(cmd: str, code: str) -> dict[int, str]:
+    """Kills by a name or pattern that also reach other sessions' processes,
+    keyed by where each pkill, pgrep or killall starts.
 
     No pattern is safe: paths are shared (a main checkout, $HOME) and a regex
     alternation such as 'x|own/path' matches beyond its own part.
     """
     pick = ("List them with pgrep -fl '[n]ame', check they are yours, then kill "
             "them by number in a separate call.")
-    found = []
+    found = {}
     for m in KILL_CMD.finditer(code):
         tool = m.group(1)
         rest = re.split(r"[;&|\n)`]", code[m.end():], maxsplit=1)[0]
@@ -259,7 +260,7 @@ def broad_kills(cmd: str, code: str) -> list[str]:
             words = rest.split()
         if tool == "killall":
             if any(not w.startswith("-") for w in words):
-                found.append(
+                found[m.start(1)] = (
                     f"killall {' '.join(words)} stops matching processes in every session. {pick}"
                 )
             continue
@@ -268,7 +269,7 @@ def broad_kills(cmd: str, code: str) -> list[str]:
         pattern, _, scoped = proc_args(words)
         if not pattern or scoped:
             continue
-        found.append(
+        found[m.start(1)] = (
             f"{'pkill' if tool == 'pkill' else 'kill of pgrep'} '{pattern}' stops every matching "
             "process in every session: other tasks' tests and servers, and claude -p runs whose "
             "prompt holds that text. Kill the PID you saved when you started the process "
@@ -364,17 +365,18 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "This is a handoff session (AGENT_HANDOFF=1), so do not start another "
                 "claude -p session. Run the handoff stages here, in this session."
             )
+    kills = broad_kills(cmd, code)
     for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:
             continue  # inside quoted data or a comment
+        if m.start() in kills:
+            continue  # blocked as a broad kill; a bracket alone would not make it safe
         tool = m.group(1)
         rest = re.split(r"[;&|\n)]", code[m.end():], maxsplit=1)[0]
         try:
             words = shlex.split(cmd[m.end():m.end() + len(rest)])
         except ValueError:
             words = rest.split()
-        if tool == "pkill" and not proc_args(words)[2]:
-            continue  # broad_kills blocks it; a bracket alone would not make it safe
         pattern = (proc_pattern(words) or "").strip("\"'")
         # An anchored pattern cannot match this shell, whose command line
         # starts with the shell's own path.
@@ -388,8 +390,8 @@ def problems(cmd: str, background: bool) -> list[str]:
             safe = f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
             found.append(
                 f"{tool} -f '{pattern}' also matches this shell's own command "
-                f"line. Bracket one character so it cannot match itself: "
-                f"{tool} -f '{safe}'."
+                f"line. Bracket one character of the pattern so it cannot match "
+                f"itself: '{safe}'."
             )
         elif re.sub(r"\[(.)\]", r"\1", pattern) in cmd:
             found.append(
@@ -397,7 +399,7 @@ def problems(cmd: str, background: bool) -> list[str]:
                 "text it matches, so it would still match this shell. Start "
                 "and stop the process in separate calls."
             )
-    return found + broad_kills(cmd, code)
+    return found + list(kills.values())
 
 
 def long_subagent_call(tool_input: dict) -> list[str]:

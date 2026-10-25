@@ -186,7 +186,8 @@ class KillScopeTests(GuardTestCase):
                         # Paths are shared too (a main checkout, $HOME), and | widens any pattern.
                         "pkill -f '[/]work/repo/.worktrees/fix-a/server.js'",
                         "pkill -f '[n]ode /tmp/claude/5e55-1d/scratchpad/s.js'",
-                        "pkill -f '[v]ite|[/]work/repo/.worktrees/fix-a/x'"):
+                        "pkill -f '[v]ite|[/]work/repo/.worktrees/fix-a/x'", "echo x | xargs pkill -f node",
+                        "xargs -r pkill -f '[n]ode' < names"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "in every session")
 
@@ -198,12 +199,22 @@ class KillScopeTests(GuardTestCase):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
-    def test_pkill_gets_no_bracket_hint(self):
-        # Bracketing stops pkill matching its own shell but not other sessions, so it is no fix.
-        result = self.run_hook("pkill -f node")
+    def test_broad_kills_get_no_bracket_hint(self):
+        # Bracketing stops a kill matching its own shell but not other sessions, so it is no fix.
+        for command in ("pkill -f node", "pgrep -f node | xargs kill", "kill $(pgrep -f node)"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn("in every session", result.stderr)
+                self.assertNotIn("Bracket one character", result.stderr)
+
+    def test_other_pkill_forms_keep_the_bracket_hint(self):
+        # sudo -u root hides pkill from the broad-kill check; the self-match check still catches it.
+        self.assertBlocked("sudo -u root pkill -f node", "Bracket one character of the pattern")
+        result = self.run_hook("pkill -P 123 -f node")
         self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn("in every session", result.stderr)
-        self.assertNotIn("Bracket one character", result.stderr)
+        self.assertIn("itself: '[n]ode'.", result.stderr)
+        self.assertNotIn("pkill -f '[n]ode'", result.stderr)
 
 
 class SubagentTimeoutTests(GuardTestCase):
