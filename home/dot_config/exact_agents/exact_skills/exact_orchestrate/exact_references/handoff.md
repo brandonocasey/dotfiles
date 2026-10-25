@@ -26,7 +26,8 @@ the orchestrator, so run the stages below.
    changed: a fresh `worker` following `write-docs`, given the diff and
    `decisions.md`. For new or changed tutorials and how-tos, run the reader pass
    from `write-docs` yourself, since the worker cannot spawn agents, and send its
-   findings back to the docs worker. Then `review-fix` on the docs commits.
+   findings back to the docs worker. Then `review-fix` on the docs commits, as
+   in stage 4.
 6. **Report.** Final report: commits, checks, the `review-fix` result with its
    reviewed head, the `reviewed` and `unreviewed_commits` fields of
    `agt review status`, and every open question.

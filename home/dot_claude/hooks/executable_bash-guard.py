@@ -188,7 +188,8 @@ FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
 CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)?\\b")
 PRINT_FLAG = re.compile(r"(?:^|\s)(?:-p|--print)(?=\s|$)")
 # Also --print=VALUE and grouped short flags such as -pc, so a reworded launch still matches.
-HEADLESS_FLAG = re.compile(r"(?:^|\s)(?:--print(?:=\S*)?|-[A-Za-z]*p[A-Za-z]*)(?=\s|$)")
+# Any character that cannot continue a flag name ends it: -p), -p<f, -p"x", -p`x`.
+HEADLESS_FLAG = re.compile(r"(?:^|\s)(?:--print(?:=\S*)?|-[A-Za-z0-9]*p[A-Za-z0-9]*)(?![\w=-])")
 TOOLS_FLAG = re.compile(r"(?<!\S)--tools(?:=|(?=\s|$))")
 
 
