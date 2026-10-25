@@ -279,7 +279,8 @@ def broad_kills(cmd: str, code: str, own: tuple[str, ...]) -> list[str]:
             f"{'pkill' if tool == 'pkill' else 'kill of pgrep'} '{pattern}' stops every matching "
             "process in every session: other tasks' tests and servers, and claude -p runs whose "
             "prompt holds that text. Kill the PID you saved when you started the process "
-            "(kill $PID), or put this worktree's path or this session's id in the pattern."
+            "(kill $PID), or put this worktree's path or this session's id in the pattern, "
+            "with one character bracketed: pkill -f '[/]path/to/worktree/server.js'."
         )
     return found
 
