@@ -148,6 +148,10 @@ class HeadlessClaudeTests(GuardTestCase):
                         "AGENT_HANDOFF=1 claude -p --model sonnet < r.md"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "handoff session")
+        # handoff.md starts the session with run_in_background, so that path must block too.
+        result = self.run_hook("claude -p --model sonnet < r.md > o.json", background=True)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("handoff session", result.stderr)
 
     def test_handoff_session_allows_other_commands(self):
         self.env["AGENT_HANDOFF"] = "1"
