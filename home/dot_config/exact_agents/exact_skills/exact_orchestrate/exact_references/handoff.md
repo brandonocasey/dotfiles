@@ -19,11 +19,14 @@ the orchestrator, so run the stages below.
 2. **QA.** A fresh `tester` on the committed work; record cases with `agt qa`.
 3. **QA fixes.** Per **Prompt caching** in `sub-agents`, with `decisions.md`.
    Stop after 2 rounds and report.
-4. **Review.** Run `review-fix`; delegate its fixes as in stage 3.
+4. **Review.** Run `review-fix` and follow every step: its tester, its reviewer,
+   and its `agt review` records through `agt review run end`. The main session
+   reviews again when the store shows no review. Delegate its fixes as in stage 3.
 5. **Docs.** Only when user-facing behavior, CLI, config, setup, or a public API
    changed: a fresh `worker` following `write-docs`, given the diff and
    `decisions.md`. For new or changed tutorials and how-tos, run the reader pass
    from `write-docs` yourself, since the worker cannot spawn agents, and send its
    findings back to the docs worker. Then `review-fix` on the docs commits.
 6. **Report.** Final report: commits, checks, the `review-fix` result with its
-   reviewed head, and every open question.
+   reviewed head, the `reviewed` and `unreviewed_commits` fields of
+   `agt review status`, and every open question.
