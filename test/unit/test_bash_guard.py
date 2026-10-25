@@ -193,7 +193,8 @@ class KillScopeTests(GuardTestCase):
 
     def test_scoped_kills_are_allowed(self):
         for command in ("kill $PID", "kill 1234", "kill %1", "pkill -P $$", "pkill -F /work/server.pid",
-                        "pkill -P 123 -f '[n]ode'", "pgrep -f '[n]ode'", "pgrep -fl '[n]ode'",
+                        "pkill -P 123 -f '[n]ode'", "pkill --parent=123 -f '[n]ode'",
+                        "pgrep -f '[n]ode'", "pgrep -fl '[n]ode'",
                         "pgrep -f '[n]ode' | wc -l", "kill -0 $(pgrep -f '[n]ode')",
                         "echo 'pkill node'", "rg -n pkill hooks", "grep -c killall log"):
             with self.subTest(command=command):
@@ -207,6 +208,16 @@ class KillScopeTests(GuardTestCase):
                 self.assertEqual(result.returncode, 2, result.stderr)
                 self.assertIn("in every session", result.stderr)
                 self.assertNotIn("Bracket one character", result.stderr)
+
+    def test_options_after_the_pattern(self):
+        # Linux procps reads options anywhere. macOS reads words after the pattern as more
+        # patterns, so there -P 123 widens the kill to every process holding "-P" or "123".
+        for command in ("pkill -f '[n]ode' -P 123", "pkill '[n]ode' --parent=123"):
+            with self.subTest(command=command):
+                if sys.platform.startswith("linux"):
+                    self.assertAllowed(command)
+                else:
+                    self.assertBlocked(command, "put options such as -P before it")
 
     def test_other_pkill_forms_keep_the_bracket_hint(self):
         # sudo -u root hides pkill from the broad-kill check; the self-match check still catches it.

@@ -49,19 +49,26 @@ SIGNALS = {s.name.removeprefix("SIG") for s in signal.Signals}
 # Options that tie pkill to known processes: a parent, process group, session, terminal or PID file.
 PROC_SCOPE_OPTS = {"--parent", "--pgroup", "--session", "--terminal", "--pidfile"}
 PROC_SCOPE_LETTERS = "PgstF"
+# Linux procps uses GNU getopt, which also reads options after the pattern. macOS uses BSD
+# getopt, which reads them as more patterns: there `pkill -f x -P 1` also kills "-P" and "1".
+OPTIONS_AFTER_PATTERN = sys.platform.startswith("linux")
 
 
-def proc_args(words: list[str]) -> tuple[str | None, bool, bool]:
-    """A pkill/pgrep's pattern, whether it uses -f, and whether an option scopes it."""
+def proc_args(words: list[str]) -> tuple[str | None, bool, bool, list[str]]:
+    """A pkill/pgrep's pattern, whether it uses -f, whether an option scopes it, and
+    the later words this system reads as more patterns, not as options."""
     full = scoped = False
-    i = 0
+    pattern, i = None, 0
     while i < len(words):
         w = words[i]
         if w == "--":
-            return (words[i + 1] if i + 1 < len(words) else None), full, scoped
-        if w in PROC_ARG_OPTS:
-            scoped = scoped or w in PROC_SCOPE_OPTS
-            i += 2
+            if pattern is None and i + 1 < len(words):
+                pattern, i = words[i + 1], i + 1
+            break
+        name = w.split("=", 1)[0]  # --parent=123 as well as --parent 123
+        if name in PROC_ARG_OPTS:
+            scoped = scoped or name in PROC_SCOPE_OPTS
+            i += 1 if "=" in w else 2
             continue
         if w[1:].removeprefix("SIG") in SIGNALS or re.fullmatch(r"-\d+", w):
             pass  # a signal such as -HUP or -9, not option letters
@@ -74,14 +81,19 @@ def proc_args(words: list[str]) -> tuple[str | None, bool, bool]:
         elif w == "--full":
             full = True
         elif not w.startswith("-"):
-            return w, full, scoped
+            if pattern is not None:
+                break  # a second pattern, which procps rejects
+            pattern = w
+            if not OPTIONS_AFTER_PATTERN:
+                break
         i += 1
-    return None, full, scoped
+    extra = [] if OPTIONS_AFTER_PATTERN or pattern is None else words[i + 1:]
+    return pattern, full, scoped, extra
 
 
 def proc_pattern(words: list[str]) -> str | None:
     """The pattern of a pkill/pgrep that uses -f, or None."""
-    pattern, full, _ = proc_args(words)
+    pattern, full, _, _ = proc_args(words)
     return pattern if full else None
 
 
@@ -266,14 +278,16 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
             continue
         if tool == "pgrep" and not (KILL_AFTER.match(code, m.end()) or KILL_BEFORE.search(code, 0, m.start(1))):
             continue
-        pattern, _, scoped = proc_args(words)
+        pattern, _, scoped, extra = proc_args(words)
         if not pattern or scoped:
             continue
+        late = (" On this system, words after the pattern are more patterns, not options: "
+                "put options such as -P before it." if any(w.startswith("-") for w in extra) else "")
         found[m.start(1)] = (
             f"{'pkill' if tool == 'pkill' else 'kill of pgrep'} '{pattern}' stops every matching "
             "process in every session: other tasks' tests and servers, and claude -p runs whose "
             "prompt holds that text. Kill the PID you saved when you started the process "
-            f"(kill $PID, or pkill -F <pidfile>). {pick}"
+            f"(kill $PID, or pkill -F <pidfile>). {pick}{late}"
         )
     return found
 
