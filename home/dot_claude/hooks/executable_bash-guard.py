@@ -9,9 +9,9 @@
 - pkill -f / pgrep -f with a plain pattern. The pattern also appears in this
   shell's own command line, so pkill kills its own shell (exit 144) and pgrep
   always finds a match.
-- pkill, killall, or pgrep fed to kill, by a name or pattern that holds
-  neither this worktree's path nor this session's id. It also stops other
-  sessions' processes, such as claude -p runs whose prompt holds the text.
+- pkill, killall, or pgrep fed to kill, by a name or pattern, unless an option
+  such as -P or -F limits it. It also stops other sessions' processes, such as
+  claude -p runs whose prompt holds the text.
 - Unquoted words that start with `=`. The Bash tool runs zsh, which expands
   `=foo` to a path, so `echo ===` fails with "= not found".
 - A trailing echo or printf of `$?`. The Bash tool already reports the exit code.
@@ -25,7 +25,6 @@ Exit 2 cancels the call and shows the message to the model.
 
 import json
 import os
-from pathlib import Path
 import re
 import shlex
 import signal
@@ -242,19 +241,14 @@ def tool_names(rest: str) -> list[str]:
     return names
 
 
-def own_text(data: dict) -> tuple[str, ...]:
-    """Text only this task's command lines hold: the session id, and the working
-    directory unless other sessions share it, as they do $HOME and /tmp."""
-    own = [data.get("session_id") or ""]
-    cwd = Path(data.get("cwd") or os.getcwd())
-    home = Path.home()
-    if len(cwd.parts) > 2 and cwd != home and not home.is_relative_to(cwd):
-        own.append(str(cwd))
-    return tuple(o for o in own if o)
+def broad_kills(cmd: str, code: str) -> list[str]:
+    """Kills by a name or pattern that also reach other sessions' processes.
 
-
-def broad_kills(cmd: str, code: str, own: tuple[str, ...]) -> list[str]:
-    """Kills by a name or pattern that also reach other sessions' processes."""
+    No pattern is safe: paths are shared (a main checkout, $HOME) and a regex
+    alternation such as 'x|own/path' matches beyond its own part.
+    """
+    pick = ("List them with pgrep -fl '[n]ame', check they are yours, then kill "
+            "them by number in a separate call.")
     found = []
     for m in KILL_CMD.finditer(code):
         tool = m.group(1)
@@ -266,26 +260,24 @@ def broad_kills(cmd: str, code: str, own: tuple[str, ...]) -> list[str]:
         if tool == "killall":
             if any(not w.startswith("-") for w in words):
                 found.append(
-                    f"killall {' '.join(words)} stops matching processes in every session. "
-                    "Kill the PID you saved when you started the process: kill $PID."
+                    f"killall {' '.join(words)} stops matching processes in every session. {pick}"
                 )
             continue
         if tool == "pgrep" and not (KILL_AFTER.match(code, m.end()) or KILL_BEFORE.search(code, 0, m.start(1))):
             continue
         pattern, _, scoped = proc_args(words)
-        if not pattern or scoped or any(o in re.sub(r"\[(.)\]", r"\1", pattern) for o in own):
+        if not pattern or scoped:
             continue
         found.append(
             f"{'pkill' if tool == 'pkill' else 'kill of pgrep'} '{pattern}' stops every matching "
             "process in every session: other tasks' tests and servers, and claude -p runs whose "
             "prompt holds that text. Kill the PID you saved when you started the process "
-            "(kill $PID), or put this worktree's path or this session's id in the pattern, "
-            "with one character bracketed: pkill -f '[/]path/to/worktree/server.js'."
+            f"(kill $PID, or pkill -F <pidfile>). {pick}"
         )
     return found
 
 
-def problems(cmd: str, background: bool, own: tuple[str, ...] = ()) -> list[str]:
+def problems(cmd: str, background: bool) -> list[str]:
     # Heredoc bodies are data (notes, scripts being written), not commands.
     cmd = HEREDOC.sub("", cmd)
     found = []
@@ -381,6 +373,8 @@ def problems(cmd: str, background: bool, own: tuple[str, ...] = ()) -> list[str]
             words = shlex.split(cmd[m.end():m.end() + len(rest)])
         except ValueError:
             words = rest.split()
+        if tool == "pkill" and not proc_args(words)[2]:
+            continue  # broad_kills blocks it; a bracket alone would not make it safe
         pattern = (proc_pattern(words) or "").strip("\"'")
         # An anchored pattern cannot match this shell, whose command line
         # starts with the shell's own path.
@@ -403,7 +397,7 @@ def problems(cmd: str, background: bool, own: tuple[str, ...] = ()) -> list[str]
                 "text it matches, so it would still match this shell. Start "
                 "and stop the process in separate calls."
             )
-    return found + broad_kills(cmd, code, own)
+    return found + broad_kills(cmd, code)
 
 
 def long_subagent_call(tool_input: dict) -> list[str]:
@@ -428,7 +422,7 @@ def main() -> int:
     data = json.load(sys.stdin)
     tool_input = data.get("tool_input") or {}
     found = problems(
-        tool_input.get("command") or "", bool(tool_input.get("run_in_background")), own_text(data)
+        tool_input.get("command") or "", bool(tool_input.get("run_in_background"))
     )
     if data.get("agent_id"):
         found += long_subagent_call(tool_input)

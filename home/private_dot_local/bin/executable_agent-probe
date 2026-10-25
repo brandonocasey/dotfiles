@@ -179,7 +179,8 @@ def mcp_state(events):
 
 def run_once(args, prompt, flags, log, err):
     cwd = Path(tempfile.mkdtemp(prefix='cwd-', dir=args.out))
-    # The prompt goes on stdin. On the command line, another session's pkill -f on any of its words stops the run.
+    # The prompt goes on stdin, so a pkill -f on its words cannot stop this claude run.
+    # --prompt-file also keeps it off this script's own command line.
     cmd = ['claude', '-p', '--output-format', 'stream-json', '--verbose',
            '--no-session-persistence', '--max-turns', str(args.max_turns), *flags]
     start = time.monotonic()

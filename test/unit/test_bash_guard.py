@@ -182,22 +182,28 @@ class KillScopeTests(GuardTestCase):
                         "sudo pkill -f '[n]ode'", "pkill -f '[/]work/repo/other/server.js'",
                         "pgrep -f '[n]ode' | xargs kill", "pgrep -f '[n]ode' | xargs -r kill -9",
                         "kill $(pgrep -f '[n]ode')", "kill -9 `pgrep -f '[n]ode'`", "killall node",
-                        "bash -c 'pkill -f [n]ode'"):
+                        "bash -c 'pkill -f [n]ode'", "killall Dock",
+                        # Paths are shared too (a main checkout, $HOME), and | widens any pattern.
+                        "pkill -f '[/]work/repo/.worktrees/fix-a/server.js'",
+                        "pkill -f '[n]ode /tmp/claude/5e55-1d/scratchpad/s.js'",
+                        "pkill -f '[v]ite|[/]work/repo/.worktrees/fix-a/x'"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "in every session")
 
     def test_scoped_kills_are_allowed(self):
         for command in ("kill $PID", "kill 1234", "kill %1", "pkill -P $$", "pkill -F /work/server.pid",
-                        "pkill -f '[/]work/repo/.worktrees/fix-a/server.js'",
-                        "pkill -f '[n]ode /tmp/claude/5e55-1d/scratchpad/s.js'",
-                        "pgrep -f '[n]ode'", "pgrep -f '[n]ode' | wc -l", "kill -0 $(pgrep -f '[n]ode')",
+                        "pkill -P 123 -f '[n]ode'", "pgrep -f '[n]ode'", "pgrep -fl '[n]ode'",
+                        "pgrep -f '[n]ode' | wc -l", "kill -0 $(pgrep -f '[n]ode')",
                         "echo 'pkill node'", "rg -n pkill hooks", "grep -c killall log"):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
-    def test_shared_working_directory_does_not_scope(self):
-        self.fields = {"cwd": self.env["HOME"]}
-        self.assertBlocked(f"pkill -f '[/]{self.env['HOME'][1:]}/server.js'", "in every session")
+    def test_pkill_gets_no_bracket_hint(self):
+        # Bracketing stops pkill matching its own shell but not other sessions, so it is no fix.
+        result = self.run_hook("pkill -f node")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("in every session", result.stderr)
+        self.assertNotIn("Bracket one character", result.stderr)
 
 
 class SubagentTimeoutTests(GuardTestCase):
