@@ -825,8 +825,9 @@ esac
 # Time since the last turn ended (grey: "42s", "12m", "1h05m", "2d"), to judge
 # how long a wait on background work has run; empty while a turn runs. Each
 # turn ends with a turn_duration entry or an interrupt; turns woken by
-# hooks/cache-keepalive.sh don't count. Parsing takes ~15 ms, so each session
-# reuses its result until the transcript changes.
+# hooks/cache-keepalive.sh don't count, and local slash commands, "!" shell
+# commands, compaction, and synthetic replies start none. Parsing takes ~15 ms,
+# so each session reuses its result until the transcript changes.
 idle_val=""
 if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
   idle_key=$(stat -c %s:%Y "$transcript" 2>/dev/null || stat -f %z:%m "$transcript" 2>/dev/null)
@@ -837,18 +838,23 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
     idle_end=${idle_line##* }
   else
     idle_end=$(tail -n 400 "$transcript" | jq -nrR '
+      # Ends a turn; a keepalive turn leaves the last real end in place.
+      def done($e): (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false;
       reduce (inputs | fromjson? | select(.type == "user" or .type == "assistant" or .subtype == "turn_duration")) as $e
         ({end: null, busy: false, ka: false};
          ($e.message.content // "") as $c
-         | if $e.subtype == "turn_duration" then
-             (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false
-           elif $e.type == "user" and ($c | type) == "string"
+         | if $e.subtype == "turn_duration" then done($e)
+           elif ($c | type) == "string" and ($c | test("^<(local-command-|command-name>|bash-)"))
+             or $e.isCompactSummary == true or $e.message.model == "<synthetic>" then .
+           elif $e.type == "user" and $e.origin.kind == "task-notification" and ($c | type) == "string"
              and ($c | contains("cache-keepalive: the session is idle")) then .ka = true
-           elif .ka then .
            elif $e.type == "user" and ($c | type) == "array"
              and any($c[]; .type == "text" and (.text // "" | startswith("[Request interrupted by user")))
-             then .end = $e.timestamp | .busy = false
-           else .busy = true end)
+             then done($e)
+           # The keepalive reply; any new prompt ends the keepalive turn.
+           elif .ka and ($e.type == "assistant" or $e.isMeta == true
+             or (($c | type) == "array" and any($c[]; .type == "tool_result"))) then .
+           else .ka = false | .busy = true end)
       | if .busy or .end == null then "" else .end | sub("\\.[0-9]+Z$"; "Z") | fromdate end' 2>/dev/null)
     [ -n "$idle_key" ] && printf '%s %s\n' "$idle_key" "$idle_end" > "$idle_cache"
   fi
