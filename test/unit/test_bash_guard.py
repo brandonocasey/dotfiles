@@ -145,7 +145,8 @@ class HeadlessClaudeTests(GuardTestCase):
                         " < r.md > o.json 2> o.err",
                         "D=.cache/h && claude -p --model sonnet < $D/request.md > $D/o.json",
                         "cd app && claude --print 'x'", "nohup claude -p x > log 2>&1 &",
-                        "AGENT_HANDOFF=1 claude -p --model sonnet < r.md"):
+                        "AGENT_HANDOFF=1 claude -p --model sonnet < r.md", "claude --print=x",
+                        "claude -pc x", "claude -cp x"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "handoff session")
         # handoff.md starts the session with run_in_background, so that path must block too.
@@ -155,7 +156,8 @@ class HeadlessClaudeTests(GuardTestCase):
 
     def test_handoff_session_allows_other_commands(self):
         self.env["AGENT_HANDOFF"] = "1"
-        for command in ("git status", "echo claude -p", "grep -c 'claude -p' log", "claude --version"):
+        for command in ("git status", "echo claude -p", "grep -c 'claude -p' log", "claude --version",
+                        "claude --permission-mode plan", "claude -c"):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 

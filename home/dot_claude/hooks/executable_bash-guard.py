@@ -187,6 +187,8 @@ READ_CMD = re.compile(
 FILE_REDIRECT = re.compile(r">>?(?!&)\s*\S")
 CLAUDE_CMD = re.compile(f"(?:{CMD_START}|{SCRIPT_START}){WRAPPERS}claude(?:-two)?\\b")
 PRINT_FLAG = re.compile(r"(?:^|\s)(?:-p|--print)(?=\s|$)")
+# Also --print=VALUE and grouped short flags such as -pc, so a reworded launch still matches.
+HEADLESS_FLAG = re.compile(r"(?:^|\s)(?:--print(?:=\S*)?|-[A-Za-z]*p[A-Za-z]*)(?=\s|$)")
 TOOLS_FLAG = re.compile(r"(?<!\S)--tools(?:=|(?=\s|$))")
 
 
@@ -301,7 +303,7 @@ def problems(cmd: str, background: bool) -> list[str]:
             break
     # The handoff command sets AGENT_HANDOFF=1, and this hook runs in its session.
     if os.environ.get("AGENT_HANDOFF") == "1":
-        if any(PRINT_FLAG.search(args_code) for _, args_code in segments(cmd, code, CLAUDE_CMD)):
+        if any(HEADLESS_FLAG.search(args_code) for _, args_code in segments(cmd, code, CLAUDE_CMD)):
             found.append(
                 "This is a handoff session (AGENT_HANDOFF=1), so do not start another "
                 "claude -p session. Run the handoff stages here, in this session."
