@@ -39,10 +39,12 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    the user asks for a formal approval, use `publish --approve --formal`; it also submits the
    host's approval. GitHub does not let you approve your own PR, so there it posts a
    `COMMENT` review with the approval text and `skipped` lists `<id>/formal`; report
-   `approved (comment review; GitHub blocks self-approval)`. On another author's MR/PR,
-   publish with `--approve --not-own`, after a `--dry-run` with the same
-   flags. When `skipped` lists the approval itself (head moved, open findings) or
-   `posted` shows an approve `error`, report that instead of approved.
+   `approved (comment review; GitHub blocks self-approval)`. When GitLab will not let you
+   approve, `posted` shows the approve `error` with `"fallback": "comment"`, and a comment
+   carries the approval text; report `approved (comment; GitLab refused: <error>)`. On
+   another author's MR/PR, publish with `--approve --not-own`, after a `--dry-run` with the
+   same flags. When `skipped` lists the approval itself (head moved, open findings) or
+   `posted` shows an approve `error` without that fallback, report that instead of approved.
    To retry a failed formal approval once, run `publish --approve --formal` again.
    An approval without `--formal` does not satisfy required approvals; when the MR/PR needs one for
    `--auto-merge` or `--merge`, report that blocker.

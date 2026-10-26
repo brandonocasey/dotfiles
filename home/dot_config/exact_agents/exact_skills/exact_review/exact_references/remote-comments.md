@@ -99,7 +99,9 @@ yourself. It refuses an MR/PR the user did not author. What it posts:
   user's reply to a GitHub general comment quotes it and links it.
 - **Approval.** No comment. `--formal` is the host's approval only: a GitHub `APPROVE`
   review whose body is the marker, or GitLab's approve call. On your own GitHub PR, which
-  GitHub will not let you approve, it is a `COMMENT` review with the approval text.
+  GitHub will not let you approve, it is a `COMMENT` review with the approval text. When
+  GitLab will not let you approve (HTTP 401 or 403), a comment carries the approval text
+  instead.
 
 ````markdown
 **🐛 bug (medium)**
