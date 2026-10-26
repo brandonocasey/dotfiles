@@ -7,7 +7,7 @@ and output field. This file names what the review skill uses.
 
 ## Availability
 
-These rules need `agt` 0.22.0 or newer. Follow [agt.md](../../shared/agt.md).
+These rules need `agt` 0.26.0 or newer. Follow [agt.md](../../shared/agt.md).
 
 ## Commands
 

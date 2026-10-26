@@ -98,7 +98,8 @@ yourself. It refuses an MR/PR the user did not author. What it posts:
   or `✅ Resolved.` for a bare resolve. Agent replies end with the same footer. The
   user's reply to a GitHub general comment quotes it and links it.
 - **Approval.** No comment. `--formal` is the host's approval only: a GitHub `APPROVE`
-  review whose body is the marker, or GitLab's approve call.
+  review whose body is the marker, or GitLab's approve call. On your own GitHub PR, which
+  GitHub will not let you approve, it is a `COMMENT` review with the approval text.
 
 ````markdown
 **🐛 bug (medium)**
