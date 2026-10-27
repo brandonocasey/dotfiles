@@ -34,6 +34,7 @@ Measure global rules, skills, and agents with `agent-probe --prompt 'Reply with 
 It runs in an empty directory, so it never loads project files.
 For project files or a per-file breakdown, ask the user to run `/context` in the project, before and after.
 Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
+Invoking this skill authorizes these probes.
 Before applying a safe rules or config item, copy the target to the AGENTS.md backup path.
 Skill edits need no backup.
 
@@ -108,7 +109,7 @@ One harness's setting does not control another.
   Never remove a check or authorization boundary merely because it restates a default.
 - **Stop points:** keep asks, confirmations, waits, and stops that guard irreversible, outward-facing, or unauthorized actions.
   Narrow or remove other stop points; agents follow them literally.
-- **Language:** apply [writing.md](../shared/writing.md).
+- **Language:** apply the writing rules. Main sessions already load them; read [writing.md](../shared/writing.md) only when they are absent.
   Use one term per concept and name the action, not only a ban. Keep “never” for hard boundaries.
   Remove unnecessary capitals and emphasis, which can cause over-application.
 - **Behavioral ambiguity:** choose the safer reading and give the reason as a veto item or proposal.
@@ -126,7 +127,7 @@ Prioritize recurring cost over raw file size:
    Plugin skills ignore `skillOverrides`; manage them through `/plugin`.
 3. Skill bodies load on invocation and remain in context.
    Weight cost by `/<name>` or `$<name>` counts in `~/.claude*/history.jsonl` and `~/.codex/history.jsonl`.
-   History records typed invocations only.
+   History records typed invocations only. History files can hold NUL bytes: search them with `rg -a` or `grep -a`.
    For model-invocable skills, count Claude `"name":"Skill"` calls recursively under `~/.claude*/projects/`, including sub-agent logs.
 4. Linked reads add tokens. Make each conditional: “Read X when Y.”
 
