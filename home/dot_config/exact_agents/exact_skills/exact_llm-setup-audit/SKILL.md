@@ -17,8 +17,8 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
-  Include MCP servers: `mcpServers`, top-level and per project, in `~/.claude.json` and `~/.claude*/.claude.json`; project `.mcp.json`; and Codex `[mcp_servers.*]`.
-  Read only server names, `enabled`, and `enabled_tools`, never values.
+  MCP servers: `mcpServers` and `disabledMcpServers` (top level and per project) in `~/.claude.json` and `~/.claude*/.claude.json`; project and plugin `.mcp.json`; and Codex `[mcp_servers.*]`.
+  Read only names, `enabled`, and `enabled_tools`, never values.
   Tag each proposal (see **Safe and gating**); ask only about gating ones.
 - **Sessions:** audit the last 30 days of transcripts per [runtime.md](references/runtime.md).
 - Use the invocation's scope; without one, audit every target above.
@@ -101,8 +101,8 @@ One harness's setting does not control another.
   Example: “The `commit` skill owns commit splitting.”
 - **Reader context:** for the main thread and each role, per harness, list what loads together: rules (Codex roles load `AGENTS.md`; Claude roles with `omitClaudeMd: true` do not), the main rules or role body with its partials, skills each names, MCP tools, and session-start hook output.
   Check each set for duplicates, gaps, and contradictions. Estimate each load as bytes ÷ 3.
-  Across sets, flag text a reader loads but never acts on, such as main-session reply rules in a role's load.
-- **Spawn guidance:** compare what `sub-agents` and other skills tell the main thread to put in spawn prompts with each role's load.
+  Flag text a reader loads but never acts on, such as main-session reply rules in a role.
+- **Spawn guidance:** compare the spawn-prompt content that skills require with each role's load.
   Flag text the role already loads and context it lacks.
 - **Invocation conflicts:** find each rule or skill that tells the model to run an explicit-only skill.
   Propose one fix: make the skill model-invocable, or change the rule.
@@ -127,7 +127,7 @@ One harness's setting does not control another.
 Prioritize recurring cost over raw file size:
 
 1. Rules, MCP tool listings, and session-start hook output load every session. Rules also load in sub-agents that include them.
-2. Output from per-prompt and per-tool hooks recurs on each call that adds it.
+2. Per-prompt and per-tool hook output recurs on each call that adds it.
 3. Model-invocable skill listings load every session.
    Propose explicit-only invocation for rarely used skills: `disable-model-invocation` for owned skills;
    `skillOverrides: user-invocable-only` for other Claude skills.
@@ -175,8 +175,8 @@ Never add tool-specific commands there.
 - **Empty hooks:** report hook events with no commands, such as `"PreToolUse": []`.
 - **Parity:** list each Claude hook with no Codex equivalent in `~/.codex/hooks.json`, and the reverse.
 - **Secrets:** run the `dotfiles-sync` secret scan on the chezmoi source; report per AGENTS.md. Propose a move to the secret store for each.
-- **Tool search:** for each Claude profile, check for `ENABLE_TOOL_SEARCH=false` in settings `env`, a custom `ANTHROPIC_BASE_URL`, and a `ToolSearch` deny rule.
-  Any of them turns tool search off, so every MCP tool schema loads in full on each call.
+- **Tool search:** flag `ENABLE_TOOL_SEARCH=false` in a Claude profile's settings `env`, a custom `ANTHROPIC_BASE_URL`, or a `ToolSearch` deny rule.
+  Each turns tool search off, so every MCP tool schema loads in full on each call.
 - **MCP servers:** check use per [runtime.md](references/runtime.md).
 
 ## Skills flow

@@ -1,5 +1,6 @@
 # Measure runtime spend
 
+These checks need `agt` ([agt.md](../../shared/agt.md)); when it stays missing, report them as not run.
 Scan the last 30 days once, instead of writing a new parser:
 
 ```sh
@@ -25,8 +26,9 @@ Never read transcript files whole.
   Propose trimming or silencing output the model does not act on.
   Keep output that guards an authorization boundary or stop point.
 - **MCP:** list each configured server per harness with its `mcp:<server>` calls.
+  Skip servers that `disabledMcpServers` or Codex `enabled = false` already turns off.
   Propose disabling servers with no calls, or narrowing Codex `enabled_tools`.
-  Account connectors (`claude_ai_*`) are not in config files; propose disconnecting unused ones in claude.ai settings.
+  Account connectors (`claude_ai_*`) and plugin servers (`plugin_*`) have no `mcpServers` entry; propose adding unused ones to `disabledMcpServers`.
 - **Cache gaps:** report rewrite tokens by agent.
   Tie long gaps to a rule or hook that causes the wait, if any.
 
