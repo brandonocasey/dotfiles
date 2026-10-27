@@ -15,7 +15,6 @@ description: "Create or edit documentation, one page at a time, using Diátaxis 
 - Each paragraph covers one idea in at most four sentences. Apply
   [writing.md](../shared/writing.md) and repository templates.
 - After writing or changing a tutorial or how-to, run a reader pass: a fresh `tester`
-  (on Codex, where it cannot write, a `worker` told to write only in scratch)
   given only the page paths, no diff or intent. Tell it to follow every step exactly
   without guessing or reading code, to work in a scratch directory with `HOME` set
   inside it, and to report each failing or confusing step as step, expected, and

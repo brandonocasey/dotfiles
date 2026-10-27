@@ -2,8 +2,8 @@ name = "tester"
 description = "Run checks, manual cases, and UX checks; inspect test/build failures and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
 model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
-{{/* Linux hosts lack bwrap, which Codex needs to enforce a sandbox. */ -}}
-sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}read-only{{ end }}"
+{{/* Linux hosts lack bwrap, which Codex needs to enforce a sandbox. The tester writes check logs and test caches. */ -}}
+sandbox_mode = "{{ if eq .chezmoi.os "linux" }}danger-full-access{{ else }}workspace-write{{ end }}"
 developer_instructions = """
 {{ template "agents/tester.md" (dict "harness" "codex") }}"""
 

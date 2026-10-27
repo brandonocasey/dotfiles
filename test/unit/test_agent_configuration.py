@@ -89,5 +89,21 @@ class AgentConfigurationTests(unittest.TestCase):
             self.assertEqual(config["skills"]["max_context_tokens"], 1000)
             self.assertNotIn("config", config["skills"])
 
+    def test_codex_tester_can_write_logs(self):
+        # The tester writes check logs and test caches; explorer and consult stay read-only.
+        linux = os.uname().sysname == "Linux"
+        expected = {"tester": "workspace-write", "explorer": "read-only", "consult": "read-only"}
+        with tempfile.TemporaryDirectory(prefix="agent-config-test-") as directory:
+            config = Path(directory) / "chezmoi.toml"
+            config.write_text("")
+            for role, sandbox in expected.items():
+                with self.subTest(role=role):
+                    template = REPO / f"home/dot_codex/exact_agents/{role}.toml.tmpl"
+                    rendered = subprocess.run(
+                        ["chezmoi", "--source", str(REPO), "--config", str(config), "execute-template"],
+                        input=template.read_text(), text=True, capture_output=True, check=True, timeout=10).stdout
+                    self.assertEqual(tomllib.loads(rendered)["sandbox_mode"],
+                                     "danger-full-access" if linux else sandbox)
+
 if __name__ == "__main__":
     unittest.main()
