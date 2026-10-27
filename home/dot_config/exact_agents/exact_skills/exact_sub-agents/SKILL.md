@@ -18,7 +18,7 @@ Before choosing a role, model, or effort, read [roles.md](references/roles.md). 
 - When passing `model: opus`, state the reason in the prompt's first line.
 - Request raw results: data, findings, and paths, not prose for the user.
 - Tell an agent that implements a change to write `<scratch>/<task>/decisions.md` before handing back, at most 40 lines: choices made, why, and what must not change. Pass its path to every later fix or docs agent for that change, and tell them that a fix conflicting with it comes back as a question, not a change.
-- Name a result path, `<scratch>/<task>/<role>-<n>.md`. Tell agents: if the result exceeds ~40 lines, write it there and return at most 5 lines: path, counts, status. Read-only Codex roles cannot write; ask them for at most 40 lines. Read only the parts of a result file you need.
+- Name a result path, `<scratch>/<task>/<role>-<n>.md`. Tell agents: if the result exceeds ~40 lines, write it there and return at most 5 lines: path, counts, status. Read-only Codex roles (`explorer`, `consult`) cannot write; ask them for at most 40 lines. Read only the parts of a result file you need.
 - Fetch diffs, logs, and browser evidence through `cheap` agents first; they write raw output under the task's scratch directory and pass paths on.
 - Delegate web page and doc reads (WebFetch) to an agent; return only the needed excerpt.
 - Sub-agents never spawn sub-agents. Claude Code role files deny `Agent`; Codex role files enforce this only through instructions.
