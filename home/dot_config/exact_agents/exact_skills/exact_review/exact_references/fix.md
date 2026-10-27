@@ -71,8 +71,7 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   review worktree to a new fix branch at its pinned head. Preserve the original
   branch and checkout, and keep the selected range store target. Report the fix branch.
   Apply the fixes in the branch's worktree, retest per **Retest** in
-  [testing.md](testing.md), record the `Checked:` line, and commit per the `commit` skill. Read each
-  file you will edit with the file-read tool, not `cat`. For a commit
+  [testing.md](testing.md), record the `Checked:` line, and commit per the `commit` skill. For a commit
   or the default branch, first create a fix branch per the `worktree` skill. Do not push.
 - **Working diff**: apply the fixes in place, retest per **Retest** in
   [testing.md](testing.md), record the `Checked:` line, and leave them

@@ -50,7 +50,7 @@ that the platform is unsupported and stop before any mutation.
   `<main-checkout>/.worktrees/review-<number>` path before adding anything.
   Prefer a compatible earlier-pass checkout, existing source-branch worktree, or
   matching named review worktree, including one retained by another session.
-  Reused checkouts must be outside the main checkout and match the pinned head.
+  Reused checkouts must not be the main checkout itself and must match the pinned head.
 
   A stale detached review worktree may move with
   `git -C <wt> switch --detach <head-sha>` only when clean and not in use.
@@ -69,5 +69,4 @@ that the platform is unsupported and stop before any mutation.
 ## Linked MRs/PRs
 
 When the request or the MR/PR description names a companion or linked MR/PR, review it in
-the same run. Do not ask first. Report each one separately. Apply `--fix`, `--threads`,
-approval, and merge only to MRs/PRs that the user names or authored; review the others read-only.
+the same run. Do not ask first. Report each one separately.

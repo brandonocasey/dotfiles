@@ -70,8 +70,8 @@ If the pinned diff is empty, report `empty` and stop.
   documented, fill the tester prompt's `Checks` with `none documented; choose relevant ones`
   and continue. Copy commands as written. When documented commands conflict, choose
   and list the choice.
-- `agt worktree create --prepare` installs dependencies in a new worktree, so
-  reviewers and the tester never install there. In an existing checkout, install only when dependencies are
+- `agt worktree create --prepare` installs dependencies in a new worktree. After
+  `git worktree add`, run `agt worktree prepare <worktree>` once. Reviewers and the tester never install there. In an existing checkout, install only when dependencies are
   missing. Build only when the commands need it.
 - Run none of the commands. The tester runs them ([testing.md](testing.md)).
 
@@ -135,7 +135,7 @@ Return raw data: file, line, severity, `pre-existing` when marked, failure scena
 evidence, and any runtime check that would confirm it. End with `Risk: low|medium|high - <one-line reason>`.
 ```
 
-Keep the severity scale in sync with [output.md](output.md). The main session converts
+[output.md](output.md) uses this scale. The main session converts
 the returned prose to `pass end --findings` JSON per [store.md](store.md).
 
 ## Record

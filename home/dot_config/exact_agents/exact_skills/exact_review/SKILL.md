@@ -9,7 +9,8 @@ as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets 
 explained in plain language. Report verified defects and explicit repository
 requirement violations. Include optional style suggestions only when requested.
 
-Arguments: `--test` and `--no-test` (**Testing**), `--fix` (steps 4–5), and
+Arguments: `--test` and `--no-test` (**Testing**), `--fix` (steps 4–5), `--threads`
+(step 6), `--approve`, `--auto-merge`, and `--merge` (step 7), and
 `--agents <model>[:<effort>][,…]` (**Delegation**). A request in words to fix,
 approve, or merge, or that names reviewer models counts as the matching flag.
 
@@ -44,8 +45,8 @@ check (on for a run's first setup; off when the user asks to review again, and f
 later passes).
 
 - Run setups one at a time, never in parallel.
-- On `empty`, say there is nothing to review and stop. On a blocker, clean up per
-  [output.md](references/output.md), report it to the user, and stop.
+- On `empty` or a blocker, clean up any worktree setup reports per
+  [output.md](references/output.md). On `empty`, say there is nothing to review; on a blocker, report it to the user. Then stop.
 - Run the testing stage in [testing.md](references/testing.md) first. Start the
   reviewers only after its last retest.
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`

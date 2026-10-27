@@ -11,13 +11,8 @@ posts by hand print per `host-preflight/references/copyable-output.md`.
    vs. minor notes, how many are pre-existing, and the risk tier with its reason.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No
    project codenames without a gloss.
-3. **One block per surviving finding**, most-severe first, each led by a severity label:
-   `bug` (wrong behavior reachable in production), `question` (design choice worth confirming
-   with the author), `requirement` (an explicit repository rule violation), or
-   `nit` (optional style feedback, only when requested).
-   Give each `bug` a severity: `high` (data loss, security hole, crash, or a broken main
-   path), `medium` (wrong result on a common path), or `low` (rare edge case or minor
-   effect). Per block:
+3. **One block per surviving finding**, most-severe first, each led by its label and, for a
+   `bug`, its severity, per the **Severity scale** in [setup.md](setup.md)'s reviewer prompt. Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
