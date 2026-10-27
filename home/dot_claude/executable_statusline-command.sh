@@ -323,7 +323,7 @@ if [ -n "$rl_locked" ]; then
   # Session files last past every window they hold (7 days at most); temp
   # files are left only by runs killed outright.
   find "$rl_dir" -type f \( -name 'session-*.json' -mtime +8 -o -name 'session-*.port' -mtime +8 -o -name 'idle-*' -mtime +8 \
-    -o -name '*.json.*' -mmin +60 -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
+    -o -name 'compacts-*' -mtime +8 -o -name '*.json.*' -mmin +60 -o -name 'servers-*' -mmin +60 \) -delete 2>/dev/null
   rmdir "$rl_lock" 2>/dev/null
   rl_locked=""
 fi
@@ -874,17 +874,45 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
   esac
 fi
 
+# Compactions in this session (grey: "⟳2"; none shows nothing). Each appends a
+# compact_boundary entry to the transcript. A full scan of a long transcript
+# takes ~50 ms, so each session keeps its count with the byte offset read so
+# far, and later runs read only what was appended since.
+cc_val=""
+if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
+  cc_cache="$rl_dir/compacts-$rl_sid"
+  cc_off="" cc_n=""
+  { read -r cc_off cc_n < "$cc_cache"; } 2>/dev/null
+  case $cc_off:$cc_n in *[!0-9:]* | :* | *:) cc_off=0 cc_n=0 ;; esac
+  # The idle check above already holds the transcript's "size:mtime".
+  cc_size=${idle_key%%:*}
+  case $cc_size in '' | *[!0-9]*) cc_size=0 ;; esac
+  # A shorter file is a new transcript at the same path.
+  [ "$cc_size" -lt "$cc_off" ] && cc_off=0 cc_n=0
+  # Read only up to a line end, so a line still being written counts next run.
+  if [ "$cc_size" -gt "$cc_off" ] &&
+    [ "$(tail -c +"$cc_size" "$transcript" | head -c 1; printf x)" = $'\nx' ]; then
+    # dd only seeks past the part already read; macOS tail copies a long range
+    # at ~35 ms per MB.
+    cc_add=$({ dd bs=1 skip="$cc_off" count=0 2>/dev/null; head -c $((cc_size - cc_off)); } < "$transcript" |
+      rg -cF '"subtype":"compact_boundary"')
+    cc_n=$((cc_n + ${cc_add:-0}))
+    printf '%s %s\n' "$cc_size" "$cc_n" > "$cc_cache"
+  fi
+  [ "$cc_n" -gt 0 ] && cc_val=$(printf '\033[38;5;247m⟳%d\033[0m' "$cc_n")
+fi
+
 # Context window usage, led by the window only when unusual ("40%",
-# "200k:40%"), then in the same segment the idle time and the prompt cache's
-# time to live once 30 minutes or less remain ("40%:12m", "40%:47m:13m",
-# "40%:3h10m:cold").
+# "200k:40%"), then in the same segment the compaction count, the idle time,
+# and the prompt cache's time to live once 30 minutes or less remain
+# ("40%:⟳2", "40%:12m", "40%:⟳1:47m:13m", "40%:3h10m:cold").
 ctx_seg=""
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
   ctx_seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$ctx_used_pct")
   [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
 fi
-for v in "$idle_val" "$pc_val"; do
+for v in "$cc_val" "$idle_val" "$pc_val"; do
   [ -n "$v" ] || continue
   if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$v"); else ctx_seg=$v; fi
 done
