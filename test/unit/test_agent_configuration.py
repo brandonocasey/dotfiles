@@ -89,10 +89,10 @@ class AgentConfigurationTests(unittest.TestCase):
             self.assertEqual(config["skills"]["max_context_tokens"], 1000)
             self.assertNotIn("config", config["skills"])
 
-    def test_codex_tester_can_write_logs(self):
-        # The tester writes check logs and test caches; explorer and consult stay read-only.
+    def test_codex_tester_can_run_checks(self):
+        # The tester needs network and writes outside the workspace; explorer and consult stay read-only.
         linux = os.uname().sysname == "Linux"
-        expected = {"tester": "workspace-write", "explorer": "read-only", "consult": "read-only"}
+        expected = {"tester": "danger-full-access", "explorer": "read-only", "consult": "read-only"}
         with tempfile.TemporaryDirectory(prefix="agent-config-test-") as directory:
             config = Path(directory) / "chezmoi.toml"
             config.write_text("")
