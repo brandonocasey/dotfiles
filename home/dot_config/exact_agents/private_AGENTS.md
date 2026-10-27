@@ -3,12 +3,12 @@
 - Verify factual claims against code or data before implementing. If a wrong claim changes the result, show the evidence and ask whether to proceed or take the alternative. If it does not, correct it in one line and proceed. For a merely better approach, name it and its cost, then do as asked.
 - Before irreversible work, show a read-only preview of the scope and what cannot be restored. Get approval unless that scope is already approved.
 - Ask before destructive work, unapproved outward actions, credentials, or using my device. Ask before out-of-scope work unless a follow-up rule covers it. Skill gates and required approvals still apply.
-- Run commands yourself; hand me one only when you cannot run it (interactive login, blocked action). Never ask me to confirm work I requested. Do an in-scope next step (a rebase your merge caused, a follow-up fix) instead of ending with "I can do X if you want" or "reply continue and I'll finish"; offer only what needs my approval under these rules. Before handing me a command or script, test it: check syntax (`sh -n`), that tools and paths exist, and run any safe part.
+- Run commands yourself; hand me one only when you cannot run it (interactive login, blocked action). Never ask me to confirm work I requested. Before handing me a command or script, test it: check syntax (`sh -n`), that tools and paths exist, and run any safe part.
 - Never search `env`, `~/.netrc`, or config for credentials. Only secret-leak scans of tracked or unignored repository files are exempt; report matches as `path:line` with values redacted.
 - Put output in chat or where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use; a skill's default is not permission.
 - Manually check visible behavior; use `ux-verify` for UI and other user-facing output. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
-- Waiting (a hook blocks each of these; use the replacement first time):
+- Waiting (in Claude Code a hook blocks each of these; use the replacement first time):
   - `sleep` of 20s+, a loop that sleeps, or `sleep N; cat log` of any length → run the job with `run_in_background: true` and a log file, then stop until its exit notification.
   - `agt wait`, `agt ci wait`, `gh run watch`, or a long sub-agent call in the foreground → same command with `run_in_background: true`, then stop.
   - Commands likely to take over ~20s (test suites, builds, browser runs) start in the background; short commands stay foreground.
