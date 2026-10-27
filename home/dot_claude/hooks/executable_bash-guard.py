@@ -330,7 +330,7 @@ def problems(cmd: str, background: bool) -> list[str]:
                 )
                 break
         # Also with a trailing &: the harness tracks only run_in_background jobs.
-        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agt\s+(?:ci\s+)?wait\b", code):
+        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agt\s+(?:ci\s+)?wait\b(?!\s+(?:-h|--help)(?:$|[\s;&|)]))", code):
             found.append(
                 "agt wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits."

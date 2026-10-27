@@ -231,6 +231,17 @@ class KillScopeTests(GuardTestCase):
         self.assertNotIn("pkill -f '[n]ode'", result.stderr)
 
 
+class AgtWaitTests(GuardTestCase):
+    def test_foreground_wait_is_blocked(self):
+        for command in ("agt wait --timeout 600 -- test -f done", "agt ci wait '!12'",
+                        "cd /w && agt ci wait --help-me"):
+            self.assertBlocked(command, "agt wait in the foreground")
+
+    def test_help_is_allowed(self):
+        for command in ("agt ci wait --help", "agt wait -h", "agt ci wait --help 2>&1 | rg -n sha"):
+            self.assertAllowed(command)
+
+
 class SubagentTimeoutTests(GuardTestCase):
     def run_call(self, timeout: int | None, agent_id: str | None = "a1", background: bool = False):
         tool_input = {"command": "npm test", "timeout": timeout, "run_in_background": background}
