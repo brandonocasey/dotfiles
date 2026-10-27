@@ -362,35 +362,32 @@ countdown_str() {
   }'
 }
 
-# --- Draw a usage gauge: "▕<bar>▏ <pct>% <gap>[→<time>|+<time>]" ---
+# --- Draw a usage gauge: "<bar><tab><pct>%<tab><gap>" ---
 # $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
-# step, in seconds, $5 = pace colour from rate_seg. The bar has 56 cells, two
-# per 7-day budget step; fill is drawn in eighths of a cell. The bar marks the
-# same zones rate_seg colours by: up to one step's share past the budget is
-# fine, the next step's share is yellow, and beyond that is red. Fill takes the
-# colour of the zone holding most of its cell's fill; a full bar is all red.
-# Unfilled cells show "▒" up to where an even pace would put usage now (budget
-# still free at this pace), then "░" tinted by zone, so the track shows how far
-# ahead turns yellow or red right now. Each unfilled cell takes the zone of its
-# middle. The gap is usage minus pace in points: "↑12" in the pace colour when
-# ahead, "↓8" grey when behind, "↕0" grey on pace. Once the pace colour is
-# yellow or red and the bar is not full, "→<time>" estimates when usage reaches
-# 100% at the window's average rate so far; running ahead of pace always gets
-# there before the reset. Behind pace, "+<time>" is the spare time: how long
-# usage could stay flat before pace catches up.
+# step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
+# per day of a window over a day long, else one per hour, whose last cell is
+# darker (fill faint, track 22 levels darker). Every bar is 63 cells, the most
+# that keeps the widest line ("23.9h", "100%", "+100%") within 80 columns:
+# 7 days of 9 cells, or 5 hours of 12 or 13 split at the nearest cell. Cells are
+# "▇", which leaves the top eighth of the line blank so stacked bars don't
+# touch; full-height eighth glyphs would, so fill rounds to whole cells. The
+# bar marks the same zones rate_seg colours by: up to one step's share past
+# the budget is fine, the next step's share is yellow, and beyond that is red.
+# Each cell takes the zone of its middle; a full bar is all red. The track is
+# lighter grey up to where an even pace would put usage now (budget still free
+# at this pace), then dark grey, olive, or maroon by zone, so it shows how far
+# # ahead turns yellow or red right now. The gap is pace minus usage in points:
+# "+8%" green while usage is under pace, "-12%" red while over, "0%" grey on
+# pace.
 pace_gauge() {
   awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" '
-  # Seconds as the largest unit, rounded down to one decimal: "1.4d", "15h", "9m".
-  function dur(s) {
-    if (s >= 86400) return int(s / 8640) / 10 "d"
-    if (s >= 3600)  return int(s / 360) / 10 "h"
-    return int(s / 60) "m"
-  }
   # Zone colour at x percent of the limit: 0 within budget, else yellow or red.
   function zone(x) { return x > red ? 31 : x > yellow ? 33 : 0 }
   BEGIN {
-    split("▏ ▎ ▍ ▌ ▋ ▊ ▉ █", g, " ")
-    N = 56; cw = 100 / N
+    K = w / (w > 86400 ? 86400 : 3600)
+    N = 63; cw = 100 / N
+    # cut[j]: a segment ends at the edge before cell j.
+    for (k = 1; k < K; k++) cut[int(k * N / K + 0.5)] = 1
     pre = "\033[" dim
     e = w - (r - n)
     if (e < 0) e = 0
@@ -400,42 +397,35 @@ pace_gauge() {
     s = 100 * t / w
     b = int((e >= w ? w - 1 : e) / t) * s
     yellow = b + s; red = b + 2 * s
-    u = int(p * N * 8 / 100 + 0.5)
+    u = int(p * N / 100 + 0.5)
     # Full once the shown percentage reads 100.
-    if (u > N * 8 || p >= 99.5) u = N * 8
-    full = u == N * 8
+    if (u > N || p >= 99.5) u = N
+    full = u == N
     if (full) c = 31
-    out = pre "38;5;245m▕"
+    out = ""
     for (i = 0; i < N; i++) {
-      q = u - 8 * i
-      if (q > 8) q = 8
-      if (q > 0) {
-        z = full ? 31 : zone(cw * i + cw * q / 16)
-        out = out pre (z ? z : 32) "m" g[q]
-        continue
-      }
+      last = (i + 1) in cut
       x = cw * (i + 0.5)
-      if (x < pace) { out = out pre "38;5;245m▒"; continue }
-      z = zone(x)
-      out = out pre (z == 31 ? "38;5;124" : z == 33 ? "38;5;136" : "38;5;240") "m░"
+      z = full ? 31 : zone(x)
+      if (i < u) { out = out "\033[0m" pre (last ? "2;" : "") (z ? z : 32) "m▇"; continue }
+      tc = x < pace ? 84 : z == 31 ? "78;38;38" : z == 33 ? "74;66;30" : 56
+      split(tc ";" tc ";" tc, v, ";")
+      k = last ? 22 : 0
+      out = out "\033[0m" pre "38;2;" v[1] - k ";" v[2] - k ";" v[3] - k "m▇"
     }
-    out = out pre "38;5;245m▏\033[0m"
+    out = out "\033[0m"
     d = p - pace
     d = d < 0 ? -int(-d + 0.5) : int(d + 0.5)
-    # Percentage and gap are right-aligned ("  5%", " ↓9") so stacked gauges
-    # line up their numbers and the times after them.
-    ad = d < 0 ? -d : d
-    gap = (ad < 10 ? " " : "") (d > 0 ? pre c "m↑" d : pre "38;5;245m" (d < 0 ? "↓" ad : "↕0"))
-    if (c != 32 && p > 0 && !full && e > 0) gap = gap "→" dur((100 - p) * e / p)
-    if (d < 0) gap = gap "+" dur((pace - p) * w / 100)
-    printf "%s %s%sm%3d%%\033[0m %s\033[0m", out, pre, c, int(p + 0.5), gap
+    # Fields are tab-separated so align_gauges can line up stacked gauges.
+    gap = d > 0 ? pre "31m-" d "%" : d < 0 ? pre "32m+" (-d) "%" : pre "38;5;245m0%"
+    printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
 
 # --- Build an unlabeled rate-limit segment ---
 # $1 = reset epoch (may be empty), $2 = used percentage (may be empty),
 # $3 = window length and $4 = budget step, in seconds (may be empty)
-# With a window, step, and reset it reads "<countdown> <gauge>" (see pace_gauge);
+# With a window, step, and reset it reads "<countdown><tab><gauge>" (see pace_gauge);
 # otherwise "<countdown>:<pct>%". The countdown colours itself per unit. With a
 # window, step, and reset, the percentage is coloured by an even budget across
 # the window (1/7 a day for 7 days, 1/5 an hour for 5 hours), counted to the
@@ -444,7 +434,7 @@ pace_gauge() {
 # than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
 # and red mark only usage warnings and an expiring prompt cache.
 rate_seg() {
-  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c vis
+  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
     seg=$(countdown_str "$reset")
   fi
@@ -459,10 +449,7 @@ rate_seg() {
         b = int(e / t) * s
         print (p >= 100 || p > b + 2 * s ? 31 : p > b + s ? 33 : 32)
       }')
-      # Right-align the countdown to its widest form ("23.9h") so stacked bars
-      # line up.
-      vis=$(printf '%s' "$seg" | sed $'s/\033\\[[0-9;]*m//g')
-      seg="$(printf '%*s' $((5 - ${#vis})) '')$seg $(pace_gauge "$pct" "$reset" "$window" "$step" "$c")"
+      seg="$seg"$'\t'"$(pace_gauge "$pct" "$reset" "$window" "$step" "$c")"
     elif [ -n "$seg" ]; then
       c=$(color_for_pct "$p")
       seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
@@ -946,13 +933,33 @@ fi
 # 5-hour and 7-day windows: "<countdown> <gauge>" each, no labels, one line
 # each so their bars line up. Each links to the claude.ai usage page.
 usage_link() { printf '\033]8;;https://claude.ai/new#settings/usage\a%s\033]8;;\a' "$1"; }
-gauges=""
+# Right-align the countdown, percentage, and gap of each gauge line to the
+# widest of each across the lines, and pad the shorter bar on its right, so
+# bars and numbers line up without padding for values neither line shows.
+# Lines without gauge fields pass as is.
+align_gauges() {
+  printf '%s\n' "$@" | LC_ALL=C awk -F '\t' '
+  # Visible width: drop colour codes, then count only UTF-8 lead bytes (awk
+  # must read bytes, hence LC_ALL=C).
+  function vis(s) { gsub(/\033\[[0-9;]*m/, "", s); gsub(/[\200-\277]/, "", s); return length(s) }
+  function pad(s, i) { return sprintf("%*s", m[i] - vis(s), "") s }
+  { line[NR] = $0 }
+  NF == 4 { for (i = 1; i <= 4; i++) if (vis($i) > m[i]) m[i] = vis($i) }
+  END {
+    for (k = 1; k <= NR; k++) {
+      if (split(line[k], f, "\t") != 4) { print line[k]; continue }
+      print pad(f[1], 1) " " f[2] sprintf("%*s", m[2] - vis(f[2]), "") " " pad(f[3], 3) " " pad(f[4], 4)
+    }
+  }'
+}
 rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
-[ -n "$fh_seg" ] && gauges="\n$(usage_link "$fh_seg")"
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
-[ -n "$sd_seg" ] && gauges="$gauges\n$(usage_link "$sd_seg")"
+gauges=""
+while IFS= read -r g; do
+  [ -n "$g" ] && gauges="$gauges\n$(usage_link "$g")"
+done < <(align_gauges "$fh_seg" "$sd_seg")
 
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
 # <usage%>", then the dollars spent of the limit when the gateway reports them.
