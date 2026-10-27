@@ -134,7 +134,8 @@ managed=$(
     "LEFTHOOK_OUTPUT": "failure,summary",
     "NO_COLOR": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
-    "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp"
+    "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp",
+    "DISABLE_AUTOUPDATER": "1"
   },
   "skillOverrides": {
     "frontend-design": "user-invocable-only",
