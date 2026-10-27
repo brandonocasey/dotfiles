@@ -71,7 +71,7 @@ git rebase <TARGET>
   earlier evidence and review records (the review bullet below still runs a
   review the change never had). The same applies after a step 2 fix commit.
 - Then run any review that `review/references/when-to-run.md` triggers, pinned to
-  `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status`
+  `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status --default-branch <TARGET>`
   reports `reviewed: true` and an empty `unreviewed_commits`; otherwise review from
   its `review_from`. A review fix
   commit repeats the step 2 tests before step 4.

@@ -18,7 +18,7 @@ branch still exists. Read [create.md](create.md) for an existing branch. Only
 when the branch was also deleted:
 
 ```sh
-git -C <main-checkout> fetch origin <branch>:refs/remotes/origin/<branch>
+git -C <main-checkout> fetch origin "+refs/heads/<branch>:refs/remotes/origin/<branch>"
 git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
 ```
 

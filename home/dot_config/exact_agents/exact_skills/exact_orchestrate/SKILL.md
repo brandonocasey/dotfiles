@@ -31,7 +31,7 @@ other parts.
    owned files, acceptance criteria, and scoped checks for each part.
 2. Pick one base commit. Create one worktree per part yourself, per
    `worktree/SKILL.md`: `agt worktree create <task>-<n> --base <base> --prepare --background`.
-   Collect each with `agt worktree prepare --wait` before spawning into it.
+   Collect each with `agt worktree prepare --wait <worktree>`, in the background, before spawning into it.
 
 ### Stages (per part, in its own worktree)
 
@@ -43,7 +43,8 @@ other parts.
    part's worktree.
 3. **QA.** A fresh `tester` on the part's worktree; record cases with `agt qa`.
 4. **QA fixes.** A `worker` per **Prompt caching** in `sub-agents`, with
-   `decisions.md`. Stop after 2 rounds and report the part blocked.
+   `decisions.md`. Stop after 2 rounds and report the part blocked. Leave a blocked part out of
+   Integrate and keep its worktree for the user.
 5. **Review.** Run `review-fix` on the part's branch against `<base>`; delegate
    its fixes as in stage 4.
 

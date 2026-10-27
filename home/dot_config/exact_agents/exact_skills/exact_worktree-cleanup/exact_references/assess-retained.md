@@ -76,8 +76,8 @@ Assign one verdict per branch:
   history mean unknown. File overlap or a matching PR title alone is insufficient.
 - **No longer useful**: the work still differs from the target, no open PR references it, and
   one of these holds:
-  - No merged PR references it. The ticket is closed and the remote branch is gone. The branch
-    has had no commit since the target changed the same files.
+  - All of: no merged PR references it, the ticket is closed, the remote branch is gone, and the
+    branch has had no commit since the target changed the same files.
   - A closed-without-merge PR references it. A closed PR means the work is no longer needed.
     The PR references it when its head equals the local tip or contains it. Report the PR URL.
 

@@ -80,8 +80,8 @@ errors are recorded. Collect:
 - The page's own debug switches and state, through `evaluate_script`.
 - Screenshots at the failure point, and a performance trace for slowness.
 
-Delegate browser-evidence gathering to an agent that returns only the needed
-excerpt.
+Delegate headless browser-evidence gathering to an agent that returns only the needed
+excerpt. Run headed audio and `real-safari` checks yourself; roles never start them.
 
 On a live third-party page, never submit forms, sign in, buy, or click ads.
 A click on an ad can bill the advertiser.
@@ -125,8 +125,8 @@ service, a browser bug, or user data, add a safe workaround in reach if one
 exists, and go to section 6 for the rest.
 
 1. Load `worktree` and `code-standards`. Work in a worktree on a new branch.
-2. Write a test that fails for the reported reason. Where no test harness fits,
-   write the exact manual check instead.
+2. Reproduce the report per `code-standards`: a test that fails for the reported
+   reason, else the exact manual check.
 3. Make the smallest change that makes the test pass. When two fixes are
    valid, take the one with the smaller blast radius and name the other.
 4. Run the test, the related suites, the linter, and the type checker.

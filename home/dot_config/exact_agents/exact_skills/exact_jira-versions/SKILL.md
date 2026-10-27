@@ -30,7 +30,7 @@ Every command is `jira-api <METHOD> <path> [json]`.
 - List versions: `GET /project/<KEY>/versions`
 - Read one: `GET /version/<id>`
 - Create:
-  `POST /version '{"name":"<name>","projectId":<id>,"description":"Created <YYYY-MM-DD> at the request of <name>."}'`
+  `POST /version '{"name":"<name>","projectId":<id>,"description":"Created <YYYY-MM-DD> at the request of <user>."}'` (`<user>`: the requesting user's name)
 - Rename or edit: `PUT /version/<id> '{"name":"...","description":"..."}'`
 - Release:
   `PUT /version/<id> '{"released":true,"releaseDate":"<YYYY-MM-DD>","driver":"<accountId>"}'`
@@ -51,7 +51,8 @@ Output ends with `HTTP <code>`. `201` means created, `200` means ok.
    Add the target and keep all other versions. To take a ticket out of the
    release, remove only the named version and add none.
 4. Write the new list with the Atlassian MCP `editJiraIssue`
-   (`fields: {"fixVersions": [{"name": "<name>"}, ...]}`). This field replaces
+   (`fields: {"fixVersions": [{"name": "<name>"}, ...]}`); if the MCP fails, use
+   `jira-api PUT /issue/<KEY> '{"fields":{"fixVersions":[...]}}'`. This field replaces
    the full list.
 5. If the project labels MRs/PRs by release, change the label. Get the label
    format from the project's release skill or docs. GitLab:

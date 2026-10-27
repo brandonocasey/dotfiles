@@ -105,8 +105,8 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   limits for specific approval. A request naming that set, such as "empty my
   trash", approves it after the preview. A broader category, such as "clean caches",
   does not. Emptying trash cannot be undone.
-- A temp entry qualifies only when three things hold. The current user owns it, and
-  no process has it open. Its producer is known. Never clear a temp root wholesale.
+- A temp entry qualifies only when the current user owns it, no process has it
+  open, and its producer is known. Never clear a temp root wholesale.
   Measure swap and sleep images and system-volume contents, but never propose or
   delete them. Report local snapshots as needing review; details in
   [tools.md](references/tools.md).

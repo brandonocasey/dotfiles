@@ -12,7 +12,7 @@ Answer "status?" from the run's own log or journal, in three lines or fewer, sta
 For a Workflow, use `agent-wf-status` per [workflows.md](workflows.md).
 Print timed progress lines (done/total, failures) only when the user asks for them.
 When background jobs start, give one line: `Waiting on: <thing>, about <expected duration>`.
-When a job finishes and nothing needs the user or changes the plan, end the turn with no text.
+When a job finishes while others still run and nothing needs the user or changes the plan, end the turn with no text. When the last job finishes, report the outcome.
 If something needs the user while jobs still run, report it and end with `Next:`.
 
 A sub-agent's prompt cache expires after an idle period set by its harness and model; its next request rewrites its whole context.

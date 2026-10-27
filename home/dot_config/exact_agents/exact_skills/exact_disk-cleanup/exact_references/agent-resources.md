@@ -53,8 +53,8 @@ otherwise ask its step 4 question.
   retain a parent containing any protected child.
 - Do not delete branch refs in this workflow, and never force-delete one to make cleanup
   succeed. Never run `agt cleanup --only worktrees --yes` here: it also deletes landed branches.
-  Run `agt cleanup --only worktrees` (plan only, needs agt 0.14.0) inside each repository that
-  disk-cleanup's own discovery found, never with `--all-repos`. Take the worktrees from the `remove` rows
+  Run `agt cleanup --only worktrees --dirty --recent` (plan only) inside each repository that
+  disk-cleanup's own discovery found, never with `--all-repos`; `worktree-cleanup` step 1 owns these flags. Take the worktrees from the `remove` rows
   the user approved, and remove each with `agt worktree remove <path> --yes`, which keeps the
   branch.
 

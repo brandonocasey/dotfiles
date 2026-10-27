@@ -10,7 +10,8 @@ main checkout's, under `<git-common-dir>/modules/<SUB_NAME>`, so the submodule b
 lands there. The fetches below read local paths, not remotes; `land` allows
 both directions between these clones. This flow requires `MAIN_WT` to be
 that main checkout (the first `worktree` entry of `git worktree list --porcelain`).
-If `TARGET` is checked out in a linked worktree instead, stop and ask: that
+If `TARGET` is checked out in a linked worktree, or nowhere (a temporary
+target worktree), stop and ask: that
 worktree's submodule clone does not persist, so landing the submodule branch
 there loses it.
 

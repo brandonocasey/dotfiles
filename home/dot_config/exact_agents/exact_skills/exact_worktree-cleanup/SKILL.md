@@ -78,8 +78,8 @@ The plan lists under `worktrees`, per repository, `remove` and `delete` candidat
 `squash-merged`, `open`, `closed`, `diverged`, `unknown`, and `unmerged`. A worktree is kept as `dirty`,
 `recent`, locked, in use by another process or Claude Code session, or holding a submodule `remove`
 refuses. The calling session's own processes do not keep a worktree: agt lists them under the
-repository's `warnings` with `(of the calling session)`. Take every `kept` row as a retained candidate. Also list worktrees and branches the plan
-did not mention, with `agt worktree list`, as explicit keeps, never omissions.
+repository's `warnings` with `(of the calling session)`. Take every `kept` row as a retained candidate. Also list worktrees (`agt worktree list`) and branches
+(`git branch --list`) the plan did not mention as explicit keeps, never omissions.
 
 ### 3. Merge evidence
 
@@ -153,8 +153,8 @@ Then handle what agt kept, one target at a time, after a fresh recheck of its pa
 - For a user-named closed-without-merge or relevance branch: record the tip SHA. When a worktree
   has the branch checked out, first run `agt worktree remove <path> --yes`; if it refuses, keep
   the worktree and the branch and report the refusal. Then
-  `git -C <target-worktree-path> branch -D -- <branch>`. Name the exception in the report.
-  Delete from a checkout that is not on the branch; if none exists, use the current checkout.
+  `git -C <checkout> branch -D -- <branch>`. Name the exception in the report.
+  `<checkout>` is one not on the branch, such as the main checkout; if none exists, use the current checkout.
 
 Refresh and show the result:
 

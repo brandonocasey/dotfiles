@@ -31,5 +31,5 @@ Before removing a worktree or branch, read [remove.md](references/remove.md).
 It owns cleanup eligibility, `agt worktree remove`, and removal after push.
 Batch cleanup runs only when the user invokes `worktree-cleanup` or `disk-cleanup`.
 
-After **Remove**, read [removal-checks.md](references/removal-checks.md):
-**Submodules** for initialized submodules, **Blocked removal** when `agt worktree remove` refuses.
+Read [removal-checks.md](references/removal-checks.md) only for initialized submodules
+(**Submodules**) or when `agt worktree remove` refuses (**Blocked removal**).

@@ -33,5 +33,5 @@ These rules keep a Workflow run's raw output out of the main session.
 
 ## Between workflows
 
-At each phase boundary of a multi-agent run, record a checkpoint with `agt task` or the ledger: phase, scratch dir, result paths, and verified status.
+At each phase boundary of a multi-agent run, record a checkpoint with `agt task` (or the `open-ended` ledger when one exists): phase, scratch dir, result paths, and verified status.
 When a workflow with 10 or more agents finishes and the next step starts another workflow, also offer a fresh session that resumes from that record. Continue in this session if the user declines.

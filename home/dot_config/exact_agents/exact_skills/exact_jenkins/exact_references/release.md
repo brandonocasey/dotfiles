@@ -1,7 +1,5 @@
 # Release a hive package
 
-Read when asked to release a hive package (npm) through Jenkins.
-
 - Job: `hive-jwp-releaser`, at `/job/hive-jwp-releaser` or
   `/view/hive-gitlab/job/hive-jwp-releaser`. Ignore the similar
   `jenkins-hive-jwp-releaser`.

@@ -46,7 +46,8 @@ agt worktree remove <worktree-path> --yes
   false, the HEAD commit is on no branch. Report the HEAD commit ID and the backup ref
   `refs/agt/backups/<id>`: those commits live only there.
 - It never deletes the branch. Delete a local branch only through **Remove after
-  push** below, `land`'s merged branch checks, or the `-D` exceptions in `review`
+  push** below, `land`'s merged branch checks, the wrong-base cleanup in
+  [create.md](create.md), or the `-D` exceptions in `review`
   step 7 and in a user-invoked `worktree-cleanup` run. If a deleted remote branch
   prevents that proof, retain the local branch; the worktree can still be removed.
   A squash merge does not prove the original commits are on the branch. Outside

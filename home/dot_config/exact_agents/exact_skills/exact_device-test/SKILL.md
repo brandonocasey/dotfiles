@@ -14,8 +14,8 @@ their attention once: preflight, then one page, then read results.
    unknown; never assume iPhone or Mac. Put the name in the page.
 2. Same LAN: run `ipconfig getifaddr en0` (`hostname -I` on Linux) and give
    the device that URL, not localhost. The server prints a guess; swap in the en0 address if it is a VPN one. A QR code helps for phones.
-3. Check the page loads from the device's network before asking: `curl` the
-   LAN URL. A firewall prompt or VPN can block it.
+3. After starting the server (below) and before giving the user its URL,
+   `curl` the LAN URL. A firewall prompt or VPN can block it.
 4. iPhone driven by the agent: Settings > (Apps >) Safari > Advanced > Remote
    Automation must be on, and the phone unlocked and trusted. Stop and ask if
    it drops mid-run; do not retry in a loop.

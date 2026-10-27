@@ -47,10 +47,11 @@ Use `agt sessions search --session <id>` (no `--query`) to find an exact session
 `agt sessions search --query <text> [--session <id>]` to search human turns. Each
 JSON-array result includes the host, session, source offset, and bounded context.
 Search writes coverage JSON to standard error, including when it finds no match.
-Resolve includes coverage in its JSON object. Use `--file <path>` to add or
+A `--session` lookup without `--query` includes coverage in its JSON object. Use `--file <path>` to add or
 refresh one known transcript.
 
-When the user asks to transfer a task between hosts, copy only its private JSON record with `ssh`,
+When the user asks to transfer a task between hosts, copy only its private JSON record
+(`${XDG_STATE_HOME:-~/.local/state}/agents/tasks/<id>.json`) with `ssh`,
 then set its mode to `0600`. Run `show` on the destination and validate the host,
 repository, worktree, and HEAD before work. Do not copy transcripts or credentials.
 The skill never starts remote commands automatically.
