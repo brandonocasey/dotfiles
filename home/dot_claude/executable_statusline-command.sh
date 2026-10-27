@@ -895,9 +895,15 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
     # dd only seeks past the part already read; macOS tail copies a long range
     # at ~35 ms per MB.
     cc_add=$({ dd bs=1 skip="$cc_off" count=0 2>/dev/null; head -c $((cc_size - cc_off)); } < "$transcript" |
-      rg -cF '"subtype":"compact_boundary"')
-    cc_n=$((cc_n + ${cc_add:-0}))
-    printf '%s %s\n' "$cc_size" "$cc_n" > "$cc_cache"
+      rg -cF '"subtype":"compact_boundary"' 2>/dev/null)
+    # rg exits 1 when nothing matches; on any other failure, such as rg missing,
+    # keep the old offset so the range is read again next run.
+    case $? in
+      0 | 1)
+        cc_n=$((cc_n + ${cc_add:-0}))
+        printf '%s %s\n' "$cc_size" "$cc_n" > "$cc_cache"
+        ;;
+    esac
   fi
   [ "$cc_n" -gt 0 ] && cc_val=$(printf '\033[38;5;247m⟳%d\033[0m' "$cc_n")
 fi
