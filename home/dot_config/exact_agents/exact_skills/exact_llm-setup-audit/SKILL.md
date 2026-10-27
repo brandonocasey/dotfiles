@@ -1,6 +1,6 @@
 ---
 name: llm-setup-audit
-description: "Audit global skills, roles, rules, and config for defects and token waste."
+description: "Audit global skills, roles, rules, config, and session spend for defects and token waste."
 ---
 
 Give each reader every needed rule once, in plain words and few tokens.
@@ -17,7 +17,10 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
+  Include MCP servers: `mcpServers`, top-level and per project, in `~/.claude.json` and `~/.claude*/.claude.json`; project `.mcp.json`; and Codex `[mcp_servers.*]`.
+  Read only server names, `enabled`, and `enabled_tools`, never values.
   Tag each proposal (see **Safe and gating**); ask only about gating ones.
+- **Sessions:** audit the last 30 days of transcripts per [runtime.md](references/runtime.md).
 - Use the invocation's scope; without one, audit every target above.
   “Talk before making changes” applies the rules flow to every target.
 - A **veto item** changes behavior or resolves ambiguity. Give each applied item a revert instruction.
@@ -31,10 +34,11 @@ State that shared impact before proposing a move.
 
 Read every target whole and record before/after tokens.
 Measure global rules, skills, and agents with `agent-probe --prompt 'Reply with OK only.'`, before and after.
+Invoking this skill authorizes these probes.
 It runs in an empty directory, so it never loads project files.
+For the MCP share, run it with `--variant base= --variant nomcp='--strict-mcp-config'` and compare.
 For project files or a per-file breakdown, ask the user to run `/context` in the project, before and after.
 Label rounded or estimated counts accordingly. Estimate other files as bytes (`wc -c`) ÷ 3.
-Invoking this skill authorizes these probes.
 Before applying a safe rules or config item, copy the target to the AGENTS.md backup path.
 Skill edits need no backup.
 
@@ -95,8 +99,11 @@ One harness's setting does not control another.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
   Example: “The `commit` skill owns commit splitting.”
-- **Reader context:** for each role, per harness, list what loads together: rules (Codex roles load `AGENTS.md`; Claude roles with `omitClaudeMd: true` do not), the role body with its partials, and skills the role names.
-  Check each set for duplicates, gaps, and contradictions. Estimate each role's load as bytes ÷ 3.
+- **Reader context:** for the main thread and each role, per harness, list what loads together: rules (Codex roles load `AGENTS.md`; Claude roles with `omitClaudeMd: true` do not), the main rules or role body with its partials, skills each names, MCP tools, and session-start hook output.
+  Check each set for duplicates, gaps, and contradictions. Estimate each load as bytes ÷ 3.
+  Across sets, flag text a reader loads but never acts on, such as main-session reply rules in a role's load.
+- **Spawn guidance:** compare what `sub-agents` and other skills tell the main thread to put in spawn prompts with each role's load.
+  Flag text the role already loads and context it lacks.
 - **Invocation conflicts:** find each rule or skill that tells the model to run an explicit-only skill.
   Propose one fix: make the skill model-invocable, or change the rule.
 - **Orphans:** list each file under `references/` or `shared/` that no skill links. Propose a link or a removal.
@@ -119,17 +126,18 @@ One harness's setting does not control another.
 
 Prioritize recurring cost over raw file size:
 
-1. Rules load every session and in sub-agents that include them.
-2. Model-invocable skill listings load every session.
+1. Rules, MCP tool listings, and session-start hook output load every session. Rules also load in sub-agents that include them.
+2. Output from per-prompt and per-tool hooks recurs on each call that adds it.
+3. Model-invocable skill listings load every session.
    Propose explicit-only invocation for rarely used skills: `disable-model-invocation` for owned skills;
    `skillOverrides: user-invocable-only` for other Claude skills.
    To keep model visibility, propose `name-only` instead.
    Plugin skills ignore `skillOverrides`; manage them through `/plugin`.
-3. Skill bodies load on invocation and remain in context.
+4. Skill bodies load on invocation and remain in context.
    Weight cost by `/<name>` or `$<name>` counts in `~/.claude*/history.jsonl` and `~/.codex/history.jsonl`.
    History records typed invocations only. History files can hold NUL bytes: search them with `rg -a` or `grep -a`.
    For model-invocable skills, count Claude `"name":"Skill"` calls recursively under `~/.claude*/projects/`, including sub-agent logs.
-4. Linked reads add tokens. Make each conditional: “Read X when Y.”
+5. Linked reads add tokens. Make each conditional: “Read X when Y.”
 
 For workflow improvements or a session-history audit, read
 [session-evidence.md](references/session-evidence.md).
@@ -167,6 +175,9 @@ Never add tool-specific commands there.
 - **Empty hooks:** report hook events with no commands, such as `"PreToolUse": []`.
 - **Parity:** list each Claude hook with no Codex equivalent in `~/.codex/hooks.json`, and the reverse.
 - **Secrets:** run the `dotfiles-sync` secret scan on the chezmoi source; report per AGENTS.md. Propose a move to the secret store for each.
+- **Tool search:** for each Claude profile, check for `ENABLE_TOOL_SEARCH=false` in settings `env`, a custom `ANTHROPIC_BASE_URL`, and a `ToolSearch` deny rule.
+  Any of them turns tool search off, so every MCP tool schema loads in full on each call.
+- **MCP servers:** check use per [runtime.md](references/runtime.md).
 
 ## Skills flow
 
@@ -189,6 +200,7 @@ Never add tool-specific commands there.
 ## Every report
 
 Start with before/after tokens that load every session.
+Put runtime findings under **Session evidence**, with their numbers and date range.
 Map each original rule to its retained location or removal reason when merging, moving, or removing text.
 State that every rule was checked. If little needs changing, say the files are in good shape; do not invent findings.
 Cite files as bare `path:line`, never Markdown links.

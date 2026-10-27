@@ -9,13 +9,9 @@ Without `agt sessions`, count with `jq`, `grep`, or `awk` in `~/.claude*/history
 and `~/.codex/history.jsonl`. Remove duplicate rows; history can write a row
 many times. Never read history or transcript files whole.
 
-For transcript stats, run `agt sessions report [--sections ...]` instead of writing a new parser:
-`cost` (USD by agent and model; `--by agent,model,project,session,file,harness`), `tools`, `cache-gaps`, `errors`,
-`denials`, and `friction` (interrupts, corrections, short replies, repeated
-prompts; `--tsv` for rows). It skips scratch and probe projects unless
-`--scratch` is given, and reads Codex rollouts too (`--harness claude|codex`).
-Prices come from `~/.config/agt/model-prices.json`.
-For live A/B runs, use `agent-probe`.
+For friction stats, run `agt sessions report --sections friction,errors,denials`
+(interrupts, corrections, short replies, repeated prompts; `--tsv` for rows).
+[runtime.md](runtime.md) owns the other sections. For live A/B runs, use `agent-probe`.
 
 Search human corrections, repeated follow-ups, and interrupted workflows with
 `agt sessions search --query TEXT`. Resolve a known conversation with `--session` (no `--query`).

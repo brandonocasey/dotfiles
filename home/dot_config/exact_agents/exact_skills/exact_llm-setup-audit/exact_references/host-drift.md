@@ -9,7 +9,7 @@ node scripts/check-drift.cjs --remote root@koof.win
 
 Repeat `--remote` for more hosts. Repeat `--path` with home-relative files or
 directories to narrow the scope. The default covers managed `.config/agents`,
-`.codex/agents`, and the four `agent-*` helpers named in the script.
+`.codex/agents`, and the two `agent-*` helpers named in the script.
 App-owned synced skills are excluded. Unmanaged files need a separate explicit
 comparison; their absence from a managed inventory does not prove agreement.
 
