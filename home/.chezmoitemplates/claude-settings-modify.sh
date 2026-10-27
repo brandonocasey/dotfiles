@@ -289,7 +289,7 @@ managed=$(
         "hooks": [
           {
             "type": "command",
-            "command": "agt cleanup --count",
+            "command": "agt cleanup --count | jq -Rsc 'select(length > 0) | {systemMessage: .}'",
             "timeout": 2
           },
           {

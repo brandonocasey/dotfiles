@@ -37,7 +37,9 @@ class AgentConfigurationTests(unittest.TestCase):
         self.assertFalse(any("agt cleanup" in command for command in commands("compact")))
         for event in ("startup", "resume", "fork", "clear"):
             with self.subTest(event=event):
-                self.assertIn("agt cleanup --count", commands(event))
+                # The count goes to the user as a systemMessage, not into model context.
+                self.assertTrue(any(command.startswith("agt cleanup --count |") and "systemMessage" in command
+                                    for command in commands(event)), commands(event))
                 self.assertIn("agt cleanup --only files --yes >/dev/null", commands(event))
         self.assertIn("sh ~/.claude/hooks/session-port.sh", commands("compact"))
 
