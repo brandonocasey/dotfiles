@@ -4,7 +4,7 @@
 - Add a dependency only when it saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies.
 - In unreleased code, change every caller of a renamed or replaced API. Do not keep compat shims, legacy aliases, or deprecation paths unless the user asks.
 - Do not edit CHANGELOG files by hand unless the repository documents manual edits; release tooling writes them.
-- Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first.
+- Fix bugs at the root cause: in the shared code all callers route through, not just the reported path. Check every caller first. When derived objects must carry a flag, policy, or state, find every site that creates one with `rg` before fixing any. Enforce it where they are created rather than with a call at each site; otherwise fix all sites together or list the ones left.
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
 - Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
 - Add logs at appropriate levels. Add trace logs only where a failure would otherwise be hard to diagnose
