@@ -366,23 +366,28 @@ def drop_status_echo(original: str, cmd: str, code: str, bare: str, start: int) 
     cut = len(cmd[:start].rstrip(" \t\n;&|"))
     if not cut or original[cut:start] != cmd[cut:start]:
         return None
+    # A kept \ would join nothing, and a lone & in the cut (`job &; echo $?`)
+    # would bring the job into the foreground.
+    if cmd[cut - 1] == "\\" or re.search(r"(?<!&)&(?!&)", cmd[cut:start + 1]):
+        return None
     return [(cut, len(cmd), "")]
 
 
-def drop_wait_amp(code: str, waits: list[re.Match]) -> list[tuple[int, int, str]] | None:
-    """Remove the & after an agt wait, so run_in_background tracks the wait itself,
-    not a shell that exits as soon as it has forked it. None when the & is not the
-    command's last character: the shell would still exit before the wait."""
+def drop_wait_amp(code: str, fg: str, waits: list[re.Match]) -> list[tuple[int, int, str]] | None:
+    """Remove the & that backgrounds an agt wait, so run_in_background tracks the
+    wait itself, not a shell that exits as soon as it has forked it. None when that
+    & is not the command's last character: the shell would still exit before the wait.
+
+    fg is code with top-level backgrounded commands blanked, so a wait blanked
+    there is backgrounded, also inside a group or a -c script.
+    """
     end = len(code.rstrip())
     for m in waits:
-        # The wait's command list runs through pipes, && and || up to ; or a newline.
-        for tok in SHELL_TOKEN.finditer(code, m.end()):
-            if tok.group() in (";", "\n"):
-                break
-            if tok.group() == "&":
-                if tok.start() != end - 1:
-                    return None
-                return [(len(code[:tok.start()].rstrip()), end, "")]
+        if fg[m.end() - 1] == code[m.end() - 1]:
+            continue  # runs in the foreground of its shell
+        if code[end - 1] == "&" and code[end - 2:end] != "&&" and not fg[m.end():end - 1].strip():
+            return [(len(code[:end - 1].rstrip()), end, "")]
+        return None
     return []
 
 
@@ -408,7 +413,8 @@ def bracket_edit(cmd: str, start: int, stop: int, pattern: str, safe: str) -> li
     if not m:
         return None
     if m.group(3) is not None:
-        return None if "'" in safe else [(m.start(3), m.end(3), f"'{safe}'")]
+        # Single quotes would stop $VAR, ~ and globs from expanding.
+        return None if any(c in safe for c in "'\"$`\\~*?{") else [(m.start(3), m.end(3), f"'{safe}'")]
     group = 1 if m.group(1) is not None else 2
     if group == 2 and any(c in safe for c in "\"$`\\"):
         return None
@@ -458,7 +464,7 @@ def problems(cmd: str, background: bool) -> list[Problem]:
             found.append(Problem(
                 "agt wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits.",
-                drop_wait_amp(code, waits), True, "agt wait in the foreground blocks the turn."
+                drop_wait_amp(code, fg, waits), True, "agt wait in the foreground blocks the turn."
             ))
         if GH_WATCH.search(fg):
             found.append(Problem(

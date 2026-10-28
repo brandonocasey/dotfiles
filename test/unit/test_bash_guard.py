@@ -143,7 +143,8 @@ class ExitStatusEchoTests(GuardTestCase):
                         "bash -c 'make; echo $?'", "out=`make; echo $?`",
                         "python3 - <<'PY'\nimport x\nPY\necho \"exit=$?\"",
                         "cat > f <<'EOF'\nx\nEOF\necho $?", "bash -c 'make\necho $?'",
-                        'bash -c "make\necho $?"'):
+                        'bash -c "make\necho $?"', "make && \\\n  echo \"exit=$?\"", "make \\\n && echo $?",
+                        "server > log 2>&1 &; echo $?"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
@@ -286,7 +287,9 @@ class KillScopeTests(GuardTestCase):
         # would still kill every match once bracketed, so it stays blocked.
         for command, hint in (("pgrep -f '[n]ode'; node x.js", "pgrep -f"), ("pgrep -f 'a'\"b\"", "pgrep -f"),
                               ("sudo -u root pkill -f node", "in every session"),
-                              ("if pkill -f node; then echo ok; fi", "in every session")):
+                              ("if pkill -f node; then echo ok; fi", "in every session"),
+                              # Quoting would stop $VAR and ~ from expanding.
+                              ("pgrep -fl $PWD", "pgrep -f"), ("pgrep -fl ~/x/server", "pgrep -f")):
             with self.subTest(command=command):
                 self.assertBlocked(command, hint)
 
@@ -310,6 +313,12 @@ class AgtWaitTests(GuardTestCase):
         # The & of a pipeline or && chain holding the wait detaches the wait too.
         self.assertFixed("agt wait -- x | tee l &", "agt wait -- x | tee l", background=True)
         self.assertFixed("agt wait -- x && echo done &", "agt wait -- x && echo done", background=True)
+        # So does the & after a group or -c script holding it.
+        self.assertFixed("(agt wait -- test -e d; echo ready) &", "(agt wait -- test -e d; echo ready)",
+                         background=True)
+        self.assertFixed("agt wait -- sh -c 'test -e a; test -e b' &", "agt wait -- sh -c 'test -e a; test -e b'",
+                         background=True)
+        self.assertBlocked("(agt wait -- test -e d; echo ready) & echo started", "agt wait in the foreground")
 
     def test_several_fixes_apply_together(self):
         self.assertFixed("agt ci wait '!12'; echo ===; echo $?", "agt ci wait '!12'; echo '==='",
