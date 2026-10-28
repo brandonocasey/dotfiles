@@ -375,12 +375,14 @@ def drop_wait_amp(code: str, waits: list[re.Match]) -> list[tuple[int, int, str]
     command's last character: the shell would still exit before the wait."""
     end = len(code.rstrip())
     for m in waits:
-        sep = SEGMENT_END.search(code, m.end())
-        if not sep or code[sep.start()] != "&":
-            continue
-        if sep.start() != end - 1:
-            return None
-        return [(len(code[:sep.start()].rstrip()), end, "")]
+        # The wait's command list runs through pipes, && and || up to ; or a newline.
+        for tok in SHELL_TOKEN.finditer(code, m.end()):
+            if tok.group() in (";", "\n"):
+                break
+            if tok.group() == "&":
+                if tok.start() != end - 1:
+                    return None
+                return [(len(code[:tok.start()].rstrip()), end, "")]
     return []
 
 

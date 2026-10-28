@@ -307,6 +307,9 @@ class AgtWaitTests(GuardTestCase):
         # Another job's & stays; an & before more commands would still let the shell exit early.
         self.assertFixed("agt wait -- test -e d; server &", "agt wait -- test -e d; server &", background=True)
         self.assertBlocked("agt wait -- test -e d & echo started", "agt wait in the foreground")
+        # The & of a pipeline or && chain holding the wait detaches the wait too.
+        self.assertFixed("agt wait -- x | tee l &", "agt wait -- x | tee l", background=True)
+        self.assertFixed("agt wait -- x && echo done &", "agt wait -- x && echo done", background=True)
 
     def test_several_fixes_apply_together(self):
         self.assertFixed("agt ci wait '!12'; echo ===; echo $?", "agt ci wait '!12'; echo '==='",
