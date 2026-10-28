@@ -348,17 +348,32 @@ def equals_edits(cmd: str, analysed: str) -> list[tuple[int, int, str]] | None:
     return edits
 
 
-def drop_status_echo(cmd: str, start: int) -> list[tuple[int, int, str]] | None:
+def drop_status_echo(original: str, cmd: str, code: str, bare: str, start: int) -> list[tuple[int, int, str]] | None:
     """Remove a trailing echo of $? that starts after the separator at start.
 
     Only after ;, a newline, && or ||: dropping it after & would bring the job
     before it into the foreground, and after | would leave a dangling pipe.
+    Not inside a quoted script, group or substitution, whose closing ) } ` or
+    quote the cut would remove, nor across a heredoc, which cmd holds blanked.
     """
     sep = cmd[start]
     if not (sep in ";\n" or (sep in "&|" and start > 0 and cmd[start - 1] == sep)):
         return None
+    if bare[start] != cmd[start] or any(c in code[start:] for c in ")}`"):
+        return None
     cut = len(cmd[:start].rstrip(" \t\n;&|"))
-    return [(cut, len(cmd), "")] if cut else None
+    if not cut or original[cut:start] != cmd[cut:start]:
+        return None
+    return [(cut, len(cmd), "")]
+
+
+def drop_trailing_amp(code: str) -> list[tuple[int, int, str]]:
+    """Remove a final & so run_in_background tracks the job itself, not a shell
+    that exits as soon as it has forked the job."""
+    end = len(code.rstrip())
+    if end and code[end - 1] == "&" and code[end - 2:end] != "&&":
+        return [(len(code[:end - 1].rstrip()), end, "")]
+    return []
 
 
 def add_toolsearch(cmd: str, pos: int) -> list[tuple[int, int, str]] | None:
@@ -393,7 +408,7 @@ def bracket_edit(cmd: str, start: int, stop: int, pattern: str, safe: str) -> li
 def problems(cmd: str, background: bool) -> list[Problem]:
     # Heredoc bodies are data (notes, scripts being written), not commands.
     # Blanked, not removed, so offsets match the command that fixes edit.
-    cmd = HEREDOC.sub(blank, cmd)
+    original, cmd = cmd, HEREDOC.sub(blank, cmd)
     found = []
     code = code_only(cmd)
     bare = code_only(cmd, False)
@@ -432,7 +447,7 @@ def problems(cmd: str, background: bool) -> list[Problem]:
             found.append(Problem(
                 "agt wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits.",
-                [], True, "agt wait in the foreground blocks the turn."
+                drop_trailing_amp(code), True, "agt wait in the foreground blocks the turn."
             ))
         if GH_WATCH.search(fg):
             found.append(Problem(
@@ -465,7 +480,7 @@ def problems(cmd: str, background: bool) -> list[Problem]:
             found.append(Problem(
                 "Do not print $?; the Bash tool already reports the exit code "
                 "of every command.",
-                drop_status_echo(cmd, m.start()), False,
+                drop_status_echo(original, cmd, code, bare, m.start()), False,
                 "The trailing echo of $? was removed; the tool reports the exit code."
             ))
             break
@@ -513,13 +528,22 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                 continue
             i = first.start()
             safe = f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
-            found.append(Problem(
-                f"{tool} -f '{pattern}' also matches this shell's own command "
-                f"line. Bracket one character of the pattern so it cannot match "
-                f"itself: '{safe}'.",
-                bracket_edit(cmd, m.end(), m.end() + len(rest), pattern, safe), False,
-                f"The {tool} -f pattern is now '{safe}', so it cannot match its own shell."
-            ))
+            # A pgrep only lists. A pkill here may be a broad kill that KILL_CMD
+            # missed (after if, or sudo -u root), so only a scoped one is fixed.
+            if tool == "pgrep" or proc_args(words)[2]:
+                found.append(Problem(
+                    f"{tool} -f '{pattern}' also matches this shell's own command "
+                    f"line. Bracket one character of the pattern so it cannot match "
+                    f"itself: '{safe}'.",
+                    bracket_edit(cmd, m.end(), m.end() + len(rest), pattern, safe), False,
+                    f"The {tool} -f pattern is now '{safe}', so it cannot match its own shell."
+                ))
+            else:
+                found.append(Problem(
+                    f"pkill -f '{pattern}' stops every matching process in every session, "
+                    "and also this shell. Kill the PID you saved when you started the "
+                    "process (kill $PID, or pkill -F <pidfile>)."
+                ))
         elif re.sub(r"\[(.)\]", r"\1", pattern) in cmd:
             found.append(Problem(
                 f"{tool} -f '{pattern}': this command also contains the plain "

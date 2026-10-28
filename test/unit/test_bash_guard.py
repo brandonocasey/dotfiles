@@ -137,7 +137,12 @@ class ExitStatusEchoTests(GuardTestCase):
 
     def test_printed_exit_status_without_a_safe_cut_is_blocked(self):
         # Alone there is nothing left to run; after & or | the cut would change the job.
-        for command in ("echo $?", "make & echo $?", "make | echo $?"):
+        # Inside a group, substitution or quoted script, the cut would drop its closing
+        # character, and after a heredoc it would drop the heredoc.
+        for command in ("echo $?", "make & echo $?", "make | echo $?", "(cd sub && make; echo $?)",
+                        "bash -c 'make; echo $?'", "out=`make; echo $?`",
+                        "python3 - <<'PY'\nimport x\nPY\necho \"exit=$?\"",
+                        "cat > f <<'EOF'\nx\nEOF\necho $?"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
@@ -268,8 +273,7 @@ class KillScopeTests(GuardTestCase):
 
     def test_other_pkill_forms_get_the_bracket(self):
         # sudo -u root hides pkill from the broad-kill check; the self-match check still catches it.
-        for command, expected in (("sudo -u root pkill -f node", "sudo -u root pkill -f '[n]ode'"),
-                                  ("pkill -P 123 -f node", "pkill -P 123 -f '[n]ode'"),
+        for command, expected in (("pkill -P 123 -f node", "pkill -P 123 -f '[n]ode'"),
                                   ("pgrep -f node", "pgrep -f '[n]ode'"),
                                   ("pgrep -fl 'vite dev' | head", "pgrep -fl '[v]ite dev' | head"),
                                   ('pgrep -f "mise run"', 'pgrep -f "[m]ise run"')):
@@ -277,9 +281,13 @@ class KillScopeTests(GuardTestCase):
                 self.assertFixed(command, expected, note="cannot match its own shell")
 
     def test_self_matches_that_brackets_cannot_fix_are_blocked(self):
-        for command in ("pgrep -f '[n]ode'; node x.js", "pgrep -f 'a'\"b\""):
+        # An unscoped pkill the broad-kill check missed (after if, or sudo -u root)
+        # would still kill every match once bracketed, so it stays blocked.
+        for command, hint in (("pgrep -f '[n]ode'; node x.js", "pgrep -f"), ("pgrep -f 'a'\"b\"", "pgrep -f"),
+                              ("sudo -u root pkill -f node", "in every session"),
+                              ("if pkill -f node; then echo ok; fi", "in every session")):
             with self.subTest(command=command):
-                self.assertBlocked(command, "pgrep -f")
+                self.assertBlocked(command, hint)
 
 
 class AgtWaitTests(GuardTestCase):
@@ -287,6 +295,14 @@ class AgtWaitTests(GuardTestCase):
         for command in ("agt wait --timeout 600 -- test -f done", "agt ci wait '!12'",
                         "cd /w && agt ci wait --help-me"):
             self.assertFixed(command, command, background=True, note="agt wait in the foreground")
+
+    def test_detached_wait_drops_its_ampersand(self):
+        # With & the background task's shell exits at once, and its notification with it.
+        self.assertFixed("agt wait --timeout 270 -- test -e done &", "agt wait --timeout 270 -- test -e done",
+                         background=True)
+        self.assertFixed("nohup agt wait -- test -e d > log 2>&1 &", "nohup agt wait -- test -e d > log 2>&1",
+                         background=True)
+        self.assertFixed("make && agt wait -- test -e d", "make && agt wait -- test -e d", background=True)
 
     def test_several_fixes_apply_together(self):
         self.assertFixed("agt ci wait '!12'; echo ===; echo $?", "agt ci wait '!12'; echo '==='",
