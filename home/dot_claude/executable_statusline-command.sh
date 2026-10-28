@@ -369,8 +369,9 @@ countdown_str() {
 # the active share of the window used by now, scaled back to w seconds, so the
 # step and zone maths stay as they were. Shorter windows use wall-clock time.
 # The UTC offset is the current one; a DST change inside the window shifts the
-# earlier downtimes by an hour.
+# earlier downtimes by an hour. A malformed start falls back to 00:00.
 dt_start=${STATUSLINE_DOWNTIME_START:-00:00}
+[[ $dt_start =~ ^([01]?[0-9]|2[0-3]):[0-5][0-9]$ ]] || dt_start=00:00
 dt_tz=$(date +%z)
 dt_off=$(( ${dt_tz:0:1}1 * (10#${dt_tz:1:2} * 3600 + 10#${dt_tz:3:2} * 60) ))
 dt_awk_vars=(-v off="$dt_off" -v ds="$(( 10#${dt_start%%:*} * 3600 + 10#${dt_start##*:} * 60 ))"
