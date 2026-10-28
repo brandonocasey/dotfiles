@@ -24,7 +24,9 @@ error inputs. For each output the change touches, check:
 - **Clarity:** a user can tell what happened and what to do next. Errors name
   the cause and a fix, not only a code or stack trace.
 - **Consistency:** wording, casing, and format match nearby output, and docs or
-  help text match the behavior.
+  help text match the behavior. Text comes from the locale catalog where the
+  project has one, never hard-coded, and a message that quotes a label uses each
+  locale's real label.
 - **Format:** wrapping at narrow terminal widths, alignment, colors with and
   without a TTY (`NO_COLOR`), machine-readable output (JSON, exit status), and
   generated files that open in their target tool.
@@ -47,7 +49,9 @@ Take a before screenshot. A phone screenshot from the user means a phone width.
 
 For responsive changes, check narrow and wide layouts and sizes immediately
 around the actual CSS breakpoints. Include long content and the affected
-empty, loading, error, and populated states. Check light/dark themes and
+empty, loading, error, and populated states. Check every shipped locale at the
+narrowest width (320 px unless the project sets one); translations run longer
+and clip. Check light/dark themes and
 reduced motion when their styling or transitions changed.
 
 ## Exercise the UI
