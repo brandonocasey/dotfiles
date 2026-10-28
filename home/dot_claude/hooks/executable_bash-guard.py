@@ -35,7 +35,9 @@ import json
 import os
 import re
 import shlex
+import shutil
 import signal
+import subprocess
 import sys
 from typing import NamedTuple
 
@@ -367,12 +369,18 @@ def drop_status_echo(original: str, cmd: str, code: str, bare: str, start: int) 
     return [(cut, len(cmd), "")]
 
 
-def drop_trailing_amp(code: str) -> list[tuple[int, int, str]]:
-    """Remove a final & so run_in_background tracks the job itself, not a shell
-    that exits as soon as it has forked the job."""
+def drop_wait_amp(code: str, waits: list[re.Match]) -> list[tuple[int, int, str]] | None:
+    """Remove the & after an agt wait, so run_in_background tracks the wait itself,
+    not a shell that exits as soon as it has forked it. None when the & is not the
+    command's last character: the shell would still exit before the wait."""
     end = len(code.rstrip())
-    if end and code[end - 1] == "&" and code[end - 2:end] != "&&":
-        return [(len(code[:end - 1].rstrip()), end, "")]
+    for m in waits:
+        sep = SEGMENT_END.search(code, m.end())
+        if not sep or code[sep.start()] != "&":
+            continue
+        if sep.start() != end - 1:
+            return None
+        return [(len(code[:sep.start()].rstrip()), end, "")]
     return []
 
 
@@ -443,11 +451,12 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                 ))
                 break
         # Also with a trailing &: the harness tracks only run_in_background jobs.
-        if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agt\s+(?:ci\s+)?wait\b(?!\s+(?:-h|--help)(?:$|[\s;&|)]))", code):
+        waits = list(re.finditer(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agt\s+(?:ci\s+)?wait\b(?!\s+(?:-h|--help)(?:$|[\s;&|)]))", code))
+        if waits:
             found.append(Problem(
                 "agt wait in the foreground blocks this turn. Rerun it with "
                 "run_in_background: true and stop; it wakes you when it exits.",
-                drop_trailing_amp(code), True, "agt wait in the foreground blocks the turn."
+                drop_wait_amp(code, waits), True, "agt wait in the foreground blocks the turn."
             ))
         if GH_WATCH.search(fg):
             found.append(Problem(
@@ -553,6 +562,18 @@ def problems(cmd: str, background: bool) -> list[Problem]:
     return found + [Problem(message) for message in kills.values()]
 
 
+def parses(cmd: str) -> bool:
+    """Whether the shell the Bash tool runs can parse cmd, so an edit that cuts a
+    quote or bracket is caught. Without zsh, trust the edit."""
+    shell = shutil.which("zsh")
+    if not shell:
+        return True
+    try:
+        return subprocess.run([shell, "-f", "-n", "-c", cmd], capture_output=True, timeout=5).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def fix(tool_input: dict, found: list[Problem], subagent: bool) -> tuple[dict, str] | None:
     """The fixed tool input and a note for the model, or None when a problem has no
     safe fix, edits overlap, or the fixed command still has problems."""
@@ -572,6 +593,8 @@ def fix(tool_input: dict, found: list[Problem], subagent: bool) -> tuple[dict, s
     background = bool(tool_input.get("run_in_background")) or any(p.background for p in found)
     fixed = dict(tool_input, command=cmd, run_in_background=background)
     if problems(cmd, background) or (subagent and long_subagent_call(fixed)):
+        return None
+    if edits and not parses(cmd):
         return None
     notes = [p.note for p in found]
     if background and not tool_input.get("run_in_background"):

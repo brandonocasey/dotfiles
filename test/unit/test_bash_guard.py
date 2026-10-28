@@ -142,7 +142,8 @@ class ExitStatusEchoTests(GuardTestCase):
         for command in ("echo $?", "make & echo $?", "make | echo $?", "(cd sub && make; echo $?)",
                         "bash -c 'make; echo $?'", "out=`make; echo $?`",
                         "python3 - <<'PY'\nimport x\nPY\necho \"exit=$?\"",
-                        "cat > f <<'EOF'\nx\nEOF\necho $?"):
+                        "cat > f <<'EOF'\nx\nEOF\necho $?", "bash -c 'make\necho $?'",
+                        'bash -c "make\necho $?"'):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
@@ -272,7 +273,7 @@ class KillScopeTests(GuardTestCase):
                     self.assertBlocked(command, "put options such as -P before it")
 
     def test_other_pkill_forms_get_the_bracket(self):
-        # sudo -u root hides pkill from the broad-kill check; the self-match check still catches it.
+        # A pgrep only lists, and a pkill scoped by -P stops only that parent's children.
         for command, expected in (("pkill -P 123 -f node", "pkill -P 123 -f '[n]ode'"),
                                   ("pgrep -f node", "pgrep -f '[n]ode'"),
                                   ("pgrep -fl 'vite dev' | head", "pgrep -fl '[v]ite dev' | head"),
@@ -303,6 +304,9 @@ class AgtWaitTests(GuardTestCase):
         self.assertFixed("nohup agt wait -- test -e d > log 2>&1 &", "nohup agt wait -- test -e d > log 2>&1",
                          background=True)
         self.assertFixed("make && agt wait -- test -e d", "make && agt wait -- test -e d", background=True)
+        # Another job's & stays; an & before more commands would still let the shell exit early.
+        self.assertFixed("agt wait -- test -e d; server &", "agt wait -- test -e d; server &", background=True)
+        self.assertBlocked("agt wait -- test -e d & echo started", "agt wait in the foreground")
 
     def test_several_fixes_apply_together(self):
         self.assertFixed("agt ci wait '!12'; echo ===; echo $?", "agt ci wait '!12'; echo '==='",
