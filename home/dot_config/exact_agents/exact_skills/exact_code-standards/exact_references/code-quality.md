@@ -9,4 +9,14 @@
 - Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
 - Add logs at appropriate levels. Add trace logs only where a failure would otherwise be hard to diagnose
 - Export only what a current caller uses. Keep the public API minimal
+- In a loop over independent items (repositories, files, worktrees, records), one item's failure warns and the loop goes on. An item that vanished before you acted on it counts as done, not as an error. Record what was done before any step that can fail.
+- Quote or validate every outside string before it reaches a shell, a git ref, a path join, or a URL. Compare paths as paths, not string prefixes. Decide whether to follow symlinks. Test with a space, a `;`, and a symlink.
+
+## Edge cases to list before coding
+
+Before writing code in these areas, list the cases below that apply. Handle each one or name why it cannot occur. Add a test for each case the code handles.
+
+- **Code that deletes, moves, or restores user files or git data:** submodules (uninitialized, nested, with local-only refs), nested untracked repos, sparse checkouts, skip-worktree and assume-unchanged files, ignored files, staged changes that differ from the tree, unborn and detached HEAD, missing or locked linked worktrees, and user git config that changes defaults (`merge.autoStash`, `status.showUntrackedFiles`).
+- **Replacing or matching another tool (gh, glab, a script):** first write a table of its behavior for each flag and edge input. Read its source or run it. Test each row. Report each deliberate difference.
+- **Async UI, polling, or event handlers:** two actions in quick succession, responses out of order, a failed or slow request, a record read while half written, and user input that a refresh would discard.
 - New project, or no repo convention: test files in `test/<type>` (`test/unit`, `test/integration`, `test/fixtures`); built or generated files in subdirectories of `./dist` (`./dist/fe/client`, `./dist/be`, `./dist/coverage`, `./dist/types`)
