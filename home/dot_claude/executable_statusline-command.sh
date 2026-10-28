@@ -407,8 +407,8 @@ elapsed_awk='
 # lighter grey up to where an even pace would put usage now (budget still free
 # at this pace), then dark grey, olive, or maroon by zone, so it shows how far
 # # ahead turns yellow or red right now. The gap is pace minus usage in points:
-# "+8%" green while usage is under pace, "-12%" red while over, "0%" grey on
-# pace.
+# "+8%" while usage is under pace, "-12%" while over, "0%" grey on pace. The
+# percentage and the gap take the colour of the bar's last filled cell.
 pace_gauge() {
   awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" \
     "${dt_awk_vars[@]}" "$elapsed_awk"'
@@ -432,7 +432,10 @@ pace_gauge() {
     # Full once the shown percentage reads 100.
     if (u > N || p >= 99.5) u = N
     full = u == N
+    # The last filled cell sets the colour of the percentage and the gap too.
+    c = 32
     if (full) c = 31
+    else if (u > 0 && zone(cw * (u - 0.5))) c = zone(cw * (u - 0.5))
     out = ""
     for (i = 0; i < N; i++) {
       last = (i + 1) in cut
@@ -448,7 +451,7 @@ pace_gauge() {
     d = p - pace
     d = d < 0 ? -int(-d + 0.5) : int(d + 0.5)
     # Fields are tab-separated so align_gauges can line up stacked gauges.
-    gap = d > 0 ? pre "31m-" d "%" : d < 0 ? pre "32m+" (-d) "%" : pre "38;5;245m0%"
+    gap = d > 0 ? pre c "m-" d "%" : d < 0 ? pre c "m+" (-d) "%" : pre "38;5;245m0%"
     printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
