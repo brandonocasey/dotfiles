@@ -362,6 +362,35 @@ countdown_str() {
   }'
 }
 
+# --- Elapsed budget time, skipping a daily downtime ---
+# Windows over a day long count pace only over active hours: each day skips
+# STATUSLINE_DOWNTIME_HOURS (default 6, 0 turns it off) from local
+# STATUSLINE_DOWNTIME_START (HH:MM, default 00:00). elapsed(r, n, w) returns
+# the active share of the window used by now, scaled back to w seconds, so the
+# step and zone maths stay as they were. Shorter windows use wall-clock time.
+# The UTC offset is the current one; a DST change inside the window shifts the
+# earlier downtimes by an hour.
+dt_start=${STATUSLINE_DOWNTIME_START:-00:00}
+dt_tz=$(date +%z)
+dt_off=$(( ${dt_tz:0:1}1 * (10#${dt_tz:1:2} * 3600 + 10#${dt_tz:3:2} * 60) ))
+dt_awk_vars=(-v off="$dt_off" -v ds="$(( 10#${dt_start%%:*} * 3600 + 10#${dt_start##*:} * 60 ))"
+  -v dh="${STATUSLINE_DOWNTIME_HOURS:-6}")
+elapsed_awk='
+  # Downtime seconds from the epoch to x.
+  function down(x,  y, q, m) {
+    y = x + off - ds; q = int(y / 86400); if (q * 86400 > y) q--
+    m = y - q * 86400
+    return q * dl + (m < dl ? m : dl)
+  }
+  function elapsed(r, n, w,  a, A) {
+    dl = dh * 3600; if (dl > 86400) dl = 86400
+    if (w <= 86400 || dl <= 0) return w - (r - n)
+    A = w - (down(r) - down(r - w))
+    if (A <= 0) return w - (r - n)
+    a = (n - (r - w)) - (down(n) - down(r - w))
+    return w * a / A
+  }'
+
 # --- Draw a usage gauge: "<bar><tab><pct>%<tab><gap>" ---
 # $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
@@ -380,7 +409,8 @@ countdown_str() {
 # "+8%" green while usage is under pace, "-12%" red while over, "0%" grey on
 # pace.
 pace_gauge() {
-  awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" '
+  awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" \
+    "${dt_awk_vars[@]}" "$elapsed_awk"'
   # Zone colour at x percent of the limit: 0 within budget, else yellow or red.
   function zone(x) { return x > red ? 31 : x > yellow ? 33 : 0 }
   BEGIN {
@@ -389,7 +419,7 @@ pace_gauge() {
     # cut[j]: a segment ends at the edge before cell j.
     for (k = 1; k < K; k++) cut[int(k * N / K + 0.5)] = 1
     pre = "\033[" dim
-    e = w - (r - n)
+    e = elapsed(r, n, w)
     if (e < 0) e = 0
     if (e > w) e = w
     pace = 100 * e / w
@@ -441,8 +471,9 @@ rate_seg() {
   if [ -n "$pct" ]; then
     p=$(printf '%.0f' "$pct")
     if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
-      c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" 'BEGIN {
-        e = w - (r - n)
+      c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" \
+        "${dt_awk_vars[@]}" "$elapsed_awk"' BEGIN {
+        e = elapsed(r, n, w)
         if (e < 0) e = 0
         if (e >= w) e = w - 1
         s = 100 * t / w
