@@ -20,6 +20,14 @@
 - Headless claude inside a handoff session (AGENT_HANDOFF=1). The session reads
   the same rules as its parent, so it would hand the task off again, and again.
 
+When every problem has a safe fix, the hook fixes the call instead of blocking it,
+which saves the model a retry: it moves waits and polls to the background, quotes
+`=` words, drops the `$?` echo, brackets the self-matching pattern, and adds
+ToolSearch. It returns the fixed input as updatedInput with no permission
+decision, so permission rules and auto mode still check the fixed command, and
+a note tells the model what changed. Kills by name and claude -p in a handoff
+session have no safe fix.
+
 Exit 2 cancels the call and shows the message to the model.
 """
 
@@ -29,6 +37,20 @@ import re
 import shlex
 import signal
 import sys
+from typing import NamedTuple
+
+
+class Problem(NamedTuple):
+    message: str
+    # A safe fix: (start, end, text) replacements in the command, None when only
+    # the model can fix it, and whether running it in the background fixes it.
+    edits: list[tuple[int, int, str]] | None = None
+    background: bool = False
+    note: str = ""
+
+
+BACKGROUND_NOTE = ("It now runs in the background, so stop and wait for its exit "
+                   "notification instead of polling.")
 
 POLL_LOOP = re.compile(
     r"(?:^|[;&|({\n'\"]|\b(?:do|then|else)\b)\s*(until|while|for)\b"
@@ -228,18 +250,19 @@ KILL_AFTER = re.compile(r"[^;&\n|]*\|\s*xargs\b[^;&\n|]*\bkill\b(?!\s+-0\b)")
 KILL_BEFORE = re.compile(r"\bkill\b(?!\s+-0\b)[^;&\n|]*(?:\$\(|`)\s*$")
 
 
-def segments(cmd: str, code: str, start: re.Pattern) -> list[tuple[str, str]]:
+def segments(cmd: str, code: str, start: re.Pattern) -> list[tuple[int, str, str]]:
     """The text after each command that start matches, up to its end.
 
     code is cmd with quoted data blanked, so quoted separators do not end a
-    command. Each item pairs the original text with its code, so flags are
-    found in code and their quoted values read from the original.
+    command. Each item gives the text's offset in cmd, the original text and
+    its code, so flags are found in code and their quoted values read from the
+    original.
     """
     out = []
     for m in start.finditer(code):
         end = SEGMENT_END.search(code, m.end())
         stop = end.start() if end else len(cmd)
-        out.append((cmd[m.end():stop], code[m.end():stop]))
+        out.append((m.end(), cmd[m.end():stop], code[m.end():stop]))
     return out
 
 
@@ -296,9 +319,81 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
     return found
 
 
-def problems(cmd: str, background: bool) -> list[str]:
+def blank(m: re.Match) -> str:
+    """The match as spaces, keeping newlines, so offsets stay the same."""
+    return re.sub(r"[^\n]", " ", m.group())
+
+
+# Where an unquoted = word ends; a quote, backslash or $ in it leaves it to the model.
+EQUALS_WORD = re.compile(r"[^\s;&|()<>]*")
+GAP = re.compile(r"(?:\s|\\\n)*")
+PLAIN_WORD = re.compile(r"[^\s;&|()<>'\"`$\\]*")
+
+
+def span_end(pattern: re.Pattern, text: str, pos: int) -> int:
+    """Where a match of pattern, which may be empty, ends from pos."""
+    m = pattern.match(text, pos)
+    return m.end() if m else pos
+
+
+def equals_edits(cmd: str, analysed: str) -> list[tuple[int, int, str]] | None:
+    """Single-quote each unquoted word that starts with =, or None when one cannot be."""
+    edits = []
+    for m in ZSH_EQUALS.finditer(analysed):
+        end = span_end(EQUALS_WORD, cmd, m.start())
+        word = cmd[m.start():end]
+        if any(c in word for c in "'\"\\$`"):
+            return None
+        edits.append((m.start(), end, f"'{word}'"))
+    return edits
+
+
+def drop_status_echo(cmd: str, start: int) -> list[tuple[int, int, str]] | None:
+    """Remove a trailing echo of $? that starts after the separator at start.
+
+    Only after ;, a newline, && or ||: dropping it after & would bring the job
+    before it into the foreground, and after | would leave a dangling pipe.
+    """
+    sep = cmd[start]
+    if not (sep in ";\n" or (sep in "&|" and start > 0 and cmd[start - 1] == sep)):
+        return None
+    cut = len(cmd[:start].rstrip(" \t\n;&|"))
+    return [(cut, len(cmd), "")] if cut else None
+
+
+def add_toolsearch(cmd: str, pos: int) -> list[tuple[int, int, str]] | None:
+    """Append ToolSearch to the --tools value that starts at or after pos."""
+    if cmd[pos:pos + 1] == "=":
+        pos += 1
+    else:
+        pos = span_end(GAP, cmd, pos)
+    if cmd[pos:pos + 1] in ("'", '"'):
+        close = cmd.find(cmd[pos], pos + 1)
+        return [(close, close, ",ToolSearch")] if close > pos + 1 else None
+    end = span_end(PLAIN_WORD, cmd, pos)
+    if end == pos or cmd[pos] == "-" or (end < len(cmd) and not cmd[end].isspace() and cmd[end] not in ";&|)<>"):
+        return None
+    return [(end, end, ",ToolSearch")]
+
+
+def bracket_edit(cmd: str, start: int, stop: int, pattern: str, safe: str) -> list[tuple[int, int, str]] | None:
+    """Replace the pattern written between start and stop with its bracketed form."""
+    p = re.escape(pattern)
+    m = re.compile(rf"'({p})'|\"({p})\"|(?<!\S)({p})(?=$|[\s;&|)])").search(cmd, start, stop)
+    if not m:
+        return None
+    if m.group(3) is not None:
+        return None if "'" in safe else [(m.start(3), m.end(3), f"'{safe}'")]
+    group = 1 if m.group(1) is not None else 2
+    if group == 2 and any(c in safe for c in "\"$`\\"):
+        return None
+    return [(m.start(group), m.end(group), safe)]
+
+
+def problems(cmd: str, background: bool) -> list[Problem]:
     # Heredoc bodies are data (notes, scripts being written), not commands.
-    cmd = HEREDOC.sub("", cmd)
+    # Blanked, not removed, so offsets match the command that fixes edit.
+    cmd = HEREDOC.sub(blank, cmd)
     found = []
     code = code_only(cmd)
     bare = code_only(cmd, False)
@@ -307,46 +402,54 @@ def problems(cmd: str, background: bool) -> list[str]:
         # `nohup setsid sh -c '...' &` form subagent-wait suggests.
         fg = foreground(code, bare)
         if POLL_LOOP.search(fg):
-            found.append(
+            found.append(Problem(
                 "Foreground polling loop. Rerun it with run_in_background: true "
-                "and wait for its exit, or use Monitor for a stream of events."
-            )
+                "and wait for its exit, or use Monitor for a stream of events.",
+                [], True, "It was a foreground polling loop."
+            ))
         total = 0.0
         for m in SLEEP.finditer(fg):
             seconds = float(m.group(1)) * UNIT[m.group(2)]
             total += seconds  # chained sleeps (sleep 19; sleep 19) add up
             if total >= 20:
-                found.append(
+                found.append(Problem(
                     f"Foreground sleep {m.group(1)}{m.group(2)}"
                     f"{f' ({total:g}s in all)' if total > seconds else ''}. Wait on a "
-                    "condition in a background command instead of a fixed sleep."
-                )
+                    "condition in a background command instead of a fixed sleep.",
+                    [], True, "It slept in the foreground."
+                ))
                 break
             if seconds >= 10 and READ_CMD.search(fg, m.end()):
-                found.append(
+                found.append(Problem(
                     f"Sleep-then-check polling (sleep {m.group(1)}{m.group(2)}, then a read). "
                     "Wait for the job's exit notification, or run agt wait with "
-                    "run_in_background: true and stop; it wakes you when it exits."
-                )
+                    "run_in_background: true and stop; it wakes you when it exits.",
+                    [], True, "It slept, then checked a file."
+                ))
                 break
         # Also with a trailing &: the harness tracks only run_in_background jobs.
         if re.search(r"(?:^|[;&|(\n])\s*(?:nohup\s+|\S*=\S*\s+)*(?:\S*/)?agt\s+(?:ci\s+)?wait\b(?!\s+(?:-h|--help)(?:$|[\s;&|)]))", code):
-            found.append(
+            found.append(Problem(
                 "agt wait in the foreground blocks this turn. Rerun it with "
-                "run_in_background: true and stop; it wakes you when it exits."
-            )
+                "run_in_background: true and stop; it wakes you when it exits.",
+                [], True, "agt wait in the foreground blocks the turn."
+            ))
         if GH_WATCH.search(fg):
-            found.append(
+            found.append(Problem(
                 "Foreground gh watch. Rerun it with run_in_background: true, "
-                "or run agt ci wait in the background."
-            )
+                "or run agt ci wait in the background.",
+                [], True, "gh watch in the foreground blocks the turn."
+            ))
     # bare also blanks sh -c and bash -c scripts, which have no = expansion.
-    if ZSH_EQUALS.search(COMPARISONS.sub(" ", bare)):
-        found.append(
+    analysed = COMPARISONS.sub(blank, bare)
+    if ZSH_EQUALS.search(analysed):
+        found.append(Problem(
             "An unquoted word starting with = is a zsh path expansion "
             "(`echo ===` fails with \"= not found\"). Print separators with "
-            "printf '--- %s\\n' and quote any other word that starts with =."
-        )
+            "printf '--- %s\\n' and quote any other word that starts with =.",
+            equals_edits(cmd, analysed), False,
+            "Words starting with = are now single-quoted; zsh expands an unquoted =word to a path."
+        ))
     # Keeps "$?", where it still expands; drops '$?' and comments.
     expanding = code_only(cmd, keep_double=True)
     for m in PRINT_CMD.finditer(code):
@@ -359,30 +462,34 @@ def problems(cmd: str, background: bool) -> list[str]:
             trailing and "$?" in expanding[m.end():stop]
             and not FILE_REDIRECT.search(code[m.end():stop])
         ):
-            found.append(
+            found.append(Problem(
                 "Do not print $?; the Bash tool already reports the exit code "
-                "of every command."
-            )
+                "of every command.",
+                drop_status_echo(cmd, m.start()), False,
+                "The trailing echo of $? was removed; the tool reports the exit code."
+            ))
             break
-    for args, args_code in segments(cmd, code, CLAUDE_CMD):
+    for offset, args, args_code in segments(cmd, code, CLAUDE_CMD):
         tools = TOOLS_FLAG.search(args_code)
         if not (tools and HEADLESS_FLAG.search(args_code)) or "--strict-mcp-config" in args_code:
             continue
         names = tool_names(args[tools.end():])
         if "ToolSearch" not in names and "default" not in names:
-            found.append(
+            found.append(Problem(
                 "Headless claude with --tools but without ToolSearch sends every "
                 "connector tool in full (about 600k tokens per call). Add "
-                "ToolSearch to the --tools list, or pass --strict-mcp-config."
-            )
+                "ToolSearch to the --tools list, or pass --strict-mcp-config.",
+                add_toolsearch(cmd, offset + tools.end()), False,
+                "ToolSearch was added to --tools; without it every connector tool is sent in full."
+            ))
             break
     # The handoff command sets AGENT_HANDOFF=1, and this hook runs in its session.
     if os.environ.get("AGENT_HANDOFF") == "1":
-        if any(HEADLESS_FLAG.search(args_code) for _, args_code in segments(cmd, code, CLAUDE_CMD)):
-            found.append(
+        if any(HEADLESS_FLAG.search(args_code) for _, _, args_code in segments(cmd, code, CLAUDE_CMD)):
+            found.append(Problem(
                 "This is a handoff session (AGENT_HANDOFF=1), so do not start another "
                 "claude -p session. Run the handoff stages here, in this session."
-            )
+            ))
     kills = broad_kills(cmd, code)
     for m in PROC_TOOL.finditer(cmd):
         if code[m.start()] != cmd[m.start()]:
@@ -406,21 +513,51 @@ def problems(cmd: str, background: bool) -> list[str]:
                 continue
             i = first.start()
             safe = f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
-            found.append(
+            found.append(Problem(
                 f"{tool} -f '{pattern}' also matches this shell's own command "
                 f"line. Bracket one character of the pattern so it cannot match "
-                f"itself: '{safe}'."
-            )
+                f"itself: '{safe}'.",
+                bracket_edit(cmd, m.end(), m.end() + len(rest), pattern, safe), False,
+                f"The {tool} -f pattern is now '{safe}', so it cannot match its own shell."
+            ))
         elif re.sub(r"\[(.)\]", r"\1", pattern) in cmd:
-            found.append(
+            found.append(Problem(
                 f"{tool} -f '{pattern}': this command also contains the plain "
                 "text it matches, so it would still match this shell. Start "
                 "and stop the process in separate calls."
-            )
-    return found + list(kills.values())
+            ))
+    return found + [Problem(message) for message in kills.values()]
 
 
-def long_subagent_call(tool_input: dict) -> list[str]:
+def fix(tool_input: dict, found: list[Problem], subagent: bool) -> tuple[dict, str] | None:
+    """The fixed tool input and a note for the model, or None when a problem has no
+    safe fix, edits overlap, or the fixed command still has problems."""
+    if not found:
+        return None
+    edits = []
+    for p in found:
+        if p.edits is None:
+            return None
+        edits += p.edits
+    edits.sort()
+    cmd = tool_input.get("command") or ""
+    if any(a[1] > b[0] for a, b in zip(edits, edits[1:])):
+        return None
+    for start, end, text in reversed(edits):
+        cmd = cmd[:start] + text + cmd[end:]
+    background = bool(tool_input.get("run_in_background")) or any(p.background for p in found)
+    fixed = dict(tool_input, command=cmd, run_in_background=background)
+    if problems(cmd, background) or (subagent and long_subagent_call(fixed)):
+        return None
+    notes = [p.note for p in found]
+    if background and not tool_input.get("run_in_background"):
+        notes.append(BACKGROUND_NOTE)
+    if edits:
+        notes.append(f"Command run: {cmd}")
+    return fixed, "bash-guard changed this Bash call before it ran. " + " ".join(dict.fromkeys(notes))
+
+
+def long_subagent_call(tool_input: dict) -> list[Problem]:
     """A sub-agent foreground call allowed to outlast its 5-minute cache."""
     if tool_input.get("run_in_background"):
         return []
@@ -430,12 +567,14 @@ def long_subagent_call(tool_input: dict) -> list[str]:
         return []
     if limit <= SUBAGENT_MAX_MS:
         return []
-    return [
+    return [Problem(
         f"Sub-agent foreground call with a {limit / 60000:.1f}-minute timeout. Your "
         "prompt cache expires after 5 idle minutes, so a longer call rewrites your "
         f"whole context when it returns. Use a timeout of {SUBAGENT_MAX_MS} or less, "
-        "or rerun it with run_in_background: true and stop."
-    ]
+        "or rerun it with run_in_background: true and stop.",
+        [], True,
+        f"Its {limit / 60000:.1f}-minute timeout would outlast your 5-minute prompt cache."
+    )]
 
 
 def main() -> int:
@@ -444,12 +583,20 @@ def main() -> int:
     found = problems(
         tool_input.get("command") or "", bool(tool_input.get("run_in_background"))
     )
-    if data.get("agent_id"):
+    subagent = bool(data.get("agent_id"))
+    if subagent:
         found += long_subagent_call(tool_input)
-    if found:
-        print("bash-guard: " + " ".join(found), file=sys.stderr)
-        return 2
-    return 0
+    if not found:
+        return 0
+    fixed = fix(tool_input, found, subagent)
+    if fixed:
+        updated, note = fixed
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PreToolUse", "updatedInput": updated, "additionalContext": note,
+        }}))
+        return 0
+    print("bash-guard: " + " ".join(p.message for p in found), file=sys.stderr)
+    return 2
 
 
 if __name__ == "__main__":

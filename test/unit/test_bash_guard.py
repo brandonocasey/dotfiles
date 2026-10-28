@@ -1,7 +1,8 @@
-"""Check the Bash PreToolUse guard hook blocks and allows the commands it should."""
+"""Check the Bash PreToolUse guard hook blocks, fixes and allows the commands it should."""
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -42,25 +43,39 @@ class GuardTestCase(unittest.TestCase):
         result = self.run_hook(command)
         self.assertEqual(result.returncode, 0, f"{command!r} was blocked: {result.stderr}")
         self.assertEqual(result.stderr, "")
+        self.assertEqual(result.stdout, "", f"{command!r} was changed")
+
+    def assertFixed(self, command, expected, background=False, note="", result=None):
+        """The hook lets the call run as expected, with no permission decision, so
+        permission rules and auto mode still check the fixed command."""
+        result = result or self.run_hook(command)
+        self.assertEqual(result.returncode, 0, f"{command!r} was blocked: {result.stderr}")
+        output = json.loads(result.stdout)["hookSpecificOutput"]
+        self.assertEqual(output["hookEventName"], "PreToolUse")
+        self.assertNotIn("permissionDecision", output)
+        self.assertEqual(output["updatedInput"]["command"], expected, command)
+        self.assertEqual(output["updatedInput"]["run_in_background"], background, command)
+        self.assertTrue(output["additionalContext"].startswith("bash-guard changed this Bash call"))
+        self.assertIn(note, output["additionalContext"])
 
 
 class ExistingBehaviorTests(GuardTestCase):
-    def test_foreground_sleep_is_blocked(self):
-        self.assertBlocked("sleep 30", "Foreground sleep")
+    def test_foreground_sleep_runs_in_background(self):
+        self.assertFixed("sleep 30", "sleep 30", background=True, note="It slept in the foreground.")
 
     def test_background_sleep_is_allowed(self):
         self.assertTrue(self.run_hook("sleep 30", background=True).returncode == 0)
 
 
 class SleepPollTests(GuardTestCase):
-    def test_sleep_then_check_is_blocked(self):
+    def test_sleep_then_check_runs_in_background(self):
         for command in ("sleep 19; tail -3 run.log", "sleep 15 && cat out.txt",
                         "sleep 15; cd /w; tail -2 a.log | cut -c1-80", "sleep 10; [ -f done ] && echo ok",
                         "sleep 18; ls -la /w/.cache", "sleep 12; rg -c ok run.log",
                         "sleep 15; sed -n '1,40p' run.log", "sleep 15; [[ -s run.log ]] && echo ok",
                         "sleep 15; if grep -q PASS run.log; then echo ok; fi", "sleep 15; jq .status out.json"):
             with self.subTest(command=command):
-                self.assertBlocked(command, "Sleep-then-check polling")
+                self.assertFixed(command, command, background=True, note="wait for its exit notification")
 
     def test_short_or_unchecked_sleeps_are_allowed(self):
         for command in ("sleep 5; tail -3 run.log", "sleep 15", "sleep 15 && curl -s localhost:3000",
@@ -70,18 +85,33 @@ class SleepPollTests(GuardTestCase):
             with self.subTest(command=command):
                 self.assertAllowed(command)
 
-    def test_chained_and_looped_sleeps_are_blocked(self):
-        self.assertBlocked("sleep 19; sleep 19; sleep 19", "(38s in all)")
-        self.assertBlocked("for i in 1 2 3; do sleep 19; done; ls", "Foreground polling loop")
+    def test_chained_and_looped_sleeps_run_in_background(self):
+        self.assertFixed("sleep 19; sleep 19; sleep 19", "sleep 19; sleep 19; sleep 19", background=True)
+        self.assertFixed("for i in 1 2 3; do sleep 19; done; ls", "for i in 1 2 3; do sleep 19; done; ls",
+                         background=True, note="foreground polling loop")
+
+    def test_waits_with_an_unfixable_problem_stay_blocked(self):
+        # The kill has no safe fix, so the whole call is blocked with every message.
+        self.assertBlocked("sleep 30; pkill node", "Foreground sleep")
+        self.assertBlocked("sleep 30; pkill node", "in every session")
 
     def test_background_sleep_then_check_is_allowed(self):
         self.assertEqual(self.run_hook("sleep 19; tail run.log", background=True).returncode, 0)
 
 
 class ZshEqualsTests(GuardTestCase):
-    def test_unquoted_equals_words_are_blocked(self):
-        for command in ("echo ===", "echo ==== done", "echo =foo", "ls; echo =====",
-                        "true && echo === x ===", "echo a\necho ===", "echo ===\\\n"):
+    def test_unquoted_equals_words_are_quoted(self):
+        for command, expected in (("echo ===", "echo '==='"), ("echo ==== done", "echo '====' done"),
+                                  ("echo =foo", "echo '=foo'"), ("ls; echo =====", "ls; echo '====='"),
+                                  ("true && echo === x ===", "true && echo '===' x '==='"),
+                                  ("echo a\necho ===", "echo a\necho '==='"),
+                                  ("echo =foo>out", "echo '=foo'>out"),
+                                  ("cat <<EOF\n===\nEOF\necho ===", "cat <<EOF\n===\nEOF\necho '==='")):
+            with self.subTest(command=command):
+                self.assertFixed(command, expected, note="single-quoted")
+
+    def test_equals_words_that_cannot_be_quoted_are_blocked(self):
+        for command in ("echo ===\\\n", "echo =$HOME", "echo =a'b'", 'echo ="x"'):
             with self.subTest(command=command):
                 self.assertBlocked(command, "printf '--- %s\\n'")
 
@@ -97,10 +127,17 @@ class ZshEqualsTests(GuardTestCase):
 
 
 class ExitStatusEchoTests(GuardTestCase):
-    def test_printed_exit_status_is_blocked(self):
+    def test_printed_exit_status_is_dropped(self):
         for command in ("make; echo rc=$?", 'make; echo "exit=$?"', "make; echo $?",
                         'make || printf "rc=%s\\n" "$?"', "make\necho rc=$?", "make && printf '%s\\n' $?",
-                        "make; echo rc=$? >&2", "make; echo rc=$? 2>&1", "make; echo $? # > done"):
+                        "make; echo rc=$? >&2", "make; echo rc=$? 2>&1", "make; echo $? # > done",
+                        "make ;  echo $?;"):
+            with self.subTest(command=command):
+                self.assertFixed(command, "make", note="echo of $? was removed")
+
+    def test_printed_exit_status_without_a_safe_cut_is_blocked(self):
+        # Alone there is nothing left to run; after & or | the cut would change the job.
+        for command in ("echo $?", "make & echo $?", "make | echo $?"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
@@ -119,15 +156,22 @@ class ExitStatusEchoTests(GuardTestCase):
 
 
 class HeadlessClaudeTests(GuardTestCase):
-    def test_tools_without_toolsearch_is_blocked(self):
-        for command in ("claude -p 'hi' --tools Bash,Read", 'claude --print --tools "Bash Read" hi',
-                        "claude-two -p --tools=Read,Grep 'x'", "cd /tmp && claude -p --tools Bash 'x'",
+    def test_tools_without_toolsearch_gets_it(self):
+        for command in ("claude -p 'hi' --tools Bash,Read", "claude-two -p --tools=Read,Grep 'x'",
+                        "cd /tmp && claude -p --tools Bash 'x'",
                         "FOO=1 claude -p --tools Bash 'x'", "claude -p \\\n  --tools Bash \\\n  'x'",
                         "claude -p 'x' --tools Bash 2>&1 | tail -5", "timeout 300 claude -p --tools Bash 'x'",
                         "nohup claude -p --tools Bash 'x' > log 2>&1 &", "timeout -k 5 5m claude -p --tools Bash x",
                         "nohup setsid sh -c 'claude -p --tools Bash x > log 2>&1' &",
                         "claude -p --tools Bash Read 'x'", "claude -pc --tools Bash x",
-                        "claude -p<r.md --tools Bash"):
+                        "claude -p<r.md --tools Bash", "claude -p --tools \\\n  Bash x"):
+            with self.subTest(command=command):
+                expected = re.sub(r"(--tools(?:=|\s|\\\n)+)([^\s'\"]+)", r"\1\2,ToolSearch", command, count=1)
+                self.assertFixed(command, expected, note="ToolSearch was added")
+        self.assertFixed('claude --print --tools "Bash Read" hi', 'claude --print --tools "Bash Read,ToolSearch" hi')
+
+    def test_tools_that_cannot_take_toolsearch_are_blocked(self):
+        for command in ('claude -p --tools "" x', "claude -p --tools $TOOLS x", "claude -p --tools"):
             with self.subTest(command=command):
                 self.assertBlocked(command, "ToolSearch")
 
@@ -222,20 +266,31 @@ class KillScopeTests(GuardTestCase):
                 else:
                     self.assertBlocked(command, "put options such as -P before it")
 
-    def test_other_pkill_forms_keep_the_bracket_hint(self):
+    def test_other_pkill_forms_get_the_bracket(self):
         # sudo -u root hides pkill from the broad-kill check; the self-match check still catches it.
-        self.assertBlocked("sudo -u root pkill -f node", "Bracket one character of the pattern")
-        result = self.run_hook("pkill -P 123 -f node")
-        self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn("itself: '[n]ode'.", result.stderr)
-        self.assertNotIn("pkill -f '[n]ode'", result.stderr)
+        for command, expected in (("sudo -u root pkill -f node", "sudo -u root pkill -f '[n]ode'"),
+                                  ("pkill -P 123 -f node", "pkill -P 123 -f '[n]ode'"),
+                                  ("pgrep -f node", "pgrep -f '[n]ode'"),
+                                  ("pgrep -fl 'vite dev' | head", "pgrep -fl '[v]ite dev' | head"),
+                                  ('pgrep -f "mise run"', 'pgrep -f "[m]ise run"')):
+            with self.subTest(command=command):
+                self.assertFixed(command, expected, note="cannot match its own shell")
+
+    def test_self_matches_that_brackets_cannot_fix_are_blocked(self):
+        for command in ("pgrep -f '[n]ode'; node x.js", "pgrep -f 'a'\"b\""):
+            with self.subTest(command=command):
+                self.assertBlocked(command, "pgrep -f")
 
 
 class AgtWaitTests(GuardTestCase):
-    def test_foreground_wait_is_blocked(self):
+    def test_foreground_wait_runs_in_background(self):
         for command in ("agt wait --timeout 600 -- test -f done", "agt ci wait '!12'",
                         "cd /w && agt ci wait --help-me"):
-            self.assertBlocked(command, "agt wait in the foreground")
+            self.assertFixed(command, command, background=True, note="agt wait in the foreground")
+
+    def test_several_fixes_apply_together(self):
+        self.assertFixed("agt ci wait '!12'; echo ===; echo $?", "agt ci wait '!12'; echo '==='",
+                         background=True, note="Command run: agt ci wait '!12'; echo '==='")
 
     def test_help_is_allowed(self):
         for command in ("agt ci wait --help", "agt wait -h", "agt ci wait --help 2>&1 | rg -n sha"):
@@ -251,10 +306,9 @@ class SubagentTimeoutTests(GuardTestCase):
         return subprocess.run([sys.executable, "-I", str(HOOK)], env=self.env, capture_output=True, text=True,
                               input=json.dumps(payload), timeout=30)
 
-    def test_long_subagent_foreground_call_is_blocked(self):
-        result = self.run_call(590000)
-        self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn("Sub-agent foreground call with a 9.8-minute timeout", result.stderr)
+    def test_long_subagent_foreground_call_runs_in_background(self):
+        self.assertFixed("npm test", "npm test", background=True, result=self.run_call(590000),
+                         note="9.8-minute timeout would outlast")
 
     def test_short_or_background_or_main_calls_are_allowed(self):
         for name, outcome in (("short", self.run_call(270000)), ("default", self.run_call(None)),

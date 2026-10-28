@@ -8,7 +8,7 @@
 - Put output in chat or where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use; a skill's default is not permission.
 - Manually check visible behavior; use `ux-verify` for UI and other user-facing output. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
-- Waiting (in Claude Code a hook blocks each of these; use the replacement first time):
+- Waiting (in Claude Code a hook moves foreground waits to the background and blocks the kills; use the replacement first time):
   - `sleep` of 20s+, a loop that sleeps, or `sleep N; cat log` of any length → run the job with `run_in_background: true` and a log file, then stop until its exit notification.
   - `agt wait`, `agt ci wait`, `gh run watch`, or a long sub-agent call in the foreground → same command with `run_in_background: true`, then stop.
   - Commands likely to take over ~20s (test suites, builds, browser runs) start in the background; short commands stay foreground.
