@@ -17,7 +17,17 @@ list)
   shift
   states=$(tmux list-panes -a -F '#{session_name}	#{E:@agent_status}' 2>/dev/null)
   colors=$(tmux list-sessions -F '#{session_name}	#{@session_color}' 2>/dev/null)
-  sesh list "$@" | while IFS= read -r line; do
+  order=$(tmux list-sessions -F '#{session_created}	#{session_name}' 2>/dev/null | sort -n | cut -f2-)
+  # sesh sorts tmux sessions by activity, so they jump around on every
+  # switch. Put them in a fixed order (by creation time); other entries keep theirs.
+  sesh list "$@" | ORDER=$order awk '
+    BEGIN { n = split(ENVIRON["ORDER"], o, "\n"); for (i = 1; i <= n; i++) idx[o[i]] = i }
+    {
+      name = $0
+      gsub(/\033\[[0-9;]*m/, "", name)
+      sub(/^[^ ]* /, "", name)
+      printf "%d\t%s\n", (name in idx) ? idx[name] : 100000 + NR, $0
+    }' | sort -n -s -k1,1 | cut -f2- | while IFS= read -r line; do
     name=$(printf '%s\n' "$line" | sed 's/\x1b\[[0-9;]*m//g')
     name=${name#* }
     mine=$(printf '%s\n' "$states" | awk -F '\t' -v n="$name" '$1 == n { print $2 }')
