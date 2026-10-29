@@ -116,6 +116,14 @@ when step 5 asks one. Include each named
 detached-baseline exception with its HEAD-preservation proof. Only the approved rows and
 dispositions are authorized; changed scope needs a new preview.
 
+**Deletion preview.** Before every step 6 command, including auto-approved merged rows, send the
+user a message listing exactly what that command will delete: each worktree path with its branch
+(or detached HEAD), tip SHA, verdict, PR number, and changed-file count, then each branch deleted
+without a worktree with its tip SHA and verdict. Take the rows from a fresh plan run, not an
+earlier one. State that each worktree gets a snapshot backup and each branch can be restored with
+`git branch <name> <tip>`. The preview needs no reply for auto-approved rows; send it, then run
+step 6 with exactly those names.
+
 ### 5. Assess retained candidates
 
 Read [assess-retained.md](references/assess-retained.md) when step 4 retains any candidate.
