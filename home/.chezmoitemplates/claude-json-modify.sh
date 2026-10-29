@@ -26,12 +26,19 @@ const hasBrowser = Object.values(servers).some((server) => {
   return `${command} ${args}`.includes("chrome-devtools-mcp");
 });
 
-const chromeArgs = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"];
-const oldChromeArgs = ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"].join(" ");
+// Run the pinned mise install through `exec`, so no npx/npm wrapper processes sit in each session.
+const chromeCommand = "sh";
+const chromeArgs = ["-c", "exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics"];
+const oldChromeArgs = [
+  ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"],
+  ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"],
+  ["chrome-devtools-mcp@latest", "--headless", "--isolated"],
+].map((args) => args.join(" "));
 const chrome = servers["chrome-devtools"];
 if (!hasBrowser && !("chrome-devtools" in servers)) {
-  servers["chrome-devtools"] = { type: "stdio", command: "npx", args: chromeArgs };
-} else if (chrome && Array.isArray(chrome.args) && chrome.args.join(" ") === oldChromeArgs) {
+  servers["chrome-devtools"] = { type: "stdio", command: chromeCommand, args: chromeArgs };
+} else if (chrome && chrome.command === "npx" && Array.isArray(chrome.args) && oldChromeArgs.includes(chrome.args.join(" "))) {
+  chrome.command = chromeCommand;
   chrome.args = chromeArgs;
 }
 if (!("openaiDeveloperDocs" in servers)) {

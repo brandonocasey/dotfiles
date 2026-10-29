@@ -11,6 +11,8 @@ uv = ['latest']
 # ~/.local/bin/typescript-language-server.
 'npm:typescript' = '7.0.2'
 'npm:pyright' = '1.1.414'
+# Browser MCP server, run directly so no npx/npm/sh wrapper processes sit in every session.
+'npm:chrome-devtools-mcp' = '1.10.1'
 rust-analyzer = '2026-10-12'
 
 [settings]
