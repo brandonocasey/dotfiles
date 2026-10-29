@@ -1,6 +1,6 @@
 #!/bin/sh
 # UserPromptSubmit hook: names a session from its first prompt, like /rename,
-# as a filename-style slug (tmux-hooks). Haiku writes the title in the
+# as plain words (Fix stop-hook loop). Haiku writes the title in the
 # background, so the prompt never waits. The tmux session takes the name as
 # soon as Haiku answers; Claude shows it above the prompt from the next prompt.
 # Skips unattended runs (claude -p), sessions the user named, slash commands,
@@ -45,13 +45,14 @@ fi
 
 if ! [ -f "$state/$sid.haiku" ]; then
   prompt=$(printf '%s' "$input" | jq -r '.prompt // "" | .[:1000]')
-  case $prompt in '' | /*) exit 0 ;; esac
+  # A hand-back from another session is not the topic; wait for a real prompt.
+  case $prompt in '' | /* | 'Another Claude session sent a message'*) exit 0 ;; esac
   # Greetings and pings make filler titles; leave the session for the next prompt.
   [ "$(printf '%s' "$prompt" | wc -w)" -ge 4 ] || exit 0
   : >"$state/$sid.haiku"
   # Tags and the never-answer rule stop Haiku replying to questions instead.
   system='Write a title for the coding session that starts with the message inside <message> tags. Never answer or reply to the message; only title it.
-Rules: 3-7 words. Start with a verb (Fix, Add, Review, Explain, Check, Speed up). Keep specific names: ticket IDs, files, tools, repos, settings. Never use filler words like request, question, session, inquiry, help, initiated. Output the title only.
+Rules: 3-7 words and under 50 characters, so the title is never cut off. Use sentence case. Start with a verb (Fix, Add, Review, Explain, Check, Speed up). Keep specific names: ticket IDs, files, tools, repos, settings. Never use filler words like request, question, session, inquiry, help, initiated. Output the title only.
 Examples:
 can you see why PROJ-123 is still open in web-player -> Check why PROJ-123 is open in web-player
 is there any way we can have haiku auto title give better titles -> Improve Haiku auto-title prompt
@@ -68,7 +69,7 @@ the stop hook keeps blocking me over and over -> Fix repeated stop-hook blocks'
         --max-turns 1 2>/dev/null) || title=
     title=$(printf '%s\n' "$title" | head -n 1)
     case $title in *[Hh]it\ your*limit* | *[Ll]imit\ reached* | *[Uu]sage\ limit*) title= ;; esac
-    title=$(sh "$tmux_hook" slug "$title")
+    title=$(sh "$tmux_hook" tidy "$title")
     if [ -z "$title" ]; then
       rm -f "$state/$sid.haiku"
       exit 0

@@ -1,12 +1,12 @@
 #!/bin/sh
-# Renames the tmux session that holds an agent to the agent's session title, as
-# a filename-style slug (fix-stop-hook-loop). Usage:
+# Renames the tmux session that holds an agent to the agent's session title, in
+# plain words (Fix stop-hook loop). Usage:
 #   agent-tmux-session.sh claude|codex   SessionStart or Stop hook, JSON on stdin
 #   agent-tmux-session.sh set <title>    from auto-title.sh, right after Haiku
 #   agent-tmux-session.sh restore        SessionEnd hook, JSON on stdin
 #   agent-tmux-session.sh sync <title>   from the Claude status line after /rename;
 #                                        renames only when the title changed
-#   agent-tmux-session.sh slug <title>   print the slug only
+#   agent-tmux-session.sh tidy <title>   print the cleaned title only
 # The first rename saves the session's old name; restore puts it back when the
 # agent exits, unless the user renamed the session since or another agent pane
 # still uses it. /clear keeps the name. Over ssh it never restores.
@@ -20,16 +20,22 @@
 agent=${1:-}
 marker='agent-session:'
 
-# Lowercase words joined by '-', at most 40 characters, cut at a word break.
-# It also keeps out the '.', ':', and '#' that tmux treats specially in names.
-slug() {
-  printf '%s' "$1" | LC_ALL=C tr '[:upper:]' '[:lower:]' |
-    LC_ALL=C sed -e 's/[^a-z0-9][^a-z0-9]*/-/g' -e 's/^-//' -e 's/-$//' |
-    awk '{ if (length($0) > 40) { s = substr($0, 1, 41); sub(/-[^-]*$/, "", s); $0 = substr(s, 1, 40) } print }'
+# The title as plain words (case kept), at most 60 characters, cut at a word
+# break, without a closing period. Claude shows this form.
+tidy() {
+  printf '%s' "$1" | LC_ALL=C tr -d '[:cntrl:]' |
+    LC_ALL=C sed -e 's/[.!?]*[[:space:]]*$//' -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' |
+    awk '{ if (length($0) > 60) { s = substr($0, 1, 61); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, 60) } print }'
 }
 
-if [ "$agent" = slug ]; then
-  slug "${2:-}"
+# The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
+# '_', so 8.51.14 becomes 8_51_14 here but stays exact in Claude.
+safe() {
+  tidy "$1" | LC_ALL=C sed -e 's/[:#]/ /g' -e 's/\./_/g' -e 's/  */ /g' -e 's/^ //' -e 's/ $//'
+}
+
+if [ "$agent" = tidy ]; then
+  tidy "${2:-}"
   exit 0
 fi
 
@@ -45,7 +51,7 @@ else
 fi
 
 rename() {
-  name=$(slug "$1")
+  name=$(safe "$1")
   [ -n "$name" ] || return 0
   if [ "$target" = ssh ]; then
     printf '\033k%s%s\033\134' "$marker" "$name" >"$SSH_TTY" 2>/dev/null
@@ -57,7 +63,7 @@ rename() {
   base=$name
   n=2
   while [ "$name" != "$current" ] && tmux has-session -t "=$name" 2>/dev/null; do
-    name=$base-$n
+    name="$base ($n)"
     n=$((n + 1))
   done
   [ "$name" = "$current" ] && return 0
@@ -78,7 +84,7 @@ fi
 if [ "$agent" = sync ]; then
   [ "$target" = tmux ] || exit 0
   session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_id}' 2>/dev/null) || exit 0
-  [ "$(slug "${2:-}")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
+  [ "$(safe "${2:-}")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
   rename "${2:-}"
   exit 0
 fi
