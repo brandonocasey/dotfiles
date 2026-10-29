@@ -118,6 +118,19 @@ export DISABLE_AUTOUPDATER=1
 # DISABLE_AUTOUPDATER also stops plugin updates; keep those on.
 export FORCE_AUTOUPDATE_PLUGINS=1
 
+# Stop Claude Code's per-agent status summaries, which resend each background agent's whole
+# transcript every 30 seconds. Other Bun programs load the preload but skip it. After a Claude
+# Code update, check it still matches the timer: see the README in
+# https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce
+no_agent_summary="$HOME/.local/share/no-agent-summary.js"
+if [ -r "$no_agent_summary" ]; then
+	case " ${BUN_OPTIONS:-} " in
+	*" --preload=$no_agent_summary "*) ;;
+	*) export BUN_OPTIONS="${BUN_OPTIONS:+$BUN_OPTIONS }--preload=$no_agent_summary" ;;
+	esac
+fi
+unset no_agent_summary
+
 export PAGER="${PAGER:-less}"
 export GIT_PAGER="${GIT_PAGER:-less}"
 if command -v delta >/dev/null 2>&1; then

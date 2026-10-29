@@ -105,6 +105,12 @@ set -gx DISABLE_AUTOUPDATER 1
 # DISABLE_AUTOUPDATER also stops plugin updates; keep those on.
 set -gx FORCE_AUTOUPDATE_PLUGINS 1
 
+# Stop Claude Code's per-agent status summaries; see env.sh.
+set -l no_agent_summary "$HOME/.local/share/no-agent-summary.js"
+if test -r "$no_agent_summary"; and not contains -- "--preload=$no_agent_summary" (string split ' ' -- "$BUN_OPTIONS")
+    set -gx BUN_OPTIONS (string trim -- "$BUN_OPTIONS --preload=$no_agent_summary")
+end
+
 # ~/.local/bin must resolve before Homebrew — its `brew` wrapper (and other
 # shims) live there and need to shadow the real binaries. Prepend + move so it
 # lands first even if a stale universal fish_user_paths ordered Homebrew ahead.
