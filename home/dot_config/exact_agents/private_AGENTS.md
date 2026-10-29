@@ -6,6 +6,7 @@
 - Run commands yourself; hand me one only when you cannot run it (interactive login, blocked action). Never ask me to confirm work I requested. Before handing me a command or script, test it: check syntax (`sh -n`), that tools and paths exist, and run any safe part.
 - Never search `env`, `~/.netrc`, or config for credentials. Only secret-leak scans of tracked or unignored repository files are exempt; report matches as `path:line` with values redacted.
 - Put output in chat or where I asked, in the format I asked. Use hosted-document skills or write to hosted docs (such as Google Docs, Claude Docs, Confluence, or artifacts) only when I name one or one is already in use; a skill's default is not permission.
+- Never put Claude session or artifact links (claude.ai/artifact, claude.ai/code, session URLs) in public-facing text: MR/PR titles and descriptions, comments, commits, docs, issues, or release notes. Attach the content itself (images, logs, text) instead.
 - Manually check visible behavior; use `ux-verify` for UI and other user-facing output. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
 - Waiting (in Claude Code a hook moves foreground waits to the background and blocks the kills; use the replacement first time):
