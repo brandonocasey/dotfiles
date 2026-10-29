@@ -62,6 +62,12 @@ steps, so a blocked outward step cannot prevent it.
 
 Use only after **Remove** permits cleanup: the MR/PR is merged or closed, or
 the user explicitly requested it. A push alone is not a cleanup trigger.
+Exception: a helper branch this session created only for a review or fix (not the
+task's own branch, and no open MR/PR on it) is cleaned up as soon as its commits are
+pushed. Prove its tip is on the remote (`git merge-base --is-ancestor <branch>
+origin/<target-branch>` after a fetch, or the tip check below when it was pushed under
+its own name), remove its worktree per **Remove**, then `branch -d`. If the proof
+fails, keep both and report why.
 When the remote source branch still exists, prove it holds the local tip:
 
 ```sh

@@ -67,12 +67,16 @@ Read [ci-and-conflicts.md](ci-and-conflicts.md) before these repairs.
   even where the `commit` skill would amend. Until the review ends, never amend,
   squash, or rebase reviewed commits, so threads and coverage stay on them. Only a
   rebase the user authorizes ([ci-and-conflicts.md](ci-and-conflicts.md)) is exempt.
-- **Local branch or commit**: for a detached local-branch review, first attach the
-  review worktree to a new fix branch at its pinned head. Preserve the original
-  branch and checkout, and keep the selected range store target. Report the fix branch.
-  Apply the fixes in the branch's worktree, retest per **Retest** in
-  [testing.md](testing.md), record the `Checked:` line, and commit per the `commit` skill. For a commit
-  or the default branch, first create a fix branch per the `worktree` skill. Do not push.
+- **Local branch or commit**: do not create a review- or fix-specific branch when the
+  reviewed branch can take the fixes. For a local branch, commit the fixes onto it in its
+  own worktree, keeping the selected range store target, unless another agent or session
+  is working in that worktree (`git worktree list`, `agt worktree remove` plan's process
+  check). Only then, or for a commit or the default branch (no task branch exists), create
+  a fix branch per the `worktree` skill, preserving the original branch and checkout, and
+  report it. A detached review worktree attaches to the branch only when the branch is
+  checked out nowhere else. Retest per **Retest** in [testing.md](testing.md), record the
+  `Checked:` line, and commit per the `commit` skill. Do not push. Clean up any fix branch
+  you created per **Remove after push** in the `worktree` skill's [remove.md](../../worktree/references/remove.md).
 - **Working diff**: apply the fixes in place, retest per **Retest** in
   [testing.md](testing.md), record the `Checked:` line, and leave them
   uncommitted unless the user asks to commit.
