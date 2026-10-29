@@ -45,6 +45,8 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    another author's MR/PR, publish with `--approve --not-own`, after a `--dry-run` with the
    same flags. When `skipped` lists the approval itself (head moved, open findings) or
    `posted` shows an approve `error` without that fallback, report that instead of approved.
+   When the output has `kept_local`, posting is off: the approval is recorded only in the
+   local store. Report `approved locally (posting off)`; never post it with `gh` or `glab`.
    To retry a failed formal approval once, run `publish --approve --formal` again.
    An approval without `--formal` does not satisfy required approvals; when the MR/PR needs one for
    `--auto-merge` or `--merge`, report that blocker.

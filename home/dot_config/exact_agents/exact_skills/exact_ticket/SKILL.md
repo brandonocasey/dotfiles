@@ -39,8 +39,9 @@ question. Never invent a key, project, status, or version.
     `gh` or `glab`.
   - Reads use the local copy, synced first when it is stale (see
     [agt.md](../shared/agt.md)). Writes are queued and go out only on
-    `agt issue push`, and only for trackers with `push = true`.
-  - Do not change `push` in the agt config.
+    `agt issue push`, only for trackers with `push = true`, and only when
+    `[forge] post = true` (agt 0.29.0 or newer).
+  - Do not change `push` or `[forge] post` in the agt config.
   - Run `agt issue sync --tracker <owner/repo>` before reads. On a sync error,
     stop, or read with `gh` or `glab`. An empty `find` after a failed sync does
     not mean "no ticket".
@@ -90,6 +91,9 @@ question. Never invent a key, project, status, or version.
      queued issue. Do not use `gh` or `glab` to bypass the setting.
    - Run `agt issue push --tracker <owner/repo>`. It sends every pending change
      on that tracker, so the pending check above is required.
+   - When its output has `kept_local`, posting is off and nothing was sent. The
+     key stays `local-`. Report the queued issue, keep the key out of the MR/PR
+     title, and do not use `gh` or `glab` to bypass the setting.
    - Push exits 0 even with entries under `failed`, `deferred`, or `conflicts`.
      Treat any of them as a failed write and report it.
    - On success, the `local-` key becomes a number. Take `number` from the

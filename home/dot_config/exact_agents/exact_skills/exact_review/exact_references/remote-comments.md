@@ -71,7 +71,9 @@ After each pass and its fix push (or after the pass, when nothing was fixed), ru
 `GITLAB_HOST=<host>` when self-hosted. It syncs first, then posts every pending
 finding, reply, and resolve, and updates the summary when a run ended or its text changed.
 A rerun matches posted items instead of posting again. Read only its returned links and failures; rerun a failure once
-yourself. It refuses an MR/PR the user did not author. What it posts:
+yourself. It refuses an MR/PR the user did not author. When its output has `kept_local`,
+posting is off (`[forge] post`): it posted nothing and exits 0. Report `kept local (posting off)`
+once; do not rerun it or post with `gh` or `glab`. What it posts:
 
 - **Finding body.** The kind on its own line (`**🐛 bug (high)**`, `**❓ question**`,
   `**🎯 requirement**`, `**✏️ nit**`), the step 3 comment text, and the footer
