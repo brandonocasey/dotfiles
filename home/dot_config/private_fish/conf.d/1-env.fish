@@ -107,6 +107,10 @@ set -gx FORCE_AUTOUPDATE_PLUGINS 1
 
 # Stop Claude Code's per-agent status summaries; see env.sh.
 set -l no_agent_summary "$HOME/.local/share/no-agent-summary.js"
+# Bun splits BUN_OPTIONS at whitespace, so it cannot load a path that contains any.
+if string match -qr '\s' -- "$no_agent_summary"
+    set no_agent_summary ''
+end
 if test -r "$no_agent_summary"; and not string match -q -- "* --preload=$no_agent_summary *" " $BUN_OPTIONS "
     set -gx BUN_OPTIONS (string trim -- "$BUN_OPTIONS --preload=$no_agent_summary")
 end
