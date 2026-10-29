@@ -9,6 +9,8 @@ Each flag is the user's request to approve or merge the reviewed MR/PR
 - `--merge`: enable auto-merge, then watch until merged or blocked.
 
 `--auto-merge` and `--merge` never imply approval. Combine them with `--approve` for that.
+When `--approve` is combined with a merge flag, a blocked approval is reported and the
+merge still proceeds (step 4).
 
 A fix pushed to the MR/PR, `--approve`, `--auto-merge`, or `--merge` is also the
 user's request to mark a draft MR/PR ready. This overrides the `ship` rule that
@@ -50,6 +52,13 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    To retry a failed formal approval once, run `publish --approve --formal` again.
    An approval without `--formal` does not satisfy required approvals; when the MR/PR needs one for
    `--auto-merge` or `--merge`, report that blocker.
+   **Blocked approval does not block merge.** When the approval cannot be recorded
+   (a permission or classifier denial such as self-approval, a host refusal, or any error),
+   report it as `approval blocked: <reason>`, never retry or work around it, and continue to
+   step 5 when `--auto-merge` or `--merge` was requested. The step 1 gate and the step 2 risk
+   confirmation still apply. Skip steps 5–6 only when merging is itself impossible: the host
+   requires an approval (merge state `BLOCKED` on a review requirement), or any other merge.md
+   blocker holds. List each PR that merged without approval in the `Merge:` line.
 5. **Auto-merge** (`--auto-merge` or `--merge`): follow merge.md **Inspect** and
    **Enable auto-merge** with `HEAD_SHA`.
 6. **Watch** (`--merge` only): follow merge.md **Watch**. Move the ticket only when
