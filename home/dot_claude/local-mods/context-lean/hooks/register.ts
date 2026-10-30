@@ -9,6 +9,9 @@ const SKILL_NOTE = 'The Skill tool is deferred: load it with ToolSearch select:S
 // Skills the app adds as `anthropic-skills:<name>` ignore skillOverrides, so their listing lines lose the description
 // here and keep the name, as `name-only` does. Add other prefixes to the group to trim them too.
 const SKILL_DESCRIBED = /^- (anthropic-skills:[^\s:]+): .+$/gm
+// Skills whose listing line was cut to the name in this session. The engine's /context estimate counts the full
+// description, so the report swaps in the size of the name alone for these.
+const trimmedSkills = new Set<string>()
 // Built-in agents whose long descriptions are replaced with one line in the agent listing. Matched by name, so a
 // custom agent that reuses one of these names gets the built-in summary too.
 const AGENT_SUMMARIES: Record<string, string> = {
@@ -218,6 +221,7 @@ const load = async ($: Host) => {
       }
       hidden.clear()
       kept.clear()
+      trimmedSkills.clear()
       sent.clear()
       used.clear()
       seen.clear()
@@ -489,7 +493,18 @@ const measure = async ($: EngineInterface): Promise<Report | undefined> => {
     ),
     ...estimated.map(row => ({ ...row, isEstimate: true })),
   ]
-  const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({ name, tokens, kind, color }))
+  // The breakdown counts each trimmed skill's whole description, but only its name is sent.
+  const breakdown = usage.context.breakdown as Inventory | undefined
+  const skills = breakdown?.skills
+  const nameOnly = (name: string) => Math.ceil((name.length + 2) / 3)
+  const skillFrontmatter = (skills?.skillFrontmatter ?? []).map(skill => (trimmedSkills.has(skill.name) ? { ...skill, tokens: Math.min(skill.tokens, nameOnly(skill.name)) } : skill))
+  const skillsSaved = (skills?.skillFrontmatter ?? []).reduce((all, skill, at) => all + skill.tokens - skillFrontmatter[at].tokens, 0)
+  const categories: Category[] = (usage.context.breakdown?.categories ?? []).map(({ name, tokens, kind, color }: Category) => ({
+    name,
+    tokens: name === 'Skills' ? Math.max(0, tokens - skillsSaved) : tokens,
+    kind,
+    color,
+  }))
   const measured: Report = {
     real: usage.context.tokens,
     window,
@@ -500,7 +515,7 @@ const measure = async ($: EngineInterface): Promise<Report | undefined> => {
     hidden: hiddenRows,
     kept: keptRows,
     // The breakdown's lists of MCP tools, agents, memory files and skills, for the built-in /context's sections.
-    inventory: { ...(usage.context.breakdown as Inventory | undefined), systemToolNames: [...builtInTools].filter(([, deferred]) => !deferred).map(([name]) => name) },
+    inventory: { ...breakdown, ...(skills === undefined ? {} : { skills: { ...skills, skillFrontmatter, tokens: Math.max(0, skills.tokens - skillsSaved) } }), systemToolNames: [...builtInTools].filter(([, deferred]) => !deferred).map(([name]) => name) },
   }
   const old = (await $.store.keys().catch(() => [])).filter(key => key === LAST_REPORT || key.startsWith(`${LAST_REPORT}:`))
   await Promise.all([$.store.set(perModel(COUNTS, model), { model, rows: { ...known, ...fresh } }), ...old.map(key => $.store.delete(key))]).catch(() => undefined)
@@ -819,6 +834,10 @@ export const register: Register = on => {
     const { text } = await next(e)
     if (text === null) return { text }
     const short = text.replace(SKILL_DESCRIBED, '- $1')
+    if (short !== text) {
+      await load($)
+      for (const [, name] of text.matchAll(SKILL_DESCRIBED)) trimmedSkills.add(name)
+    }
     if (text.startsWith(SKILL_NOTE) || !(await hasToolSearch($))) return { text: short }
 
     return { text: SKILL_NOTE + short }

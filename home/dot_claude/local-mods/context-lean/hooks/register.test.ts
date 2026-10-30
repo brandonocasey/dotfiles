@@ -868,6 +868,39 @@ test('keeps notes kept for one agent when a subagent hides the same notes', asyn
   expect(again.text).toContain('Search first.')
 })
 
+test('/context counts a trimmed anthropic skill by its name, not the description the breakdown measured', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
+  on('session.usage', () => ({
+    value: {
+      startedAt: 0,
+      rateLimits: [],
+      context: {
+        tokens: 5000,
+        window: 1000000,
+        breakdown: {
+          totalTokens: 5000,
+          categories: [{ name: 'Skills', tokens: 500, kind: 'used' }, { name: 'Messages', tokens: 4500, kind: 'used' }],
+          skills: {
+            totalSkills: 2,
+            includedSkills: 2,
+            tokens: 500,
+            skillFrontmatter: [{ name: 'anthropic-skills:docs', source: 'plugin', tokens: 343 }, { name: 'review', source: 'user', tokens: 157 }],
+          },
+        },
+      },
+    },
+  }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('model.complete', ($, e) => ({ value: { isAnswered: true, text: '', usage: { input_tokens: e.prompt.length, output_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } } }))
+  engineRow(on)
+  await $.prompt.attachment({ type: 'skill_listing', text: '- anthropic-skills:docs: Use this skill for every document.\n- review: Review changes.' })
+  const row = await drawnRow($, 'context', (await $.command.run({ command: 'context', args: 'all' })).text ?? '')
+  expect(row).not.toContain('343')
+  expect(row).toContain('anthropic-skills:docs · 1 skill · 8 tokens')
+  expect(row).toContain('review · 1 skill · 157 tokens')
+})
+
 test('/context draws the usable window the breakdown reports', async ($, on) => {
   on('command.run', { command: 'context' }, () => ({ text: 'BUILT-IN' }))
   on('session.usage', () => ({
