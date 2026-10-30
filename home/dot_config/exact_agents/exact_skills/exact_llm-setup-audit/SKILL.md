@@ -95,13 +95,12 @@ One harness's setting does not control another.
 
 ## Checks for all targets
 
-- **Mechanical sweeps:** run the existence, orphan, parity, and byte-count checks below through a `cheap` agent that writes raw results to scratch. Judge and fix the findings yourself.
+- **Sweeps:** run the existence, orphan, parity, and byte-count checks via `cheap`.
 - **References and claims:** check paths, files, steps, skill names, memory pointers, and harness claims on disk or in current documentation.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
-  Example: “The `commit` skill owns commit splitting.”
 - **Reader context:** for the main thread and each role, per harness, list what loads together: rules (Codex roles load `AGENTS.md`; Claude roles with `omitClaudeMd: true` do not), the main rules or role body with its partials, skills each names, MCP tools, and session-start hook output.
-  Check each set for duplicates, gaps, and contradictions. Estimate each load as bytes ÷ 3.
+  Check each set for duplicates, gaps, and contradictions.
   Flag text a reader loads but never acts on, such as main-session reply rules in a role.
 - **Spawn guidance:** compare the spawn-prompt content that skills require with each role's load.
   Flag text the role already loads and context it lacks.

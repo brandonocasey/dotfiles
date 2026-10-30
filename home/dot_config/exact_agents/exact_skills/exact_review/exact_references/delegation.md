@@ -4,7 +4,7 @@
   beside it found nothing extra. In a real-bug A/B test, Sonnet `xhigh` alone
   caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only setup's
   `sonnet` mode (`medium` under 80 changed lines) and fresh fix checks, to save
-  cost. Replay of 12 `low`-tier commits (11 docs-only): Haiku `xhigh` raised 55
+  cost. Replay of 12 `low`-tier commits (8 docs-only, 4 test-only): Haiku `xhigh` raised 55
   findings, 43 valid (29 matched Opus, 14 of 26 extras confirmed); Sonnet `xhigh`
   raised 42, about 35 valid, at 6× the cost. So setup's `haiku` mode takes the
   `low` tier. On mixed changes both missed most of Opus's fixed findings (Haiku
