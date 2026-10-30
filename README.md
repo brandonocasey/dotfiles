@@ -212,8 +212,8 @@ to your host user so you can edit them back on the host:
   on Linux.
 - **macOS**: Docker Desktop maps ownership automatically — mismatches are masked.
 - **Linux server**: ownership is literal. Build the image there (or with
-  `--build-arg UID/GID`) so the baked user matches; the prebuilt GHCR image is
-  UID 1000 and only lines up cleanly if your server user is 1000.
+  `--build-arg UID/GID`) so the baked user matches. The image is built locally
+  and defaults to UID 1000.
 - The entrypoint `chown`s the mount root to the runtime user, so a root-created
   bind dir is still writable.
 
