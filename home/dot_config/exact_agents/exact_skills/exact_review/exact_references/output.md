@@ -12,7 +12,7 @@ posts by hand print per `host-preflight/references/copyable-output.md`.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No
    project codenames without a gloss.
 3. **One block per surviving finding**, most-severe first, each led by its label and, for a
-   `bug`, its severity, per the **Severity scale** in [setup.md](setup.md)'s reviewer prompt. Per block:
+   `bug`, its severity, per the severity scale in the `reviewer` role ([setup.md](setup.md)). Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).

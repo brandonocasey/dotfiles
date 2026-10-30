@@ -128,24 +128,15 @@ focus areas, or earlier findings. `<target>` is the user's target verbatim, foll
 line when there is none.
 
 ```text
-Review <target> for verified defects. Read-only: no edits, commits,
-cleanup, or sub-agents. Never read MR/PR comments, discussions, or threads.
-Never run `agt review` or `agt qa`. Review code only: run no tests, lint, builds,
-browsers, or the changed code.
+Review <target> for verified defects.
 Worktree: <path>
 Steps: follow <absolute path of reviewer-steps.md>, steps 0-2.
 Linked issue: <key, title, URL, and a few body lines>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
-Severity scale: `bug` (wrong behavior reachable in production), `question` (design
-choice worth confirming with the author), `requirement` (an explicit repository
-rule violation), or `nit` (optional style feedback, only when requested). Give each
-`bug` a severity: `high` (data loss, security hole, crash, or a broken main path),
-`medium` (wrong result on a common path), or `low` (rare edge case or minor effect).
-Return raw data: file, line, severity, `pre-existing` when marked, failure scenario,
-evidence, and any runtime check that would confirm it. End with `Risk: low|medium|high - <one-line reason>`.
 ```
 
-[output.md](output.md) uses this scale. The main session converts
+The `reviewer` role sets the severity scale, return format, and read-only limits;
+[output.md](output.md) uses the scale. The main session converts
 the returned prose to `pass end --findings` JSON per [store.md](store.md).
 
 ## Record
