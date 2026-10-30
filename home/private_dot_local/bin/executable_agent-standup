@@ -1,17 +1,11 @@
 #!/bin/bash
-# Saves an end-of-day standup, built from today's Claude sessions, to the slackbots dashboard.
-# launchd runs it at 17:00 on weekdays.
-# Usage: agent-standup [--print]   (--print writes the standup to stdout instead of saving it)
+# Prints an end-of-day standup built from today's Claude sessions. Run it by hand.
+# Usage: agent-standup
 
 SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
 MODEL=${AGENT_STANDUP_MODEL:-opus}
-GROUP_ID=${AGENT_STANDUP_GROUP:-publishers}
-PROJECT_ID=${AGENT_STANDUP_PROJECT_ID:-27}
-STATUS=${AGENT_STANDUP_STATUS:-green}
 
 STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/agents/standup
-# The dashboard URL stays out of the public dotfiles: set AGENT_STANDUP_API or put it in $STATE_DIR/api.
-API=${AGENT_STANDUP_API:-$(cat "$STATE_DIR/api" 2>/dev/null)}
 # Claude runs from here so its own sessions are easy to exclude from the digest.
 RUN_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/agents/standup
 TODAY=$(date +%F)
@@ -127,71 +121,8 @@ intro="The input is a digest of today's work: the user's prompts and final repli
 standup=$(echo "$digest" | ask_claude "$read_tools" "$intro. Print only the standup; send it nowhere.
 $sources
 $format")
-if [ "$1" = --print ]; then
-    printf '%s\n' "$standup"
-    exit
-fi
 if [ -z "$(printf %s "$standup" | tr -d '[:space:]')" ]; then
-    log "claude returned no standup; nothing saved"
+    log "claude returned no standup"
     exit 1
 fi
-if [ -z "$API" ]; then
-    log "no dashboard URL (AGENT_STANDUP_API or $STATE_DIR/api); nothing saved"
-    exit 1
-fi
-
-# Same rule as the dashboard's defaultStandupDate: after 14:00 Eastern the standup is for the next weekday.
-standup_date() {
-    local hour day
-    hour=$(TZ=America/New_York date +%H)
-    day=$(TZ=America/New_York date +%F)
-    if [ "$((10#$hour))" -ge 14 ] || [ "$(TZ=America/New_York date +%u)" -ge 6 ]; then
-        day=$(TZ=America/New_York date -j -v+1d -f %F "$day" +%F)
-    fi
-    while [ "$(TZ=America/New_York date -j -f %F "$day" +%u)" -ge 6 ]; do
-        day=$(TZ=America/New_York date -j -v+1d -f %F "$day" +%F)
-    done
-    echo "$day"
-}
-
-save_standup() {
-    jq -n --arg slack_id "$SLACK_USER" --arg date "$1" --arg group_id "$GROUP_ID" \
-        --argjson project_id "$PROJECT_ID" --arg status "$STATUS" --arg update_text "$2" \
-        '{slack_id: $slack_id, date: $date, group_id: $group_id, project_id: $project_id, status: $status, update_text: $update_text}' |
-        curl -sS -m 60 --retry 2 -X POST -H 'Content-Type: application/json' --data @- "$API/api/standups" 2>>"$LOG"
-}
-
-date_for=$(standup_date)
-# A save for a date that has this user's row would overwrite what they wrote by hand.
-existing=$(curl -sS -m 30 --retry 2 "$API/api/standups/$date_for" 2>>"$LOG" |
-    jq -r --arg id "$SLACK_USER" '[.standups[]? | select(.slack_id == $id)] | length')
-if [ "$existing" != 0 ]; then
-    log "standup for $date_for already exists (or the check failed: '$existing'); nothing saved"
-    exit 0
-fi
-
-saved=$(save_standup "$date_for" "$standup")
-if ! printf %s "$saved" | jq -e '.standup' >/dev/null 2>&1; then
-    log "save failed: $(printf %s "$saved" | head -c 300)"
-    exit 1
-fi
-log "standup saved for $date_for"
-
-# The labeller scores the row after the save; once it has, add the user's own split.
-name=$(printf %s "$saved" | jq -r '.standup.user_name')
-weights=
-for _ in 1 2 3 4 5 6; do
-    sleep 10
-    weights=$(curl -sS -m 90 "$API/api/work-split?start=$date_for&end=$date_for&all_groups=true" 2>>"$LOG" |
-        jq -r --arg name "$name" '[.standups[]? | select(.user_name == $name)][0].weights // empty
-            | "Planned \((.roadmap // 0) * 100 | round)% · Reactive \((.reactive // 0) * 100 | round)%"')
-    [ -n "$weights" ] && break
-done
-if [ -z "$weights" ]; then
-    log "no work split yet for $date_for; standup saved without it"
-    exit 0
-fi
-saved=$(save_standup "$date_for" "$standup
-_work split (you)_
-• $weights")
-printf %s "$saved" | jq -e '.standup' >/dev/null 2>&1 && log "work split added: $weights" || log "adding work split failed"
+printf '%s\n' "$standup"
