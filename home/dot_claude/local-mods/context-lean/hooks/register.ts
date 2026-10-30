@@ -38,7 +38,7 @@ const NOTE = `${RULE}\n\n`
 const ARTIFACT_ENTRY = /^Artifact: .*$/m
 const HINT = `\n\nNot in the deferred tools list but loadable with select:<name>: ${[...RARE_TOOLS].join(', ')}. Load one before calling it.`
 const CONNECTOR = /^mcp__claude_ai_(.+?)__/
-const CONNECTOR_ANYWHERE = /mcp__claude_ai_([A-Za-z0-9_-]+?)__/g
+const SERVER_ANYWHERE = /mcp__(claude_ai_)?([A-Za-z0-9_-]+?)__/g
 // Any MCP server's tool, local or connector, for hiding names in the deferred-tools list.
 const MCP_SERVER = /^mcp__(?:claude_ai_)?(.+?)__/
 const LOCAL_SERVER = /^mcp__(.+?)__/
@@ -76,6 +76,15 @@ const isUpcoming = (label: string) => label.endsWith(NAMES) || label.endsWith(SE
 const SERVER_NAME = /^[a-z0-9][a-z0-9_.-]*$/
 
 const connectorOf = (tool: string) => CONNECTOR.exec(tool)?.[1]
+// Local MCP servers whose tools stay in the prompt: the desktop app's own `ccd_*` servers carry its task list and
+// wrap-up. Every other local server is deferred like a connector, and so are its server notes, once its tools have been
+// seen in this or an earlier session.
+const KEPT_LOADED = /^ccd_/
+const deferredLocalOf = (tool: string) => {
+  const server = connectorOf(tool) === undefined ? LOCAL_SERVER.exec(tool)?.[1] : undefined
+
+  return server === undefined || KEPT_LOADED.test(server) ? undefined : server
+}
 // The engine's sort puts names of only ASCII characters before all others.
 const isAscii = (name: string) => [...name].every(char => char.charCodeAt(0) < 128)
 // Matches how Claude Code turns a server name into the server part of its tool names.
@@ -360,24 +369,41 @@ const hideInstructions = (text: string, agent: string) => {
   }
   // A "## " line inside a local server's notes that does not look like a server continues that server's notes.
   let local: string | undefined
+  // The current local server's notes: its key, its report label, and whether they stay in the prompt.
+  let localKey = ''
+  let localLabel = ''
+  let localKeep = true
   const split = splitSections(notes)
   const sections = split.sections.filter((section, index) => {
     const first = section.split('\n', 1)[0] ?? ''
     const name = HEADING.exec(first)?.[1]
     if (name === undefined) {
-      // A local server's notes stay in the prompt, so the report counts them as sent.
       const heading = SUBHEADING.exec(first)?.[1]
       if (heading === undefined) return true
       if (local === undefined || isLocalHeading(heading)) {
         local = heading
-        record(kept, `${local}${SERVER_NOTES}`, serverKey(local), section)
+        localKey = serverKey(heading)
+        // Only a server seen in tool names, whose tools are deferred, has its notes sent later. A "## " line that only
+        // looks like a server stays shown, so a wrong guess costs tokens, never instructions.
+        const deferred = localServers.has(localKey) && !KEPT_LOADED.test(localKey)
+        localLabel = deferred ? `${shown(localKey)}${SERVER_NOTES}` : `${local}${SERVER_NOTES}`
+        const hash = `${agent}:${hashOf(`${localKey}\n${section}`)}`
+        localKeep = !deferred || NOTES.has(localKey) || (used.has(`${agent}:${localKey}`) && !seen.has(hash))
+        record(localKeep ? kept : hidden, localLabel, localKey, section)
+        if (deferred && localKeep) sent.add(`${agent}:${localKey}`)
+        else if (deferred) {
+          seen.add(hash)
+          kept.get(localLabel)?.texts.delete(localKey)
+          if (kept.get(localLabel)?.texts.size === 0) kept.delete(localLabel)
+        }
       } else {
-        const label = `${local}${SERVER_NOTES}`
-        const text = kept.get(label)?.texts.get(serverKey(local))
-        record(kept, label, serverKey(local), text === undefined ? section : `${text}\n${section}`)
+        // A sub-heading inside the server's notes goes where the server's notes went.
+        const rows = localKeep ? kept : hidden
+        const text = rows.get(localLabel)?.texts.get(localKey)
+        record(rows, localLabel, localKey, text === undefined ? section : `${text}\n${section}`)
       }
 
-      return true
+      return localKeep
     }
     local = undefined
     const server = connectorKey(name)
@@ -648,9 +674,10 @@ export const register: Register = on => {
     return h(Box, { flexDirection: 'column' }, await next(e), h(Box, { marginTop: 1 }, tree)) as RenderElement
   })
 
-  // Sends a hidden connector's server notes with the first ToolSearch result or tool call that uses it.
+  // Sends a hidden server's notes with the first ToolSearch result or tool call that uses it.
   on('tool.call', async ($, e, next) => {
-    if (e.tool !== 'ToolSearch' && connectorOf(e.tool) === undefined) return next(e)
+    const called = connectorOf(e.tool) ?? deferredLocalOf(e.tool)
+    if (e.tool !== 'ToolSearch' && called === undefined) return next(e)
     // Without ToolSearch the notes were never hidden, so sending them here would repeat them.
     if (!(await hasToolSearch($))) return next(e)
     const ran = await next(e)
@@ -658,7 +685,11 @@ export const register: Register = on => {
     await load($)
     const agent = e.agentId ?? 'main'
     // Only ToolSearch results load tools. Other results can be large and can name tools in untrusted text.
-    const servers = new Set(e.tool === 'ToolSearch' ? [...mentions(ran.result).matchAll(CONNECTOR_ANYWHERE)].map(match => match[1]) : [connectorOf(e.tool)!])
+    const servers = new Set(
+      e.tool === 'ToolSearch'
+        ? [...mentions(ran.result).matchAll(SERVER_ANYWHERE)].filter(([, connector, server]) => connector !== undefined || !KEPT_LOADED.test(server)).map(match => match[2])
+        : [called!],
+    )
     const fresh = [...servers].filter(server => !used.has(`${agent}:${server}`))
     for (const server of fresh) used.add(`${agent}:${server}`)
     const notes = [...servers].flatMap(server => {
@@ -666,7 +697,7 @@ export const register: Register = on => {
       if (text === undefined || sent.has(`${agent}:${server}`)) return []
       sent.add(`${agent}:${server}`)
 
-      return [`Server notes for this connector, sent now that its tools are in use:\n${text}`]
+      return [`Server notes for this server, sent now that its tools are in use:\n${text}`]
     })
     if (fresh.length > 0 || notes.length > 0) save($)
     if (notes.length === 0) return ran
@@ -682,7 +713,7 @@ export const register: Register = on => {
 
   on('tool.describe', async ($, e, next) => {
     noteLocalServer(e.tool)
-    const server = connectorOf(e.tool)
+    const server = connectorOf(e.tool) ?? deferredLocalOf(e.tool)
     // Built-in tools as last described, and whether they are deferred, for the report's System tools section.
     const builtIn = !e.tool.startsWith('mcp__')
     if (builtIn) builtInTools.set(e.tool, e.isDeferred === true)

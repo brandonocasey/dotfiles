@@ -34,10 +34,20 @@ test('defers rare built-ins and connector tools without a note', async ($, on) =
 test('leaves other tools alone', async ($, on) => {
   on('tool.describe', ($, e) => ({ description: e.description }))
 
-  for (const tool of ['Bash', 'Read', 'mcp__chrome-devtools__click']) {
+  for (const tool of ['Bash', 'Read', 'mcp__ccd_session__start_session', 'mcp__ccd_turn__wrap_up']) {
     const result = await $.tool.describe({ tool, description: 'run', provider: ENGINE })
     expect(result.isDeferred).toBeUndefined()
     expect(result.description).toBe('run')
+  }
+})
+
+test('defers local MCP server tools except the app ccd servers', async ($, on) => {
+  on('tool.describe', ($, e) => ({ description: e.description }))
+
+  for (const tool of ['mcp__chrome-devtools__click', 'mcp__Claude_Browser__navigate', 'mcp__Claude_Code_iOS_Simulator__control', 'mcp__visualize__show_widget', 'mcp__1a59c906-04da-521d-bda7-7f71b9f9e01c__batch']) {
+    const result = await $.tool.describe({ tool, description: 'text', provider: ENGINE })
+    expect(result.isDeferred).toBe(true)
+    expect(result.description).toBe('text')
   }
 })
 
@@ -769,6 +779,54 @@ test('keeps a local server shown that sorts between ASCII and non-ASCII connecto
   const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
   expect(result.text).toContain('## playwright\nOpen a page first.')
   expect(result.text).not.toContain('Use JQL.')
+})
+
+const LOCAL_NOTES = '# MCP Server Instructions\n\n## Claude_Browser\nRead pages as text.\n\n## ccd_session\nKeep the task list.\n\n## claude.ai Datadog\nUse log queries.'
+
+test('hides a known local server notes and sends them with its first ToolSearch result, but never a ccd server', async ($, on) => {
+  on('tool.describe', ($, e) => ({ description: e.description }))
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => searchResult(['mcp__Claude_Browser__navigate', 'mcp__ccd_session__start_session']))
+
+  await $.tool.describe({ tool: 'mcp__Claude_Browser__navigate', description: 'go', provider: ENGINE })
+  await $.tool.describe({ tool: 'mcp__ccd_session__start_session', description: 'start', provider: ENGINE })
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text: LOCAL_NOTES })
+  expect(result.text).not.toContain('Read pages as text.')
+  expect(result.text).not.toContain('Use log queries.')
+  expect(result.text).toContain('## ccd_session\nKeep the task list.')
+
+  const search = await $.tool.call({ tool: 'ToolSearch', input: { query: 'browser' }, tool_use_id: 'l' })
+  const context = (search.context ?? []).join('\n')
+  expect(context).toContain('Read pages as text.')
+  expect(context).not.toContain('Keep the task list.')
+
+  const again = await $.tool.call({ tool: 'ToolSearch', input: { query: 'browser' }, tool_use_id: 'm' })
+  expect(again.context ?? []).toEqual([])
+})
+
+test('keeps a local server notes whole, sub-headings included, until it is known', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '# MCP Server Instructions\n\n## Claude_Browser\nRead pages as text.\n\n## Tabs\nOpen tabs in the background.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toContain('Read pages as text.')
+  expect(result.text).toContain('Open tabs in the background.')
+})
+
+test('hides a known local server sub-headings with it and sends them together', async ($, on) => {
+  on('tool.describe', ($, e) => ({ description: e.description }))
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+  on('tool.call', () => searchResult(['mcp__Claude_Browser__navigate']))
+
+  await $.tool.describe({ tool: 'mcp__Claude_Browser__navigate', description: 'go', provider: ENGINE })
+  const text = '# MCP Server Instructions\n\n## Claude_Browser\nRead pages as text.\n\n## Tabs\nOpen tabs in the background.'
+  const result = await $.prompt.attachment({ type: 'mcp_instructions_delta', text })
+  expect(result.text).toBeNull()
+
+  const search = await $.tool.call({ tool: 'ToolSearch', input: { query: 'browser' }, tool_use_id: 'n' })
+  const context = (search.context ?? []).join('\n')
+  expect(context).toContain('Read pages as text.')
+  expect(context).toContain('Open tabs in the background.')
 })
 
 test('keeps old notes hidden when asked again after a reconnect changed them', async ($, on) => {
