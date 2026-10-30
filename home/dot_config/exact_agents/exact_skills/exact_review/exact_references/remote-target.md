@@ -60,11 +60,15 @@ that the platform is unsupported and stop before any mutation.
   Prefer the stable name below when its path is available; otherwise choose an
   unused name. Avoid extra names when safe reuse is possible.
 
+  Run it from `<main-checkout>`. It runs the repository's worktree hooks and,
+  with `--prepare`, installs dependencies. It reuses a clean detached checkout
+  already at `<head-sha>` and refuses one on a branch or at another commit.
+
   ```sh
-  git -C <main-checkout> worktree add --detach .worktrees/review-<number> <head-sha>
+  agt worktree create review-<number> --detach <head-sha> --prepare
   ```
 
-  Report whether the checkout was created or reused.
+  Report whether the checkout was created or reused (`reused` in its JSON).
 
 ## Linked MRs/PRs
 

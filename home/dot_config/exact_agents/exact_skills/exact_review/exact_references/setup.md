@@ -70,8 +70,8 @@ If the pinned diff is empty, report `empty` and stop.
   documented, fill the tester prompt's `Checks` with `none documented; choose relevant ones`
   and continue. Copy commands as written. When documented commands conflict, choose
   and list the choice.
-- `agt worktree create --prepare` installs dependencies in a new worktree. After
-  `git worktree add`, run `agt worktree prepare <worktree>` once. Reviewers and the tester never install there. In an existing checkout, install only when dependencies are
+- `agt worktree create --prepare` (also with `--detach`) installs dependencies in a new
+  worktree. After a plain `git worktree add`, run `agt worktree prepare <worktree>` once. Reviewers and the tester never install there. In an existing checkout, install only when dependencies are
   missing. Build only when the commands need it.
 - Run none of the commands. The tester runs them ([testing.md](testing.md)).
 
