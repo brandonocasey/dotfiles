@@ -1,6 +1,9 @@
 ## Testing
 
-Every review tests the target before the reviewer starts. A fresh `tester`
+A documentation, Markdown, or comment-only change (no test files) spawns no
+`tester`: the main session runs the repository's checks inline and records them.
+
+Every other review tests the target before the reviewer starts. A fresh `tester`
 sub-agent runs the repository's checks and the manual and UX cases in one pass.
 The main session tests itself only in the inline fallback below; it records the
 results with `agt qa`, as it records reviewer findings with `agt review`.

@@ -2,8 +2,9 @@
 
 - Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
   beside it found nothing extra. In a real-bug A/B test, Sonnet `xhigh` alone
-  caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only `low`
-  risk tiers and fresh fix checks, to save cost.
+  caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only setup's
+  `sonnet` mode (`low` tier, or `medium` under 80 changed lines) and fresh fix
+  checks, to save cost. Opus keeps `high` tier and larger `medium` changes.
 - The review skill's step 0–2 owns `--agents` and per-target reviewer sets.
 
 An external tool's findings go through the same re-verification.
@@ -27,3 +28,11 @@ stalls or returns nothing, start one fresh reviewer, on another model when avail
 any fallback. If a reviewer could not access the target (missing auth, no checkout) or the
 retry also fails, fall back to running the review inline and note that the reviewer is not
 independent.
+
+## Inline mode
+
+Setup's `inline` mode (see setup.md **Risk tier**) skips the reviewer and the
+tester. The main session runs [reviewer-steps.md](reviewer-steps.md) steps 0–2 on
+the diff, runs the repository's checks itself, then re-verifies, records, and
+reports as for any review. Mark the report `inline review: not independent`.
+Any finding above `low`, or growth past the limits, reruns it as a normal review.

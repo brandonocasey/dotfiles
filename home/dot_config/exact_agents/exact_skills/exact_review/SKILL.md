@@ -51,8 +51,11 @@ later passes).
   reviewers only after its last retest.
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
-  per target. Otherwise the `sub-agents` skill sets model and effort; when the
-  current risk tier is `low`, pass `model: sonnet` (effort stays `xhigh`).
+  per target. Otherwise the `sub-agents` skill sets model and effort; when setup's
+  review mode is `sonnet`, pass `model: sonnet` (effort stays `xhigh`). Mode
+  `inline` starts no reviewer ([delegation.md](references/delegation.md)
+  **Inline mode**). If a `sonnet` reviewer returns `Risk: high` or a `high` bug
+  survives verification, rerun once with the default model.
 - On `skip` (setup.md owns the test),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
   Setup stops before checks; clean up any worktree it reports per
