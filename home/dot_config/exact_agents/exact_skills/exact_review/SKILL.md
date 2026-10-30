@@ -53,9 +53,7 @@ later passes).
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when setup's
   review mode is `haiku` or `sonnet`, pass `model: haiku` or `model: sonnet` (effort
-  stays `xhigh`). Mode `inline` starts no reviewer
-  ([delegation.md](references/delegation.md) **Inline mode**). If a `haiku` or
-  `sonnet` reviewer returns `Risk: high` or a `high` bug
+  stays `xhigh`). If a `haiku` or `sonnet` reviewer returns `Risk: high` or a `high` bug
   survives verification, rerun once with the default model.
 - On `skip` (setup.md owns the test),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.

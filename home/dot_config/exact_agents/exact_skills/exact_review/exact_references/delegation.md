@@ -34,10 +34,3 @@ any fallback. If a reviewer could not access the target (missing auth, no checko
 retry also fails, fall back to running the review inline and note that the reviewer is not
 independent.
 
-## Inline mode
-
-Setup's `inline` mode (see setup.md **Risk tier**) skips the reviewer and the
-tester. The main session runs [reviewer-steps.md](reviewer-steps.md) steps 0–2 on
-the diff, runs the repository's checks itself, then re-verifies, records, and
-reports as for any review. Mark the report `inline review: not independent`.
-Any finding above `low`, or growth past the limits, reruns it as a normal review.
