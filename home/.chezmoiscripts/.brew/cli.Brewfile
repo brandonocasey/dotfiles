@@ -42,6 +42,8 @@ brew 'shellcheck'
 brew 'gitleaks'
 # shell formatter to pair with shellcheck
 brew 'shfmt'
+# prompt spellcheck in Claude Code; unlike hunspell it ships an English dictionary
+brew 'aspell'
 brew 'pass'
 
 brew 'tealdeer'
