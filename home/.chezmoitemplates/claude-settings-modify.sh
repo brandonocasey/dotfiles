@@ -188,7 +188,14 @@ managed=$(
     "artifact-capabilities": "user-invocable-only",
     "update-config": "name-only",
     "init": "user-invocable-only",
-    "security-review": "user-invocable-only"
+    "security-review": "user-invocable-only",
+    "jenkins": "name-only",
+    "jira-versions": "name-only",
+    "real-safari": "name-only",
+    "write-docs": "name-only",
+    "anthropic-skills:setup-claude": "name-only",
+    "anthropic-skills:consolidate-memory": "name-only",
+    "anthropic-skills:explain-usage": "name-only"
   },
   "hooks": {
     "UserPromptSubmit": [
