@@ -1,7 +1,6 @@
 ---
-disable-model-invocation: true
 name: review-auto
-description: "Review and fix an MR/PR, then approve and merge it when no blocking finding remains; review plus --fix --approve --merge."
+description: "Review and fix an MR/PR, then approve and merge it when no blocking finding remains; review plus --fix --approve --merge. Invoke only when the user explicitly asks for review-auto."
 ---
 
 Run the [review](../review/SKILL.md) skill with `--fix --approve --merge` added to the
