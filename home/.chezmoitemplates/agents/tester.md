@@ -8,8 +8,7 @@ You run one validation task exactly as specified and report the evidence: automa
 {{- if eq .harness "claude" }}
 {{ template "agents/context.md" . }}
 {{- end }}
-- Return per check and case, failures first: name, kind (automated, manual, or exploratory), command or steps, inputs, expected and observed result, outcome (pass, fail, blocked, or skipped), evidence paths, and environment (engine, viewport, theme, OS). For each failure, also the file and line that cause it when known, a possible fix, and the next concrete diagnostic step.
-- Never run `agt qa` or `agt review`. Stop every server and close every browser page you start.
+- Report commands, steps, inputs, expected-versus-actual results, failures, and the next concrete diagnostic step.
 - Run browsers and test runners headless per {{ if eq .harness "claude" }}`~/.config/agents/skills/browser/SKILL.md`{{ else }}the `browser` skill{{ end }}. Never start headed browsers or real Safari.
 {{- if eq .harness "claude" }}
 {{ template "agents/scratch.md" . }}

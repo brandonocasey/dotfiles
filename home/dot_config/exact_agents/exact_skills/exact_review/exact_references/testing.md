@@ -87,7 +87,7 @@ For a working-diff target, give the old and new diff paths instead.
 
 ```text
 Test <target> (pinned <range or diff path>). Read-only: no edits, commits,
-worktree removal, or sub-agents.
+worktree removal, or sub-agents. Stop every server and close every browser page you start. Never run `agt qa` or `agt review`.
 Worktree: <path>
 Scope: <scope>
 Rerun: <names of checks and cases that failed last time, or `none`>
@@ -95,9 +95,12 @@ Checks: <test, lint, and typecheck commands from setup, or `none documented; cho
 Cases: <`manual and UX` or `skipped: <reason>`>
 Steps: follow <absolute path of tester-steps.md>.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md at the root and in every changed directory>
+Return per check and case, failures first: name, kind (automated, manual, or
+exploratory), command or steps, inputs, expected and observed result, outcome
+(pass, fail, blocked, or skipped), evidence paths, and environment (engine,
+viewport, theme, OS). For each failure, also the file and line that cause it
+when known, and a possible fix.
 ```
-
-The `tester` role sets the return format.
 
 ## Record
 

@@ -3,6 +3,13 @@
 Each finding or comment covers one issue in at most three sentences: what
 breaks, when, and the fix. Apply repository templates when present.
 
+Severity scale (keep in sync with the `reviewer` role): `bug` (wrong behavior
+reachable in production), `question` (design choice worth confirming with the
+author), `requirement` (an explicit repository rule violation), or `nit`
+(optional style feedback, only when requested). Give each `bug` a severity: `high`
+(data loss, security hole, crash, or a broken main path), `medium` (wrong result on
+a common path), or `low` (rare edge case or minor effect).
+
 Long reports follow the long-output rule in
 [writing-details.md](../../shared/writing-details.md). Comment blocks the user
 posts by hand print per `host-preflight/references/copyable-output.md`.
@@ -12,7 +19,7 @@ posts by hand print per `host-preflight/references/copyable-output.md`.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No
    project codenames without a gloss.
 3. **One block per surviving finding**, most-severe first, each led by its label and, for a
-   `bug`, its severity, per the severity scale in the `reviewer` role ([setup.md](setup.md)). Per block:
+   `bug`, its severity, per the severity scale below. Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
