@@ -54,7 +54,7 @@ preview prototype (**Scope**).
 - During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
   Check `agt review status` first, so a rebase alone triggers no second review.
-- Setup picks the review mode (`inline`, `sonnet`, or `opus`; setup.md **Risk
+- Setup picks the review mode (`inline`, `haiku`, `sonnet`, or `opus`; setup.md **Risk
   tier**). An `inline` review is an end-point review like any other, run by the
   main session.
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,

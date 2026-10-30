@@ -3,8 +3,13 @@
 - Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
   beside it found nothing extra. In a real-bug A/B test, Sonnet `xhigh` alone
   caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only setup's
-  `sonnet` mode (`low` tier, or `medium` under 80 changed lines) and fresh fix
-  checks, to save cost. Opus keeps `high` tier and larger `medium` changes.
+  `sonnet` mode (`medium` under 80 changed lines) and fresh fix checks, to save
+  cost. Replay of 12 `low`-tier commits (11 docs-only): Haiku `xhigh` raised 55
+  findings, 43 valid (29 matched Opus, 14 of 26 extras confirmed); Sonnet `xhigh`
+  raised 42, about 35 valid, at 6× the cost. So setup's `haiku` mode takes the
+  `low` tier. On mixed changes both missed most of Opus's fixed findings (Haiku
+  0 of 13 medium/high, Sonnet `xhigh` 3 of 13). Opus keeps `high` tier and larger
+  `medium` changes.
 - The review skill's step 0–2 owns `--agents` and per-target reviewer sets.
 
 An external tool's findings go through the same re-verification.
