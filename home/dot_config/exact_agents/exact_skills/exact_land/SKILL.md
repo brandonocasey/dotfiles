@@ -1,5 +1,4 @@
 ---
-model: claude-sonnet-5-5
 effort: medium
 name: land
 description: "On request, commit and fast-forward into the local default branch, then clean up; never fetch or push."

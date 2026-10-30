@@ -1,5 +1,4 @@
 ---
-model: claude-sonnet-5-5
 effort: medium
 name: jira-versions
 description: "Manage Jira fix-version lifecycle and ticket or MR/PR release assignments."

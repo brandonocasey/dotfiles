@@ -1,5 +1,4 @@
 ---
-model: claude-sonnet-5-5
 effort: medium
 disable-model-invocation: true
 name: disk-cleanup
