@@ -4,6 +4,8 @@ description: "Create, reuse, or remove isolated Git worktrees before branch work
 ---
 
 Do branch work in a worktree. Never switch branches in the main checkout.
+An initial implementation (a new project with no repo yet) needs no worktree, only a
+creation location: use the one the user gave, else ask. Use a worktree once the repo exists.
 `<main-checkout>` below is the first `worktree` entry of
 `git worktree list --porcelain`. It is not `land`'s `MAIN_WT`, which can be
 unset when the target branch is checked out nowhere.
