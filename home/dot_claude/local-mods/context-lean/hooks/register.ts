@@ -6,6 +6,9 @@ const ARTIFACT_TOOLS = new Set(['Artifact', 'ArtifactComments', 'ArtifactData', 
 const RARE_TOOLS = new Set(['ScheduleWakeup', 'SendFeedback', 'ReportFindings', 'ListAgents', 'AskUserQuestion', 'Workflow', 'ShareOnboardingGuide', 'Agent', 'Skill'])
 // The skill listing still names every skill, so it says how to load the deferred Skill tool.
 const SKILL_NOTE = 'The Skill tool is deferred: load it with ToolSearch select:Skill before invoking a skill.\n\n'
+// Skills the app adds as `anthropic-skills:<name>` ignore skillOverrides, so their listing lines lose the description
+// here and keep the name, as `name-only` does. Add other prefixes to the group to trim them too.
+const SKILL_DESCRIBED = /^- (anthropic-skills:[^\s:]+): .+$/gm
 // Built-in agents whose long descriptions are replaced with one line in the agent listing. Matched by name, so a
 // custom agent that reuses one of these names gets the built-in summary too.
 const AGENT_SUMMARIES: Record<string, string> = {
@@ -814,9 +817,11 @@ export const register: Register = on => {
 
   on('prompt.attachment', { type: 'skill_listing' }, async ($, e, next) => {
     const { text } = await next(e)
-    if (text === null || text.startsWith(SKILL_NOTE) || !(await hasToolSearch($))) return { text }
+    if (text === null) return { text }
+    const short = text.replace(SKILL_DESCRIBED, '- $1')
+    if (text.startsWith(SKILL_NOTE) || !(await hasToolSearch($))) return { text: short }
 
-    return { text: SKILL_NOTE + text }
+    return { text: SKILL_NOTE + short }
   })
 
   on('prompt.attachment', { type: 'mcp_instructions_delta' }, async ($, e, next) => {

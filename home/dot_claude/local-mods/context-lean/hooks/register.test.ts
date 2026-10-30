@@ -491,6 +491,19 @@ test('defers the Skill tool and says how to load it in the skill listing', async
   expect(listing.text).toBe('The Skill tool is deferred: load it with ToolSearch select:Skill before invoking a skill.\n\n- commit: Create commits.')
 })
 
+test('lists anthropic-skills by name only and leaves other skills described', async ($, on) => {
+  on('prompt.attachment', ($, e) => ({ text: e.text }))
+
+  const text = '- commit: Create commits.\n- anthropic-skills:docx: Use this skill whenever the user wants Word documents.\n- device-test\n- anthropic-skills:pdf: Anything with PDF files.'
+  const listing = await $.prompt.attachment({ type: 'skill_listing', text })
+  expect(listing.text).toContain('- commit: Create commits.')
+  expect(listing.text).toContain('- anthropic-skills:docx\n')
+  expect(listing.text).toContain('- device-test\n')
+  expect(listing.text).toMatch(/- anthropic-skills:pdf$/)
+  expect(listing.text).not.toContain('Word documents')
+  expect(listing.text).not.toContain('PDF files')
+})
+
 test('reports only notes kept in the prompt on the MCP row, until their server disconnects', async ($, on) => {
   const local = '## chrome-devtools\nUse it.\n## Usage\nTips.'
   on('prompt.attachment', ($, e) => ({ text: e.text }))
