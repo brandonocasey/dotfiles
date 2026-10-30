@@ -31,7 +31,9 @@ moving commits unless the user asks.
 - Run the **Commit gate** from `shared/git-flow.md`, except its final clean-tree
   check: nothing moves on this path.
 - If the tree is already clean, say so plainly and stop.
-- Skip steps 2–5 (tests, rebase, ff-merge, cleanup).
+- Run step 2 (tests and manual check) and the review bullet of step 3 on the new
+  commits. `<TARGET>..<BRANCH>` is empty here, so review `review_from..HEAD` from
+  `agt review status`. Skip the rest of steps 3–5 (rebase, ff-merge, cleanup).
 - Report as step 6 describes, minus the branch/worktree lines: which commits were created (or
   that the tree was already clean) and the current `TARGET` tip. Still do not push.
 
@@ -49,6 +51,8 @@ Run the project's test suite before rebasing.
   or `test:ci`; without a `package.json`, fall back to common runners (`cargo test`,
   `go test ./...`, `pytest`, etc.).
 - Run the test command and capture its output.
+- Then run the **Manual check** of `shared/git-flow.md` on `<COMMIT_BASE>..HEAD`.
+  Land only with its `Checked:` line recorded.
 - If tests fail: fix the failures. Make the minimal changes needed to make tests pass, then commit
   the fix as a separate logical commit through the `commit` skill. Re-run tests to check that
   they pass before proceeding. If you cannot determine how to fix the failures, stop and ask
