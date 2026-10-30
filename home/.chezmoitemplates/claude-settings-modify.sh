@@ -16,6 +16,10 @@ managed=$(
     "commit": "",
     "pr": ""
   },
+  "spellcheck": {
+    "enabled": true
+  },
+  "awaySummaryEnabled": false,
   "permissions": {
     "allow": [
       "Edit",
