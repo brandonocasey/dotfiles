@@ -1,12 +1,17 @@
 #!/bin/bash
-# DMs an end-of-day standup built from today's Claude sessions.
+# Saves an end-of-day standup, built from today's Claude sessions, to the slackbots dashboard.
 # launchd runs it at 17:00 on weekdays.
-# Usage: agent-standup [--print]   (--print writes the standup to stdout instead)
+# Usage: agent-standup [--print]   (--print writes the standup to stdout instead of saving it)
 
 SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
 MODEL=${AGENT_STANDUP_MODEL:-opus}
+GROUP_ID=${AGENT_STANDUP_GROUP:-publishers}
+PROJECT_ID=${AGENT_STANDUP_PROJECT_ID:-27}
+STATUS=${AGENT_STANDUP_STATUS:-green}
 
 STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/agents/standup
+# The dashboard URL stays out of the public dotfiles: set AGENT_STANDUP_API or put it in $STATE_DIR/api.
+API=${AGENT_STANDUP_API:-$(cat "$STATE_DIR/api" 2>/dev/null)}
 # Claude runs from here so its own sessions are easy to exclude from the digest.
 RUN_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/agents/standup
 TODAY=$(date +%F)
@@ -116,18 +121,77 @@ if [ -z "$(printf %s "$digest" | tr -d '[:space:]')" ]; then
     exit 0
 fi
 
-format="Format exactly: '*Done*', '*Next*', '*Blocked*' sections, 3-12 bullets total, each bullet under 20 words. Inside each section, group bullets by project: a bold project label on its own line, such as '*hive*', then that project's bullets. A project is a repository: take its name from the session's 'project:' header or the MR URL path. Use the Jira project key for ticket-only work, and '*Other*' for work with no project or a 'none' project. Order projects by amount of work. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. Omit an empty section. No intro or outro."
+format="Format exactly: no sections, 3-12 bullets total, each bullet under 20 words and starting with '• \`TYPE\` ' (the type in backticks, so it shows as a badge), where TYPE is one of Planned, KTLO, or Reactive. Planned is committed roadmap work: features, planned tickets, and reviews of them. KTLO is keep-the-lights-on upkeep: releases, tooling, refactors, test and docs maintenance, dependency work. Reactive is unplanned work pulled in by a customer, an incident, or an urgent request. Pick one type per bullet. Put work still in progress or assigned and open in bullets of its own, starting 'Next:' after the type tag. Group bullets by project: an italic project label on its own line, such as '_hive_', then that project's bullets. A project is a repository: take its name from the session's 'project:' header or the MR URL path. Use the Jira project key for ticket-only work, and '_Other_' for work with no project or a 'none' project. Order projects by amount of work. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Never add a PUBS or SERV key to an MR bullet when the MR's title already contains that key; add one only when the title lacks it and the sessions tie the MR to that ticket.Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. No intro or outro."
 intro="The input is a digest of today's work: the user's prompts and final replies from Claude Code sessions, plus GitLab activity. Write a standup"
 
-if [ "$1" = --print ]; then
-    echo "$digest" | ask_claude "$read_tools" "$intro. Print only the standup; send it nowhere.
+standup=$(echo "$digest" | ask_claude "$read_tools" "$intro. Print only the standup; send it nowhere.
 $sources
-$format"
+$format")
+if [ "$1" = --print ]; then
+    printf '%s\n' "$standup"
     exit
 fi
+if [ -z "$(printf %s "$standup" | tr -d '[:space:]')" ]; then
+    log "claude returned no standup; nothing saved"
+    exit 1
+fi
+if [ -z "$API" ]; then
+    log "no dashboard URL (AGENT_STANDUP_API or $STATE_DIR/api); nothing saved"
+    exit 1
+fi
 
-echo "$digest" | ask_claude "$read_tools mcp__claude_ai_Slack__slack_send_message" \
-    "$intro and send it to Slack user $SLACK_USER as a DM (slack_send_message with channel_id $SLACK_USER).
-$sources
-$format" >/dev/null
-log "standup sent"
+# Same rule as the dashboard's defaultStandupDate: after 14:00 Eastern the standup is for the next weekday.
+standup_date() {
+    local hour day
+    hour=$(TZ=America/New_York date +%H)
+    day=$(TZ=America/New_York date +%F)
+    if [ "$((10#$hour))" -ge 14 ] || [ "$(TZ=America/New_York date +%u)" -ge 6 ]; then
+        day=$(TZ=America/New_York date -j -v+1d -f %F "$day" +%F)
+    fi
+    while [ "$(TZ=America/New_York date -j -f %F "$day" +%u)" -ge 6 ]; do
+        day=$(TZ=America/New_York date -j -v+1d -f %F "$day" +%F)
+    done
+    echo "$day"
+}
+
+save_standup() {
+    jq -n --arg slack_id "$SLACK_USER" --arg date "$1" --arg group_id "$GROUP_ID" \
+        --argjson project_id "$PROJECT_ID" --arg status "$STATUS" --arg update_text "$2" \
+        '{slack_id: $slack_id, date: $date, group_id: $group_id, project_id: $project_id, status: $status, update_text: $update_text}' |
+        curl -sS -m 60 --retry 2 -X POST -H 'Content-Type: application/json' --data @- "$API/api/standups" 2>>"$LOG"
+}
+
+date_for=$(standup_date)
+# A save for a date that has this user's row would overwrite what they wrote by hand.
+existing=$(curl -sS -m 30 --retry 2 "$API/api/standups/$date_for" 2>>"$LOG" |
+    jq -r --arg id "$SLACK_USER" '[.standups[]? | select(.slack_id == $id)] | length')
+if [ "$existing" != 0 ]; then
+    log "standup for $date_for already exists (or the check failed: '$existing'); nothing saved"
+    exit 0
+fi
+
+saved=$(save_standup "$date_for" "$standup")
+if ! printf %s "$saved" | jq -e '.standup' >/dev/null 2>&1; then
+    log "save failed: $(printf %s "$saved" | head -c 300)"
+    exit 1
+fi
+log "standup saved for $date_for"
+
+# The labeller scores the row after the save; once it has, add the user's own split.
+name=$(printf %s "$saved" | jq -r '.standup.user_name')
+weights=
+for _ in 1 2 3 4 5 6; do
+    sleep 10
+    weights=$(curl -sS -m 90 "$API/api/work-split?start=$date_for&end=$date_for&all_groups=true" 2>>"$LOG" |
+        jq -r --arg name "$name" '[.standups[]? | select(.user_name == $name)][0].weights // empty
+            | "Planned \((.roadmap // 0) * 100 | round)% · Reactive \((.reactive // 0) * 100 | round)%"')
+    [ -n "$weights" ] && break
+done
+if [ -z "$weights" ]; then
+    log "no work split yet for $date_for; standup saved without it"
+    exit 0
+fi
+saved=$(save_standup "$date_for" "$standup
+_work split (you)_
+• $weights")
+printf %s "$saved" | jq -e '.standup' >/dev/null 2>&1 && log "work split added: $weights" || log "adding work split failed"
