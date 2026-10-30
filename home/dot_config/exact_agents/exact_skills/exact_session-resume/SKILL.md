@@ -42,6 +42,7 @@ These session commands need `agt` 0.18.0 or newer. Follow [agt.md](../shared/agt
 For old context, run `agt sessions search` without `--query` to update the private incremental index and see scan
 coverage (Codex and Claude history, transcripts, archives, alternate profiles, plus unreadable
 or malformed files). After a deliberate rewrite deep inside a growing log, run `agt sessions search --rebuild`.
+When a search needs three or more turns to read, run it through a `cheap` agent. It writes raw results to scratch and returns session ids, offsets, and one-line context; read the sessions you pick yourself.
 
 Use `agt sessions search --session <id>` (no `--query`) to find an exact session. Use
 `agt sessions search --query <text> [--session <id>]` to search human turns. Each

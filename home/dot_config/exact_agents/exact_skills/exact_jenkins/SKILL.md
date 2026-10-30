@@ -32,5 +32,6 @@ Releasing a hive package: read [release.md](references/release.md).
 ## Rules
 
 - Read calls need no approval.
+- When a read replaces three or more turns (console logs, build histories), run it through a `cheap` agent. It writes raw output to scratch and returns the result, failing lines, and path.
 - Starting or stopping a build uses shared CI. Get user approval first,
   unless the user asked for that build.

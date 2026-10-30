@@ -14,6 +14,7 @@ description: "Create or edit documentation, one page at a time, using Diátaxis 
   page because it isn't finished.
 - Each paragraph covers one idea in at most four sentences. Apply
   [writing.md](../shared/writing.md) and repository templates.
+- Before the reader pass, check links, file paths, and command names on the changed pages through a `cheap` agent. It reports each broken one as `page:line` and edits nothing.
 - After writing or changing a tutorial or how-to, run a reader pass: a fresh `tester`
   given only the page paths, no diff or intent. Tell it to follow every step exactly
   without guessing or reading code, to work in a scratch directory with `HOME` set

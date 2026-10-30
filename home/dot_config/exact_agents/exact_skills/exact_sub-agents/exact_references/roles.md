@@ -23,16 +23,17 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, xhigh | gpt-6-luna, xhigh |
-| `explorer` | Locate usages and trace code paths; read-only | claude-sonnet-5-5, medium; pass `model: haiku` for usage lists | gpt-6.1-sol, low |
+| `explorer` | Locate usages and trace code paths; read-only | claude-haiku-5-5, xhigh; probe: matched Sonnet on usage lists and call traces; escalate to `worker` for judgement | gpt-6.1-sol, low |
 | `worker` | Design, debugging, implementation, orchestrated parts, research synthesis | claude-sonnet-5-5, medium; default sonnet. Pass `model: opus` only for a design decision with no written plan, or a root-cause hunt after a sonnet worker failed once. Never for review fixes, finishing a PR, CI edits, or commit splitting | gpt-6.1-sol, low |
 | `tester` | Run checks, manual cases, and UX checks; inspect failures and validate evidence; the `review` skill runs it before every review; changes no tracked files | claude-sonnet-5-5, medium | gpt-6.1-sol, low |
 | `consult` | Main-session escalation only; read-only | claude-fable-5-1, high | gpt-6-astra, xhigh |
-| `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh; the `review` skill passes `model: sonnet` for `low` risk tiers and fresh fix checks | gpt-6-astra, xhigh |
+| `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh; the `review` skill passes `model: haiku` for `low` risk tiers, and `model: sonnet` for small `medium` changes and fresh fix checks; both keep `xhigh` | gpt-6-astra, xhigh |
 
 Routing:
 
 - Use `cheap` for named commands with explicit pass/fail criteria (a named test, lint, or build run; request exit status and bounded output) and to find one named file, definition, string, or config value; tell it not to edit.
-- Use `explorer` to list usages, trace calls, or map affected files.
+- Use `cheap` for first-pass failure triage: it runs the named check and returns failing test names, error messages, and `file:line`. Diagnosis stays with `worker`. Probe: Haiku matched Sonnet on log triage.
+- Use `explorer` to list usages, trace calls, or map affected files; before editing from its list, confirm with one broader `rg`.
 - Main-session cost is per turn, so delegate when it replaces three or more turns: GitLab, Jira (`jira-api`), Jenkins, or Slack fetches to `cheap`; chained reads to understand code you will not edit, where each read depends on the last, to `explorer`. Claude Code `cheap` has read-only Slack tools; after the user consents to private search, tell it that private search is allowed.
 - Use `tester` for manual or UX checks, doc reader passes, and when choosing checks or interpreting failures needs judgment; `worker` for diagnosis and fixes. Escalate `cheap` or `explorer` work to `worker` when it needs judgement.
 - Independent review keeps its reviewer role. Do trivial commands inline when spawning costs more.

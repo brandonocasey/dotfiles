@@ -32,6 +32,7 @@ question. Never invent a key, project, status, or version.
 - Remote: `gh` for GitHub, `glab` for GitLab (`GITLAB_HOST` for self-hosted),
   `fj` or the Forgejo REST API for Forgejo. Other platforms: unsupported; stop
   before any write.
+- Run read-only tracker searches and lookups that take three or more turns through a `cheap` agent. Writes stay in the main session.
 - GitHub and GitLab issues: `agt issue` (0.18.0 or newer) when `agt --version`
   works and a tracker for the repo is in `$XDG_CONFIG_HOME/agt/config.toml`
   (`~/.config` when unset). See [agt.md](../shared/agt.md).

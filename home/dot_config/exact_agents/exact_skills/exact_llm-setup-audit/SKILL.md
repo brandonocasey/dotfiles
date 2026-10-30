@@ -95,6 +95,7 @@ One harness's setting does not control another.
 
 ## Checks for all targets
 
+- **Mechanical sweeps:** run the existence, orphan, parity, and byte-count checks below through a `cheap` agent that writes raw results to scratch. Judge and fix the findings yourself.
 - **References and claims:** check paths, files, steps, skill names, memory pointers, and harness claims on disk or in current documentation.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.
