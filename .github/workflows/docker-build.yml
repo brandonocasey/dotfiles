@@ -1,25 +1,12 @@
 name: Docker Image CI for GHCR
 on:
-  release:
-    types:
-      - published
   push:
     branches:
       - main
-  # Rebuild from scratch twice daily (06:00 / 18:00 UTC) so brew/apt packages,
-  # Claude/Codex/opencode, and nvim plugins are pulled fresh into a new image.
-  schedule:
-    - cron: "0 6,18 * * *"
   workflow_dispatch:
 
-env:
-  IMAGE: ghcr.io/${{ github.repository }}
-
-# amd64 only: the toolchain is Homebrew-based, and Homebrew is unsupported on
-# ARM64 Linux (no bottles), so an arm64 image ships empty. On Apple Silicon this
-# image runs fine under Docker Desktop's emulation.
+# The image is no longer built or published; this workflow only runs the tests.
 jobs:
-  # Regression tests run first; a failure stops the image from being published.
   test:
     runs-on: ubuntu-latest
     permissions:
@@ -43,48 +30,3 @@ jobs:
 
       - name: Node tests
         run: node --test home/dot_config/exact_agents/exact_skills/*/exact_test/*.test.*js
-
-  build_and_publish:
-    if: false
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
-
-      - uses: docker/setup-buildx-action@v4
-
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: linux/amd64
-          pull: true
-          push: true
-          provenance: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # Reuse layers across push/release builds via a registry cache stored as
-          # a :buildcache tag in GHCR. Registry (not GHA) cache because this image
-          # is large and mode=max would thrash GHA's 10GB/repo cap. image-manifest
-          # + oci-mediatypes are required for GHCR to accept the cache manifest.
-          # The twice-daily cron skips the import (no-cache) so brew/apt/agents are
-          # pulled fresh, but still exports the fresh layers to seed later builds.
-          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true
-          no-cache: ${{ github.event_name == 'schedule' }}
