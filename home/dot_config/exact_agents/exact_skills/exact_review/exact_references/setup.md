@@ -110,8 +110,6 @@ is unclear, choose the higher tier.
 Also report the changed-line count and a review mode, from the pinned diff:
 
 - `haiku`: tier `low`. Reviewer runs at `xhigh`.
-- `sonnet`: tier `medium` under 80 changed lines. Reviewer runs at `xhigh`. A `high`
-  tier never matches.
 - `opus`: everything else.
 
 A REVIEW.md at the root or in a changed directory may list `High risk:`, `Low risk:`,
@@ -141,5 +139,5 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 Keep for later steps and report in at most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each check command, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|sonnet|opus`.
+none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|opus`.
 Or report `empty` or the blocker, with any worktree you created.

@@ -52,8 +52,8 @@ later passes).
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when setup's
-  review mode is `haiku` or `sonnet`, pass `model: haiku` or `model: sonnet` (effort
-  stays `xhigh`). If a `haiku` or `sonnet` reviewer returns `Risk: high` or a `high` bug
+  review mode is `haiku`, pass `model: haiku` (effort stays `xhigh`). If a `haiku`
+  reviewer returns `Risk: high` or a `high` bug
   survives verification, rerun once with the default model.
 - On `skip` (setup.md owns the test),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
