@@ -397,7 +397,7 @@ elapsed_awk='
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
 # per day of a window over a day long, else one per hour, whose last cell is
 # darker (fill faint, track 22 levels darker). Every bar is 63 cells, the most
-# that keeps the widest line ("23.9h", "100%", "+100%") within 80 columns:
+# that keeps the widest line ("23.9h", "100%", "▲100%") within 80 columns:
 # 7 days of 9 cells, or 5 hours of 12 or 13 split at the nearest cell. Cells are
 # "▇", which leaves the top eighth of the line blank so stacked bars don't
 # touch; full-height eighth glyphs would, so fill rounds to whole cells. The
@@ -406,8 +406,8 @@ elapsed_awk='
 # Each cell takes the zone of its middle; a full bar is all red. The track is
 # lighter grey up to where an even pace would put usage now (budget still free
 # at this pace), then dark grey, olive, or maroon by zone, so it shows how far
-# # ahead turns yellow or red right now. The gap is pace minus usage in points:
-# "+8%" while usage is under pace, "-12%" while over, "0%" grey on pace. The
+# # ahead turns yellow or red right now. The gap is usage minus pace in points:
+# "▲12%" while usage is over pace, "▼8%" while under, "0%" grey on pace. The
 # percentage and the gap take the colour of the bar's last filled cell.
 pace_gauge() {
   awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" \
@@ -451,7 +451,7 @@ pace_gauge() {
     d = p - pace
     d = d < 0 ? -int(-d + 0.5) : int(d + 0.5)
     # Fields are tab-separated so align_gauges can line up stacked gauges.
-    gap = d > 0 ? pre c "m-" d "%" : d < 0 ? pre c "m+" (-d) "%" : pre "38;5;245m0%"
+    gap = d > 0 ? pre c "m▲" d "%" : d < 0 ? pre c "m▼" (-d) "%" : pre "38;5;245m0%"
     printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
