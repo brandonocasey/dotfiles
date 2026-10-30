@@ -1,0 +1,47 @@
+#!/bin/sh
+# One iOS Simulator per worktree, so parallel worktrees never install over each other.
+#   ios-sim [path]     print the UDID of the simulator owned by the worktree at <path> (default .),
+#                      cloning it from the base device and booting it on first use
+#   ios-sim rm [path]  shut down and delete that worktree's simulator
+# The base device (default name "ios-base", override with IOS_SIM_BASE) must exist and be shut down:
+# it holds the shared setup (saved hosts, settings) that every clone starts from.
+set -eu
+
+die() { printf 'ios-sim: %s\n' "$*" >&2; exit 1; }
+
+remove=0
+if [ "${1:-}" = rm ]; then remove=1; shift; fi
+top=$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree: ${1:-.}"
+common=$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)
+repo=$(basename "$(dirname "$common")")
+branch=$(git -C "$top" branch --show-current)
+[ -n "$branch" ] || branch=$(basename "$top")
+name="wt-$repo-$(printf '%s' "$branch" | tr '/ ' '--')"
+base=${IOS_SIM_BASE:-ios-base}
+
+# Prints "<udid> <state>" for the device with exactly this name.
+lookup() {
+  xcrun simctl list devices available -j |
+    jq -r --arg n "$1" '[.devices[][] | select(.name == $n)][0] // empty | "\(.udid) \(.state)"'
+}
+
+found=$(lookup "$name")
+if [ "$remove" = 1 ]; then
+  [ -n "$found" ] || exit 0
+  udid=${found%% *}
+  xcrun simctl shutdown "$udid" 2>/dev/null || true
+  xcrun simctl delete "$udid"
+  exit 0
+fi
+
+if [ -z "$found" ]; then
+  src=$(lookup "$base")
+  [ -n "$src" ] || die "base simulator \"$base\" not found; clone a shut-down simulator to that name first"
+  [ "${src#* }" = Shutdown ] || die "base simulator \"$base\" must be shut down to clone it"
+  xcrun simctl clone "${src%% *}" "$name" >/dev/null
+  found=$(lookup "$name")
+fi
+
+udid=${found%% *}
+[ "${found#* }" = Booted ] || xcrun simctl boot "$udid" 2>/dev/null || true
+printf '%s\n' "$udid"

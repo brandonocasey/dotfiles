@@ -40,6 +40,18 @@ random free port, such as port 0. Never rely on a tool's default port:
 parallel sessions and worktrees share it. Pass the same port to every start
 command for the task.
 
+## iOS Simulator
+
+Each worktree owns one simulator; a shared one lets another worktree's install replace the app
+under test (same bundle ID). Before any simulator work, get its UDID:
+`sh ~/.config/agents/skills/host-preflight/scripts/ios-sim [worktree]`. It clones the shut-down
+base device `ios-base` on first use, boots the clone, and prints the UDID. Pass that UDID as
+`device` to every simulator tool call, and as `-destination "id=<udid>"` to `xcodebuild`, never
+`name=`. Attach the live panel to it too. Never install onto, boot, or shut down a simulator
+another worktree owns, and leave the user's own devices alone. If the script reports the base
+missing or booted, ask before shutting anything down. At cleanup, run `ios-sim rm [worktree]`
+before `agt worktree remove`.
+
 ## Cleanup
 
 Close task-owned MCP resources, stop servers and background processes, and free
