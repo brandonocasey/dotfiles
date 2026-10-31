@@ -46,8 +46,12 @@ Each worktree owns one simulator; a shared one lets another worktree's install r
 under test (same bundle ID). Before any simulator work, get its UDID:
 `sh ~/.config/agents/skills/host-preflight/scripts/ios-sim [worktree]`. It clones the shut-down
 base device `ios-base` on first use, boots the clone, and prints the UDID. Pass that UDID as
-`device` to every simulator tool call, and as `-destination "id=<udid>"` to `xcodebuild`, never
-`name=`. Attach the live panel to it too. Never install onto, boot, or shut down a simulator
+`-destination "id=<udid>"` to `xcodebuild`, never `name=`. Drive it from the shell, which needs no
+Claude Desktop consent: `xcrun simctl` (`install`, `launch`, `io <udid> screenshot`, `openurl`,
+`ui <udid> appearance`, `privacy`) and `idb` for input (`idb ui tap X Y`, `swipe X1 Y1 X2 Y2`,
+`text "..."`, `describe-all`, each with `--udid <udid>`; points, origin top-left). Use the
+simulator tool only when the user wants the live panel; its first use of each device asks the
+user, so pass the same UDID as `device` and attach only on request. Never install onto, boot, or shut down a simulator
 another worktree owns, and leave the user's own devices alone. If the script reports the base
 missing or booted, ask before shutting anything down. At cleanup, run `ios-sim rm [worktree]`
 before `agt worktree remove`.
