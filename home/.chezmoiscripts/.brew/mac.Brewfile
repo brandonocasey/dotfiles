@@ -25,6 +25,9 @@ if OS.mac?
   brew 'openjdk@17'
   # remote Web Inspector for Safari on iOS devices
   brew 'ios-webkit-debug-proxy'
+  # iOS Simulator input (tap, swipe, text); the idb client comes from mise (pipx:fb-idb)
+  tap 'facebook/fb'
+  brew 'idb-companion'
   cask 'balenaetcher'
   cask 'brave-browser'
   cask 'calibre'
