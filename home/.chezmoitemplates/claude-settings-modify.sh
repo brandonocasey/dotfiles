@@ -91,6 +91,8 @@ managed=$(
       "Bash(xcrun simctl *)",
       "Bash(idb ui *)",
       "Bash(sh ~/.config/agents/skills/host-preflight/scripts/ios-sim *)",
+      "Bash(sh ~/.config/agents/skills/host-preflight/scripts/android-emu *)",
+      "Bash(adb -s emulator-* *)",
       "Bash(systemctl --user list-timers *)",
       "Bash(claude --version)",
       "mcp__claude_ai_Atlassian_MCP__getJiraIssue",
