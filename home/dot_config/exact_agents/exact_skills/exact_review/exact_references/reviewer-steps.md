@@ -86,6 +86,13 @@ read the diff looking for things that seem off — attack it:
   code relies on: event order and timing, naming and normalization, lifecycle
   (restart, resume, reconnect, compaction, eviction), and retries. Check each one
   against the host's source, docs, types, or binary. Do not assume the happy path.
+- **Audit dependency updates.** When a manifest or lockfile changes a dependency's
+  version, most of the behavior change is upstream, outside the diff. Read the
+  release notes for every version in the range. Then diff the upstream source
+  between the two versions for config defaults, removed or renamed options, errors,
+  events, and retry or recovery paths. Check each change against how the code uses
+  the dependency, including defaults it leaves unset and overrides that now block a
+  new upstream path. Report each one that changes behavior on a supported path.
 - **Read the history.** Run `git log -L` or `git blame` on the changed hunks. Report a
   change that undoes an earlier fix or breaks the reason a line was added; cite that
   commit.
