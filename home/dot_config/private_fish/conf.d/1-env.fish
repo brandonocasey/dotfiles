@@ -166,6 +166,8 @@ end
 
 # XDG config location overrides
 set -gx ANDROID_USER_HOME "$XDG_DATA_HOME/android"
+set -gx ANDROID_HOME "$XDG_DATA_HOME/android/sdk"
+set -gx ANDROID_AVD_HOME "$XDG_DATA_HOME/android/avd"
 set -gx DOCKER_CONFIG "$XDG_CONFIG_HOME/docker"
 set -gx GNUPGHOME "$XDG_DATA_HOME/gnupg"
 if isatty stdin

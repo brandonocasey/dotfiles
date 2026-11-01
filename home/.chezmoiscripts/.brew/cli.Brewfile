@@ -106,6 +106,7 @@ end
 #   - gcc / docker-buildx: redundant in the container (apt provides cc and the
 #     buildx plugin); brew gcc is ~hundreds of MB
 #   - act: GitHub-Actions runner, not needed in the dev container
+#   - Android SDK tools: emulators do not run in the container
 unless ENV['HOMEBREW_RUNNING_IN_DOCKER'] == 'true'
   # keg-only (versioned formula) — installed but NOT auto-symlinked onto PATH as 'ffmpeg'
   brew 'ffmpeg-full'
@@ -115,4 +116,10 @@ unless ENV['HOMEBREW_RUNNING_IN_DOCKER'] == 'true'
   brew 'gcc'
   brew 'docker-buildx'
   brew 'act'
+
+  # Android: adb, then sdkmanager and avdmanager (they run on openjdk@17). The emulator
+  # and its system image come from sdkmanager (any-linux/run_onchange_after_09-android-sdk.sh.tmpl).
+  cask 'android-platform-tools'
+  cask 'android-commandlinetools'
+  brew 'openjdk@17'
 end

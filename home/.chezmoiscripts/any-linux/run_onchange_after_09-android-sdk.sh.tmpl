@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Installs the Android emulator, one system image, and the base AVD that android-emu clones per
+# worktree. sdkmanager and avdmanager come from the Brewfile. Reruns when this file changes, so
+# bump API below to move to a newer image. Skipped in the container image (no emulator there).
+set -euo pipefail
+
+API=36
+
+[ "${RUNNING_IN_DOCKER:-}" = true ] && exit 0
+
+. "$CHEZMOI_SOURCE_DIR/.chezmoiscripts/.brew/brew-env.sh"
+
+export ANDROID_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/android/sdk"
+export ANDROID_USER_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/android"
+export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
+JAVA_HOME="$(brew --prefix openjdk@17 2>/dev/null)" || {
+  echo "openjdk@17 is not installed; skipping the Android SDK setup" >&2
+  exit 0
+}
+export JAVA_HOME PATH="$JAVA_HOME/bin:$PATH"
+command -v sdkmanager >/dev/null || {
+  echo "sdkmanager is not installed; skipping the Android SDK setup" >&2
+  exit 0
+}
+
+case "$(uname -m)" in
+arm64 | aarch64) abi=arm64-v8a ;;
+*) abi=x86_64 ;;
+esac
+image="system-images;android-$API;google_apis;$abi"
+
+mkdir -p "$ANDROID_HOME"
+# The emulator rejects an SDK root without platform-tools. Link the cask's copy, so adb stays one
+# version; android-emu refreshes the link after a cask upgrade.
+command -v adb >/dev/null || {
+  echo "adb is not installed; skipping the Android SDK setup" >&2
+  exit 0
+}
+ln -sfn "$(dirname "$(readlink -f "$(command -v adb)")")" "$ANDROID_HOME/platform-tools"
+# Accepts the Android SDK licenses, which the emulator and system image require.
+yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses >/dev/null || true
+sdkmanager --sdk_root="$ANDROID_HOME" emulator "$image"
+
+# avdmanager takes its SDK root from the directory it runs in (the brew cask's), not ANDROID_HOME.
+export AVDMANAGER_OPTS="-Dcom.android.sdkmanager.toolsdir=$ANDROID_HOME/cmdline-tools/latest"
+if ! avdmanager list avd -c | grep -qx android-base; then
+  # It exits non-zero over a harmless devices.xml warning, so check for the AVD instead.
+  echo no | avdmanager create avd --name android-base --package "$image" --device pixel_6 || true
+  avdmanager list avd -c | grep -qx android-base
+fi

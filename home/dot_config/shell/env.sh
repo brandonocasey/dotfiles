@@ -171,6 +171,8 @@ export GIT_EDITOR="${GIT_EDITOR:-$EDITOR}"
 # These variables keep tools that do not implement XDG discovery in the same
 # locations in Bash and Fish.
 export ANDROID_USER_HOME="$XDG_DATA_HOME/android"
+export ANDROID_HOME="$XDG_DATA_HOME/android/sdk"
+export ANDROID_AVD_HOME="$XDG_DATA_HOME/android/avd"
 export DOCKER_CONFIG="$XDG_CONFIG_HOME/docker"
 export GNUPGHOME="$XDG_DATA_HOME/gnupg"
 export LESSHISTFILE="$XDG_CACHE_HOME/less/history"

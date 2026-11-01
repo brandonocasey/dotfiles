@@ -19,10 +19,6 @@ if OS.mac?
   brew 'loginitems'
 
   # Applications
-  cask 'android-platform-tools'
-  # sdkmanager and avdmanager; they run on openjdk@17
-  cask 'android-commandlinetools'
-  brew 'openjdk@17'
   # remote Web Inspector for Safari on iOS devices
   brew 'ios-webkit-debug-proxy'
   # iOS Simulator input (tap, swipe, text); the idb client comes from mise (pipx:fb-idb)
