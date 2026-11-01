@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Installs the Android emulator, one system image, and the base AVD that android-emu clones per
-# worktree. sdkmanager and avdmanager come from the Brewfile. Reruns when this file changes, so
-# bump API below to move to a newer image. Skipped in the container image (no emulator there).
+# worktree. sdkmanager and avdmanager come from the Brewfile. Reruns when this file changes (bump
+# API below to move to a newer image) or when the install state below changes, so a deleted SDK or
+# a cask that finally installed brings it back. Skipped in the container image (no emulator there).
+{{- $data := env "XDG_DATA_HOME" | default (joinPath .chezmoi.homeDir ".local/share") }}
+# adb: {{ lookPath "adb" | not | not }}, sdkmanager: {{ lookPath "sdkmanager" | not | not }}
+# emulator: {{ stat (joinPath $data "android/sdk/emulator/emulator") | not | not }}, base AVD: {{ stat (joinPath $data "android/avd/android-base.ini") | not | not }}
 set -euo pipefail
 
 API=36
@@ -13,7 +17,7 @@ API=36
 export ANDROID_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/android/sdk"
 export ANDROID_USER_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/android"
 export ANDROID_AVD_HOME="$ANDROID_USER_HOME/avd"
-JAVA_HOME="$(brew --prefix openjdk@17 2>/dev/null)" || {
+JAVA_HOME="$(brew --prefix --installed openjdk@17 2>/dev/null)" || {
   echo "openjdk@17 is not installed; skipping the Android SDK setup" >&2
   exit 0
 }
@@ -43,8 +47,10 @@ sdkmanager --sdk_root="$ANDROID_HOME" emulator "$image"
 
 # avdmanager takes its SDK root from the directory it runs in (the brew cask's), not ANDROID_HOME.
 export AVDMANAGER_OPTS="-Dcom.android.sdkmanager.toolsdir=$ANDROID_HOME/cmdline-tools/latest"
-if ! avdmanager list avd -c | grep -qx android-base; then
-  # It exits non-zero over a harmless devices.xml warning, so check for the AVD instead.
-  echo no | avdmanager create avd --name android-base --package "$image" --device pixel_6 || true
-  avdmanager list avd -c | grep -qx android-base
+# Recreate the AVD when it points at another image, so bumping API moves every worktree to it.
+avd_image() { grep -qx "image.sysdir.1=system-images/android-$API/google_apis/$abi/" "$ANDROID_AVD_HOME/android-base.avd/config.ini" 2>/dev/null; }
+if ! avd_image; then
+  # It exits non-zero over a harmless devices.xml warning, so check the result instead.
+  echo no | avdmanager create avd --force --name android-base --package "$image" --device pixel_6 || true
+  avd_image
 fi
