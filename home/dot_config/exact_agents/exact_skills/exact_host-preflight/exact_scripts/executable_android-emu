@@ -26,8 +26,6 @@ sdk=${ANDROID_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android/sdk}
 emulator=$sdk/emulator/emulator
 export ANDROID_HOME="$sdk" ANDROID_SDK_ROOT="$sdk"
 command -v adb >/dev/null 2>&1 || die "adb not found; run chezmoi apply to install android-platform-tools"
-# The emulator rejects an SDK root without platform-tools; link the cask's copy (it moves on upgrade).
-[ ! -d "$sdk" ] || ln -sfn "$(dirname "$(readlink -f "$(command -v adb)")")" "$sdk/platform-tools"
 mkdir -p "$state"
 export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android/avd}"
 portfile=$state/$(printf '%s' "$name" | tr '/' '-').port
@@ -42,6 +40,13 @@ if [ "$remove" = 1 ]; then
   rm -f "$portfile"
   exit 0
 fi
+
+# Check the install before claiming a port or touching the SDK, so a failure leaves nothing behind.
+[ -x "$emulator" ] || die "emulator not found at $emulator; run chezmoi apply to install the Android SDK"
+"$emulator" -list-avds | grep -qx "$base" ||
+  die "base AVD \"$base\" not found; run chezmoi apply to create it"
+# The emulator rejects an SDK root without platform-tools; link the cask's copy (it moves on upgrade).
+ln -sfn "$(dirname "$(readlink -f "$(command -v adb)")")" "$sdk/platform-tools"
 
 port=
 [ -f "$portfile" ] && port=$(cat "$portfile")
@@ -59,9 +64,6 @@ fi
 serial=emulator-$port
 
 if ! alive "$port"; then
-  [ -x "$emulator" ] || die "emulator not found at $emulator; run chezmoi apply to install the Android SDK"
-  "$emulator" -list-avds | grep -qx "$base" ||
-    die "base AVD \"$base\" not found; run chezmoi apply to create it"
   case "$(uname -s)" in Linux) gpu=swiftshader_indirect ;; *) gpu=auto ;; esac
   set -- -avd "$base" -port "$port" -read-only -no-snapshot-save -no-audio -no-boot-anim -gpu "$gpu"
   [ "${ANDROID_EMU_WINDOW:-0}" = 1 ] || set -- "$@" -no-window
@@ -75,7 +77,7 @@ tries=0
 while [ "$(adb -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != 1 ]; do
   tries=$((tries + 1))
   [ "$tries" -le 300 ] || die "$serial did not finish booting in 300s; see ${log:-$state/$name.log}"
-  [ -z "${pid:-}" ] || kill -0 "$pid" 2>/dev/null || die "emulator exited early: $(tail -n 3 "$log" | tr '\n' ' ')"
+  [ -z "${pid:-}" ] || kill -0 "$pid" 2>/dev/null || die "emulator exited early: $(grep -E 'ERROR|FATAL|PANIC|ProbeKVM' "$log" | head -n 3 | tr '\n' ' ')(see $log)"
   sleep 1
 done
 printf '%s\n' "$serial"
