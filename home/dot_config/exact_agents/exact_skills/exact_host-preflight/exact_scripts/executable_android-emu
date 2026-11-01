@@ -1,0 +1,81 @@
+#!/bin/sh
+# One Android emulator per worktree, so parallel worktrees never install over each other.
+#   android-emu [path]     print the adb serial of the emulator owned by the worktree at <path>
+#                          (default .), starting it and waiting for boot on first use
+#   android-emu rm [path]  stop that worktree's emulator and forget its port
+# Every worktree boots the same base AVD (default "android-base", override with ANDROID_EMU_BASE)
+# read-only on its own port, so the base stays untouched and installs vanish when the emulator
+# stops. Headless by default; set ANDROID_EMU_WINDOW=1 for a window.
+# The SDK, the base AVD, and the system image come from any-linux/run_onchange_after_09-android-sdk.sh.tmpl (chezmoi).
+set -eu
+
+die() { printf 'android-emu: %s\n' "$*" >&2; exit 1; }
+
+remove=0
+if [ "${1:-}" = rm ]; then remove=1; shift; fi
+top=$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree: ${1:-.}"
+common=$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)
+repo=$(basename "$(dirname "$common")")
+branch=$(git -C "$top" branch --show-current)
+[ -n "$branch" ] || branch=$(basename "$top")
+name="wt-$repo-$(printf '%s' "$branch" | tr '/ ' '--')"
+base=${ANDROID_EMU_BASE:-android-base}
+
+state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/android-emu
+sdk=${ANDROID_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android/sdk}
+emulator=$sdk/emulator/emulator
+export ANDROID_HOME="$sdk" ANDROID_SDK_ROOT="$sdk"
+command -v adb >/dev/null 2>&1 || die "adb not found; run chezmoi apply to install android-platform-tools"
+# The emulator rejects an SDK root without platform-tools; link the cask's copy (it moves on upgrade).
+[ ! -d "$sdk" ] || ln -sfn "$(dirname "$(readlink -f "$(command -v adb)")")" "$sdk/platform-tools"
+mkdir -p "$state"
+export ANDROID_AVD_HOME="${ANDROID_AVD_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android/avd}"
+portfile=$state/$(printf '%s' "$name" | tr '/' '-').port
+
+# Prints the serial when the emulator on this port answers adb.
+alive() { adb -s "emulator-$1" get-state >/dev/null 2>&1; }
+
+if [ "$remove" = 1 ]; then
+  [ -f "$portfile" ] || exit 0
+  port=$(cat "$portfile")
+  alive "$port" && adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true
+  rm -f "$portfile"
+  exit 0
+fi
+
+port=
+[ -f "$portfile" ] && port=$(cat "$portfile")
+if [ -z "$port" ]; then
+  # Even ports 5554-5584 are the ones adb scans. Skip ports another worktree claims or that answer.
+  claimed=$(cat "$state"/*.port 2>/dev/null || true)
+  p=5554
+  while [ "$p" -le 5584 ]; do
+    case " $(printf '%s' "$claimed" | tr '\n' ' ') " in *" $p "*) ;; *) alive "$p" || { port=$p; break; } ;; esac
+    p=$((p + 2))
+  done
+  [ -n "$port" ] || die "no free emulator port in 5554-5584"
+  printf '%s\n' "$port" >"$portfile"
+fi
+serial=emulator-$port
+
+if ! alive "$port"; then
+  [ -x "$emulator" ] || die "emulator not found at $emulator; run chezmoi apply to install the Android SDK"
+  "$emulator" -list-avds | grep -qx "$base" ||
+    die "base AVD \"$base\" not found; run chezmoi apply to create it"
+  case "$(uname -s)" in Linux) gpu=swiftshader_indirect ;; *) gpu=auto ;; esac
+  set -- -avd "$base" -port "$port" -read-only -no-snapshot-save -no-audio -no-boot-anim -gpu "$gpu"
+  [ "${ANDROID_EMU_WINDOW:-0}" = 1 ] || set -- "$@" -no-window
+  log=$state/$name.log
+  nohup "$emulator" "$@" >"$log" 2>&1 &
+  pid=$!
+fi
+
+# Wait for Android to finish booting, up to 300s; stop early when an emulator we started exits.
+tries=0
+while [ "$(adb -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != 1 ]; do
+  tries=$((tries + 1))
+  [ "$tries" -le 300 ] || die "$serial did not finish booting in 300s; see ${log:-$state/$name.log}"
+  [ -z "${pid:-}" ] || kill -0 "$pid" 2>/dev/null || die "emulator exited early: $(tail -n 3 "$log" | tr '\n' ' ')"
+  sleep 1
+done
+printf '%s\n' "$serial"

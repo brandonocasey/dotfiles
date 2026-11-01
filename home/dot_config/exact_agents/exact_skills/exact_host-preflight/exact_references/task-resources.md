@@ -56,6 +56,23 @@ another worktree owns, and leave the user's own devices alone. If the script rep
 missing or booted, ask before shutting anything down. At cleanup, run `ios-sim rm [worktree]`
 before `agt worktree remove`.
 
+## Android Emulator
+
+Same rule: each worktree owns one emulator, because a shared one lets another worktree's install
+replace the app under test (same application ID). Before any emulator work, get its serial:
+`sh ~/.config/agents/skills/host-preflight/scripts/android-emu [worktree]`. It starts the base AVD
+`android-base` read-only on a port reserved for the worktree, waits for boot, and prints the serial
+(`emulator-5554`). Installs vanish when the emulator stops. Pass the serial to every command:
+`adb -s <serial>` (`install -r`, `shell am start -n`, `exec-out screencap -p > file.png`,
+`shell input tap X Y`, `swipe X1 Y1 X2 Y2`, `text "..."`, `shell uiautomator dump`, `shell pm clear`),
+`ANDROID_SERIAL=<serial>` for Gradle `installDebug` and `connectedAndroidTest`. Never rely on "the
+only device"; pixels, origin top-left. It runs headless; set `ANDROID_EMU_WINDOW=1` only when the
+user wants the live window. Linux needs the user in the `kvm` group, else the emulator fails to
+start; report that, do not change groups. Never install onto, restart, or kill an emulator another
+worktree owns, and leave the user's own devices alone. If the script reports the SDK or base AVD
+missing, run `chezmoi apply` (it installs both), not a manual install. At cleanup, run
+`android-emu rm [worktree]` before `agt worktree remove`.
+
 ## Cleanup
 
 Close task-owned MCP resources, stop servers and background processes, and free
