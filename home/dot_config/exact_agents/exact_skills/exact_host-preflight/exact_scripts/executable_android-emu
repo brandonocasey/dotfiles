@@ -68,11 +68,30 @@ claim() {
   return 1
 }
 
+# Runs for one worktree take turns from reading its claim to recording the launch, so overlapping
+# calls cannot start two emulators. A lock whose holder died is taken over.
+lock=$state/$key.lock
+unlock() { rm -f "$lock/pid"; rmdir "$lock" 2>/dev/null || true; }
+acquire() {
+  waited=0
+  until mkdir "$lock" 2>/dev/null; do
+    holder=$(cat "$lock/pid" 2>/dev/null || true)
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then unlock; continue; fi
+    waited=$((waited + 1))
+    [ "$waited" -le 60 ] || die "another android-emu run for this worktree holds $lock"
+    sleep 1
+  done
+  printf '%s\n' "$$" >"$lock/pid"
+  trap unlock EXIT
+}
+
 port=
 pid=
-if [ -f "$claimfile" ]; then read -r port pid <"$claimfile" || true; fi
+load() { if [ -f "$claimfile" ]; then read -r port pid <"$claimfile" || true; fi; }
 
 if [ "$remove" = 1 ]; then
+  acquire
+  load
   if [ -n "$port" ]; then
     if owned "$port" "$pid"; then adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true; fi
     release "$port"
@@ -88,6 +107,8 @@ fi
 # The emulator rejects an SDK root without platform-tools; link the cask's copy (it moves on upgrade).
 ln -sfn "$(dirname "$(readlink -f "$(command -v adb)")")" "$sdk/platform-tools"
 
+acquire
+load
 # A port that now answers to something we did not start (the user's emulator, a stale claim) is
 # not ours: give it up and take another.
 if [ -n "$port" ] && alive "$port" && ! owned "$port" "$pid"; then
@@ -100,7 +121,8 @@ if [ -z "$port" ]; then
 fi
 serial=emulator-$port
 
-if ! alive "$port"; then
+# Still booting counts as running: adb answers only after a few seconds.
+if ! alive "$port" && ! owned "$port" "$pid"; then
   case "$(uname -s)" in Linux) gpu=swiftshader_indirect ;; *) gpu=auto ;; esac
   set -- -avd "$base" -port "$port" -read-only -no-snapshot-save -no-audio -no-boot-anim -gpu "$gpu"
   [ "${ANDROID_EMU_WINDOW:-0}" = 1 ] || set -- "$@" -no-window
@@ -108,6 +130,8 @@ if ! alive "$port"; then
   pid=$!
 fi
 printf '%s %s\n' "$port" "${pid:-0}" >"$claimfile"
+unlock
+trap - EXIT
 
 # Wait for Android to finish booting, up to 300s; stop early when an emulator we started exits.
 tries=0
