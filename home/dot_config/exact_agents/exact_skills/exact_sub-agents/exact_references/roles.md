@@ -23,9 +23,9 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | Role | Work | Claude Code | Codex |
 | --- | --- | --- | --- |
 | `cheap` | Named command execution, aggregation, formatting, extraction, counting, bulk replacement, factual lookup, watch-and-wait | claude-haiku-5-5, medium; trial: matched `xhigh` on 20 of 20 tasks, 40% faster | gpt-6-luna, xhigh |
-| `explorer` | Locate usages and trace code paths; read-only | claude-haiku-5-5, medium; probe: matched Sonnet on usage lists and call traces; escalate to `worker` for judgement | gpt-6.1-sol, low |
-| `worker` | Design, debugging, implementation, orchestrated parts, research synthesis | claude-sonnet-5-5, high; default sonnet. Pass `model: opus` only for a design decision with no written plan, or a root-cause hunt after a sonnet worker failed once. Never for review fixes, finishing a PR, CI edits, or commit splitting | gpt-6.1-sol, low |
-| `tester` | Run checks, manual cases, and UX checks; inspect failures and validate evidence; the `review` skill runs it before every review; changes no tracked files | claude-sonnet-5-5, high | gpt-6.1-sol, low |
+| `explorer` | Locate usages and trace code paths; read-only | claude-haiku-5-5, medium; probe: matched Sonnet on usage lists and call traces; escalate to `worker` for judgement | gpt-6-luna, xhigh |
+| `worker` | Design, debugging, implementation, orchestrated parts, research synthesis | claude-sonnet-5-5, high; default sonnet. Pass `model: opus` only for a design decision with no written plan, or a root-cause hunt after a sonnet worker failed once. Never for review fixes, finishing a PR, CI edits, or commit splitting | gpt-6.1-sol, high |
+| `tester` | Run checks, manual cases, and UX checks; inspect failures and validate evidence; the `review` skill runs it before every review; changes no tracked files | claude-sonnet-5-5, high | gpt-6.1-sol, high |
 | `consult` | Main-session escalation and design critique only; read-only | claude-opus-5-5, xhigh | gpt-6-astra, xhigh |
 | `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh; trials: on 27 changes `xhigh` found 20 of 31 known high/medium bugs and `high` 17, at $2.11 vs $1.13 per review; the `review` skill passes `model: haiku` for `low` risk tiers, and `model: sonnet` for fresh fix checks; both keep `xhigh` | gpt-6-astra, xhigh |
 

@@ -1,7 +1,7 @@
 name = "tester"
 description = "Run checks, manual cases, and UX checks; inspect test/build failures and validate evidence. Use cheap for named commands with explicit pass/fail criteria."
 model = "gpt-6.1-sol"
-model_reasoning_effort = "low"
+model_reasoning_effort = "high"
 {{/* Checks need network and writes to ~/.cache and /dev/stdout, which workspace-write blocks. Like the Claude tester, only instructions keep tracked files unchanged. */ -}}
 sandbox_mode = "danger-full-access"
 developer_instructions = """
