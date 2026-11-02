@@ -21,7 +21,10 @@ class CodexTmuxSessionTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="codex-tmux-test-", dir=SCRATCH)
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
-        self.socket = self.home / "tmux.sock"
+        # Unix socket paths MUST fit the platform limit even with a long XDG root.
+        sockets = tempfile.TemporaryDirectory(prefix="agent-tmux-", dir="/tmp")
+        self.addCleanup(sockets.cleanup)
+        self.socket = Path(sockets.name) / "tmux.sock"
         self.env = dict(os.environ, HOME=str(self.home), CODEX_HOME=str(self.home / ".codex"),
                         XDG_CACHE_HOME=str(self.home / ".cache"),
                         XDG_CONFIG_HOME=str(self.home / ".config"),
