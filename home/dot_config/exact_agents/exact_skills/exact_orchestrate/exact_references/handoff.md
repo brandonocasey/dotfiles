@@ -7,10 +7,10 @@ the orchestrator, so run the stages below.
 
 1. Create a fresh directory with `mktemp -d <scratch>/handoff-XXXXXX` and use its printed path as `<dir>` below. Write the full request, constraints, and consents to `<dir>/request.md`.
 2. Start with Bash in the background, from the worktree:
-   `AGENT_HANDOFF=1 claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/orchestrate/references/handoff.md --output-format json < <dir>/request.md > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
-   The request goes on stdin: a positional prompt that starts with `-` fails as an unknown option.
-3. Wait for its exit notification.
-4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator's `review-fix` covers the change: `agt review status` reports `reviewed: true` and an empty `unreviewed_commits`. Run another review only when it does not or your checks fail. Report its open questions to the user.
+   `AGENT_HANDOFF=1 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/orchestrate/references/handoff.md --output-format json < <dir>/request.md > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
+   The request goes on stdin: a positional prompt that starts with `-` fails as an unknown option. Without the ceiling setting, print mode stops background sub-agents, such as a reviewer, 10 minutes after the orchestrator's last turn.
+3. Record the starting commit (`git rev-parse HEAD`), then wait for the exit notification.
+4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator's `review-fix` covers the change: `agt review status --range <start>..HEAD` reports `reviewed: true` and an empty `unreviewed_commits`. The range catches commits that another session already pushed to the default branch. Run another review only when it does not or your checks fail. Report its open questions to the user.
 
 ## Stages (orchestrator)
 
