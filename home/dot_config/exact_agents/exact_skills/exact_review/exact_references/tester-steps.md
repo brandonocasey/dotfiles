@@ -6,8 +6,10 @@ Run the given checks within the scope. Write each full log to the scratch
 directory, ending with an `exit N` line. Search the whole log for failures,
 errors, and warnings, and match the failure count to the summary line; do not
 judge a log from its tail alone. Do not weaken or skip tests. Rerun only a failed
-test, once, on the same tree: a pass on rerun is reported `flaky`, not pass, and
-marked `pre-existing` unless the change touched that test. Never cache a failure.
+test, once, on the same tree: a pass on rerun is reported `flaky`, not pass. It is
+`pre-existing` only when it also flakes at the base commit, or when the change
+touched neither the test nor the code it runs. Otherwise report it `flaky` and
+caused by the change. Never cache a failure.
 When the repository enforces size, accessibility, or performance budgets, check
 whether the change moves them. Never install dependencies; report missing ones as
 blocked.
