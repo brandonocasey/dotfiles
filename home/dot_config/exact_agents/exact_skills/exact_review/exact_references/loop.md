@@ -17,8 +17,8 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with
    surrounding context, since continuing after the cache expires rewrites their whole
    context. After one failed continuation, start fresh reviewers for that cycle's
-   remaining fix checks. Start fresh fix-check reviewers with `model: sonnet` (effort
-   stays `xhigh`); `--agents` overrides this. Send each reviewer:
+   remaining fix checks. Start fresh fix-check reviewers with `model: sonnet` and
+   `effort: xhigh`; `--agents` overrides this. Send each reviewer:
    - the output of `agt review list --run <run> --cycle <n> --format prompt`
      ([store.md](store.md)): every surviving finding from this cycle, from any reviewer,
      with its applied fix, and each killed finding with its one-line reason;
