@@ -56,13 +56,12 @@ the findings the user chose with
 - Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
   keeps its ID.
 - Signature: the reviewer's `model`, `effort` and `harness` (`claude-code` or
-  `codex`), recorded by `pass start`. Write `default` for an unknown effort. Mark
-  findings from the cycle 2 reveal `post_reveal`. The fixer is reviewer ID `fix`.
+  `codex`), recorded by `pass start`. Write `default` for an unknown effort. The fixer is reviewer ID `fix`.
   Posted comments carry only the footer `> <sub>🔍 agt review · <model></sub>`;
   the summary footer names every reviewer and model.
 - Harness version: run `claude --version` or `codex --version` once per run.
-- Starting context, per reviewer and pass: the starting SHA plus `fresh`,
-  `continued <pass> + <N> findings, fix diff`, or `blind, threads after lock`.
+- Starting context, per reviewer and pass: the starting SHA plus `fresh` or
+  `continued <pass> + <N> findings, fix diff`.
 
 ### Publishing
 

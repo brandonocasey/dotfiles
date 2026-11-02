@@ -30,27 +30,14 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    review the delta and the code it calls or is called by, returning new findings in the
    usual format. Re-verify and fix as in step 1.
 3. Repeat step 2 until a fix check finds no major finding that is new or `not fixed`
-   and survives re-verification, or after 3 fix checks. Other findings are fixed or held
+   and survives re-verification, after 3 fix checks, or sooner per
+   [escalation.md](../../sub-agents/references/escalation.md). Other findings are fixed or held
    but never start another fix check. A held `question` or a `pre-existing` finding
    that a later pass re-raises is not new.
 4. **Second cycle.** Repeat steps 1–3 once with fresh reviewers that have no context
    from the first cycle. Skip it when the first full review found no `high` severity
-   major finding that survived verification. Its full review runs blind, then reveals:
-   - **Lock.** When the reviewers return, record their findings as reported with
-     `pass end --lock --findings -`. The store refuses changes to them after that. Do not
-     `publish` from the lock until the reveal re-verification ends.
-   - **Reveal.** Start a `reveal` pass and continue each reviewer (Claude Code:
-     `SendMessage`) with `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a
-     commit or range target): every cycle 1 finding with
-     its comment link, fix commit, and fix-check result, plus held `question` items with
-     any answers. Ask it to mark each fix or answer `agree` or `disagree`
-     with evidence, and to return new findings in the usual format, tagged
-     `post-reveal`. Without continuation support, or when `continue-guard` blocks a
-     late continuation, skip the reveal and say so.
-   - Re-verify the blind and reveal findings together. A surviving `disagree` reopens
-     its cycle 1 finding as `not fixed`. Kill a blind finding with
-     `agt review finding kill <id> --reason <text>`. Count the surviving `agree` and
-     `disagree` marks for `run end --reveal-agree <n> --reveal-disagree <m>`.
+   major finding that survived verification. Its full review runs blind: send the
+   reviewers nothing from cycle 1.
 5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user

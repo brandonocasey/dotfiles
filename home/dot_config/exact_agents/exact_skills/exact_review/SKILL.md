@@ -65,8 +65,8 @@ later passes).
 - With `own: yes`, the review posts and resolves MR/PR comments per **Own MR/PR
   comments** in [remote-comments.md](references/remote-comments.md). With `own: no`,
   it posts nothing unless the user asks.
-- Add nothing to the reviewer prompt beyond setup.md's template; only a fix check and
-  the cycle 2 reveal add the inputs [loop.md](references/loop.md) lists.
+- Add nothing to the reviewer prompt beyond setup.md's template; only a fix check adds the
+  inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the tester uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
 - Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,

@@ -49,26 +49,26 @@ in this store) still need `--target <key>`.
 | When | Command |
 |---|---|
 | Before the run's first reviewers start | `pass start --kind full --base <base> --reviewers -` (no `--run`: it starts the run); prints the run ID and pass `c1p0` |
-| Before later reviewers start | `pass start --run <run> --kind full\|fix-check\|reveal --base <base> --reviewers -` |
-| After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; `--lock` for the blind review; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
-| Kill a blind finding after the reveal | `finding kill <id> --reason <text>`; works on a locked pass |
+| Before later reviewers start | `pass start --run <run> --kind full\|fix-check --base <base> --reviewers -` |
+| After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
+| Kill a finding that re-verification refutes | `finding kill <id> --reason <text>` |
 | Fixes applied | `resolve <id>... --fixed <sha> --reviewer <run>.<pass>.fix`: replies `✅ Fixed in <sha> <subject>.` and resolves each |
 | The user declines a finding, or it proves wrong after it was posted | `resolve <id> --rejected "<reason>"` with the main session's `--model`, `--effort`, `--harness` and `--harness-version`: replies `Won't fix: <reason>.` and resolves; the record counts it as rejected, not fixed; a finding not yet posted stays unposted |
 | Fix check says not fixed | `resolve <id> --not-fixed "<reason>" --reviewer <run>.<pass>.<id>`: replies and reopens |
 | Held question | `resolve <id> --triage question`; record the user's answer with `reply <id> --local --body <answer>` (never posted) |
 | Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
-| Reveal inputs | `list --run <run> --cycle 1 --format prompt` (`--head HEAD` for a commit or range target) |
+| Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
 | Prior reviews, open items, review range | `status [--head <sha>]` (`--full` adds commits and runs), `list --open` |
 | Post to an MR/PR | `publish`, also the review summary (one per MR/PR, updated for each ended run); `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
 | Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`, `--formal` only on request; see approve-merge.md step 4 |
-| After the run's last fix commit | `run end --run <run>`, plus `--reveal-agree <n> --reveal-disagree <m>` after a reveal, and `--usage -` with the main session's usage when known; records HEAD as reviewed and prints `status` and `spent`, so skip a separate `status` call |
+| After the run's last fix commit | `run end --run <run>`, plus `--usage -` with the main session's usage when known; records HEAD as reviewed and prints `status` and `spent`, so skip a separate `status` call |
 
 Always pass `--base` to every full pass (`pass start --kind full`, also for the second cycle): the pinned range's start (`<review_from>` for
 an end-point review), `HEAD` for a working-diff target, or the pinned merge-base for an
 MR/PR. Without it every branch commit counts as reviewed. For a commit or range target,
 also pass `--head HEAD` (the fix head) to every `pass start` after the first full
 review, and to the first one when testing-stage fixes moved HEAD
-([testing.md](testing.md) step 6), to fix-check and reveal `list`, and to `run end`; `pass end`, `finding`, and
+([testing.md](testing.md) step 6), to fix-check `list`, and to `run end`; `pass end`, `finding`, and
 `resolve` take no `--head`. Only `reply` and `resolve --fixed`/`--not-fixed`/`--rejected`/`--reply`
 add text.
 
@@ -97,7 +97,6 @@ findings and killed ones, each killed one with its one-line reason.
 | `side` | `new`, `old` | no | Default `new`, or `old` when only `old_line` is set |
 | `evidence` | string | no | Evidence for the finding |
 | `tests_run` | array of strings | no | Tests or commands the reviewer ran |
-| `post_reveal` | boolean | no | Found during the cycle 2 reveal |
 | `killed` | boolean | no | `true` stores it as a killed finding on the pass |
 | `reason` | string | when `killed` | Why it was killed; only for killed findings |
 | `reviewer` | string | no | Reviewer ID (`r1`, `fix`); default `--reviewer` |
