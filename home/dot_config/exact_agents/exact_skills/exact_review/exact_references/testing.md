@@ -51,7 +51,8 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
    **Scope** rule for them applies. Without authorization, report all of them
    beside the review findings.
 5. **Retest.** Start a fresh `tester` on the uncommitted fixes only (**Retest**).
-   Verify, record, and fix again. Stop after 3 retests and report failures that
+   Verify, record, and fix again. Stop after 3 retests, or sooner per
+   [escalation.md](../../sub-agents/references/escalation.md), and report failures that
    remain. Then commit the fixes as fix.md's **4. Optional: --fix** section commits
    review fixes (its commit item, not its retest item).
 6. **Review.** When steps 4–5 changed the target, committed or not, re-pin it so
@@ -93,6 +94,8 @@ Scope: <scope>
 Rerun: <names of checks and cases that failed last time, or `none`>
 Checks: <test, lint, and typecheck commands from setup, or `none documented; choose relevant ones`>
 Cases: <`manual and UX` or `skipped: <reason>`>
+Risk: <setup's `risk` tier>
+Expected: <the expected results from the request, acceptance criteria, design.md, or plan; never from the diff>
 Steps: follow <absolute path of tester-steps.md>.
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md at the root and in every changed directory>
 Return per check and case, failures first: name, kind (automated, manual, or
