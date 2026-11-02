@@ -48,7 +48,7 @@ in this store) still need `--target <key>`.
 
 | When | Command |
 |---|---|
-| Before the run's first reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Later passes may add `--risk` and omit the rest |
+| Before the run's first reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Omit a flag whose value you cannot tell from the request or the commits: the run keeps the first pass's values for good. Later passes may add `--risk` and omit the rest |
 | Before later reviewers start | `pass start --run <run> --kind full\|fix-check --base <base> --reviewers -` |
 | After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a finding that re-verification refutes | `finding kill <id> --reason <text>` |

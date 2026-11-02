@@ -111,8 +111,10 @@ Record each tester pass in the QA store, with the same store target flag as the
 review (`--target <key>` or `--range <range>`; [store.md](store.md)):
 
 1. `agt qa run start` with the tester's `--model`, `--effort`, and `--harness`,
-   plus `--implementer <model>` (who wrote the change) and `--round <n>` (1 for the
-   first test, plus one per retest); keep the `run` field of the printed JSON.
+   plus `--implementer` and `--round <n>` (1 for the first test, plus one per
+   retest). The implementer is the review's `--implementer` value in every round,
+   omitted when the review omits it ([store.md](store.md)). Keep the `run` field of
+   the printed JSON.
 2. One `agt qa check --run <run> --name <name> --outcome <outcome> --kind <kind>`
    per returned check or case, with `--command` or `--steps -`, `--evidence` per
    path, `--env key=value` per fact, and `--note` for blocked or skipped reasons.
