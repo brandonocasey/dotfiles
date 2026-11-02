@@ -23,7 +23,7 @@ MAX_BYTES = 5_000_000
 
 CONFIG_FILE = re.compile(
     r"""^(?:
-    pytest\.ini|tox\.ini|conftest\.py|\.coveragerc|\.flake8|\.?pylintrc|\.?ruff\.toml|\.?mypy\.ini
+    pytest\.ini|tox\.ini|\.coveragerc|\.flake8|\.?pylintrc|\.?ruff\.toml|\.?mypy\.ini
     |pyrightconfig\.json|jsconfig\.json|tsconfig(?:\.[\w.-]+)?\.json
     |\.eslintrc(?:\.\w+)?|eslint\.config\.\w+|biome\.jsonc?|\.stylelintrc(?:\.\w+)?|stylelint\.config\.\w+
     |(?:jest|vitest|playwright|cypress|karma|mocha)\.(?:config|conf)\.\w+|vitest\.workspace\.\w+|\.mocharc(?:\.\w+)?
@@ -40,11 +40,15 @@ TOOL_SECTION = re.compile(
     r"|(?:workspace\.)?lints\b|tool:pytest|flake8|mypy\b|pylint|coverage:)"
 )
 SECTION_HEADER = re.compile(r"^\s*\[+\s*([^\]]+?)\s*\]+\s*(?:#.*)?$")
-# package.json keys that hold test or lint settings or commands.
+# Top-level package.json keys that hold tool settings, and the names of scripts that run checks.
+PACKAGE_TOOL_KEYS = {"jest", "vitest", "mocha", "ava", "nyc", "c8", "eslintConfig", "stylelint", "lint-staged"}
+PACKAGE_SCRIPT = re.compile(r"(?:pre|post)?(?:test|lint|typecheck|type-check|check)[:\w.-]*")
+# For a package.json that is not valid JSON: a changed line holding one of those keys.
 PACKAGE_KEY = re.compile(
-    r'"(?:jest|vitest|mocha|ava|nyc|c8|eslintConfig|stylelint|lint-staged'
-    r'|(?:pre|post)?(?:test|lint|typecheck|type-check|check)(?:[:\w.-]*))"\s*:'
+    r'"(?:' + "|".join(re.escape(k) for k in sorted(PACKAGE_TOOL_KEYS)) + r"|" + PACKAGE_SCRIPT.pattern + r')"\s*:'
 )
+# Above this many lines in the changed region (old times new), every line there counts as changed.
+MAX_DIFF_CELLS = 1_000_000
 SUPPRESSIONS = {
     "# noqa": r"#\s*(?:flake8:\s*|ruff:\s*)?noqa\b",
     "# type: ignore": r"#\s*(?:type|pyright|mypy|pytype):\s*(?:ignore|ignore-errors|basic)\b",
@@ -101,15 +105,49 @@ def sections(lines: list[str]) -> list[str]:
 
 
 def changed_lines(old: str, new: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
-    """The removed and added lines, each with the section it sits in."""
+    """The removed and added lines, each with the section it sits in.
+
+    The lines both versions share at the start and the end are skipped before the
+    diff, so an edit costs what its own region costs, not the file's length.
+    """
     a, b = old.splitlines(), new.splitlines()
+    lo = 0
+    while lo < min(len(a), len(b)) and a[lo] == b[lo]:
+        lo += 1
+    hi = 0
+    while hi < min(len(a), len(b)) - lo and a[-1 - hi] == b[-1 - hi]:
+        hi += 1
     sa, sb = sections(a), sections(b)
+    ma, mb = a[lo:len(a) - hi], b[lo:len(b) - hi]
+    if len(ma) * len(mb) > MAX_DIFF_CELLS:
+        ops = [("replace", 0, len(ma), 0, len(mb))]
+    else:
+        ops = difflib.SequenceMatcher(None, ma, mb, autojunk=False).get_opcodes()
     removed, added = [], []
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+    for tag, i1, i2, j1, j2 in ops:
         if tag != "equal":
-            removed += list(zip(a[i1:i2], sa[i1:i2]))
-            added += list(zip(b[j1:j2], sb[j1:j2]))
+            removed += list(zip(ma[i1:i2], sa[lo + i1:lo + i2]))
+            added += list(zip(mb[j1:j2], sb[lo + j1:lo + j2]))
     return removed, added
+
+
+def package_settings(text: str) -> dict | None:
+    """The tool settings and check scripts in a package.json, None when it is not a JSON object."""
+    if not text.strip():
+        return {}
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    found = {k: v for k, v in data.items() if k in PACKAGE_TOOL_KEYS}
+    scripts = data.get("scripts")
+    if isinstance(scripts, dict):
+        found.update({f"scripts.{k}": v for k, v in scripts.items() if PACKAGE_SCRIPT.fullmatch(k)})
+    elif scripts is not None:
+        found["scripts"] = scripts
+    return found
 
 
 def reasons(path: str, old: str, new: str) -> list[str]:
@@ -124,7 +162,12 @@ def reasons(path: str, old: str, new: str) -> list[str]:
         if any(TOOL_SECTION.match(section) for _, section in removed + added):
             found.append(f"changes test, lint or type-check settings in {name}")
     elif name == "package.json":
-        if any(PACKAGE_KEY.search(line) for line, _ in removed + added):
+        before, after = package_settings(old), package_settings(new)
+        if before is None or after is None:
+            changed = any(PACKAGE_KEY.search(line) for line, _ in removed + added)
+        else:
+            changed = before != after
+        if changed:
             found.append("changes test or lint settings or scripts in package.json")
     for label, rx in SUPPRESSION_RES.items():
         gained = sum(len(rx.findall(line)) for line, _ in added) - sum(len(rx.findall(line)) for line, _ in removed)

@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
@@ -98,7 +99,7 @@ class ConfigTests(EditGuardTestCase):
         for name, text in (("ruff.toml", "line-length = 88\n"), ("sub/tsconfig.json", '{"strict": true}\n'),
                            ("tsconfig.build.json", "{}\n"), ("jest.config.js", "module.exports = {};\n"),
                            (".eslintrc.json", "{}\n"), ("pytest.ini", "[pytest]\n"), ("mypy.ini", "[mypy]\n"),
-                           (".golangci.yml", "linters: {}\n"), ("conftest.py", "import pytest\n"),
+                           (".golangci.yml", "linters: {}\n"),
                            ("vitest.config.ts", "export default {};\n"), (".rubocop.yml", "AllCops: {}\n")):
             path = self.file(name, text)
             with self.subTest(name=name):
@@ -143,6 +144,59 @@ class ConfigTests(EditGuardTestCase):
                                  "new_string": '"build": "tsc",\n    "lint": "echo"'}, "package.json")
         self.assertPasses("Edit", {"file_path": str(path), "old_string": '"build": "tsc"', "new_string": '"build": "vite build"'})
         self.assertPasses("Edit", {"file_path": str(path), "old_string": '"name": "x"', "new_string": '"name": "y"'})
+
+    def test_package_json_nested_tool_settings_ask(self):
+        jest = '{\n  "name": "x",\n  "jest": {\n    "testPathIgnorePatterns": ["/node_modules/"]\n  }\n}\n'
+        path = self.file("package.json", jest)
+        self.assertAsks("Edit", {"file_path": str(path), "old_string": '["/node_modules/"]',
+                                 "new_string": '["/node_modules/", "/src/payments/"]'}, "package.json")
+        eslint = '{\n  "eslintConfig": {\n    "rules": {\n      "no-console": "error"\n    }\n  }\n}\n'
+        path = self.file("package.json", eslint)
+        self.assertAsks("Edit", {"file_path": str(path), "old_string": '"error"', "new_string": '"off"'}, "package.json")
+        self.assertAsks("MultiEdit", {"file_path": str(path), "edits": [
+            {"old_string": '"no-console"', "new_string": '"no-debugger"'}]}, "package.json")
+        self.assertAsks("Write", {"file_path": str(path), "content": '{"eslintConfig": {"rules": {}}}\n'}, "package.json")
+        self.assertAsks("Write", {"file_path": str(self.root / "new/package.json"),
+                                  "content": '{"scripts": {"test": "true"}}\n'}, "package.json")
+
+    def test_package_json_dependency_edits_pass(self):
+        # A dependency named like a tool is not a tool setting, in either style of edit.
+        text = ('{\n  "devDependencies": {\n    "vitest": "^2.1.0",\n    "jest": "^29.0.0",\n    "mocha": "^10.0.0",\n'
+                '    "testcontainers": "^10.0.0",\n    "stylelint": "^16.0.0",\n    "lint-staged": "^15.0.0"\n  },\n'
+                '  "scripts": {\n    "test": "vitest"\n  }\n}\n')
+        path = self.file("package.json", text)
+        for old, new in (('"vitest": "^2.1.0"', '"vitest": "^2.2.0"'), ('"jest": "^29.0.0"', '"jest": "^30.0.0"'),
+                         ('"mocha": "^10.0.0"', '"mocha": "^11.0.0"'), ('"testcontainers": "^10.0.0"', '"testcontainers": "^11.0.0"'),
+                         ('"stylelint": "^16.0.0"', '"stylelint": "^17.0.0"'),
+                         ('"lint-staged": "^15.0.0"', '"lint-staged": "^16.0.0"')):
+            with self.subTest(old=old):
+                self.assertPasses("Edit", {"file_path": str(path), "old_string": old, "new_string": new})
+        self.assertPasses("Write", {"file_path": str(path), "content": text.replace('"^2.1.0"', '"^2.2.0"')})
+
+    def test_package_json_unparsable_falls_back_to_changed_lines(self):
+        path = self.file("package.json", '{\n  "name": "x",\n  "scripts": {\n    "test": "jest",\n')
+        self.assertAsks("Edit", {"file_path": str(path), "old_string": '"jest"', "new_string": '"true"'}, "package.json")
+        self.assertPasses("Edit", {"file_path": str(path), "old_string": '"x"', "new_string": '"y"'})
+
+    def test_conftest_is_test_code(self):
+        path = self.file("conftest.py", "import pytest\n")
+        self.assertPasses("Edit", {"file_path": str(path), "old_string": "import pytest", "new_string": "import os"})
+        self.assertAsks("Edit", {"file_path": str(path), "old_string": "import pytest",
+                                 "new_string": "import pytest  # noqa"}, "# noqa")
+
+
+class LargeFileTests(EditGuardTestCase):
+    def test_one_line_edit_of_a_large_generated_file_is_fast(self):
+        # The hook has 5 s before Claude Code stops waiting and lets the edit through.
+        lines = []
+        for i in range(60_000):
+            lines += [f"  function f{i}(a, b) {{", "    return a + b;", "  }"]
+        lines = lines[:60_000]
+        path = self.file("bundle.js", "\n".join(lines) + "\n")
+        start = time.monotonic()
+        self.assertAsks("Edit", {"file_path": str(path), "old_string": "function f5(a, b) {",
+                                 "new_string": "function f5(a, b) { // eslint-disable-line"}, "eslint-disable")
+        self.assertLess(time.monotonic() - start, 3)
 
 
 class PassThroughTests(EditGuardTestCase):
