@@ -132,6 +132,48 @@ class CodexTmuxSessionTests(unittest.TestCase):
         self.tmux("select-pane", "-t", self.env["TMUX_PANE"])
         self.wait_name("First pane")
 
+    def test_fast_pane_switch_restores_title_between_watcher_ticks(self):
+        self.stop_parents()
+        trace = self.home / "ticks.jsonl"
+        bindir = self.home / "bin"
+        bindir.mkdir()
+        wrapper = bindir / "tmux"
+        wrapper.write_text("#!/usr/bin/python3\nimport json, os, subprocess, sys, time\n"
+                           f"result = subprocess.run([{shutil.which('tmux')!r}, *sys.argv[1:]], capture_output=True)\n"
+                           "if sys.argv[-1].startswith('#{pane_active} #{window_active}'):\n"
+                           f"    with open({str(trace)!r}, 'a') as stream:\n"
+                           "        stream.write(json.dumps(dict(pane=os.environ['TMUX_PANE'], output=result.stdout.decode())) + '\\n')\n"
+                           "sys.stdout.buffer.write(result.stdout)\nsys.stderr.buffer.write(result.stderr)\n"
+                           "sys.exit(result.returncode)\n")
+        wrapper.chmod(0o755)
+        self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
+        self.parent = self.start_parent()
+        first = self.env["TMUX_PANE"]
+        second = self.tmux("split-window", "-d", "-P", "-F", "#{pane_id}", "sleep 60").strip()
+
+        def ticks(pane):
+            if not trace.exists():
+                return []
+            return [row for line in trace.read_text().splitlines()
+                    if (row := json.loads(line))["pane"] == pane]
+
+        self.title("First pane")
+        self.title("Second pane", "two")
+        self.fire()
+        self.wait_name("First pane")
+        time.sleep(0.5)
+        self.fire("two", parent=self.start_parent(second))
+        deadline = time.monotonic() + 4
+        while len(ticks(first)) < 2 and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertGreaterEqual(len(ticks(first)), 2)
+        time.sleep(0.1)
+        self.tmux("select-pane", "-t", second)
+        self.wait_name("Second pane")
+        self.tmux("select-pane", "-t", first)
+        self.assertTrue(all(row["output"].split()[:2] == ["1", "1"] for row in ticks(first)))
+        self.wait_name("First pane")
+
     def test_manual_name_survives_until_title_changes(self):
         self.title("Agent title")
         self.fire()

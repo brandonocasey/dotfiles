@@ -183,9 +183,12 @@ if [ "$agent" = watch-codex ]; then
     active=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_active} #{window_active}' 2>/dev/null)
     if [ "$active" = '1 1' ]; then
       title=$(session_title)
-      if [ -n "$title" ] && [ "$title" != "$last_title" ]; then
+      title_pane=$(tmux display-message -p -t "$TMUX_PANE" '#{@codex_title_pane}' 2>/dev/null)
+      if [ -n "$title" ] && { [ "$title" != "$last_title" ] || [ "$title_pane" != "$TMUX_PANE" ]; }; then
         [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ] || break
+        session=
         rename "$title"
+        [ -z "$session" ] || tmux set-option -t "$session" @codex_title_pane "$TMUX_PANE" 2>/dev/null
         last_title=$title
       fi
     else
