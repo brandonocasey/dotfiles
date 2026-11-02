@@ -20,7 +20,9 @@ GitHub token of `gh`), then check `"$(mise which agt)" --version`:
 - It still prints an older version: this machine's mise config pins that version,
   because its dotfiles predate the new pin. Stop and report:
   `agt <minimum> missing: run chezmoi update, then mise install github:brandonocasey/agt, then start a new session`.
-- The install fails: stop and report
+  When the pin in the chezmoi source (`dot_config/mise/config.toml`) is older than
+  the minimum too, report instead that the pin needs a bump.
+- Otherwise (the install fails, or no version prints): stop and report
   `agt <minimum> missing: run gh auth login, then mise install; Windows is not supported`.
 
 A skill that works without `agt` says so and skips the install above. It uses its
