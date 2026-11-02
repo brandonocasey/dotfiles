@@ -125,22 +125,30 @@ service, a browser bug, or user data, add a safe workaround in reach if one
 exists, and go to section 6 for the rest.
 
 1. Load `worktree` and `code-standards`. Work in a worktree on a new branch.
-2. Reproduce the report per `code-standards`: a test that fails for the reported
-   reason, else the exact manual check.
+2. Reproduce the report per the bug-fix bullet of `code-standards` **Tests &
+   Lint**: a test that fails for the reported reason, else the exact manual
+   check. That bullet also owns the fix proof: the existing suite, reverting
+   only the fix, and leaving the repro test unchanged.
 3. Make the smallest change that makes the test pass. When two fixes are
    valid, take the one with the smaller blast radius and name the other.
-4. Run the test, the related suites, the linter, and the type checker.
+4. Run the test, the existing suite, the linter, and the type checker. State in
+   one sentence why this cause is the cause, naming the evidence that ties it to
+   the symptom.
 5. Repeat the original reproduction from section 3 against the fix, with the same
-   tools. Capture before and after evidence, such as screenshots or logs.
-6. Search for the same defect at sibling call sites, and fix them in the
-   same change.
+   tools. Capture before and after evidence, such as screenshots or logs. Run 2-3
+   nearby inputs before and after the fix to catch other behavior changes.
+6. After the fix is proven, have `explorer` list sites with the same pattern. Fix
+   one in the same change only when a test or a direct read shows the same cause;
+   list the rest as follow-ups. Add a test per fixed site.
 7. Commit per `commit`. This is an end point: run `review` per
    `review/references/when-to-run.md` **Timing**. Push or open a pull request
    only when the Git rules allow it.
 
-If a hypothesis or fix fails, go back to section 4 with the new evidence. After
-one failure on a hard problem, follow `sub-agents` for escalation. After three
-failed fixes, stop, name the doubtful assumption, and ask one diagnostic question.
+If a hypothesis or fix fails, go back to section 4 with the new evidence, and
+classify the failure, retry, and stop early per
+[escalation.md](../sub-agents/references/escalation.md). After three failed fixes,
+each a distinct hypothesis, stop, name the doubtful assumption, and ask one
+diagnostic question.
 
 ## 6. Narrow down
 
