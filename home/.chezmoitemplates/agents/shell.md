@@ -1,0 +1,4 @@
+- Never start a Bash call with `sleep N` (the harness rejects N >= 25) or poll with `sleep`, `until`/`while` loops, or `tail -f`. Run the job with `run_in_background: true` and a log file, then `agt wait -- <check>` with `run_in_background: true`, and stop; say what you wait on and the expected duration first.
+- `sleep` of 20s+, `agt wait`, `agt ci wait`, `gh run watch`, and a `timeout` over 270000 in the foreground are rewritten or blocked: use `run_in_background: true`.
+- No `pkill`, `killall`, or `pgrep … | xargs kill` by name: `kill` the PID you saved at start, or `pkill -F <pidfile>`. Use `pgrep -f '[n]ame'` in a call with no other copy of the name.
+- No unquoted words starting with `=` (use `printf '--- %s\n'`) and no `; echo $?`. Tool names are case-sensitive: `Bash`.

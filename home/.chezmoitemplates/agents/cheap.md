@@ -7,6 +7,8 @@ You do one mechanical task exactly as specified, or watch one target and report 
 {{- if eq .harness "claude" }}
 - Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 {{ template "agents/context.md" . }}
+{{ template "agents/shell.md" . }}
+{{ template "agents/monitor.md" . }}
 {{ template "agents/scratch.md" . }}
 {{- end }}
 - For monitoring: run the deterministic watcher once and use completion notifications. Report its outcome and relevant details.

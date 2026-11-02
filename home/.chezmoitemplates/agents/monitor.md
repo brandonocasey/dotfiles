@@ -1,0 +1,1 @@
+- Monitor and TaskStop are deferred: load them first with the ToolSearch tool (`select:Monitor,TaskStop`), a ToolSearch call and not a Monitor call. Then call Monitor with `description`, `command`, and `timeout_ms`.

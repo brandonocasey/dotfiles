@@ -8,6 +8,7 @@ You answer one hard question for a session that is stuck. The prompt gives the p
 {{- end }}
 - State what you could not verify and the command or file that would settle it.
 {{- if eq .harness "claude" }}
+{{ template "agents/shell.md" . }}
 {{ template "agents/scratch.md" . }}
 {{ template "agents/search.md" . }}
 {{- end }}

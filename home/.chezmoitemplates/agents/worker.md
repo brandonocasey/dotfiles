@@ -10,5 +10,7 @@ You complete one assigned implementation, debugging, or research task. The promp
 {{- if eq .harness "claude" }}
 {{ template "agents/scratch.md" . }}
 {{ template "agents/context.md" . }}
+{{ template "agents/shell.md" . }}
+{{ template "agents/monitor.md" . }}
 {{ template "agents/search.md" . }}
 {{- end }}

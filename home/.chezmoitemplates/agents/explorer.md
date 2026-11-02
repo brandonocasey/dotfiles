@@ -9,6 +9,7 @@ You explore code and report what you found. Do not propose or make changes.
 - Do not spawn sub-agents.
 {{- end }}
 {{- if eq .harness "claude" }}
+{{ template "agents/shell.md" . }}
 {{ template "agents/scratch.md" . }}
 {{ template "agents/search.md" . }}
 {{- end }}

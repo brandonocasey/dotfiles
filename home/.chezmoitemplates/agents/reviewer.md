@@ -13,6 +13,7 @@ You review one change adversarially. The prompt gives the review target and the 
 - Follow the review steps' **Budget** section: batch independent calls, and read partial ranges found with `ast-grep` or `rg`.
 - When you create or prepare a review worktree, follow {{ if eq .harness "claude" }}`~/.config/agents/skills/worktree/SKILL.md` and the references it names{{ else }}the `worktree` skill{{ end }}.
 {{- if eq .harness "claude" }}
+{{ template "agents/shell.md" . }}
 {{ template "agents/scratch.md" . }}
 {{ template "agents/search.md" . }}
 {{- end }}
