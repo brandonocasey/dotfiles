@@ -323,6 +323,41 @@ class KillScopeTests(GuardTestCase):
                 self.assertIn(f"run {listing} alone", result.stderr)
                 self.assertIn("then kill those PIDs by number in a separate call", result.stderr)
 
+    def test_killall_option_values_are_not_the_name(self):
+        for command in ("killall -s KILL node", "killall -sKILL node", "killall -u root node", "killall -q -y 5m node",
+                        "killall --signal KILL node", "killall -9 node"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn("run pgrep -fl '[n]ode' alone", result.stderr)
+        self.assertAllowed("killall -s KILL")
+
+    def test_kill_hint_for_a_pattern_that_expands_is_generic(self):
+        # A bracket after $ or ${ breaks the variable, and a leading ~ is no longer a home directory.
+        for command in ('pkill -f "$APP"', 'pkill -f "${APP}x"', "pkill -f ~/bin/server", "killall $NAME"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertNotIn("$[", result.stderr)
+                self.assertNotIn("{[", result.stderr)
+                self.assertNotIn("[~]", result.stderr)
+                self.assertIn("run pgrep -fl with the literal process name or path in single quotes, with one "
+                              "character of it in brackets, such as '[n]ame', alone", result.stderr)
+
+    def test_pattern_with_a_regex_part_written_elsewhere_is_blocked(self):
+        # '[d]ev-server.*node' still matches this shell: its own command line holds dev-server ... node.
+        for command in ("cd ~/w/dev-server && pgrep -f 'dev-server.*node'",
+                        'cat dev-server.mjs; pgrep -f "dev-server.mjs.*$p"',
+                        "cd ~/w/dev-server && pgrep -f '[d]ev-server.*node'"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, f"{command!r}: {result.stdout}")
+                self.assertIn("would also match this shell because 'dev-server", result.stderr)
+        # The same pattern with its prefix written nowhere else is still bracketed in place.
+        self.assertFixed("cd ~/w/other && pgrep -f 'dev-server.*node'", "cd ~/w/other && pgrep -f '[d]ev-server.*node'",
+                         note="cannot match its own shell")
+        self.assertFixed("pgrep -f 'node.*node'", "pgrep -f '[n]ode.*node'", note="cannot match its own shell")
+
     def test_self_matches_that_brackets_cannot_fix_are_blocked(self):
         # An unscoped pkill the broad-kill check missed (after if, or sudo -u root)
         # would still kill every match once bracketed, so it stays blocked.

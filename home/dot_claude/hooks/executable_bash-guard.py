@@ -75,6 +75,11 @@ PROC_SCOPE_OPTS = {"--parent", "--pgroup", "--session", "--terminal", "--pidfile
 PROC_SCOPE_LETTERS = "PgstF"
 # Linux procps uses GNU getopt, which also reads options after the pattern. macOS uses BSD
 # getopt, which reads them as more patterns: there `pkill -f x -P 1` also kills "-P" and "1".
+# killall options that take a value, so the next word is not the process name.
+KILLALL_ARG_OPTS = {"--signal", "--user", "--younger-than", "--older-than", "--context"}
+KILLALL_ARG_LETTERS = "suyoZ"
+ELSEWHERE = ("{tool} -f '{pattern}' would also match this shell because '{plain}' appears elsewhere "
+             "in the command. Run the {tool} alone in its own Bash call, with only the bracketed pattern.")
 OPTIONS_AFTER_PATTERN = sys.platform.startswith("linux")
 
 
@@ -292,12 +297,53 @@ def bracketed(pattern: str) -> str:
     return f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
 
 
+def written_elsewhere(pattern: str, cmd: str) -> str | None:
+    """The literal start of a pattern (up to its first regex operator or $) when cmd
+    also holds it outside the pattern, so the shell's own command line matches the pattern."""
+    plain = re.sub(r"\[(.)\]", r"\1", pattern)
+    literal = re.match(r"[^\\\[\](){}*+?|^$]*", plain).group()
+    if plain[len(literal):len(literal) + 1] in ("*", "+", "?", "{"):
+        literal = literal[:-1]  # the last character is optional or repeated
+    if literal and cmd.count(literal) > pattern.count(literal):
+        return literal
+    return None
+
+
 def kill_hint(pattern: str) -> str:
     """What to do instead of killing by name, with the command to list the processes."""
+    # A bracket inside $VAR or ${VAR} breaks it, and quotes stop $ and ~ from expanding.
+    if any(c in pattern for c in "$~`"):
+        listing = ("pgrep -fl with the literal process name or path in single quotes, with one "
+                   "character of it in brackets, such as '[n]ame',")
+    else:
+        listing = f"pgrep -fl '{bracketed(pattern)}'"
     return ("Kill the PID you saved when you started the process: kill $PID, or "
-            "pkill -F <pidfile>. If you did not save it, run "
-            f"pgrep -fl '{bracketed(pattern)}' alone, check that each line is yours, "
-            "then kill those PIDs by number in a separate call.")
+            f"pkill -F <pidfile>. If you did not save it, run {listing} alone, "
+            "check that each line is yours, then kill those PIDs by number in a separate call.")
+
+
+def killall_name(words: list[str]) -> str | None:
+    """The process name a killall is given: the first word that is not an option or its value."""
+    i = 0
+    while i < len(words):
+        w = words[i]
+        if w == "--":
+            return words[i + 1] if i + 1 < len(words) else None
+        if w.startswith("--"):
+            i += 1 if "=" in w or w not in KILLALL_ARG_OPTS else 2
+        elif re.match(r"-[A-Za-z]", w) and w[1:].removeprefix("SIG") not in SIGNALS:
+            # Letters up to the first that takes a value; the rest of the word is that
+            # value (-sKILL), or else the next word is (-s KILL, -qs KILL).
+            for j, c in enumerate(w[1:], 1):
+                if c in KILLALL_ARG_LETTERS:
+                    i += 1 if j == len(w) - 1 else 0
+                    break
+            i += 1
+        elif w.startswith("-"):
+            i += 1  # a signal such as -9 or -HUP
+        else:
+            return w
+    return None
 
 
 def broad_kills(cmd: str, code: str) -> dict[int, str]:
@@ -316,8 +362,7 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
         except ValueError:
             words = rest.split()
         if tool == "killall":
-            if any(not w.startswith("-") for w in words):
-                name = next(w for w in words if not w.startswith("-"))
+            if name := killall_name(words):
                 found[m.start(1)] = (
                     f"killall {' '.join(words)} stops every process with that name in every "
                     f"session, not only yours. {kill_hint(name)}"
@@ -572,7 +617,9 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                 continue  # no letter or digit to bracket
             # A pgrep only lists. A pkill here may be a broad kill that KILL_CMD
             # missed (after if, or sudo -u root), so only a scoped one is fixed.
-            if tool == "pgrep" or proc_args(words)[2]:
+            if (tool == "pgrep" or proc_args(words)[2]) and (literal := written_elsewhere(pattern, cmd)):
+                found.append(Problem(ELSEWHERE.format(tool=tool, pattern=pattern, plain=literal)))
+            elif tool == "pgrep" or proc_args(words)[2]:
                 found.append(Problem(
                     f"{tool} -f '{pattern}' also matches this shell's own command "
                     f"line. Bracket one character of the pattern so it cannot match "
@@ -585,12 +632,8 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                     f"pkill -f '{pattern}' stops every matching process in every session, "
                     f"and also this shell. {kill_hint(pattern)}"
                 ))
-        elif (plain := re.sub(r"\[(.)\]", r"\1", pattern)) in cmd:
-            found.append(Problem(
-                f"{tool} -f '{pattern}' would also match this shell because '{plain}' "
-                f"appears elsewhere in the command. Run the {tool} alone in its own "
-                "Bash call, with only the bracketed pattern."
-            ))
+        elif plain := written_elsewhere(pattern, cmd):
+            found.append(Problem(ELSEWHERE.format(tool=tool, pattern=pattern, plain=plain)))
     return found + [Problem(message) for message in kills.values()]
 
 
