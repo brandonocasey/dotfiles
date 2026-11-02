@@ -1,21 +1,24 @@
 #!/bin/sh
-# tmux status: CPU load as a percent of all cores, percent of memory in use, and
+# tmux status: CPU busy percent over one second (all cores, 0-100), percent of memory in use, and
 # free disk space in GB, on macOS and Linux.
 case $(uname) in
 Darwin)
-  load=$(sysctl -n vm.loadavg | awk '{print $2}')
+  # the first top sample averages since boot, so take the second, one second later
+  cpu=$(top -l 2 -n 0 -s 1 | awk '/CPU usage/ {v = $7} END {sub("%", "", v); printf "%d", 100 - v}')
   mem=$(memory_pressure -Q | awk '/free percentage/ {sub("%", "", $NF); print 100 - $NF}')
   # user files live on the Data volume; the read-only system volume at / reports misleading usage
   vol=/System/Volumes/Data
   ;;
 *)
-  load=$(cut -d' ' -f1 /proc/loadavg)
+  cpu_sample() { awk '/^cpu / {t = 0; for (i = 2; i <= NF; i++) t += $i; print t, $5 + $6}' /proc/stat; }
+  a=$(cpu_sample)
+  sleep 1
+  b=$(cpu_sample)
+  cpu=$(echo "$a $b" | awk '{dt = $3 - $1; di = $4 - $2; printf "%d", dt > 0 ? (dt - di) * 100 / dt : 0}')
   mem=$(awk '/^MemTotal/ {t = $2} /^MemAvailable/ {a = $2} END {printf "%d", (t - a) * 100 / t}' /proc/meminfo)
   vol=/
   ;;
 esac
-# 1-minute load average over core count; above 100% means work is queuing
-cpu=$(awk -v l="$load" -v n="$(getconf _NPROCESSORS_ONLN)" 'BEGIN {printf "%d", l * 100 / n}')
 # prints free space in GB, then free percent
 set -- $(df -Pk "$vol" | awk 'NR == 2 {printf "%d %d", $4 / 1048576, $4 * 100 / $2}')
 disk=$1
