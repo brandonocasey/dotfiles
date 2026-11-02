@@ -282,6 +282,47 @@ class KillScopeTests(GuardTestCase):
             with self.subTest(command=command):
                 self.assertFixed(command, expected, note="cannot match its own shell")
 
+    def test_quoted_patterns_with_expansions_are_bracketed_in_place(self):
+        # The brackets go around the first letter, so $p and $(...) later in the pattern still expand.
+        for command, expected in (('pgrep -f "dev-server.mjs.*$p"', 'pgrep -f "[d]ev-server.mjs.*$p"'),
+                                  ('pgrep -fa "node $PORT"', 'pgrep -fa "[n]ode $PORT"'),
+                                  ("pgrep -f 'vite.*\\$x'", "pgrep -f '[v]ite.*\\$x'"),
+                                  ('pgrep -fl "/srv/app-${NAME}"', 'pgrep -fl "/[s]rv/app-${NAME}"'),
+                                  ("pgrep -f 'x{2}y'", "pgrep -f '[x]{2}y'"),
+                                  ('pkill -P 123 -f "a$(echo b)c"', 'pkill -P 123 -f "[a]$(echo b)c"')):
+            with self.subTest(command=command):
+                self.assertFixed(command, expected, note="cannot match its own shell")
+
+    def test_patterns_whose_first_letter_is_inside_an_expansion_are_blocked(self):
+        # A bracket after $, ${, $( or a backslash, or in a {n} count, would change what it means.
+        for command in ('pgrep -f "$p.*x"', 'pgrep -f "${p}x"', 'pgrep -f "$(cat pat)"', "pgrep -f '\\d+x'",
+                        'pgrep -f "`cat pat`"', "pgrep -f '{3}x'"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, f"{command!r}: {result.stdout}")
+
+    def test_pattern_also_written_elsewhere_names_the_fix(self):
+        for command in ("cd /w/dev-server.mjs && pgrep -f '[d]ev-server.mjs'",
+                        "cat dev-server.mjs; pgrep -fl \"[d]ev-server.mjs\""):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn("would also match this shell because 'dev-server.mjs' appears elsewhere", result.stderr)
+                self.assertIn("Run the pgrep alone in its own Bash call, with only the bracketed pattern", result.stderr)
+        self.assertAllowed("pgrep -f '[d]ev-server.mjs'")
+
+    def test_kill_blocks_say_what_to_run_instead(self):
+        # Each names the PID route and a pgrep -fl with the command's own pattern, bracketed.
+        for command, listing in (("pkill -f node", "pgrep -fl '[n]ode'"), ("pkill -f '[v]ite dev'", "pgrep -fl '[v]ite dev'"),
+                                 ("pgrep -f '[n]ode' | xargs kill", "pgrep -fl '[n]ode'"),
+                                 ("killall -9 server", "pgrep -fl '[s]erver'"), ("pkill -9 -f 'a/b'", "pgrep -fl '[a]/b'")):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn("kill $PID, or pkill -F <pidfile>", result.stderr)
+                self.assertIn(f"run {listing} alone", result.stderr)
+                self.assertIn("then kill those PIDs by number in a separate call", result.stderr)
+
     def test_self_matches_that_brackets_cannot_fix_are_blocked(self):
         # An unscoped pkill the broad-kill check missed (after if, or sudo -u root)
         # would still kill every match once bracketed, so it stays blocked.

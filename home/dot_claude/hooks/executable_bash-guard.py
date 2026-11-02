@@ -282,6 +282,24 @@ def tool_names(rest: str) -> list[str]:
     return names
 
 
+def bracketed(pattern: str) -> str:
+    """The pattern with one character bracketed, so it cannot match this shell's own
+    command line. Unchanged when it has a bracket already or no letter or digit."""
+    first = re.search(r"[A-Za-z0-9]", pattern)
+    if "[" in pattern or not first:
+        return pattern
+    i = first.start()
+    return f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
+
+
+def kill_hint(pattern: str) -> str:
+    """What to do instead of killing by name, with the command to list the processes."""
+    return ("Kill the PID you saved when you started the process: kill $PID, or "
+            "pkill -F <pidfile>. If you did not save it, run "
+            f"pgrep -fl '{bracketed(pattern)}' alone, check that each line is yours, "
+            "then kill those PIDs by number in a separate call.")
+
+
 def broad_kills(cmd: str, code: str) -> dict[int, str]:
     """Kills by a name or pattern that also reach other sessions' processes,
     keyed by where each pkill, pgrep or killall starts.
@@ -289,8 +307,6 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
     No pattern is safe: paths are shared (a main checkout, $HOME) and a regex
     alternation such as 'x|own/path' matches beyond its own part.
     """
-    pick = ("List them with pgrep -fl '[n]ame', check they are yours, then kill "
-            "them by number in a separate call.")
     found = {}
     for m in KILL_CMD.finditer(code):
         tool = m.group(1)
@@ -301,8 +317,10 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
             words = rest.split()
         if tool == "killall":
             if any(not w.startswith("-") for w in words):
+                name = next(w for w in words if not w.startswith("-"))
                 found[m.start(1)] = (
-                    f"killall {' '.join(words)} stops matching processes in every session. {pick}"
+                    f"killall {' '.join(words)} stops every process with that name in every "
+                    f"session, not only yours. {kill_hint(name)}"
                 )
             continue
         if tool == "pgrep" and not (KILL_AFTER.match(code, m.end()) or KILL_BEFORE.search(code, 0, m.start(1))):
@@ -315,8 +333,7 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
         found[m.start(1)] = (
             f"{'pkill' if tool == 'pkill' else 'kill of pgrep'} '{pattern}' stops every matching "
             "process in every session: other tasks' tests and servers, and claude -p runs whose "
-            "prompt holds that text. Kill the PID you saved when you started the process "
-            f"(kill $PID, or pkill -F <pidfile>). {pick}{late}"
+            f"prompt holds that text. {kill_hint(pattern)}{late}"
         )
     return found
 
@@ -407,7 +424,13 @@ def add_toolsearch(cmd: str, pos: int) -> list[tuple[int, int, str]] | None:
 
 
 def bracket_edit(cmd: str, start: int, stop: int, pattern: str, safe: str) -> list[tuple[int, int, str]] | None:
-    """Replace the pattern written between start and stop with its bracketed form."""
+    """Bracket one character of the pattern written between start and stop, in place.
+
+    Inside quotes the brackets go around the pattern's first letter or digit and
+    nothing else changes, so $VAR and other expansions in the rest still work. An
+    unquoted pattern is quoted, which stops $VAR, ~ and globs from expanding, so it
+    is left to the model when it holds any.
+    """
     p = re.escape(pattern)
     m = re.compile(rf"'({p})'|\"({p})\"|(?<!\S)({p})(?=$|[\s;&|)])").search(cmd, start, stop)
     if not m:
@@ -416,9 +439,13 @@ def bracket_edit(cmd: str, start: int, stop: int, pattern: str, safe: str) -> li
         # Single quotes would stop $VAR, ~ and globs from expanding.
         return None if any(c in safe for c in "'\"$`\\~*?{") else [(m.start(3), m.end(3), f"'{safe}'")]
     group = 1 if m.group(1) is not None else 2
-    if group == 2 and any(c in safe for c in "\"$`\\"):
+    first = re.search(r"[A-Za-z0-9]", pattern)
+    before = pattern[:first.start()] if first else ""
+    # Not inside a $VAR, ${VAR} or $(...), after a backslash, in a {n} count, or in a backtick command.
+    if not first or re.search(r"\$[\w{(]*$|[\\{]$|`", before):
         return None
-    return [(m.start(group), m.end(group), safe)]
+    at = m.start(group) + first.start()
+    return [(at, at, "["), (at + 1, at + 1, "]")]
 
 
 def problems(cmd: str, background: bool) -> list[Problem]:
@@ -540,11 +567,9 @@ def problems(cmd: str, background: bool) -> list[Problem]:
         if not pattern or pattern.startswith("^"):
             continue
         if "[" not in pattern:
-            first = re.search(r"[A-Za-z0-9]", pattern)
-            if not first:
-                continue
-            i = first.start()
-            safe = f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
+            safe = bracketed(pattern)
+            if safe == pattern:
+                continue  # no letter or digit to bracket
             # A pgrep only lists. A pkill here may be a broad kill that KILL_CMD
             # missed (after if, or sudo -u root), so only a scoped one is fixed.
             if tool == "pgrep" or proc_args(words)[2]:
@@ -558,14 +583,13 @@ def problems(cmd: str, background: bool) -> list[Problem]:
             else:
                 found.append(Problem(
                     f"pkill -f '{pattern}' stops every matching process in every session, "
-                    "and also this shell. Kill the PID you saved when you started the "
-                    "process (kill $PID, or pkill -F <pidfile>)."
+                    f"and also this shell. {kill_hint(pattern)}"
                 ))
-        elif re.sub(r"\[(.)\]", r"\1", pattern) in cmd:
+        elif (plain := re.sub(r"\[(.)\]", r"\1", pattern)) in cmd:
             found.append(Problem(
-                f"{tool} -f '{pattern}': this command also contains the plain "
-                "text it matches, so it would still match this shell. Start "
-                "and stop the process in separate calls."
+                f"{tool} -f '{pattern}' would also match this shell because '{plain}' "
+                f"appears elsewhere in the command. Run the {tool} alone in its own "
+                "Bash call, with only the bracketed pattern."
             ))
     return found + [Problem(message) for message in kills.values()]
 
