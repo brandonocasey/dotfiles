@@ -134,12 +134,17 @@ def reasons(path: str, old: str, new: str) -> list[str]:
 
 
 def main() -> int:
-    data = json.load(sys.stdin)
-    tool, tool_input = data.get("tool_name"), data.get("tool_input") or {}
-    path = tool_input.get("file_path")
-    if tool not in ("Edit", "Write", "MultiEdit") or not isinstance(path, str):
+    try:
+        data = json.load(sys.stdin)
+    except ValueError:
         return 0
-    path = os.path.join(data.get("cwd") or "", os.path.expanduser(path))
+    if not isinstance(data, dict) or not isinstance(data.get("tool_input") or {}, dict):
+        return 0
+    tool, tool_input, cwd = data.get("tool_name"), data.get("tool_input") or {}, data.get("cwd") or ""
+    path = tool_input.get("file_path")
+    if tool not in ("Edit", "Write", "MultiEdit") or not isinstance(path, str) or not isinstance(cwd, str):
+        return 0
+    path = os.path.join(cwd, os.path.expanduser(path))
     old = read(path)
     if old is None:
         return 0

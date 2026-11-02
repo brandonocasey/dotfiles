@@ -165,6 +165,13 @@ class PassThroughTests(EditGuardTestCase):
         self.assertPasses("Edit", {"old_string": "a", "new_string": "b"})
         self.assertPasses("Edit", {"file_path": str(self.root), "old_string": "a", "new_string": "b # noqa"})
 
+    def test_malformed_input_passes(self):
+        for raw in ("{{{", "", "[1]", "null", '{"tool_name": "Edit", "tool_input": "x"}',
+                    '{"tool_name": "Edit", "tool_input": {"file_path": "a.py"}, "cwd": 5}'):
+            result = subprocess.run([sys.executable, "-I", str(HOOK)], env=self.env, capture_output=True, text=True,
+                                    input=raw, timeout=30)
+            self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""), raw)
+
     def test_relative_path_uses_the_session_directory(self):
         self.file("ruff.toml", "a = 1\n")
         self.assertAsks("Edit", {"file_path": "ruff.toml", "old_string": "a = 1", "new_string": "a = 2"}, "(ruff.toml)")

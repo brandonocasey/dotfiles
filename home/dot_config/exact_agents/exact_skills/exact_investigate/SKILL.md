@@ -138,7 +138,7 @@ exists, and go to section 6 for the rest.
    tools. Capture before and after evidence, such as screenshots or logs. Run 2-3
    nearby inputs before and after the fix to catch other behavior changes.
 6. After the fix is proven, have `explorer` list sites with the same pattern. Fix
-   one in the same change only when a test or a direct read shows the same cause;
+   a site in the same change only when a test or a direct read shows the same cause;
    list the rest as follow-ups. Add a test per fixed site.
 7. Commit per `commit`. This is an end point: run `review` per
    `review/references/when-to-run.md` **Timing**. Push or open a pull request

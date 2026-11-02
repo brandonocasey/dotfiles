@@ -19,7 +19,7 @@ Skip this and the next section when the prompt says `Cases: skipped`.
 Read repository run instructions and the changed code's callers.
 Derive cases from `Expected:` first. A case with no stated expected result is
 reported as `question` with the observed behavior, not pass or fail. As a fallback
-oracle, compare output before and after the change.
+oracle, compare output before and after the change: an unchanged case passes, a changed one is `question`.
 List every affected user journey, command, flag, route, and consumer. For each:
 
 - Run the boundary values of each changed input: empty, missing, zero, negative,

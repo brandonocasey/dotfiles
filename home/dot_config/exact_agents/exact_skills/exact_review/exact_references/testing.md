@@ -115,6 +115,7 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
 2. One `agt qa check --run <run> --name <name> --outcome <outcome> --kind <kind>`
    per returned check or case, with `--command` or `--steps -`, `--evidence` per
    path, `--env key=value` per fact, and `--note` for blocked or skipped reasons.
+   Record a `question` case as `skipped` and a `flaky` case as `fail`, with the word in `--note`.
    A retest reuses the earlier name, so its result replaces the old one.
 3. One `agt qa comment --check <check-id> --type bug --severity <high|medium|low>
    --body <text>` per verified failure the change caused, posted as a review comment: add

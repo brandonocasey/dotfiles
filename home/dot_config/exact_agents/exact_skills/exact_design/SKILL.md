@@ -13,7 +13,7 @@ Size the phase to the cost of being wrong:
 
 1. List the unknowns that change the design. Answer every one the code, docs, or history can.
 2. Ask the user only design choices with no safe default, batched as numbered options with a recommended default, per the output-style rules. Take reversible defaults and list them in the design; do not ask.
-3. Write `design.md` at `<scratch>/<task>/design.md`, at most 60 lines, with:
+3. Write `design.md` at `<scratch>/<task>/design.md` (under `agents/output/<task>/` when it needs approval), at most 60 lines, with:
    - goal;
    - decisions, each with a one-line reason;
    - rejected options, each with a reason;
@@ -22,6 +22,7 @@ Size the phase to the cost of being wrong:
    - "done means": criteria that a command or observation can check;
    - open questions.
 4. For a high-risk design only, get one independent critique: a fresh `consult` given `design.md` and the evidence paths, per `sub-agents`. Apply or answer each point in the file.
-5. The implementer follows `design.md` and returns a conflict with it as a question. It writes no second plan.
+5. For the full-design tier, show `design.md` to the user and wait for approval before implementing.
+6. The implementer follows `design.md` and returns a conflict with it as a question. It writes no second plan.
 
 Pass `design.md` to the tester as the source for `Expected:` per `review` [testing.md](../review/references/testing.md).

@@ -57,7 +57,6 @@ in this store) still need `--target <key>`.
 | Fix check says not fixed | `resolve <id> --not-fixed "<reason>" --reviewer <run>.<pass>.<id>`: replies and reopens |
 | Held question | `resolve <id> --triage question`; record the user's answer with `reply <id> --local --body <answer>` (never posted) |
 | Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
-| Fix-check inputs | `list --run <run> --cycle <n> --format prompt` (`--head HEAD` for a commit or range target) |
 | Prior reviews, open items, review range | `status [--head <sha>]` (`--full` adds commits and runs), `list --open` |
 | Post to an MR/PR | `publish`, also the review summary (one per MR/PR, updated for each ended run); `publish --dry-run` prints every payload; on another person's MR/PR when the user asks, `publish --not-own --only <ids>` after a `--dry-run` with the same flags (findings and user-written threads, never records) |
 | Approve (`--approve`, [approve-merge.md](approve-merge.md)) | `publish --approve`, `--formal` only on request; see approve-merge.md step 4 |
