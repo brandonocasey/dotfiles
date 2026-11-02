@@ -148,6 +148,13 @@ class ExitStatusEchoTests(GuardTestCase):
             with self.subTest(command=command):
                 self.assertBlocked(command, "exit code")
 
+    def test_status_echo_after_a_balanced_quoted_argument_is_dropped(self):
+        for command, expected in (("git commit -m 'a\nb'\necho $?", "git commit -m 'a\nb'"),
+                                  ('make "a b"\necho "exit=$?"', 'make "a b"'),
+                                  ("bash -c 'make' ; echo $?", "bash -c 'make'")):
+            with self.subTest(command=command):
+                self.assertFixed(command, expected, note="echo of $? was removed")
+
     def test_status_in_tests_and_assignments_is_allowed(self):
         for command in ("make; rc=$?", "make; if [ $? -ne 0 ]; then exit 1; fi", "make || [ $? -eq 2 ]",
                         "make; exit $?", "echo '$?'", "echo done",
@@ -301,6 +308,15 @@ class KillScopeTests(GuardTestCase):
                 result = self.run_hook(command)
                 self.assertEqual(result.returncode, 2, f"{command!r}: {result.stdout}")
 
+    def test_patterns_that_already_hold_a_bracket_expression_are_allowed(self):
+        # Single- and multi-character brackets: 'python[23] app.py' cannot match its own text.
+        for command in ("pgrep -f 'python[23] app.py'", 'pgrep -fl "python[23] app.py"', "pgrep -f '[p]ython app.py'",
+                        "pgrep -f 'a[23]b[45]'", "pgrep -f 'python[23] app.py' | wc -l",
+                        "pkill -P 123 -f 'python[23] app.py'"):
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.assertFixed("pgrep -f 'python app.py'", "pgrep -f '[p]ython app.py'", note="cannot match its own shell")
+
     def test_pattern_also_written_elsewhere_names_the_fix(self):
         for command in ("cd /w/dev-server.mjs && pgrep -f '[d]ev-server.mjs'",
                         "cat dev-server.mjs; pgrep -fl \"[d]ev-server.mjs\""):
@@ -344,6 +360,46 @@ class KillScopeTests(GuardTestCase):
                 self.assertIn("run pgrep -fl with the literal process name or path in single quotes, with one "
                               "character of it in brackets, such as '[n]ame', alone", result.stderr)
 
+    def test_wrapped_kills_name_the_process_without_the_script_quote(self):
+        for command, message in (("bash -c 'killall -s KILL node'", "killall -s KILL node stops every process"),
+                                 ('bash -c "killall node"', "killall node stops every process"),
+                                 ("sh -c 'pkill node'", "pkill 'node' stops every matching process"),
+                                 ("bash -c 'pkill -f node'", "pkill 'node' stops every matching process"),
+                                 ("killall -s KILL node", "killall -s KILL node stops every process")):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertIn(message, result.stderr)
+                self.assertIn("run pgrep -fl '[n]ode' alone", result.stderr)
+                self.assertNotIn("''", result.stderr)
+                self.assertNotIn("node\"", result.stderr)
+
+    def test_self_match_hints_for_a_pattern_that_expands_are_generic(self):
+        # No bracket inside $VAR, ${VAR}, ~ or a backtick command, in the self-match or the elsewhere message.
+        for command in ('pgrep -f "$HOME/x"', "pgrep -f '${APP}x'", "pgrep -fl ~/x/server", 'pgrep -f "`cat pat`"',
+                        'cat dev-server.mjs; pgrep -f "dev-server.mjs.*$p"',
+                        "cd ~/w/dev-server && pgrep -f '[d]ev-server.*$p'"):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                for broken in ("$[", "{[", "[~]", "`[", "bracketed pattern"):
+                    self.assertNotIn(broken, result.stderr)
+                self.assertIn("the literal process name or path in single quotes, with one "
+                              "character of it in brackets, such as '[n]ame'", result.stderr)
+
+    def test_each_distinct_message_is_printed_once(self):
+        for command, message in (("pgrep -f 'node' ; pgrep -f 'node'", "would also match this shell because 'node'"),
+                                 ("sh -c 'pgrep -f node; pgrep -f node'", "would also match this shell because 'node'"),
+                                 ("pkill -f node; pkill -f node", "pkill 'node' stops every matching process"),
+                                 ("killall node; killall node", "killall node stops every process")):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, result.stdout)
+                self.assertEqual(result.stderr.count(message), 1, result.stderr)
+        result = self.run_hook("pgrep -f 'node' ; pgrep -f 'vite'; cd node")
+        self.assertIn("'node' appears elsewhere", result.stderr)
+        self.assertIn("pgrep -f 'vite' also matches this shell's own command line", result.stderr)
+
     def test_pattern_with_a_regex_part_written_elsewhere_is_blocked(self):
         # '[d]ev-server.*node' still matches this shell: its own command line holds dev-server ... node.
         for command in ("cd ~/w/dev-server && pgrep -f 'dev-server.*node'",
@@ -357,6 +413,26 @@ class KillScopeTests(GuardTestCase):
         self.assertFixed("cd ~/w/other && pgrep -f 'dev-server.*node'", "cd ~/w/other && pgrep -f '[d]ev-server.*node'",
                          note="cannot match its own shell")
         self.assertFixed("pgrep -f 'node.*node'", "pgrep -f '[n]ode.*node'", note="cannot match its own shell")
+
+    def test_pattern_that_matches_nothing_else_in_the_command_is_not_blocked(self):
+        # The shell's command line holds the rest of the command, but the pattern as a regex cannot match it.
+        for command in ("pgrep -f 'python[23] app.py'; echo python", "cd dev-server && pgrep -f 'dev-server[0-9]+'"):
+            with self.subTest(command=command):
+                self.assertAllowed(command)
+        self.assertFixed("echo node; pgrep -f 'node +zz'", "echo node; pgrep -f '[n]ode +zz'",
+                         note="cannot match its own shell")
+
+    def test_pattern_whose_regex_matches_elsewhere_is_blocked_naming_the_match(self):
+        # The command line holds the pattern's own text too, so dev-server ... node matches across the two.
+        for command, matched in (("pgrep -f '[d]ev-server.*node'; cat dev-server.mjs; node x", "dev-server"),
+                                 ("cd dev-server-x && pgrep -f 'dev-server.*node'", "dev-server"),
+                                 ("pgrep -f '[n]ode server' ; echo node server", "node server"),
+                                 ("echo vite && pgrep -f '[v]ite'", "vite"),
+                                 ("pgrep -f 'node' ; pgrep -f 'node'", "node")):
+            with self.subTest(command=command):
+                result = self.run_hook(command)
+                self.assertEqual(result.returncode, 2, f"{command!r}: {result.stdout}")
+                self.assertIn(f"because '{matched}", result.stderr)
 
     def test_self_matches_that_brackets_cannot_fix_are_blocked(self):
         # An unscoped pkill the broad-kill check missed (after if, or sudo -u root)

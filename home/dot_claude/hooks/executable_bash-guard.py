@@ -78,8 +78,11 @@ PROC_SCOPE_LETTERS = "PgstF"
 # killall options that take a value, so the next word is not the process name.
 KILLALL_ARG_OPTS = {"--signal", "--user", "--younger-than", "--older-than", "--context"}
 KILLALL_ARG_LETTERS = "suyoZ"
+# For a pattern that expands, where a bracket inside $VAR, ${VAR}, ~ or a backtick command breaks it.
+LITERAL_HINT = ("the literal process name or path in single quotes, with one character of it in "
+                "brackets, such as '[n]ame'")
 ELSEWHERE = ("{tool} -f '{pattern}' would also match this shell because '{plain}' appears elsewhere "
-             "in the command. Run the {tool} alone in its own Bash call, with only the bracketed pattern.")
+             "in the command. Run the {tool} alone in its own Bash call, with {fix}.")
 OPTIONS_AFTER_PATTERN = sys.platform.startswith("linux")
 
 
@@ -297,9 +300,29 @@ def bracketed(pattern: str) -> str:
     return f"{pattern[:i]}[{pattern[i]}]{pattern[i + 1:]}"
 
 
-def written_elsewhere(pattern: str, cmd: str) -> str | None:
-    """The literal start of a pattern (up to its first regex operator or $) when cmd
-    also holds it outside the pattern, so the shell's own command line matches the pattern."""
+# Pattern text whose meaning pgrep decides at run time or differently from Python's re.
+NOT_PYTHON_RE = re.compile(r"[\\$~`]|\(\?|\[[\[:]")
+
+
+def written_elsewhere(pattern: str, safe: str, cmd: str, span: tuple[int, int]) -> str | None:
+    """The text of cmd that the pattern also matches, so the shell's own command line matches it.
+
+    The command line holds the pattern's own text, written between span's offsets, once
+    the fix has bracketed it to safe. A pattern that is not a plain regex, or whose own
+    text is not found in span, falls back to its literal start (up to the first regex
+    operator or $), counted outside the pattern.
+    """
+    at = cmd.find(pattern, *span)
+    regex = None
+    if at >= 0 and not NOT_PYTHON_RE.search(pattern):
+        try:
+            regex = re.compile(safe, re.DOTALL)
+        except re.error:
+            pass
+    if regex:
+        # An empty match (`x*`) is not text of the command.
+        found = next((f for f in regex.finditer(cmd[:at] + safe + cmd[at + len(pattern):]) if f.group()), None)
+        return found and (found.group()[:60] + "..." if len(found.group()) > 60 else found.group())
     plain = re.sub(r"\[(.)\]", r"\1", pattern)
     literal = re.match(r"[^\\\[\](){}*+?|^$]*", plain).group()
     if plain[len(literal):len(literal) + 1] in ("*", "+", "?", "{"):
@@ -309,17 +332,50 @@ def written_elsewhere(pattern: str, cmd: str) -> str | None:
     return None
 
 
+def expands(pattern: str) -> bool:
+    """Whether the shell expands part of the pattern. A bracket inside $VAR or ${VAR} breaks
+    it, and quotes stop $ and ~ from expanding."""
+    return any(c in pattern for c in "$~`")
+
+
+def elsewhere_message(tool: str, pattern: str, plain: str) -> str:
+    fix = LITERAL_HINT if expands(pattern) else "only the bracketed pattern"
+    return ELSEWHERE.format(tool=tool, pattern=pattern, plain=plain, fix=fix)
+
+
 def kill_hint(pattern: str) -> str:
     """What to do instead of killing by name, with the command to list the processes."""
-    # A bracket inside $VAR or ${VAR} breaks it, and quotes stop $ and ~ from expanding.
-    if any(c in pattern for c in "$~`"):
-        listing = ("pgrep -fl with the literal process name or path in single quotes, with one "
-                   "character of it in brackets, such as '[n]ame',")
+    if expands(pattern):
+        listing = f"pgrep -fl with {LITERAL_HINT},"
     else:
         listing = f"pgrep -fl '{bracketed(pattern)}'"
     return ("Kill the PID you saved when you started the process: kill $PID, or "
             f"pkill -F <pidfile>. If you did not save it, run {listing} alone, "
             "check that each line is yours, then kill those PIDs by number in a separate call.")
+
+
+def shell_words(text: str) -> list[str]:
+    """The words of a command's text. In a quoted -c script the text runs to the script's
+    closing quote, the first quote left unpaired, which is not part of any word."""
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c == "\\":
+            i += 2
+        elif c in "'\"":
+            j = i + 1
+            while j < len(text) and text[j] != c:
+                j += 2 if c == '"' and text[j] == "\\" else 1
+            if j >= len(text):
+                text = text[:i]
+                break
+            i = j + 1
+        else:
+            i += 1
+    try:
+        return shlex.split(text)
+    except ValueError:
+        return text.split()
 
 
 def killall_name(words: list[str]) -> str | None:
@@ -357,10 +413,7 @@ def broad_kills(cmd: str, code: str) -> dict[int, str]:
     for m in KILL_CMD.finditer(code):
         tool = m.group(1)
         rest = re.split(r"[;&|\n)`]", code[m.end():], maxsplit=1)[0]
-        try:
-            words = shlex.split(cmd[m.end():m.end() + len(rest)])
-        except ValueError:
-            words = rest.split()
+        words = shell_words(cmd[m.end():m.end() + len(rest)])
         if tool == "killall":
             if name := killall_name(words):
                 found[m.start(1)] = (
@@ -419,6 +472,8 @@ def drop_status_echo(original: str, cmd: str, code: str, bare: str, start: int) 
     before it into the foreground, and after | would leave a dangling pipe.
     Not inside a quoted script, group or substitution, whose closing ) } ` or
     quote the cut would remove, nor across a heredoc, which cmd holds blanked.
+    bare holds only quote delimiters, so an odd number of them in the cut means
+    it closes a quote that opens before it.
     """
     sep = cmd[start]
     if not (sep in ";\n" or (sep in "&|" and start > 0 and cmd[start - 1] == sep)):
@@ -427,6 +482,8 @@ def drop_status_echo(original: str, cmd: str, code: str, bare: str, start: int) 
         return None
     cut = len(cmd[:start].rstrip(" \t\n;&|"))
     if not cut or original[cut:start] != cmd[cut:start]:
+        return None
+    if len(re.findall(r"['\"]", re.sub(r"\\[\s\S]", "", bare[cut:]))) % 2:
         return None
     # A kept \ would join nothing, and a lone & in the cut (`job &; echo $?`)
     # would bring the job into the foreground.
@@ -602,10 +659,8 @@ def problems(cmd: str, background: bool) -> list[Problem]:
             continue  # blocked as a broad kill; a bracket alone would not make it safe
         tool = m.group(1)
         rest = re.split(r"[;&|\n)]", code[m.end():], maxsplit=1)[0]
-        try:
-            words = shlex.split(cmd[m.end():m.end() + len(rest)])
-        except ValueError:
-            words = rest.split()
+        words = shell_words(cmd[m.end():m.end() + len(rest)])
+        span = (m.end(), m.end() + len(rest))
         pattern = (proc_pattern(words) or "").strip("\"'")
         # An anchored pattern cannot match this shell, whose command line
         # starts with the shell's own path.
@@ -617,14 +672,14 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                 continue  # no letter or digit to bracket
             # A pgrep only lists. A pkill here may be a broad kill that KILL_CMD
             # missed (after if, or sudo -u root), so only a scoped one is fixed.
-            if (tool == "pgrep" or proc_args(words)[2]) and (literal := written_elsewhere(pattern, cmd)):
-                found.append(Problem(ELSEWHERE.format(tool=tool, pattern=pattern, plain=literal)))
+            if (tool == "pgrep" or proc_args(words)[2]) and (literal := written_elsewhere(pattern, safe, cmd, span)):
+                found.append(Problem(elsewhere_message(tool, pattern, literal)))
             elif tool == "pgrep" or proc_args(words)[2]:
                 found.append(Problem(
-                    f"{tool} -f '{pattern}' also matches this shell's own command "
-                    f"line. Bracket one character of the pattern so it cannot match "
-                    f"itself: '{safe}'.",
-                    bracket_edit(cmd, m.end(), m.end() + len(rest), pattern, safe), False,
+                    f"{tool} -f '{pattern}' also matches this shell's own command line. "
+                    + (f"Use {LITERAL_HINT} instead." if expands(pattern) else
+                       f"Bracket one character of the pattern so it cannot match itself: '{safe}'."),
+                    bracket_edit(cmd, *span, pattern, safe), False,
                     f"The {tool} -f pattern is now '{safe}', so it cannot match its own shell."
                 ))
             else:
@@ -632,8 +687,8 @@ def problems(cmd: str, background: bool) -> list[Problem]:
                     f"pkill -f '{pattern}' stops every matching process in every session, "
                     f"and also this shell. {kill_hint(pattern)}"
                 ))
-        elif plain := written_elsewhere(pattern, cmd):
-            found.append(Problem(ELSEWHERE.format(tool=tool, pattern=pattern, plain=plain)))
+        elif plain := written_elsewhere(pattern, pattern, cmd, span):
+            found.append(Problem(elsewhere_message(tool, pattern, plain)))
     return found + [Problem(message) for message in kills.values()]
 
 
@@ -717,7 +772,7 @@ def main() -> int:
             "hookEventName": "PreToolUse", "updatedInput": updated, "additionalContext": note,
         }}))
         return 0
-    print("bash-guard: " + " ".join(p.message for p in found), file=sys.stderr)
+    print("bash-guard: " + " ".join(dict.fromkeys(p.message for p in found)), file=sys.stderr)
     return 2
 
 
