@@ -9,12 +9,11 @@
 - Never put Claude session or artifact links (claude.ai/artifact, claude.ai/code, session URLs) in public-facing text: MR/PR titles and descriptions, comments, commits, docs, issues, or release notes. Attach the content itself (images, logs, text) instead.
 - Manually check visible behavior; use `ux-verify` for UI and other user-facing output. Automated tests alone do not count. Internal refactors with passing tests and text-only edits need only a diff check.
 - Never weaken/skip/remove tests, add lint/type suppressions, or edit test/lint/type config without consent. Intended behavior changes may update tests; disclose them.
-- Waiting (in Claude Code a hook moves foreground waits to the background and blocks the kills; use the replacement first time):
-  - `sleep` of 20s+, a loop that sleeps, or `sleep N; cat log` of any length → run the job with `run_in_background: true` and a log file, then stop until its exit notification.
-  - `agt wait`, `agt ci wait`, `gh run watch`, or a long sub-agent call in the foreground → same command with `run_in_background: true`, then stop.
+- Waiting (Claude Code's hook moves most foreground waits to the background, but a call that starts with `sleep N`, N >= 25, is rejected before the hook runs, so never lead with `sleep`):
+  - `sleep` of 20s+, a loop that sleeps, `sleep N; cat log`, `agt wait`, `agt ci wait`, `gh run watch`, or a long sub-agent call in the foreground → run it with `run_in_background: true` (jobs write a log file), then stop until its exit notification.
   - Commands likely to take over ~20s (test suites, builds, browser runs) start in the background; short commands stay foreground.
-  - `pkill`, `killall`, or `pgrep … | xargs kill` by name → `kill` the PID you saved at start, or `pkill -F <pidfile>`. A name or path also stops other sessions' processes. For a process you did not start, list it with `pgrep -fl '[n]ame'`, then kill it by number in a separate call.
-  - `pgrep -f name` → `pgrep -f '[n]ame'`, with no other unbracketed copy of the name in the command.
+  - `pkill`, `killall`, or `pgrep … | xargs kill` by name also stops other sessions' processes → `kill` the PID you saved at start, or `pkill -F <pidfile>`; for one you did not start, list it with `pgrep -fl '[n]ame'`, then kill it by number in a separate call.
+  - `pgrep -f '[n]ame'` goes in a call of its own: no `cd` into or `cat` of a path holding the name.
   - When stopping to wait, say what you are waiting on and the expected duration.
 - Never sit idle waiting. When remaining steps must wait a long time (pipelines, reviews, slow runs), hand them off to one or more fitting agents per `sub-agents`; meanwhile, review, do other tasks, and make fixes. When a push is authorized, push as soon as local checks pass so CI starts early.
 - Use `agent-probe` for headless usage or A/B probes. In other `claude -p` runs, keep `ToolSearch` in any `--tools` list. When tool search is off (`ENABLE_TOOL_SEARCH=false` in env or settings, a custom `ANTHROPIC_BASE_URL`, or ToolSearch denied), add `--strict-mcp-config`. Without these, every connector tool is sent in full: about 600k tokens per call.

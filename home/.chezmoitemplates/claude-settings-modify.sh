@@ -236,6 +236,16 @@ managed=$(
         ]
       },
       {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/edit-guard.py",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "SendMessage",
         "hooks": [
           {
