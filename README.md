@@ -23,6 +23,14 @@ one. An unchanged configuration does not trigger another reload.
 Before that reload, the same configuration change runs tpm to install missing
 plugins and update all plugins.
 
+Codex's title hook watches the saved session name once per second while Codex
+runs. Delayed automatic titles, `/rename`, and resumed sessions update tmux
+without waiting for a turn to finish. The active pane in the active window
+supplies the name; switching panes selects that pane's title. A manual tmux
+rename lasts until the next title change, pane switch, or title hook.
+Names retain the shared title cleaning and duplicate-name suffixes.
+Outside a remote tmux server, SSH title forwarding still runs only at hook time.
+
 ## Agent skills
 
 Chezmoi manages `~/.config/agents/` and every owned folder under it as

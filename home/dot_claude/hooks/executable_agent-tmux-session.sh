@@ -122,6 +122,32 @@ codex)
   session_id=$(printf '%s' "$hook_input" | jq -r '.session_id // empty' 2>/dev/null)
   [ -n "$session_id" ] || exit 0
   index_file="${CODEX_HOME:-$HOME/.codex}/session_index.jsonl"
+  # A detached watcher MUST stop when its Codex process exits or another session
+  # takes this pane. Hook timeouts must not bound idle /rename synchronization.
+  if [ "$target" = tmux ]; then
+    owner=$PPID
+    while [ "$owner" -gt 1 ] 2>/dev/null; do
+      process=$(ps -p "$owner" -o comm= 2>/dev/null)
+      case $process in
+      codex | */codex)
+        token="$session_id:$$"
+        tmux set-option -p -t "$TMUX_PANE" @codex_title_owner "$token" 2>/dev/null || exit 0
+        nohup sh "$0" watch-codex "$session_id" "$owner" "$token" </dev/null >/dev/null 2>&1 &
+        exit 0
+        ;;
+      esac
+      owner=$(ps -p "$owner" -o ppid= 2>/dev/null | tr -d ' ')
+    done
+  fi
+  ;;
+watch-codex)
+  [ "$target" = tmux ] || exit 0
+  session_id=${2:-}
+  owner=${3:-}
+  token=${4:-}
+  case $owner in '' | *[!0-9]*) exit 0 ;; esac
+  [ -n "$session_id" ] && [ -n "$token" ] || exit 0
+  index_file="${CODEX_HOME:-$HOME/.codex}/session_index.jsonl"
   ;;
 *)
   echo "agent-tmux-session: unknown agent '$agent'; use claude, codex, or set" >&2
@@ -144,11 +170,34 @@ session_title() {
     return 0
   fi
   [ -r "$index_file" ] || return 0
-  jq -sr --arg id "$session_id" '
-    map(select(.id == $id)) |
-    if length > 0 then .[-1].thread_name // empty else empty end
+  jq -Rnr --arg id "$session_id" '
+    reduce (inputs | fromjson? | select(.id == $id and (.thread_name | type) == "string")) as $e
+      (""; $e.thread_name)
   ' "$index_file" 2>/dev/null
 }
+
+if [ "$agent" = watch-codex ]; then
+  last_title=
+  while kill -0 "$owner" 2>/dev/null &&
+    [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ]; do
+    active=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_active} #{window_active}' 2>/dev/null)
+    if [ "$active" = '1 1' ]; then
+      title=$(session_title)
+      if [ -n "$title" ] && [ "$title" != "$last_title" ]; then
+        [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ] || break
+        rename "$title"
+        last_title=$title
+      fi
+    else
+      last_title=
+    fi
+    sleep 1
+  done
+  if [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ]; then
+    tmux set-option -pu -t "$TMUX_PANE" @codex_title_owner 2>/dev/null
+  fi
+  exit 0
+fi
 
 # The title entry can land just after the hook fires, so retry briefly.
 attempt=0
