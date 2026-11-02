@@ -41,9 +41,11 @@ other parts.
 2. **Verify.** Check the diff covers the assignment and touches only owned
    files, the scoped checks pass, and `decisions.md` exists. Commit in the
    part's worktree.
-3. **QA.** A fresh `tester` on the part's worktree; record cases with `agt qa`.
+3. **QA.** A fresh `tester` on the part's worktree, given the part's acceptance
+   criteria as `Expected:`; record cases with `agt qa`.
 4. **QA fixes.** A `worker` per **Prompt caching** in `sub-agents`, with
-   `decisions.md`. Stop after 2 rounds and report the part blocked. Leave a blocked part out of
+   `decisions.md`. Stop after 2 rounds, or sooner per
+   [escalation.md](../sub-agents/references/escalation.md), and report the part blocked. Leave a blocked part out of
    Integrate and keep its worktree for the user.
 5. **Review.** Run `review-fix` on the part's branch against `<base>`; delegate
    its fixes as in stage 4.

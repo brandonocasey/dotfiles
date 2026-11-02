@@ -1,3 +1,11 @@
+## Failed attempts and loops
+
+Loop caps (rounds, retests, fix checks) are ceilings. Stop a loop early when the same failure signature (check, error text, location) repeats or a round fixes nothing new.
+After a failed attempt, retry in a fresh context with a 5-8 line brief of what was ruled out, with evidence paths. Classify the failure first:
+
+- **Implementation** (the cause is believed right, the check fails): one fresh same-model retry given the check output.
+- **Diagnosis** (the cause is wrong, or there is no check): escalate to `consult` at once.
+
 ## Escalate with `consult`
 
 Only the main session may escalate.

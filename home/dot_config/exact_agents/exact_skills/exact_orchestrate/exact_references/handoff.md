@@ -16,9 +16,11 @@ the orchestrator, so run the stages below.
 
 1. **Implement.** One `worker` on its sonnet pin. It writes `decisions.md` per
    `sub-agents`. Check and commit.
-2. **QA.** A fresh `tester` on the committed work; record cases with `agt qa`.
+2. **QA.** A fresh `tester` on the committed work, given the acceptance criteria
+   as `Expected:`; record cases with `agt qa`.
 3. **QA fixes.** Per **Prompt caching** in `sub-agents`, with `decisions.md`.
-   Stop after 2 rounds and report.
+   Stop after 2 rounds, or sooner per `sub-agents`
+   [escalation.md](~/.config/agents/skills/sub-agents/references/escalation.md), and report.
 4. **Review.** Run `review-fix` and follow every step: its tester, its reviewer,
    and its `agt review` records through `agt review run end`. The main session
    reviews again when the store shows no review. Delegate its fixes as in stage 3.
