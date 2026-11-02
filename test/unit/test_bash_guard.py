@@ -341,7 +341,8 @@ class KillScopeTests(GuardTestCase):
 
     def test_killall_option_values_are_not_the_name(self):
         for command in ("killall -s KILL node", "killall -sKILL node", "killall -u root node", "killall -q -y 5m node",
-                        "killall --signal KILL node", "killall -9 node"):
+                        "killall --signal KILL node", "killall -9 node", "killall -n 1234 node",
+                        "killall --ns 1234 node", "killall --sig KILL node"):
             with self.subTest(command=command):
                 result = self.run_hook(command)
                 self.assertEqual(result.returncode, 2, result.stdout)

@@ -76,8 +76,8 @@ PROC_SCOPE_LETTERS = "PgstF"
 # Linux procps uses GNU getopt, which also reads options after the pattern. macOS uses BSD
 # getopt, which reads them as more patterns: there `pkill -f x -P 1` also kills "-P" and "1".
 # killall options that take a value, so the next word is not the process name.
-KILLALL_ARG_OPTS = {"--signal", "--user", "--younger-than", "--older-than", "--context"}
-KILLALL_ARG_LETTERS = "suyoZ"
+KILLALL_ARG_OPTS = {"--signal", "--user", "--younger-than", "--older-than", "--ns", "--context"}
+KILLALL_ARG_LETTERS = "suyonZ"
 # For a pattern that expands, where a bracket inside $VAR, ${VAR}, ~ or a backtick command breaks it.
 LITERAL_HINT = ("the literal process name or path in single quotes, with one character of it in "
                 "brackets, such as '[n]ame'")
@@ -386,7 +386,8 @@ def killall_name(words: list[str]) -> str | None:
         if w == "--":
             return words[i + 1] if i + 1 < len(words) else None
         if w.startswith("--"):
-            i += 1 if "=" in w or w not in KILLALL_ARG_OPTS else 2
+            # getopt_long also takes an unambiguous prefix, such as --sig for --signal.
+            i += 1 if "=" in w or not any(o.startswith(w) for o in KILLALL_ARG_OPTS) else 2
         elif re.match(r"-[A-Za-z]", w) and w[1:].removeprefix("SIG") not in SIGNALS:
             # Letters up to the first that takes a value; the rest of the word is that
             # value (-sKILL), or else the next word is (-s KILL, -qs KILL).
