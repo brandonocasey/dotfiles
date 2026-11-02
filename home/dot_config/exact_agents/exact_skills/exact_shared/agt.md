@@ -12,8 +12,16 @@ events (`agt ps --watch`). Each command's `--help` documents its JSON fields and
 
 Run `agt --version` once per run. When it fails or prints an older version than the
 stated minimum, run `mise install github:brandonocasey/agt` (it reads the
-GitHub token of `gh`), then check again. When it still fails, stop and report:
-`agt <minimum> missing: run gh auth login, then mise install; Windows is not supported`.
+GitHub token of `gh`), then check `"$(mise which agt)" --version`:
+
+- It prints the minimum or newer, but `agt --version` does not: the session's `PATH`
+  predates the install. Call agt by the `mise which agt` path for the rest of the
+  session; new sessions find it on `PATH`.
+- It still prints an older version: this machine's mise config pins that version,
+  because its dotfiles predate the new pin. Stop and report:
+  `agt <minimum> missing: run chezmoi update, then mise install github:brandonocasey/agt, then start a new session`.
+- The install fails: stop and report
+  `agt <minimum> missing: run gh auth login, then mise install; Windows is not supported`.
 
 A skill that works without `agt` says so and skips the install above. It uses its
 own fallback instead.
