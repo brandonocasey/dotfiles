@@ -2,7 +2,8 @@
 # Feeds the sesh picker (sesh-pick.sh). Colors each tmux session's
 # name with its @session_color, as in the status line, and adds its
 # agent state after the name, colored like the window list: a yellow ●
-# when any pane waits for input, else a green ● when any pane works.
+# when any pane waits for input, else a green ● when any pane works. Then
+# come the agents it runs (claude, codex), from tmux.conf's @agent_tool.
 # It reads the state from the colors in tmux.conf's @agent_status; keep them in
 # sync. The state follows a tab, so the picker passes only the part before it on.
 # Usage: sesh-list.sh list [sesh list flags]
@@ -16,6 +17,7 @@ kill)
 list)
   shift
   states=$(tmux list-panes -a -F '#{session_name}	#{E:@agent_status}' 2>/dev/null)
+  tools=$(tmux list-panes -a -F '#{session_name}	#{E:@agent_tool}' 2>/dev/null)
   colors=$(tmux list-sessions -F '#{session_name}	#{@session_color}' 2>/dev/null)
   order=$(tmux list-sessions -F '#{session_created}	#{session_name}' 2>/dev/null | sort -n | cut -f2-)
   # sesh sorts tmux sessions by activity, so they jump around on every
@@ -40,11 +42,17 @@ list)
       line=$(printf '%s\033[38;2;%sm%s\033[39m' "${line%"$name"}" "$rgb" "$name")
       ;;
     esac
+    used=$(printf '%s\n' "$tools" | awk -F '\t' -v n="$name" '$1 == n && $2 != "" && !seen[$2]++ { printf "%s%s", sep, $2; sep = " " }')
     case $mine in
-    *D7AF00*) printf '%s\t\033[38;5;178m●\033[0m\n' "$line" ;;
-    *5FD700*) printf '%s\t\033[38;5;76m●\033[0m\n' "$line" ;;
-    *) printf '%s\n' "$line" ;;
+    *D7AF00*) dot='\033[38;5;178m● ' ;;
+    *5FD700*) dot='\033[38;5;76m● ' ;;
+    *) dot= ;;
     esac
+    if [ -n "$dot$used" ]; then
+      printf "%s\t$dot\033[38;5;245m%s\033[0m\n" "$line" "$used"
+    else
+      printf '%s\n' "$line"
+    fi
   done
   ;;
 *) exit 2 ;;
