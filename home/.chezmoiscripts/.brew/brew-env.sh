@@ -7,10 +7,6 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # Only install missing packages; never upgrade outdated ones here. Upgrades
 # are manual via `brew upgrade` so a Brewfile edit stays fast.
 export HOMEBREW_BUNDLE_NO_UPGRADE=1
-# Homebrew 6 refuses formulae from third-party taps (wader, anomalyco, …) and
-# aborts the entire bundle on the first one. These are taps we deliberately use,
-# so opt out of the trust requirement for the bundle.
-export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
 # brew clears every variable without a HOMEBREW_ prefix before it reads a
 # Brewfile, so pass the container flag through under that prefix.
 export HOMEBREW_RUNNING_IN_DOCKER="${RUNNING_IN_DOCKER:-}"
@@ -25,6 +21,10 @@ brewfile() {
 
 # Install whatever the named Brewfile lists but the host lacks.
 brew_bundle_install() {
+  # Homebrew refuses formulae from third-party taps until they are trusted, and
+  # aborts the entire bundle on the first one. Trust only the taps this Brewfile
+  # names for this host.
+  brew bundle list --tap --file="$(brewfile "$1")" | xargs -r brew trust --tap
   # `check` is seconds when nothing is missing; skip the slow install then.
   # One bad entry (e.g. a cask Homebrew disabled) fails the whole bundle. Warn
   # instead of failing, so it never blocks the rest of `chezmoi apply`.

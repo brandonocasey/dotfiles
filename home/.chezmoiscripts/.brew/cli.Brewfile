@@ -95,9 +95,8 @@ brew 'htmlq'
 if OS.mac?
   brew 'opencode'
 else
-  # On Linux opencode comes from a third-party tap; HOMEBREW_NO_REQUIRE_TAP_TRUST
-  # (set in brew-env.sh) lets the bundle use it. Its Linux bottles cover
-  # both x86_64 and arm64.
+  # On Linux opencode comes from a third-party tap, which brew_bundle_install
+  # (brew-env.sh) trusts. Its Linux bottles cover both x86_64 and arm64.
   tap 'anomalyco/tap'
   brew 'anomalyco/tap/opencode'
 end
@@ -118,8 +117,8 @@ unless ENV['HOMEBREW_RUNNING_IN_DOCKER'] == 'true'
   brew 'docker-buildx'
   brew 'act'
 
-  # Android: adb, then sdkmanager and avdmanager (they run on openjdk@17). The emulator
-  # and its system image come from sdkmanager (any-linux/run_onchange_after_09-android-sdk.sh.tmpl).
+  # Android: adb, then the android CLI and avdmanager (they run on openjdk@17). The emulator
+  # and its system image come from `android sdk` (any-linux/run_onchange_after_09-android-sdk.sh.tmpl).
   cask 'android-platform-tools'
   cask 'android-commandlinetools'
   brew 'openjdk@17'
