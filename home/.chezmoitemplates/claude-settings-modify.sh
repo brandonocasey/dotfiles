@@ -6,7 +6,7 @@
 # To hand another key to the app, add its name to KEEP_KEYS.
 set -euo pipefail
 
-KEEP_KEYS='["model", "effortLevel", "modelSettings"]'
+KEEP_KEYS='["model", "effortLevel", "modelSettings", "agentPushNotifEnabled"]'
 
 # Values here are the fallback for a machine that has no settings.json yet.
 managed=$(
