@@ -22,6 +22,21 @@ codex() (
 	command codex --no-daemon "$@"
 )
 
+android() (
+	for android_launch_argument do
+		case $android_launch_argument in
+		--)
+			break
+			;;
+		--no-metrics)
+			command android "$@"
+			return
+			;;
+		esac
+	done
+	command android --no-metrics "$@"
+)
+
 if command -v eza >/dev/null 2>&1; then
 	alias ls='eza'
 	alias ll='eza -l --git --icons --time-style=long-iso'
