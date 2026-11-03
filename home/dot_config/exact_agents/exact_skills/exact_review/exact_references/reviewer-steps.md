@@ -75,6 +75,13 @@ read the diff looking for things that seem off — attack it:
   selector, export, flag, route, or file path, grep the whole repository, including unit,
   E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
   in suites the author did not run were the most common CI-only failure after a review.
+- **Check maintainability** against the **Maintainability** rules in
+  [code-quality.md](../../code-standards/references/code-quality.md). For each new
+  function, block, or constant, search the repository once for code that already does
+  it. Report logic the change copies (name both places), changes the task does not
+  need, and code placed outside the module that owns its concern (name that module).
+  Report one only when you can name the existing copy, the hunk the task does not
+  need, or the owning module.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.
@@ -120,7 +127,7 @@ read the diff looking for things that seem off — attack it:
   defect when it misstates a contract or behavior, not merely because it could be
   shorter or styled differently. A `requirement` finding quotes the rule and names
   its file: AGENTS.md, CLAUDE.md, or REVIEW.md at the root or in any changed
-  directory. Skip paths a REVIEW.md lists under `Skip:`.
+  directory, or the **Maintainability** section of code-quality.md. Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown
 

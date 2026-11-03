@@ -1,6 +1,6 @@
 ## Code Quality
 
-- Choose the solution that leaves the least code to maintain, not the smallest diff, within the code you touch. Before writing or editing code, prefer in this order: deletion, an existing codebase helper or a method that already sets the same state (call a setter for the initial value instead of repeating its assignments), the standard library, a native platform feature (CSS over JS, a database constraint over application code), an installed dependency, an established package, then minimal new code. Add no interface with one implementation, factory for one product, or configuration for a value that never changes.
+- Choose the solution that leaves the least code to maintain within the code the task touches. A larger diff is fine when it leaves less code, such as replacing a copy with a call to a shared helper. Before writing or editing code, prefer in this order: deletion, an existing codebase helper or a method that already sets the same state (call a setter for the initial value instead of repeating its assignments), the standard library, a native platform feature (CSS over JS, a database constraint over application code), an installed dependency, an established package, then minimal new code. Add no interface with one implementation, factory for one product, or configuration for a value that never changes.
 - Add a dependency only when it saves significant time or prevents technical debt. Prefer small, well-maintained packages with few transitive dependencies.
 - In unreleased code, change every caller of a renamed or replaced API. Do not keep compat shims, legacy aliases, or deprecation paths unless the user asks.
 - Do not edit CHANGELOG files by hand unless the repository documents manual edits; release tooling writes them.
@@ -15,6 +15,14 @@
 - Export only what a current caller uses. Keep the public API minimal
 - In a loop over independent items (repositories, files, worktrees, records), one item's failure warns and the loop goes on. An item that vanished before you acted on it counts as done, not as an error. Record what was done before any step that can fail.
 - Quote or validate every outside string before it reaches a shell, a git ref, a path join, or a URL. Compare paths as paths, not string prefixes. Decide whether to follow symlinks. Test with a space, a `;`, and a symlink.
+
+## Maintainability
+
+Reviews report breaks of these rules as `requirement` findings.
+
+- No duplication. Before writing a function, block, constant, or style rule, `rg` for code that already does it and call that. When you need a variant, extend the existing code. When the change would otherwise create a second copy, move the logic to the module that owns it and have both callers use it; that edit counts as needed by the task. Leave existing copies the task does not touch. Only copies that cannot share code, such as ones in different languages, are exempt; keep them in sync per the two-places rule above. Client and server code in one language share a module.
+- Change only what the task needs. Make no drive-by renames, reformatting, reordering, or refactors in code the task does not need to change. Put an unrelated fix you choose to make in its own commit.
+- Put code where it belongs. Place it in the module that owns its concern, next to the code it works with, following the layout the repository already uses for that kind of code. Do not add a helper inside one caller when others need it, or a new generic `utils` file when an owning module exists. When the repository documents where code goes, follow that; when the place is unclear, ask.
 
 ## Edge cases to list before coding
 

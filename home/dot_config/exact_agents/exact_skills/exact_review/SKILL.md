@@ -6,8 +6,9 @@ description: "Review PRs/MRs, diffs, commits, branches, or threads for verified 
 Review a code change adversarially: assume it is broken and try to prove it. The
 deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
-explained in plain language. Report verified defects and explicit repository
-requirement violations. Include optional style suggestions only when requested.
+explained in plain language. Report verified defects, explicit repository
+requirement violations, and maintainability rule violations (duplication,
+unneeded changes, misplaced code). Include optional style suggestions only when requested.
 
 Arguments: `--test` and `--no-test` (**Testing**), `--fix` (steps 4–5), `--threads`
 (step 6), `--approve`, `--auto-merge`, and `--merge` (step 7), and
