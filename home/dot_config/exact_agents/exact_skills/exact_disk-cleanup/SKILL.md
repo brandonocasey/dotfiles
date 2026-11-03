@@ -63,6 +63,12 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   - Xcode DerivedData and unavailable simulators;
   - package manager leftovers (`apt clean`, `brew cleanup`);
   - Linux journals (`journalctl --vacuum-size=<size>`);
+  - app caches under `~/Library/Caches/<bundle-id>` (macOS) or `~/.cache/<app>`, such as
+    media players and browsers, but never their offline downloads or profiles;
+  - per-entry temp leftovers, such as `*.code_sign_clone` under the user temp
+    `../X` directory (macOS);
+  - Playwright and other test-result directories in task scratch;
+  - iOS simulator devices and runtimes;
   - trash.
 
   Discover their actual paths from installed tools and safe configuration path
@@ -124,6 +130,12 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   checkouts, independently qualify inactive build outputs and linked scratch. See the
   dependencies bullet above. Classify them under agent-resources **Build outputs and
   linked scratch**. Unknown files and requested deliverables still protect the checkout.
+- Unmerged worktrees are never removal candidates by default. List each one over
+  1 GiB in **Protected but large** with its size, last commit date, branch state
+  (ahead/behind, upstream gone), and last activity. Offer its dependencies and build
+  output as candidates under the rule above. Offer the whole worktree only as
+  `needs review`, removable on an approval naming it, through
+  `agt worktree remove <path> --yes`, which backs it up and keeps the branch.
 - Inventory each worktree's build targets and task scratch separately from the checkout.
   A process using any descendant protects the whole worktree from build cleanup.
   Unfinished durable tasks protect outputs they still need. Rules:
@@ -139,7 +151,13 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
 Every run reports:
 
 - used and total space from `df`, and how much of it the scan accounted for;
-- the top 5–10 consumers by path and size, each with a one-line description;
+- the top 10 consumers by path and size, each with a one-line description and a
+  status: `candidate`, `needs review`, or `protected`. Never leave a top consumer
+  out because a rule protects it;
+- a **Protected but large** list: every skipped entry of 1 GiB or more (or the top 10),
+  each with the rule that blocked it and the one question that would unblock it,
+  such as "quit Spotify?" or "is `serv-18832` still needed?". These are not
+  candidates. Removal still needs the normal preview and an approval naming the entry;
 - anything the scan could not see, such as unreadable folders, snapshots, and other mounts.
 
 An analysis-only request stops here.

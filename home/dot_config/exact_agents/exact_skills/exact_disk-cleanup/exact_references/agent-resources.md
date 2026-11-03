@@ -107,6 +107,11 @@ wipe entire profile or shared cache roots. Age alone does not prove a cache file
   screenshots/reports, databases, source, credentials, recovery data and unknown files stay
   protected unless their disposal is separately established. A mixed directory can have
   eligible children without deleting the parent.
+- Playwright output (`test-results`, `*-results`, traces, videos) in task scratch qualifies
+  when a producer script or log identifies it, its task is finished, no unfinished record
+  references it, and it is not the only copy of a requested comparison or evidence. Show
+  each directory's size and last-modified date. Hold baseline and regression pairs as
+  `needs review` until the user confirms the comparison is no longer needed.
 - Include eligible external scratch in the same approval batch, even if the checkout
   remains. Removing a worktree does not authorize deleting its scratch. Never remove shared
   entries until every consumer is accounted for. After approved worktree removal, recheck

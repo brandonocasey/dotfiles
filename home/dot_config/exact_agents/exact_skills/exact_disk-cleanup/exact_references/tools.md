@@ -36,6 +36,29 @@ not replace ownership, active-process, content, merge, or approval checks.
   `ccache --clear` and `codex delete --force <UUID>`, only within verified approved scope.
   Inspect installed help rather than assuming every compiler cache supports clearing.
 
+## Large-item candidates
+
+Read when a top consumer is an app cache, temp entry, or simulator. Each still needs the
+main skill's qualification, preview, and approval; a running producer makes it `needs
+review`, never a reason to kill it.
+
+- **App caches (macOS):** list `~/Library/Caches/<bundle-id>` by size. Check the app
+  is not running with `pgrep -fl '[n]ame'`. Confirm offline downloads, logins, and
+  databases live elsewhere (usually `~/Library/Application Support`). Remove the one
+  directory, not `~/Library/Caches`. If the app runs, ask the user to quit it.
+- **Temp leftovers (macOS):** list entries one level under the user temp sibling
+  directories, not the root: `ls -la "$(getconf DARWIN_USER_TEMP_DIR)../X"` (and `../C`,
+  `../T`). `*.code_sign_clone` is a browser updater's copy of the app. It qualifies when
+  its browser and updater are not running and no process holds it open:
+  `lsof -nP 2>/dev/null | rg -F <entry-name>`. The browser recreates it on update.
+- **iOS simulators:** read-only: `xcrun simctl list devices` and per-device size with
+  `du -sk ~/Library/Developer/CoreSimulator/Devices/<UDID>`. `xcrun simctl delete
+  unavailable` removes only devices the current Xcode cannot run. `xcrun simctl delete
+  <UDID>` removes one device and its data; list only shutdown devices, and name each
+  UDID, device name, runtime, and size in the preview. Runtimes:
+  `xcrun simctl runtime list`; remove one with `xcrun simctl runtime delete <id>`
+  only on a named approval. Xcode `DerivedData` is a regenerable cache.
+
 ## Scan roots and coverage
 
 Read when choosing full-disk scan roots, listing temp/trash/snapshot locations, or
