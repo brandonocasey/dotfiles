@@ -72,6 +72,7 @@ brew 'glab'
 brew 'cloc'
 brew 'media-info'
 brew 'yt-dlp'
+brew 'internetarchive'
 
 ## JSON, YAML, XML, CSV, TOML manipulation
 brew 'jq'
