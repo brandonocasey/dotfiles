@@ -6,6 +6,8 @@
 #   chrome-for-testing install   download the current Stable build and drop older ones not in use
 #   chrome-for-testing path      print the executable path; exit 1 when not installed
 #   chrome-for-testing [args]    run it
+# `path` and runs start a background install when the last check is a week old (or nothing is
+# installed), so launches never wait on a download; the next launch uses the new build.
 set -eu
 
 root="${XDG_DATA_HOME:-$HOME/.local/share}/chrome-for-testing"
@@ -63,6 +65,9 @@ install() {
   lock
   tmp=
   trap 'rm -rf "$lockdir" ${tmp:+"$tmp"}' EXIT
+  # Holding the lock means any download folder is left from a killed install.
+  find "$root" -mindepth 1 -maxdepth 1 -name '.download.*' -exec rm -rf {} +
+  touch "$root/.checked"
   feed=https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json
   json=$(curl -fsSL "$feed")
   version=$(printf '%s' "$json" | jq -r '.channels.Stable.version')
@@ -91,9 +96,19 @@ install() {
   prune
 }
 
+# Starts a detached install when the last check is over 7 days old. Its output goes to a log:
+# callers capture `path` with $(...), which would otherwise wait for it, and the MCP server's
+# stdout is its protocol channel.
+refresh() {
+  [ -n "$(find "$root/.checked" -mtime -7 2>/dev/null)" ] && return 0
+  mkdir -p "$root" && touch "$root/.checked"
+  nohup sh "$0" install >"$root/.install.log" 2>&1 </dev/null &
+}
+
 case "${1:-}" in
   install) install ;;
-  path) exe ;;
-  *) path=$(exe) || { echo "chrome-for-testing: not installed; run: chrome-for-testing install" >&2; exit 1; }
+  path) refresh; exe ;;
+  *) refresh
+     path=$(exe) || { echo "chrome-for-testing: not installed yet; an install started in the background" >&2; exit 1; }
      exec "$path" "$@" ;;
 esac
