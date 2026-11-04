@@ -1,0 +1,61 @@
+#!/bin/sh
+# Chrome for Testing for browser automation (chrome-devtools-mcp).
+# Installed Google Chrome copies itself into the user temp X folder on each launch and
+# deletes the copy only on a clean quit; agent sessions kill it, so about 1.4 GiB leaks
+# per launch. Chrome for Testing makes no such copy.
+#   chrome-for-testing install   download the current Stable build and drop older ones
+#   chrome-for-testing path      print the executable path; exit 1 when not installed
+#   chrome-for-testing [args]    run it
+set -eu
+
+root="${XDG_DATA_HOME:-$HOME/.local/share}/chrome-for-testing"
+
+case "$(uname -s)-$(uname -m)" in
+  Darwin-arm64) platform=mac-arm64 bin="Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" ;;
+  Darwin-x86_64) platform=mac-x64 bin="Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing" ;;
+  Linux-x86_64) platform=linux64 bin=chrome ;;
+  *) echo "chrome-for-testing: unsupported platform $(uname -sm)" >&2; exit 1 ;;
+esac
+
+exe() {
+  version=$(cat "$root/current" 2>/dev/null) || return 1
+  path="$root/$version/chrome-$platform/$bin"
+  [ -x "$path" ] || return 1
+  printf '%s\n' "$path"
+}
+
+install() {
+  feed=https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json
+  json=$(curl -fsSL "$feed")
+  version=$(printf '%s' "$json" | jq -r '.channels.Stable.version')
+  url=$(printf '%s' "$json" | jq -r --arg p "$platform" \
+    '.channels.Stable.downloads.chrome[] | select(.platform == $p) | .url')
+  [ -n "$version" ] && [ -n "$url" ] || { echo "chrome-for-testing: no Stable build for $platform" >&2; exit 1; }
+  if [ "$(cat "$root/current" 2>/dev/null)" = "$version" ] && exe >/dev/null; then
+    echo "chrome-for-testing $version is current"
+    return
+  fi
+  mkdir -p "$root"
+  tmp=$(mktemp -d "$root/.download.XXXXXX")
+  trap 'rm -rf "$tmp"' EXIT
+  curl -fsSL -o "$tmp/chrome.zip" "$url"
+  # ditto keeps the framework symlinks that the app needs on macOS.
+  if command -v ditto >/dev/null; then
+    ditto -x -k "$tmp/chrome.zip" "$tmp/out"
+  else
+    unzip -q "$tmp/chrome.zip" -d "$tmp/out"
+  fi
+  [ -x "$tmp/out/chrome-$platform/$bin" ] || { echo "chrome-for-testing: download is missing $bin" >&2; exit 1; }
+  rm -rf "${root:?}/$version"
+  mv "$tmp/out" "$root/$version"
+  printf '%s\n' "$version" > "$root/current"
+  find "$root" -mindepth 1 -maxdepth 1 -type d ! -name "$version" ! -name '.download.*' -exec rm -rf {} +
+  echo "chrome-for-testing $version installed"
+}
+
+case "${1:-}" in
+  install) install ;;
+  path) exe ;;
+  *) path=$(exe) || { echo "chrome-for-testing: not installed; run: chrome-for-testing install" >&2; exit 1; }
+     exec "$path" "$@" ;;
+esac

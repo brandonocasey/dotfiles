@@ -1,0 +1,8 @@
+#!/bin/sh
+# Installs Chrome for Testing for chrome-devtools-mcp (see ~/.local/bin/chrome-for-testing).
+# Reruns when this file changes or the install goes missing. Run `chrome-for-testing install`
+# to move to a newer Stable build.
+{{- $data := env "XDG_DATA_HOME" | default (joinPath .chezmoi.homeDir ".local/share") }}
+# installed: {{ stat (joinPath $data "chrome-for-testing/current") | not | not }}
+set -eu
+"$HOME/.local/bin/chrome-for-testing" install || echo "chrome-for-testing install failed; chrome-devtools-mcp falls back to installed Chrome" >&2

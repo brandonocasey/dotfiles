@@ -27,17 +27,23 @@ const hasBrowser = Object.values(servers).some((server) => {
 });
 
 // Run the pinned mise install through `exec`, so no npx/npm wrapper processes sit in each session.
+// Use Chrome for Testing when installed: installed Chrome leaks a 1.4 GiB copy per killed launch.
 const chromeCommand = "sh";
-const chromeArgs = ["-c", "exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics"];
+const chromeArgs = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""];
 const oldChromeArgs = [
   ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"],
   ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"],
   ["chrome-devtools-mcp@latest", "--headless", "--isolated"],
 ].map((args) => args.join(" "));
+const oldShArgs = [
+  ["-c", "exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics"],
+].map((args) => args.join(" "));
 const chrome = servers["chrome-devtools"];
 if (!hasBrowser && !("chrome-devtools" in servers)) {
   servers["chrome-devtools"] = { type: "stdio", command: chromeCommand, args: chromeArgs };
-} else if (chrome && chrome.command === "npx" && Array.isArray(chrome.args) && oldChromeArgs.includes(chrome.args.join(" "))) {
+} else if (chrome && Array.isArray(chrome.args) && (
+  (chrome.command === "npx" && oldChromeArgs.includes(chrome.args.join(" "))) ||
+  (chrome.command === "sh" && oldShArgs.includes(chrome.args.join(" "))))) {
   chrome.command = chromeCommand;
   chrome.args = chromeArgs;
 }
