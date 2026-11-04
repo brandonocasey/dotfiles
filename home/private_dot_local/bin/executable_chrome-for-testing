@@ -3,7 +3,7 @@
 # Installed Google Chrome copies itself into the user temp X folder on each launch and
 # deletes the copy only on a clean quit; agent sessions kill it, so about 1.4 GiB leaks
 # per launch. Chrome for Testing makes no such copy.
-#   chrome-for-testing install   download the current Stable build and drop older ones
+#   chrome-for-testing install   download the current Stable build and drop older ones not in use
 #   chrome-for-testing path      print the executable path; exit 1 when not installed
 #   chrome-for-testing [args]    run it
 set -eu
@@ -24,7 +24,45 @@ exe() {
   printf '%s\n' "$path"
 }
 
+# Deletes versions other than the current one, keeping any that a running browser still uses:
+# deleting those would crash the session when Chrome starts its next helper process.
+prune() {
+  keep=$(cat "$root/current" 2>/dev/null) || return 0
+  running=$(ps -axo command=)
+  for dir in "$root"/*/; do
+    [ -d "$dir" ] || continue
+    name=$(basename "$dir")
+    [ "$name" = "$keep" ] && continue
+    if printf '%s\n' "$running" | grep -qF "$root/$name/"; then
+      echo "chrome-for-testing $name is still running; kept"
+      continue
+    fi
+    rm -rf "${root:?}/$name"
+    echo "chrome-for-testing $name removed"
+  done
+}
+
+# One install at a time: two would replace the same version folder under each other. A lock whose
+# process is gone is taken over.
+lock() {
+  mkdir -p "$root"
+  lockdir="$root/.install.lock"
+  if ! mkdir "$lockdir" 2>/dev/null; then
+    holder=$(cat "$lockdir/pid" 2>/dev/null || true)
+    if [ -n "$holder" ] && kill -0 "$holder" 2>/dev/null; then
+      echo "chrome-for-testing: another install (pid $holder) is running; skipped"
+      exit 0
+    fi
+    rm -rf "$lockdir"
+    mkdir "$lockdir" 2>/dev/null || { echo "chrome-for-testing: another install just started; skipped"; exit 0; }
+  fi
+  printf '%s\n' "$$" > "$lockdir/pid"
+}
+
 install() {
+  lock
+  tmp=
+  trap 'rm -rf "$lockdir" ${tmp:+"$tmp"}' EXIT
   feed=https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json
   json=$(curl -fsSL "$feed")
   version=$(printf '%s' "$json" | jq -r '.channels.Stable.version')
@@ -33,11 +71,11 @@ install() {
   [ -n "$version" ] && [ -n "$url" ] || { echo "chrome-for-testing: no Stable build for $platform" >&2; exit 1; }
   if [ "$(cat "$root/current" 2>/dev/null)" = "$version" ] && exe >/dev/null; then
     echo "chrome-for-testing $version is current"
+    prune
     return
   fi
   mkdir -p "$root"
   tmp=$(mktemp -d "$root/.download.XXXXXX")
-  trap 'rm -rf "$tmp"' EXIT
   curl -fsSL -o "$tmp/chrome.zip" "$url"
   # ditto keeps the framework symlinks that the app needs on macOS.
   if command -v ditto >/dev/null; then
@@ -49,8 +87,8 @@ install() {
   rm -rf "${root:?}/$version"
   mv "$tmp/out" "$root/$version"
   printf '%s\n' "$version" > "$root/current"
-  find "$root" -mindepth 1 -maxdepth 1 -type d ! -name "$version" ! -name '.download.*' -exec rm -rf {} +
   echo "chrome-for-testing $version installed"
+  prune
 }
 
 case "${1:-}" in
