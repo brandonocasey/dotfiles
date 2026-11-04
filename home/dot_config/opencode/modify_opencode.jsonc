@@ -10,11 +10,9 @@ managed=$(cat <<'JSON'
     "chrome-devtools": {
       "type": "local",
       "command": [
-        "npx",
-        "-y",
-        "chrome-devtools-mcp@1.10.1",
-        "--headless",
-        "--isolated"
+        "sh",
+        "-c",
+        "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""
       ],
       "enabled": true
     },

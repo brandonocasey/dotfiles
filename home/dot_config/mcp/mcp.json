@@ -1,12 +1,10 @@
 {
   "mcpServers": {
     "chrome-devtools": {
-      "command": "npx",
+      "command": "sh",
       "args": [
-        "-y",
-        "chrome-devtools-mcp@1.10.1",
-        "--headless",
-        "--isolated"
+        "-c",
+        "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""
       ]
     },
     "firefox-devtools": {
