@@ -1,0 +1,6 @@
+{{ if eq .chezmoi.os "darwin" -}}
+pinentry-program /opt/homebrew/bin/pinentry-tty
+{{ end -}}
+# Match ssh AddKeysToAgent 30d so pass stays unlocked as long as ssh keys.
+default-cache-ttl 2592000
+max-cache-ttl 2592000
