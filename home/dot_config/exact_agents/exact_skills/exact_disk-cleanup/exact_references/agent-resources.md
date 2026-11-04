@@ -56,7 +56,9 @@ otherwise ask its step 4 question.
   Run `agt cleanup --only worktrees --dirty --recent` (plan only) inside each repository that
   disk-cleanup's own discovery found, never with `--all-repos`; `worktree-cleanup` step 1 owns these flags. Take the worktrees from the `remove` rows
   the user approved, and remove each with `agt worktree remove <path> --yes`, which keeps the
-  branch.
+  branch. Backups hold tracked files only (agt 0.35.0): list each row's `untracked_lost` and
+  `ignored_lost` in the preview, and add `--force` only for a worktree whose untracked files the
+  user approved dropping. `agt cleanup --only worktrees --dirty` drops them the same way.
 
 ### Sessions inactive for at least 30 days
 

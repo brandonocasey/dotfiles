@@ -10,9 +10,11 @@ Remove a task worktree after merge or closure, or on explicit cleanup. Never
 remove the main checkout, a locked worktree, or one another task uses. Report
 retained paths and reasons or the removed path.
 
-`agt worktree remove` backs the worktree up before it removes it, so dirty and
-untracked work is kept: no separate check of it is needed. Ignored files are not
-backed up. The plan and the result list the ones no build recreates (`.env*`,
+`agt worktree remove` backs the worktree up before it removes it, so modified
+tracked work is kept. Untracked and ignored files are not backed up (needs `agt`
+0.35.0): it refuses while untracked files exist, naming them; commit or delete
+them, or pass `--force` to drop them, and only when the user agrees they are
+disposable. The plan with `--force` lists them as `untracked_lost`. The plan and the result list the ones no build recreates (`.env*`,
 credentials, notes) as `ignored_lost`; read that list before `--yes` (needs `agt`
 0.21.0) and copy out what is needed. For a remote MR/PR, fetch and refresh its
 state before using merged/closed status.
