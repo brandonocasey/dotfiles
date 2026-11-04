@@ -255,6 +255,24 @@ KEEP_SECTIONS_TOML=$(printf '%s\n' "$KEEP_SECTIONS_TOML" | awk '
   { print }
   END { if (godot && !printed) print "enabled = false" }
 ')
+# Automatic recaps stay off on every host. The tui table is app-owned, so force only this key.
+KEEP_SECTIONS_TOML=$(printf '%s\n' "$KEEP_SECTIONS_TOML" | awk '
+  /^[[:space:]]*\[tui\][[:space:]]*(#.*)?$/ { tui = 1; seen = 1; printed = 0; print; next }
+  /^[[:space:]]*\[/ {
+    if (tui && !printed) print "auto_recap = false"
+    tui = 0
+  }
+  tui && /^[[:space:]]*auto_recap[[:space:]]*=/ {
+    if (!printed) print "auto_recap = false"
+    printed = 1
+    next
+  }
+  { print }
+  END {
+    if (tui && !printed) print "auto_recap = false"
+    if (!seen) print "\n[tui]\nauto_recap = false"
+  }
+')
 export KEEP_SECTIONS_TOML
 
 # Live values for the app-owned top-level keys. They all sit above the first
