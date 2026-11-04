@@ -136,8 +136,8 @@ approval_mode = "approve"
 approval_mode = "approve"
 
 [mcp_servers.chrome-headed]
-command = "npx"
-args = ["chrome-devtools-mcp@1.10.1", "--isolated", "--chromeArg=--mute-audio", "--acceptInsecureCerts"]
+command = "sh"
+args = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --acceptInsecureCerts --no-usage-statistics \"$@\""]
 enabled = false
 
 [mcp_servers.firefox-devtools]

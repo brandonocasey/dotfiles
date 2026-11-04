@@ -2,12 +2,10 @@
   "mcpServers": {
     "chrome-headed": {
       "type": "stdio",
-      "command": "npx",
+      "command": "sh",
       "args": [
-        "chrome-devtools-mcp@1.10.1",
-        "--isolated",
-        "--chromeArg=--mute-audio",
-        "--acceptInsecureCerts"
+        "-c",
+        "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --acceptInsecureCerts --no-usage-statistics \"$@\""
       ],
       "env": {}
     }
