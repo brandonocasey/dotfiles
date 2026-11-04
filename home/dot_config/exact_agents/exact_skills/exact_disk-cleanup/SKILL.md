@@ -9,7 +9,9 @@ Measure the host, preview exact candidates ranked by reclaimable bytes, then rem
 approved items. Work locally unless the user explicitly requests a remote host.
 A dry run ends at the preview. A request only to find space use or list large
 files ends at the report. Such a run writes only scan files to the task scratch
-directory. It skips agent-resource and worktree inventory unless the user asks.
+directory. It skips session and whole-worktree inventory unless the user asks. It
+still lists inactive worktrees' dependency installs and build caches (see
+**Worktrees, build outputs, and task resources**).
 Scan the full disk when the user says "my disk" or "the whole drive". Also scan it
 when the user gives no path. Announce the full-disk scan before starting it. Honor
 narrower scope, such as a path the user names. Ask when the path is ambiguous in any
@@ -94,7 +96,8 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   Inspect cleanup command semantics before proposing them. An “unused” resource may
   still support stopped containers, an offline workflow, or an unfinished task.
 - Inventory agent resources using the linked reference, including external and legacy
-  worktrees. In an analysis-only run, do this only on request. Session retention
+  worktrees. In an analysis-only run, inventory sessions and whole worktrees only on
+  request; always inventory worktree installs and build caches. Session retention
   defaults to 30 elapsed days and applies only to sessions.
 
 ## Qualify and preserve
@@ -147,6 +150,15 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   checkouts, independently qualify inactive build outputs and linked scratch. See the
   dependencies bullet above. Classify them under agent-resources **Build outputs and
   linked scratch**. Unknown files and requested deliverables still protect the checkout.
+- By default, in every run, suggest removing dependency installs and build caches of
+  inactive checkouts, including the main checkout and every linked worktree. Installs
+  include `node_modules`, `.venv`, `Pods`, and `.dart_tool`. Build caches include
+  Cargo targets, DerivedData, and build or dist output named by the project's build
+  config, also under `.cache/agents/`. A checkout is inactive when no process runs in
+  or holds open any descendant; age does not matter. Count only entries that can be
+  rebuilt or reinstalled: a manifest or lockfile, or the build config that produced
+  them, remains, and they are Git-ignored with no tracked files. List each over
+  50 MiB as a `candidate` with size and rebuild cost. Removal still needs approval.
 - Unmerged worktrees are never removal candidates by default. List each one over
   1 GiB in **Protected but large** with its size, last commit date, branch state
   (ahead/behind, upstream gone), and last activity. Offer its dependencies and build
