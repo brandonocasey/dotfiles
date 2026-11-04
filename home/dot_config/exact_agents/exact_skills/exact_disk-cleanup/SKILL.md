@@ -69,6 +69,23 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
     `../X` directory (macOS);
   - Playwright and other test-result directories in task scratch;
   - iOS simulator devices and runtimes;
+  - agent state that `agt cleanup` leaves: worktree backups and manual restore points under
+    `~/.local/state/agents/backups` (backups hold tracked files only since agt 0.35.0; old ones
+    may still hold large copies), task scratch under `~/.cache/agents/scratch`, and Claude Code
+    session scratchpads under `~/.cache/claude-tmp/<uid>/<project>/<session>`. agt's own
+    sweeps wait 30 days, so older-than-7-days dirs with no open file are candidates;
+  - temp leftovers on Linux `/tmp`, owned by the user with nothing open: browser
+    `FileSystemWritableStream-*` files and `puppeteer_dev_chrome_profile-*` profiles,
+    `node-compile-cache`, and test dirs a crashed run left;
+  - a compiler cache sitting at its size cap (sccache, ccache): clearing only refills it, so
+    offer a lower cap (`SCCACHE_CACHE_SIZE`, `ccache -M`) alongside, and mark a clear `needs review`;
+  - old versions of self-updating tools, keeping the one the launcher points to
+    (`~/.local/share/cursor-agent/versions`, mise `http-tarballs`, old Codex releases);
+  - inactive worktree build outputs and dependencies (`target`, `.cache/target`, `node_modules`,
+    `dist`), which are often larger than all landed worktrees together;
+  - Docker dangling images and build cache by exact ID; an image kept by a stopped container
+    is not dangling. `needs review`: Android SDK system images and AVDs, pnpm and Gradle
+    stores, Flatpak runtimes;
   - trash.
 
   Discover their actual paths from installed tools and safe configuration path
