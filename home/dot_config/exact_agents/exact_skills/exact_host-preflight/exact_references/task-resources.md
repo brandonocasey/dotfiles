@@ -7,7 +7,9 @@ resources, or cleaning them up.
 
 Put new disposable resources in the Scratch path from AGENTS.md
 **Directories**, where `<task>` is a unique task name. Keep logs, temporary
-helpers, generated preview assets, and intermediate results there.
+helpers, generated preview assets, and intermediate results there. When a task
+works on a worktree, use that worktree's scratch, not the main checkout's or
+`~/.cache/agents/scratch/`: `agt worktree remove` then deletes it with the worktree.
 
 Before using `.cache/agents/scratch/`, verify that the candidate path is ignored
 (`git check-ignore -v <candidate-path>`) and that no files under it are tracked. The
@@ -46,15 +48,18 @@ Each worktree owns one simulator; a shared one lets another worktree's install r
 under test (same bundle ID). Before any simulator work, get its UDID:
 `sh ~/.config/agents/skills/host-preflight/scripts/ios-sim [worktree]`. It clones the shut-down
 base device `ios-base` on first use, boots the clone, and prints the UDID. Pass that UDID as
-`-destination "id=<udid>"` to `xcodebuild`, never `name=`. Drive it from the shell, which needs no
+`-destination "id=<udid>"` to `xcodebuild`, never `name=`, with
+`-derivedDataPath <worktree>/.cache/agents/DerivedData` so the build output goes with the
+worktree instead of the shared `~/Library/Developer/Xcode/DerivedData`. Drive it from the shell, which needs no
 Claude Desktop consent: `xcrun simctl` (`install`, `launch`, `io <udid> screenshot`, `openurl`,
 `ui <udid> appearance`, `privacy`) and `idb` for input (`idb ui tap X Y`, `swipe X1 Y1 X2 Y2`,
 `text "..."`, `describe-all`, each with `--udid <udid>`; points, origin top-left). Use the
 simulator tool only when the user wants the live panel; its first use of each device asks the
 user, so pass the same UDID as `device` and attach only on request. Never install onto, boot, or shut down a simulator
 another worktree owns, and leave the user's own devices alone. If the script reports the base
-missing or booted, ask before shutting anything down. At cleanup, run `ios-sim rm [worktree]`
-before `agt worktree remove`.
+missing or booted, ask before shutting anything down. `agt worktree remove` and `agt cleanup`
+run `ios-sim rm` through the global remove hook in `~/.config/agt/config.toml`; run it yourself
+only to drop a simulator while keeping its worktree.
 
 ## Android Emulator
 
@@ -72,8 +77,9 @@ user wants the live window. Linux needs the user in the `kvm` group, else the em
 start; report that, do not change groups. Never install onto, restart, or kill an emulator another
 worktree owns, and leave the user's own devices alone. If the script reports the SDK or base AVD
 missing, run `chezmoi apply` (it installs both), not a manual install. It reuses or kills only an
-emulator it started itself, so a user emulator on a nearby port is safe. At cleanup, run
-`android-emu rm [worktree]` before `agt worktree remove`; that frees the port.
+emulator it started itself, so a user emulator on a nearby port is safe. The same remove hook
+runs `android-emu rm`, which stops the emulator and frees the port; run it yourself only to stop
+an emulator while keeping its worktree.
 
 ## Cleanup
 

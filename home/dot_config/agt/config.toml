@@ -1,0 +1,10 @@
+# agt global settings. Reference: agt docs/reference.md, "$XDG_CONFIG_HOME/agt/config.toml".
+
+[worktree.hooks]
+# `agt worktree remove --yes` and `agt cleanup` run these in the worktree before removing it, and a
+# failing one stops the removal. Delete the worktree's own simulator and stop its emulator, which
+# live outside the checkout. Hosts without Xcode or adb skip them.
+remove = [
+  '[ "$(uname -s)" = Darwin ] && command -v xcrun >/dev/null 2>&1 || exit 0; sh "$HOME/.config/agents/skills/host-preflight/scripts/ios-sim" rm "$AGT_WORKTREE"',
+  'command -v adb >/dev/null 2>&1 || exit 0; sh "$HOME/.config/agents/skills/host-preflight/scripts/android-emu" rm "$AGT_WORKTREE"',
+]

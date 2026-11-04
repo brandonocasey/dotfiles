@@ -33,7 +33,8 @@
 
 Prefer XDG cache/state roots when set, otherwise `~/.cache` and `~/.local/state`, including Windows. Keep fixed paths a tool requires; use `/tmp` only when a tool needs it or I ask.
 
-- Scratch: `<worktree>/.cache/agents/scratch/<task>/`; outside worktrees, `$TMPDIR` or the harness scratchpad when under the cache root, else `~/.cache/agents/scratch/<task>/`.
+- Scratch: `<worktree>/.cache/agents/scratch/<task>/` of the worktree the task works on, even when the session runs in the main checkout or elsewhere, so removing that worktree removes it; only for tasks tied to no worktree, `$TMPDIR` or the harness scratchpad when under the cache root, else `~/.cache/agents/scratch/<task>/`.
+- Per-worktree build output (Cargo `--target-dir`, Xcode `-derivedDataPath`, test results) set by a flag goes under `<worktree>/.cache/agents/`. Use installed toolchains (mise, Homebrew) and shared package caches; never download an SDK or toolchain copy into a worktree.
 - Backups before overwrite, force-removal, or migration: `~/.local/state/agents/backups/<repo>/<YYYYMMDD-HHMM>-<reason>/`; preserve relative paths, never auto-prune, report the path.
 
 ## Skills own the detail
