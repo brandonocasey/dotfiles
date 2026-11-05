@@ -74,6 +74,7 @@ class TmuxBellTests(unittest.TestCase):
     def test_permission_marks_input(self):
         self.fire("PermissionRequest")
         self.assertEqual(self.state(), "input")
+        self.assertEqual(self.tmux("show-options", "-pqv", "-t", self.pane, "@agent_kind"), "codex")
 
     def test_unattended_and_nested_codex_leave_state_alone(self):
         for key in ("CLAUDE_CODE_SESSION_ATTENDED", "CLAUDECODE"):
