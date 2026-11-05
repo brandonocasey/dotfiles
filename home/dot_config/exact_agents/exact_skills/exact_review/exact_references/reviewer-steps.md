@@ -86,6 +86,12 @@ read the diff looking for things that seem off — attack it:
   need, and code placed outside the module that owns its concern (name that module).
   Report one only when you can name the existing copy, the hunk the task does not
   need, or the owning module.
+- **Check added comments** against [comments.md](../../code-standards/references/comments.md).
+  List every comment line the change adds, including doc comments and new files. Report
+  each one that breaks a rule there: too long, lists cases, restates the code, explains
+  the change or earlier behavior, or says how a caller uses the item. Quote the comment
+  and the rule, and give the rewrite or say to delete it. Skip directives tools read
+  (shebangs, lint or type pragmas, license headers) and comments the change did not add.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.
@@ -127,11 +133,12 @@ read the diff looking for things that seem off — attack it:
   contradicted by the diff or violations of explicit repository requirements.
   Do not shorten a useful description just for length.
 - Report verified defects and violations of explicit repository requirements.
-  Include optional style suggestions only when requested. A comment or name is a
-  defect when it misstates a contract or behavior, not merely because it could be
-  shorter or styled differently. A `requirement` finding quotes the rule and names
-  its file: AGENTS.md, CLAUDE.md, or REVIEW.md at the root or in any changed
-  directory, or the **Maintainability** section of code-quality.md. Skip paths a REVIEW.md lists under `Skip:`.
+  Include optional style suggestions only when requested. A name is a defect when it
+  misstates a contract or behavior, not merely because it could be shorter or styled
+  differently. A comment is a defect when it misstates one or breaks comments.md. A
+  `requirement` finding quotes the rule and names its file: AGENTS.md, CLAUDE.md, or
+  REVIEW.md at the root or in any changed directory, the **Maintainability** section
+  of code-quality.md, or comments.md. Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown
 
