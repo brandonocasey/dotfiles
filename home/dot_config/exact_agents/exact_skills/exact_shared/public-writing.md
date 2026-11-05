@@ -3,8 +3,9 @@
 These rules cover text others read later, outside the chat: commit messages,
 MR/PR titles and descriptions, review and MR/PR comments, ticket text, and code
 comments. The main writing rules still apply, except the parts aimed at me in
-chat: `Next:`, status marks, `agents/output/` files, and reply layout.
-Repository templates and conventions win over both. Code comments also follow
+chat: leading with the result, `Next:`, `Separately:`, `Run /copy`, status
+marks, `agents/output/` files, and reply layout. These rules win where they
+differ. Repository templates and conventions win over both. Code comments also follow
 [comments.md](../code-standards/references/comments.md), which wins where they differ.
 
 - Write for a teammate who has not read the conversation, the ticket, or the diff.
@@ -17,7 +18,7 @@ Repository templates and conventions win over both. Code comments also follow
 - Keep exact facts: numbers, versions, error messages, limits, and scope, such
   as `1 of 12 runs`. Never generalize a claim limited to some cases. Verify each
   claim before posting.
-- Leave out file-by-file walkthroughs, lists of every change, commands run,
+- Leave out file-by-file walkthroughs, lists of every change, command logs,
   process ("first I tried…"), filler ("this change improves…"), hedging, and emojis.
 - Use bullets only for parallel items, such as several behavior changes. No
   Summary/Changes/Testing headings.
