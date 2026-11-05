@@ -1,5 +1,5 @@
 ---
-description: "Design new or reshaped UI with intentional visual direction and typography."
+description: "Design distinctive new or reshaped UI with intentional visual direction and typography. For landing pages, redesigns, or a bold, non-generic look."
 license: Complete terms in LICENSE.txt
 name: frontend-design
 disable-model-invocation: true

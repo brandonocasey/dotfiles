@@ -1,6 +1,6 @@
 ---
 name: session-resume
-description: "Save or resume task state across sessions, agents, or hosts."
+description: "Save or resume task state across sessions, agents, or hosts; find old sessions by text."
 ---
 
 Use `agt task` as the durable task record. Keep credentials, full transcripts,

@@ -1,7 +1,7 @@
 ---
 effort: medium
 name: jira-versions
-description: "Manage Jira fix-version lifecycle and ticket or MR/PR release assignments."
+description: "Create, rename, release, or archive Jira fix versions, and move tickets or MRs/PRs between versions."
 ---
 
 The Atlassian MCP and `acli` cannot manage versions. Use `jira-api`

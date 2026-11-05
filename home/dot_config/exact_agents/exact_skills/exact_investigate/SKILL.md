@@ -1,6 +1,6 @@
 ---
 name: investigate
-description: "Reproduce and fix reported bugs; isolate unresolved causes into actionable blockers."
+description: "Reproduce and fix a reported bug, or narrow an unresolved one to a blocker. Use for bug reports, issue or error-tracker links, stack traces, 'why does X fail'."
 ---
 
 The goal is a verified fix. When a fix is not possible, the goal is a narrowed

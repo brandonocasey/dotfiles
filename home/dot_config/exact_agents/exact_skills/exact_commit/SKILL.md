@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Create logical Conventional Commits; choose amend versus new."
+description: "Create logical Conventional Commits and choose amend versus new. Use when asked to commit, amend, or write a commit message."
 ---
 
 Optional argument: a target file or chunk. Commit only that target.

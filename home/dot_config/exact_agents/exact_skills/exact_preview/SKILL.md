@@ -1,6 +1,6 @@
 ---
 name: preview
-description: "Show live previews; screenshots only on request. Offer requested or open-ended design choices through a LAN gallery."
+description: "Share a live LAN preview of the app or page; screenshots only on request. Offer design variants in a LAN gallery when asked for options or the design is open-ended."
 ---
 
 Default to a live preview of the actual app or page. A request to preview or

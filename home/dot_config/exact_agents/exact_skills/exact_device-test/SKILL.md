@@ -1,6 +1,6 @@
 ---
 name: device-test
-description: "Hands-on testing on a real device (AirPlay, iPhone, TV) where the user must act; checklist page returns results."
+description: "Hands-on testing on a real device (AirPlay, iPhone, TV, Control Center) where the user must act; a checklist page returns results. Fallback after browser or real-safari."
 ---
 
 Use when a check needs a person or hardware the agent cannot drive: AirPlay

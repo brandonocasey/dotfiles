@@ -1,6 +1,6 @@
 ---
 name: host-preflight
-description: "Check local or SSH tool availability before unfamiliar tools, agent assignments, or host-specific workflows."
+description: "Check tool availability on this or an SSH host before unfamiliar tools or host-specific work. Also covers task servers, scratch, simulators, and copy-ready output."
 ---
 
 Run `agent-preflight` before work depends on tools that can differ by host. For

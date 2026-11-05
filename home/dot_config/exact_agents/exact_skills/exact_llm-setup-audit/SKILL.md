@@ -1,6 +1,6 @@
 ---
 name: llm-setup-audit
-description: "Audit global skills, roles, rules, config, and session spend for defects and token waste."
+description: "Audit global skills, roles, rules, config, and session spend for defects and token waste. Use for 'audit my skills, rules, or setup' and token-cost cleanup."
 ---
 
 Give each reader every needed rule once, in plain words and few tokens.

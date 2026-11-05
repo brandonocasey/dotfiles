@@ -1,6 +1,6 @@
 ---
 name: pr-fix
-description: "Fix CI on existing GitHub PRs or GitLab MRs until green, then approve or merge only with --approve or --merge; excludes creation and review."
+description: "Fix CI on existing GitHub PRs or GitLab MRs until green: failing checks, behind base, conflicts. Approve or merge only with --approve or --merge; not for creation or review."
 ---
 
 # Fix pull requests

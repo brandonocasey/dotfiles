@@ -1,6 +1,6 @@
 ---
 name: write-docs
-description: "Create or edit documentation, one page at a time, using Diátaxis modes."
+description: "Create or edit documentation one page at a time using Diátaxis modes. Use when writing or fixing READMEs, guides, tutorials, how-tos, or reference pages."
 ---
 
 - Structure docs by [Diátaxis](https://diataxis.fr/): every page serves exactly one
