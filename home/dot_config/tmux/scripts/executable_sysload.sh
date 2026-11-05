@@ -14,7 +14,7 @@ Darwin)
   a=$(cpu_sample)
   sleep 1
   b=$(cpu_sample)
-  cpu=$(echo "$a $b" | awk '{dt = $3 - $1; di = $4 - $2; printf "%d", dt > 0 ? (dt - di) * 100 / dt : 0}')
+  cpu=$(echo "$a $b" | awk '{dt = $3 - $1; di = $4 - $2; printf "%d", (dt > 0 ? (dt - di) * 100 / dt : 0)}')
   mem=$(awk '/^MemTotal/ {t = $2} /^MemAvailable/ {a = $2} END {printf "%d", (t - a) * 100 / t}' /proc/meminfo)
   vol=/
   ;;
