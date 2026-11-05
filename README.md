@@ -31,6 +31,11 @@ rename lasts until the next title change, pane switch, or title hook.
 Names retain the shared title cleaning and duplicate-name suffixes.
 Outside a remote tmux server, SSH title forwarding still runs only at hook time.
 
+Agent status hooks select a tmux client that can reach the running server,
+including Homebrew installations absent from a hook shell's PATH. Finished
+turns and permission prompts mark the pane yellow; prompts and tool completion
+mark it green. The idle hook also sets tmux's bell flag.
+
 ## Agent skills
 
 Chezmoi manages `~/.config/agents/` and every owned folder under it as
