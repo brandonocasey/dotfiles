@@ -127,7 +127,24 @@ codex)
   if [ "$target" = tmux ]; then
     owner=$PPID
     while [ "$owner" -gt 1 ] 2>/dev/null; do
+      # macOS reports the interpreter, not the script, as comm for a script
+      # started through a shebang (node, python), so also read the arguments.
       process=$(ps -p "$owner" -o comm= 2>/dev/null)
+      case $process in
+      codex | */codex) ;;
+      *)
+        read -r first second _ <<EOF
+$(ps -p "$owner" -o args= 2>/dev/null)
+EOF
+        process=
+        case $first in
+        codex | */codex) process=codex ;;
+        node | */node | python* | */python* | */Python | sh | */sh | bash | */bash | env | */env)
+          case $second in codex | */codex) process=codex ;; esac
+          ;;
+        esac
+        ;;
+      esac
       case $process in
       codex | */codex)
         token="$session_id:$$"
