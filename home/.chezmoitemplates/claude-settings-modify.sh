@@ -160,6 +160,7 @@ managed=$(
     "session-resume": "name-only",
     "pr-fix": "name-only",
     "host-preflight": "name-only",
+    "design": "name-only",
     "dataviz": "name-only",
     "claude-api": "name-only",
     "anthropic-skills:docs": "user-invocable-only",
