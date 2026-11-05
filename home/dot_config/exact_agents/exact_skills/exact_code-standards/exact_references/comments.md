@@ -1,6 +1,7 @@
 ## Code comments
 
 - Comment only what the code cannot show: a reason, constraint, workaround, required behavior, or warning about code that deliberately breaks convention. Do not repeat what the code says or describe the change; put the bug, investigation, and ticket in the commit message. Remove redundant comments, and update or remove comments when the code changes. Each comment must make sense to someone who has not read the conversation.
+- Write comments in the plain style of [public-writing.md](../../shared/public-writing.md); these rules win where they differ.
 - Put the comment at the method or block level, in 1–2 plain sentences a teammate understands on first read. If it must list cases, make the code show them (named constants, a table) and put longer reasoning in the commit message. Doc sections a tool or the repo requires (`# Safety`, `@param`) do not count
 - These rules cover doc comments too. A doc comment states what the item does and its contract in one sentence; link a sibling instead of re-explaining it: `Like [compress], but takes ownership of the hunk.`
 - Never write, in code or doc comments: why you added the item or how your caller uses it ("so it can be sent to another thread", "such as when…"); a constant's justification with estimates ("~32 MiB, enough to ride out latency spikes"); earlier behavior ("the old", "previously", "now", "no longer"); or what the signature already shows (owns, borrows, `'static`, `Send`)

@@ -5,6 +5,7 @@
 - Push only with authorization; default-branch push/merge needs my request or consent; a local fast-forward of the target to its own upstream per [ff-local-target.md](ff-local-target.md) needs none. Scoped local push consent applies. Fixing an MR/PR or linked thread authorizes `ship` and branch pushes. Invoked/implied ship or an existing branch MR/PR grants session-long task-branch push consent unless withdrawn.
 - When work will push to an MR/PR with auto-merge on, pause it first and restore it after the last push, per [auto-merge-pause.md](auto-merge-pause.md).
 - Approve/merge/change tickets only when asked for that MR/PR or ticket; move the task's own ticket forward when its MR/PR opens/merges.
+- Write every commit message per the `commit` skill's **Format**, and every MR/PR title and description per `ship` step 3, also in sub-agents and when you skip those skills. Both follow [public-writing.md](public-writing.md).
 - Commit finished task changes to the worktree branch before reporting done unless the workflow leaves commits to me. Leave no task dirt; preserve unrelated work.
 - Resolve clear conflicts and continue; stop on ambiguous intent. Fetch before remote-state claims. Never suggest Git operations for unchanged files.
 - Update MR/PR titles/descriptions only when asked, or while actively working on one you pushed or that is outdated.

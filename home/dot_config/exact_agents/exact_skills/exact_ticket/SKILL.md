@@ -148,4 +148,5 @@ review finding, a check failure the change did not cause, or a new problem.
 
 Use a short summary naming the outcome. Describe the problem, expected
 result, acceptance check, and links in as few bullets as cover them.
-Follow repository templates.
+Write the summary, body, and ticket comments per
+[public-writing.md](../shared/public-writing.md). Follow repository templates.

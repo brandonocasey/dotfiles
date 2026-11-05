@@ -51,6 +51,7 @@ Optional argument: a target file or chunk. Commit only that target.
 - The scope is optional; include one when required
 - Keep the description minimal, with no filler, and make it say why the change happened
 - Add a body only when it gives context the description cannot hold
+- Write the description and body per [public-writing.md](../shared/public-writing.md)
 
 ## Choosing the type
 

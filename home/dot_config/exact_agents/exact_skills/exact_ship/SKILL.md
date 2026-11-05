@@ -82,6 +82,7 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
   - Lead with the concrete problem and resulting behavior. Describe the final
     change for someone who has not read the conversation.
   - Reread before posting; drop sentences repeating another sentence, the title, or the diff.
+- Write the title and description per [public-writing.md](../shared/public-writing.md).
 - Use the recorded `TARGET`. Leave draft state alone unless asked.
 - When `TICKET` is set, move it to the open-MR/PR status per [ticket](../ticket/SKILL.md) step 6.
 

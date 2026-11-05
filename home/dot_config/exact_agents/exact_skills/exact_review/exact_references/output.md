@@ -1,7 +1,8 @@
 # Review output and cleanup
 
 Each finding or comment covers one issue in at most three sentences: what
-breaks, when, and the fix. Apply repository templates when present.
+breaks, when, and the fix. Write comments to post per
+[public-writing.md](../../shared/public-writing.md). Apply repository templates when present.
 
 Severity scale (keep in sync with the `reviewer` role): `bug` (wrong behavior
 reachable in production), `question` (design choice worth confirming with the
