@@ -10,15 +10,7 @@ state=${1:-input}
 [ "${CLAUDE_CODE_SESSION_ATTENDED:-1}" = 0 ] && exit 0
 [ "${2:-}" = codex ] && [ -n "${CLAUDECODE:-}" ] && exit 0
 [ -n "$TMUX_PANE" ] || exit 0
-# Hook shells may find a system client incompatible with the Homebrew server.
-tmux_command=
-for candidate in /opt/homebrew/bin/tmux /home/linuxbrew/.linuxbrew/bin/tmux /usr/local/bin/tmux "$(command -v tmux || true)"; do
-  [ -x "$candidate" ] || continue
-  "$candidate" display-message -p -t "$TMUX_PANE" '#{pane_id}' >/dev/null 2>&1 || continue
-  tmux_command=$candidate
-  break
-done
-[ -n "$tmux_command" ] || exit 0
+tmux_command=$(sh "$HOME/.config/tmux/scripts/tmux-client.sh" 2>/dev/null) || exit 0
 case $state in
 clear) "$tmux_command" set-option -p -u -t "$TMUX_PANE" @agent_state 2>/dev/null ;;
 *) "$tmux_command" set-option -p -t "$TMUX_PANE" @agent_state "$state" 2>/dev/null ;;

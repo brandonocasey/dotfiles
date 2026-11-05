@@ -35,6 +35,9 @@ class TmuxReloadTests(unittest.TestCase):
         self.config = self.source / "dot_config/tmux/tmux.conf"
         self.config.parent.mkdir(parents=True)
         self.config.write_text("set -g @reload-test first\n")
+        client = self.source / "dot_config/tmux/scripts/executable_tmux-client.sh"
+        client.parent.mkdir(parents=True)
+        shutil.copyfile(REPO / "home/dot_config/tmux/scripts/executable_tmux-client.sh", client)
         if (REPO / "home" / SCRIPT).exists():
             target = self.source / SCRIPT
             target.parent.mkdir(parents=True)

@@ -39,6 +39,9 @@ class TmuxBellTests(unittest.TestCase):
         hook = self.home / ".claude/hooks/tmux-bell.sh"
         hook.parent.mkdir(parents=True)
         shutil.copyfile(REPO / "home/dot_claude/hooks/executable_tmux-bell.sh", hook)
+        client = self.home / ".config/tmux/scripts/tmux-client.sh"
+        client.parent.mkdir(parents=True)
+        shutil.copyfile(REPO / "home/dot_config/tmux/scripts/executable_tmux-client.sh", client)
 
     def tmux(self, *args):
         return subprocess.check_output([TMUX, "-S", self.socket, *args],

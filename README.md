@@ -32,7 +32,8 @@ Names retain the shared title cleaning and duplicate-name suffixes.
 Outside a remote tmux server, SSH title forwarding still runs only at hook time.
 
 Agent status hooks select a tmux client that can reach the running server,
-including Homebrew installations absent from a hook shell's PATH. Finished
+including Homebrew installations absent from a hook shell's PATH.
+Configuration reload uses the same client selection helper. Finished
 turns and permission prompts mark the pane yellow; prompts and tool completion
 mark it green. The idle hook also sets tmux's bell flag.
 
