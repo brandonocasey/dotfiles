@@ -2,7 +2,11 @@
 # tmux status: the active pane's project as "project#branch", like the Claude
 # Code status line. The project (green) is the git repository root, so
 # worktrees name the parent repo; outside git it is the directory name. The
-# branch (white) is hidden on the default branch. Usage: project.sh <path>
+# branch (white) is hidden on the default branch. With --name it prints only
+# the plain project name, for the sesh picker.
+# Usage: project.sh [--name] <path>
+plain=
+[ "${1:-}" = --name ] && plain=1 && shift
 dir=${1:-$PWD}
 cd "$dir" 2>/dev/null || exit 0
 name=
@@ -14,6 +18,7 @@ if common=$(git --no-optional-locks rev-parse --path-format=absolute --git-commo
     # Bare repo: the gitdir itself is the project (e.g. "web-player.git").
     name=$(basename "$common" .git)
   fi
+  [ -z "$plain" ] || { printf '%s\n' "$name"; exit 0; }
   branch=$(git --no-optional-locks branch --show-current 2>/dev/null)
   [ -n "$branch" ] || branch=detached
   default=$(git --no-optional-locks symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)
@@ -28,6 +33,7 @@ elif [ "$dir" = "$HOME" ]; then
 else
   name=$(basename "$dir")
 fi
+[ -z "$plain" ] || { printf '%s\n' "$name"; exit 0; }
 # tmux reads '##' as a literal '#'.
 printf '#[fg=green]%s' "$name"
 [ -z "$branch" ] || printf '#[fg=colour245]###[fg=brightwhite]%s' "$branch"
