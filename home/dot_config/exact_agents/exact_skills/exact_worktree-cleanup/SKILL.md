@@ -26,9 +26,10 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   worktree it kept, except under the confirmations below.
 - Pass `--offline` only when the forge is unreachable; the plan then trusts local ancestry only.
   Pass `--all-repos` only when the user asked for every repository. Always pass `--dirty` and
-  `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their work.
-  `--dirty` also lets worktrees go whose `ignored_lost` is not empty, since no backup keeps ignored
-  files; list each row's `ignored_lost` in the plan preview. Report each removed dirty worktree's
+  `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their tracked
+  changes. `--dirty` also lets worktrees go whose `untracked_lost` or `ignored_lost` is not empty,
+  since no backup keeps those files (agt 0.35.0); list both for each row in the plan preview.
+  Report each removed dirty worktree's
   changed files with its backup id.
 - When removal fails with "does not point back", the worktree belongs to another clone: its
   `.git` file names the owning repository. Run the plan and removal from that repository, then
@@ -109,8 +110,9 @@ those task processes per
 live preview still needs. Every `keep` row
 then goes through step 5. If the user asked for a dry run, show the step 5 assessment, ask
 nothing, and stop. Otherwise the `remove` and `delete` rows with verdict `merged` or
-`squash-merged` are approved by the cleanup request: run step 6 on them without asking. Ask
-approval only for the other rows and exceptions, in the same message as the step 5 question
+`squash-merged` and an empty `untracked_lost` are approved by the cleanup request: run step 6 on
+them without asking. Ask approval only for the other rows (naming each one's `untracked_lost`
+files) and exceptions, in the same message as the step 5 question
 when step 5 asks one. Include each named
 detached-baseline exception with its HEAD-preservation proof. Only the approved rows and
 dispositions are authorized; changed scope needs a new preview.

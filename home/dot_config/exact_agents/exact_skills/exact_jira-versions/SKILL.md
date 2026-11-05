@@ -65,5 +65,5 @@ Output ends with `HTTP <code>`. `201` means created, `200` means ok.
 
 - Before moving a ticket, check which MR/PR is merged. Merged work stays in
   the version it shipped in.
-- Creating or editing a version is visible to the whole team. Delete needs
-  user approval. A user request to release a version authorizes the release only, not a delete.
+- Creating or editing a version is visible to the whole team: do it only when
+  the user asked for it or a requested move needs it. Delete needs user approval. A user request to release a version authorizes the release only, not a delete.

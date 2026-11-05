@@ -34,7 +34,7 @@ with no pipes, `;`, or variable assignments.
    session did not edit. Do not include them unless the user names them.
    Agent config directories are exact: applying removes files absent from their sources.
    For requested deletions, remove the source entry; deleting only the target restores it.
-   Keep `synced/` ignored.
+   Never add `~/.config/agents/skills/synced` to the source; `.chezmoiignore` ignores it.
 3. **Copy.** For each managed target, show `diff -u "$(chezmoi source-path <target>)" <target>`.
    For a new target, show `diff -u /dev/null <target>`. Skip the copy for a target
    whose source this session edited directly; step 7 applies it.
@@ -63,9 +63,10 @@ with no pipes, `;`, or variable assignments.
 7. **Apply.** Run `chezmoi apply <targets>`, so the pushed sources take effect.
    Apply only the scoped targets; a wider apply overwrites unsynced target edits.
    When the sandbox reports `operation not permitted`, rerun it outside the sandbox.
-   When the harness blocks a settings or rule file, do not retry the edit.
-   Write one apply script to the scratch directory, print its path and what it
-   changes, and hand it over once.
+   When the harness blocks a settings or rule file, do not retry the edit. Hand
+   over one apply script per
+   [copyable-output.md](../host-preflight/references/copyable-output.md), and say what it
+   changes.
 8. **Check.** `chezmoi status <targets>` must print nothing, and
    `git status -sb` must show no ahead count.
    Report the pushed SHAs, the targets you left out, and why.

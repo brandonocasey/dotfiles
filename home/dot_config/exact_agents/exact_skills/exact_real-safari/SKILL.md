@@ -28,7 +28,8 @@ do not run it yourself.
 Constraints:
 
 - One session at a time system-wide. On every exit path, including failure,
-  close the pages you opened. For WebDriver, also `DELETE` the session and kill `safaridriver`.
+  close the pages you opened. For WebDriver, also `DELETE` the session and kill
+  the `safaridriver` you started by its PID, never by name.
 - Media autoplay needs the `webkit:alwaysAllowAutoplay` capability in `alwaysMatch`,
   or a real gesture via `POST /session/<id>/element/<element-id>/click`.
 - Real Safari is always headed and visible. A user request to test or run in real Safari

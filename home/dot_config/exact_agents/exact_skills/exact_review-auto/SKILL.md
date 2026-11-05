@@ -17,7 +17,7 @@ Optional flags, not passed to review:
   so the review targets the MR/PR it opens. The flag is the push authorization ship
   needs.
 - `--land`: after the review and its fix loop, run the [land](../land/SKILL.md) skill
-  on the target. The flag is the request to land. Skip approve and merge, which need
-  an MR/PR.
+  on the target. The flag is the request to land. Do not pass `--approve` or `--merge`
+  to review: they need an MR/PR.
 
 Use at most one of them. With both, ask which one and stop.

@@ -96,9 +96,7 @@ agent-resources.md. It owns the `worktree-cleanup` component and its limits. Rea
   Inspect cleanup command semantics before proposing them. An “unused” resource may
   still support stopped containers, an offline workflow, or an unfinished task.
 - Inventory agent resources using the linked reference, including external and legacy
-  worktrees. In an analysis-only run, inventory sessions and whole worktrees only on
-  request; always inventory worktree installs and build caches. Session retention
-  defaults to 30 elapsed days and applies only to sessions.
+  worktrees. Session retention defaults to 30 elapsed days and applies only to sessions.
 
 ## Qualify and preserve
 

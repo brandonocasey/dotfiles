@@ -20,7 +20,7 @@ posts by hand print per `host-preflight/references/copyable-output.md`.
 2. **What the change does** — 1–2 plain-language sentences a non-expert could follow. No
    project codenames without a gloss.
 3. **One block per surviving finding**, most-severe first, each led by its label and, for a
-   `bug`, its severity, per the severity scale below. Per block:
+   `bug`, its severity, per the severity scale above. Per block:
    - **Where**: file + line. For an MR/PR, add a clickable link so the
      comment can be left right there; for local targets, use `path:line` (clickable in the
      terminal).
@@ -33,11 +33,13 @@ posts by hand print per `host-preflight/references/copyable-output.md`.
 4. **Pre-existing** — defects the change did not introduce, after the change's
    findings, in the same block format, each marked `pre-existing`. They are not the
    author's fault and never block approval; [fix.md](fix.md) **Scope** owns fixing them.
-5. **What was checked and cleared** — one one-line bullet per candidate issue that
-   did not survive verification and why each was killed. This is the proof the review was real.
+5. **What was checked and cleared** — one bullet per candidate issue that
+   did not survive verification, on one line with why it was killed. This is the proof the review was real.
 
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
-is a valid result. For a GitHub or GitLab MR/PR, run `agt review sync --pr <n|url>`
+is a valid result.
+
+Before reporting findings, for a GitHub or GitLab MR/PR, run `agt review sync --pr <n|url>`
 (with `GITLAB_HOST=<host>` for a self-hosted GitLab), then
 `agt review list --target <key>` once for every thread with its resolved state
 ([store.md](store.md)). Then:

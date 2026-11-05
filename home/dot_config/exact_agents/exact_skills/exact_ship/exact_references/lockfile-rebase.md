@@ -1,7 +1,7 @@
 # Lockfile conflicts in a long rebase
 
 1. `git rebase --abort`.
-2. Merge `origin/<base>` into the branch, or squash the branch to one commit
+2. Merge the pinned `COMMIT_BASE` into the branch, or squash the branch to one commit
    first, so the lockfile conflict happens once.
 3. Resolve it with the base's lockfile, then run `npm install --package-lock-only`
    once (use the repo's package manager equivalent) and commit the result.

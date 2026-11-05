@@ -93,8 +93,10 @@ Delete with literal resolved task paths, never `rm -rf "$VAR"`.
 
 When removing a worktree, its remaining disposable `.cache/agents/scratch/` contents go with
 it, but directory removal does not stop processes. Remove it with
-`agt worktree remove`, which backs up the worktree's commits and untracked work but deletes its
-ignored files, and lists the ones no build recreates (`.env*`, credentials, notes) as `ignored_lost`.
+`agt worktree remove`, which backs up the worktree's commits and tracked changes, refuses while
+untracked files exist (drop them with `--force` only when the user agrees they are disposable; the
+plan with `--force` lists them as `untracked_lost`), and deletes its ignored files, listing the ones no build
+recreates (`.env*`, credentials, notes) as `ignored_lost`.
 Keep requested files and copy files awaiting use. If a helper could serve a
 teammate or later task, propose a project path and let the user decide; never
 leave it in the repository without consent.

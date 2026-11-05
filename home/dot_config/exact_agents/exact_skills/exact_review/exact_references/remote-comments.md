@@ -71,7 +71,7 @@ After each pass and its fix push (or after the pass, when nothing was fixed), ru
 finding, reply, and resolve, and updates the summary when a run ended or its text changed.
 A rerun matches posted items instead of posting again. Read only its returned links and failures; rerun a failure once
 yourself. It refuses an MR/PR the user did not author. When its output has `kept_local`,
-posting is off (`[forge] post`): it posted nothing and exits 0. Report `kept local (posting off)`
+posting is off (the tracker's `push` is not `manual` or `auto`): it posted nothing and exits 0. Report `kept local (posting off)`
 once; do not rerun it or post with `gh` or `glab`. What it posts:
 
 - **Finding body.** The kind on its own line (`**🐛 bug (high)**`, `**❓ question**`,

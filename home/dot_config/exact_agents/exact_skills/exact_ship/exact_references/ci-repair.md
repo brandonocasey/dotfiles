@@ -21,7 +21,7 @@ Do not restart the watch unless the user asks, except after a repair or retry.
 
 ## Repair
 
-Before repairing a target, check that its checkout is on the shipped branch, `HEAD` equals the watched head, and the tree is clean. Otherwise, report without repairing.
+Before repairing a target, check that its checkout is on the shipped branch, `HEAD` equals the watched head, and the tree is clean. Otherwise, report without repairing. A worktree an earlier run removed is not a mismatch: recreate it per step 2 first, then run this check.
 
 1. Pull the failing job's log (`glab ci trace <job>` / `gh run view <run-id> --log-failed`).
    Find the real error under the boilerplate.

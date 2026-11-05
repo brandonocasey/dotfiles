@@ -69,7 +69,7 @@ agent-preview wait --state-dir <state-dir> --after 0 --timeout-seconds 3600
 
 The call returns as soon as a submission arrives. A timeout prints nothing and does not discard
 feedback: run it again with the same cursor, in the background, and show the URL again. Do not
-poll a model or ask the user to type that they submitted.
+poll in a loop or ask the user to type that they submitted.
 
 ## Read the answers
 
@@ -77,7 +77,7 @@ Each event carries `answers`, keyed by question ID, with the chosen option `ids`
 
 For a `more` response, or for the next round, update the same config file with valid questions and stable IDs. The running server validates the edit and keeps the same URL. Picks whose IDs remain are kept. An invalid config edit leaves the last valid gallery active; correct the file without restarting the server.
 
-Apply selections, notes, and requests for more options to the active task. When the choice must survive a resumed session, use `agt task update --correction` to record the option IDs, feedback, and resulting correction. Continue the requested work after each response.
+Apply selections, notes, and requests for more options to the active task. Record each response's option IDs, rejections, notes, and resulting correction in the task record, so a resumed session keeps them: create the record first when none exists, then `agt task update <id> --revision <n> --correction <text>`, per `session-resume`. Continue the requested work after each response.
 
 ## Stop
 

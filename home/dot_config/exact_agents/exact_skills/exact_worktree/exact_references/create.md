@@ -1,7 +1,7 @@
 ## Create
 
 Use `agt` 0.10.0 or newer; [agt.md](../../shared/agt.md) installs it. When agt is still missing
-after that install step, use **Without agt** below instead of stopping.
+or older after that install step, skip agt.md's stop-and-report and use **Without agt** below.
 
 For a separate task that depends on an unmerged MR/PR, first read
 [dependent-branches.md](../../shared/dependent-branches.md). Use its parent base

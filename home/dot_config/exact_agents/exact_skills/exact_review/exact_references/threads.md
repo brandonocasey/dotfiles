@@ -19,8 +19,8 @@ Use the `agt review` commands in [store.md](store.md), each with the
    threads and one `agt review resolve <id>... --stale --reply '<reply>'` for
    the stale ones (each thread its own call when the replies differ), then
    `agt review publish`. Add `--not-own` when the user did
-   not author the MR/PR; it then posts only replies and resolves. Show the user
-   `publish --dry-run` output first.
+   not author the MR/PR; it then posts only replies and resolves. Run
+   `publish --dry-run` first, show its output, and publish without waiting only when its writes match the request.
    The user's request authorizes this for the named MR/PR only.
    Never reply or resolve on a repository outside the user's organization unless the user names that action.
 6. Print draft replies for `question` threads for the user to post, as in [output.md](output.md). Do not post them.

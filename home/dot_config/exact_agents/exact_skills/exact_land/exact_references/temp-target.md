@@ -12,8 +12,9 @@ git -C <primary-checkout> worktree add .worktrees/<unused-name> <TARGET>
 git -C <MAIN_WT> merge --ff-only <BRANCH>
 ```
 
-Record that this run created it. On failure, keep it if needed for recovery and
-report its path.
+Record that this run created it. On failure, remove it as in **Removal** below
+(run the plan first; keep it when dirty or refused) and report its path only
+when kept.
 
 ## Removal (step 5)
 

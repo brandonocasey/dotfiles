@@ -21,7 +21,7 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
 3. Pick angles: distinct lenses that fit the task, one line each. For a code
    audit: correctness, error and edge paths, callers and sibling sites, tests.
 4. If a ledger for this task exists, resume from it. Otherwise create
-   `<scratch>/open-ended/<task-slug>/ledger.md` with the task, scope, end check,
+   `agents/output/open-ended/<task-slug>/ledger.md` in the XDG cache root with the task, scope, end check,
    angles, and empty **Found**, **Rejected**, and **Checked** sections.
 
 ## 1. Run a round

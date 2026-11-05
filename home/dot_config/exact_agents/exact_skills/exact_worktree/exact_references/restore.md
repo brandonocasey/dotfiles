@@ -13,13 +13,8 @@ It recreates the worktree at its original path (or `--path`) with its branch
 and its uncommitted work, and refuses an existing path. Ignored files are not
 restored, except from backups made by agt 0.20.0 or older. Reinstall dependencies per [prepare.md](prepare.md).
 
-Without a backup, check `git worktree list --porcelain` and whether the local
-branch still exists. Read [create.md](create.md) for an existing branch. Only
-when the branch was also deleted:
-
-```sh
-git -C <main-checkout> fetch origin "+refs/heads/<branch>:refs/remotes/origin/<branch>"
-git -C <main-checkout> worktree add --track -b <branch> .worktrees/<branch> origin/<branch>
-```
-
-Then set up submodules per [create.md](create.md).
+Without a backup, check `git worktree list --porcelain`, whether the local branch still
+exists, and `git -C <main-checkout> ls-remote --exit-code origin "refs/heads/<branch>"`. When
+the branch exists locally or on origin, follow [create.md](create.md): `agt worktree create <branch>`
+reuses it or tracks the origin branch, and sets up submodules. When it exists in neither place,
+report that and do not create a new branch.

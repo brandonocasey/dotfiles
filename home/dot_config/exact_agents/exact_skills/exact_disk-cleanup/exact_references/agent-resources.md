@@ -37,7 +37,7 @@ Do not claim exhaustive cleanup when discovery was incomplete.
 
 Every `disk-cleanup` run that can remove anything runs `worktree-cleanup` as a
 required step. A dry run runs only its qualification and reports what it would
-remove; it removes nothing. Analysis-only runs skip it unless the user asks. Read
+remove; it removes nothing. Read
 `~/.config/agents/skills/worktree-cleanup/SKILL.md` directly. It is explicit-only,
 so the Skill tool cannot load it. The user's `disk-cleanup` request is the explicit batch-cleanup request. Follow its
 merge-evidence procedure for each repository, narrowed to merged/landed

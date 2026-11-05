@@ -1,6 +1,6 @@
 ---
 name: ship
-description: "Commit, push, and open/update PRs/MRs with Git authorization; merge only when requested."
+description: "Commit, push, and open/update PRs/MRs with Git authorization; merge only when requested. Local merge: land. CI fixes on existing PRs/MRs: pr-fix."
 ---
 
 Ship the current branch: push it, open or update the MR/PR, and report. When

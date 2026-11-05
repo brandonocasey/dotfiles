@@ -10,9 +10,10 @@ next check. Stop only at one of these two results or at a stop point named below
 Use every tool that can add evidence. When one tool fails or is not connected,
 try the next one before you call a fact unknown.
 
-Never comment on, edit, close, or transition issues, pull requests, or chat
-threads unless the user asks. Never write to production data. Follow
-[git-policy.md](../shared/git-policy.md) for commits and pushes.
+Comment on, edit, close, or transition issues, pull requests, or chat
+threads only when the user asks, except moving the task's own ticket forward
+when its MR/PR opens or merges. Never write to production data. Follow
+[git-policy.md](../shared/git-policy.md) for that ticket move, commits, and pushes.
 
 ## 0. Take stock of tools
 
@@ -44,7 +45,7 @@ attachments, linked issues, and linked commits or merge requests.
 | Issue tracker link (Jira, Linear, GitHub, GitLab, …) | The tracker's connected MCP. Else its CLI (`gh`, `glab`) or REST API. |
 | Error tracker or monitoring link (Sentry, Datadog, …) | Its MCP or API: stack trace, first and last seen, release, tags, breadcrumbs. |
 | Chat link (Slack, …) | Its MCP: the full thread, not only the linked message. |
-| Web page URL | Step 3. Treat the page as read-only. |
+| Web page URL | Section 3. Treat the page as read-only. |
 | Error text, stack trace, or log | Search the code and history for the exact message. |
 | Plain description | Ask one question only when reproduction is impossible without the answer. |
 
@@ -103,7 +104,7 @@ autoplay, audio tracks, sync), follow `browser`
 - Run the narrowest existing test that covers the area. A new failing test is
   good evidence; keep it as the regression test for section 5.
 
-Ask before you install a tool. Say which tool is missing and what it would show.
+Install a missing tool in scratch without asking. Ask before a global install; say which tool is missing and what it would show.
 
 ## 4. Find the cause in code
 

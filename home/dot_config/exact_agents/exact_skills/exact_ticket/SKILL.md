@@ -1,6 +1,6 @@
 ---
 name: ticket
-description: "Find, create, link, and update tracker tickets for MR/PR work; log pre-existing or found issues."
+description: "Find, create, link, and update tracker tickets for MR/PR work; log pre-existing or found issues. For Jira fix versions, use jira-versions."
 ---
 
 Arguments: `[<MR/PR url|number|branch>...] [to <version>] [none]`.
@@ -40,19 +40,22 @@ question. Never invent a key, project, status, or version.
     `gh` or `glab`.
   - Reads use the local copy, synced first when it is stale (see
     [agt.md](../shared/agt.md)). Writes are queued and go out only on
-    `agt issue push`, only for trackers with `push = true`, and only when
-    `[forge] post = true` (agt 0.29.0 or newer).
-  - Do not change `push` or `[forge] post` in the agt config.
-  - Run `agt issue sync --tracker <owner/repo>` before reads. On a sync error,
-    stop, or read with `gh` or `glab`. An empty `find` after a failed sync does
-    not mean "no ticket".
+    `agt issue push`, only for trackers whose `push` is `manual` or `auto`
+    (the default is `off`).
+  - Do not change `push` in the agt config.
+  - Before any `agt issue sync --tracker <owner/repo>` (here and in step 2),
+    run `agt issue list --tracker <owner/repo> --pending`: `sync` also pushes
+    queued changes when the tracker's `push` is `manual` or `auto`. Stop and ask
+    when anything besides this run's keys is pending. Run the sync before reads.
+    On a sync error, stop, or read with `gh` or `glab`. An empty `list` after a
+    failed sync does not mean "no ticket".
   - The sync scope `involved` can miss issues. Read a key that is not in the
     local copy with `gh` or `glab`.
 - Jira: the Atlassian MCP. If it fails, use `jira-api` per the Setup in
   [jira-versions](../jira-versions/SKILL.md); `JIRA_EMAIL` comes from the
   environment, as that Setup says.
-- Jira fix versions: use [jira-versions](../jira-versions/SKILL.md) when the
-  project matches it. The Atlassian MCP cannot create versions.
+- Jira fix versions: use [jira-versions](../jira-versions/SKILL.md) for any
+  fix-version work. The Atlassian MCP cannot create versions.
 
 ## Steps (per MR/PR)
 
@@ -88,11 +91,11 @@ question. Never invent a key, project, status, or version.
      anything besides this run's keys is pending.
    - Run `agt issue push --tracker <owner/repo> --dry-run` and show it. Stop and
      ask when it touches other issues.
-   - When `push = false`, the dry-run errors. Stop on that error and report the
+   - When push is off for the tracker, the dry-run errors. Stop on that error and report the
      queued issue. Do not use `gh` or `glab` to bypass the setting.
    - Run `agt issue push --tracker <owner/repo>`. It sends every pending change
      on that tracker, so the pending check above is required.
-   - When its output has `kept_local`, posting is off and nothing was sent. The
+   - When its output has `kept_local`, push is off and nothing was sent. The
      key stays `local-`. Report the queued issue, keep the key out of the MR/PR
      title, and do not use `gh` or `glab` to bypass the setting.
    - Push exits 0 even with entries under `failed`, `deferred`, or `conflicts`.
@@ -107,7 +110,7 @@ question. Never invent a key, project, status, or version.
    - `agt issue link --pr <url> --comment` also queues a comment. Use it only for an MR/PR link.
    - For issue-to-issue links, name the related key in the ticket body or a
      comment. Queue it with `agt issue comment`, then push as in step 4.
-   - Do not bypass `push = false` with `gh` or `glab`.
+   - Do not bypass a push-off setting with `gh` or `glab`.
 6. Move the status per the lifecycle. Never move a ticket backward.
    - For a GitHub or GitLab ticket with an `agt` tracker, close only when the
      lifecycle status is closed (the MR/PR is merged).

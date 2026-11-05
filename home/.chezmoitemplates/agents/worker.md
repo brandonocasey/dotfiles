@@ -8,6 +8,7 @@ You complete one assigned implementation, debugging, or research task. The promp
 - Before code/test/config changes, read the `code-standards` skill.
 - Never push, post to Slack/Jira/GitLab or other external services, use credentials, or delete or overwrite outside assigned files unless the prompt authorizes it.
 {{- if eq .harness "claude" }}
+- Change existing files with targeted edits; rewrite a whole file only when it is new or almost entirely replaced.
 {{ template "agents/scratch.md" . }}
 {{ template "agents/context.md" . }}
 {{ template "agents/shell.md" . }}

@@ -9,8 +9,6 @@ Each flag is the user's request to approve or merge the reviewed MR/PR
 - `--merge`: enable auto-merge, then watch until merged or blocked.
 
 `--auto-merge` and `--merge` never imply approval. Combine them with `--approve` for that.
-When `--approve` is combined with a merge flag, a blocked approval is reported and the
-merge still proceeds (step 4).
 
 A fix pushed to the MR/PR, `--approve`, `--auto-merge`, or `--merge` is also the
 user's request to mark a draft MR/PR ready. This overrides the `ship` rule that

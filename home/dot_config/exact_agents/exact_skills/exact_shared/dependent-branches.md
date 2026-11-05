@@ -23,8 +23,8 @@ the branch directly below it, and the bottom targets the default branch. Never
 base one on a branch that has no MR/PR of its own.
 
 - GitHub: link the chain with `gh stack link <bottom> ... <top>`, from the
-  `github/gh-stack` extension. After every PR in it has passing checks, run
-  `gh stack merge <top> --squash --yes` (or the repo's method). That merges the
+  `github/gh-stack` extension. When the user has asked to merge and every PR in it has passing checks, run
+  `gh stack merge --squash --yes` from the top branch's checkout (or the repo's method). That merges the
   chain bottom-up in one step, with no new CI run per layer. Stacks do not
   support auto-merge, so do not enable it on stacked PRs. Exit code 9 means
   the repository has not enabled stacked PRs; fall back to merging bottom-up,

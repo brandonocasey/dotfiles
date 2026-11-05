@@ -11,7 +11,7 @@
 
 Name a role below for every spawn unless the user names another agent.
 Claude Code reads `~/.config/agents/agents/<role>.md`; Codex reads
-`~/.codex/agents/<role>.toml`. Links for another harness do not prove support.
+`~/.codex/agents/<role>.toml`. A link or copy of these files in another harness does not prove it supports them.
 Check its loaded roster, effective model, thinking setting, and tools before spawning.
 If the role is unavailable or incompatible, work inline and report the limitation.
 

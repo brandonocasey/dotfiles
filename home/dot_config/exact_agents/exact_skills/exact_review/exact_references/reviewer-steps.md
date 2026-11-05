@@ -37,8 +37,8 @@ Get the full code, not just the diff — the diff alone is rarely enough context
 - After you create a review worktree, follow the `worktree` skill's **Prepare** section
   before tests or a `--fix` commit. Never install in a worktree you were given; report
   missing dependencies instead. A server you start uses its own free port.
-- With `.gitmodules`, the `worktree` skill's **Create** and **Submodules** sections
-  own submodule init and removal.
+- With `.gitmodules`, the `worktree` skill's **Create** section owns submodule init
+  and its **Remove** section owns removal.
 - An inline fallback runs after the testing stage too; it also runs no checks.
 - **Commit or working diff**: read directly in the current checkout; no worktree needed.
 

@@ -56,9 +56,8 @@ that the platform is unsupported and stop before any mutation.
   `git -C <wt> switch --detach <head-sha>` only when clean and not in use.
   Never reset local changes or move an existing source branch to match the pin.
   If a matching checkout or path is dirty, locked, occupied, or incompatible,
-  leave it untouched. Reuse is optional; create another worktree when needed.
-  Prefer the stable name below when its path is available; otherwise choose an
-  unused name. Avoid extra names when safe reuse is possible.
+  leave it untouched. Prefer the stable name below when its path is available;
+  otherwise choose an unused name.
 
   Run it from `<main-checkout>`. It runs the repository's worktree hooks and,
   with `--prepare`, installs dependencies. It reuses a clean detached checkout

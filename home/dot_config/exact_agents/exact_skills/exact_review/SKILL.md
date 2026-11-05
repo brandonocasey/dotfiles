@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Review PRs/MRs, diffs, commits, branches, or threads for verified defects; supports fixes and review loops."
+description: "Review PRs/MRs, diffs, commits, branches, or threads for verified defects; supports fixes and review loops. Fix by default: review-fix. Fix CI on an existing PR: pr-fix."
 ---
 
 Review a code change adversarially: assume it is broken and try to prove it. The
@@ -38,7 +38,7 @@ Before deciding whether review findings may be fixed, read **Fix authorization**
 Before the spawn, the main session reads no review references except when-to-run.md,
 [setup.md](references/setup.md), [testing.md](references/testing.md), and the
 references those files name (for setup, remote-target.md, store.md, ci-and-conflicts.md; for test failures, the ones testing.md names). It never reviews
-or tests the code itself, except in testing.md's inline fallback. Run setup
+or tests the code itself, except where testing.md has it run checks inline (documentation, Markdown, or comment-only changes, or no tester can run). Run setup
 yourself per setup.md, with `agt`, `git`, and `gh`/`glab` commands; no sub-agent.
 Its inputs: the user's target verbatim (a range or MR/PR the calling skill or loop
 names, or none), the task scratch directory, any earlier review worktree, and the skip
@@ -63,15 +63,16 @@ later passes).
   With `--approve`, `--auto-merge`, or `--merge`, skip only the review and still run
   step 7.
   A request to review again overrides this. Never pass records to reviewers.
-- With `own: yes`, the review posts and resolves MR/PR comments per **Own MR/PR
-  comments** in [remote-comments.md](references/remote-comments.md). With `own: no`,
-  it posts nothing unless the user asks.
+- With `own: yes`, the review posts and resolves MR/PR comments only as **Own MR/PR
+  comments** in [remote-comments.md](references/remote-comments.md) allows (own MR/PR
+  in the user's organization). With `own: no`, it posts nothing unless the user asks.
 - Add nothing to the reviewer prompt beyond setup.md's template; only a fix check adds the
   inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the tester uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
-- Give each reported linked MR/PR its own pass, read-only: apply `--fix`, `--threads`,
-  approval, and merge only to MRs/PRs that the user named or authored.
+- Give each reported linked MR/PR its own pass. A linked MR/PR the user neither named
+  nor authored stays read-only; apply `--fix`, `--threads`, approval, and merge only
+  to ones the user named or authored.
 - Use the reported CI facts in the step 3 report.
 - The risk tier is the highest of setup's `risk`, the reviewers' `Risk:` lines, and
   `high` when a security finding or `high` bug survives. A new head resets it.

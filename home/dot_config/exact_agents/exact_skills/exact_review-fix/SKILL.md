@@ -1,6 +1,6 @@
 ---
 name: review-fix
-description: "Review plus --fix: fix verified findings and re-check major-bug fixes. Default review at task end points."
+description: "Review plus --fix: fix verified findings and re-check major-bug fixes. Default review at task end points; findings only, no fixes: review."
 ---
 
 Run the [review](../review/SKILL.md) skill with `--fix` added to the user's

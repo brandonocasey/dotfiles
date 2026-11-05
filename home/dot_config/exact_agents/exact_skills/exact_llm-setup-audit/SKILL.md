@@ -15,6 +15,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
 - **Rules:** audit always-loaded `AGENTS.md`, `CLAUDE.md`, and project equivalents. Tag each proposal (see **Safe and gating**); ask only about gating ones.
   Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
+  The Writing section comes from `.chezmoitemplates/writing-rules.md`, which also renders `shared/writing.md`; edit that template.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   MCP servers: `mcpServers` and `disabledMcpServers` (top level and per project) in `~/.claude.json` and `~/.claude*/.claude.json`; project and plugin `.mcp.json`; and Codex `[mcp_servers.*]`.
@@ -34,7 +35,7 @@ State that shared impact before proposing a move.
 
 Read every target whole and record before/after tokens.
 Measure global rules, skills, and agents with `agent-probe --prompt 'Reply with OK only.'`, before and after.
-Invoking this skill authorizes these probes.
+A user's invocation authorizes these probes. In a run you started yourself, ask first.
 It runs in an empty directory, so it never loads project files.
 For the MCP share, run it with `--variant base= --variant nomcp='--strict-mcp-config'` and compare.
 For project files or a per-file breakdown, ask the user to run `/context` in the project, before and after.
@@ -171,13 +172,7 @@ Never add tool-specific commands there.
 
 ## Config coverage checks
 
-- **Coverage:** each file that a hook or `statusLine` command names must appear in `chezmoi managed`.
-- **Empty hooks:** report hook events with no commands, such as `"PreToolUse": []`.
-- **Parity:** list each Claude hook with no Codex equivalent in `~/.codex/hooks.json`, and the reverse.
-- **Secrets:** run the `dotfiles-sync` secret scan on the chezmoi source; report per AGENTS.md. Propose a move to the secret store for each.
-- **Tool search:** flag `ENABLE_TOOL_SEARCH=false` in a Claude profile's settings `env`, a custom `ANTHROPIC_BASE_URL`, or a `ToolSearch` deny rule.
-  Each turns tool search off, so every MCP tool schema loads in full on each call.
-- **MCP servers:** check use per [runtime.md](references/runtime.md).
+Read [config-checks.md](references/config-checks.md) when the scope includes harness config.
 
 ## Skills flow
 

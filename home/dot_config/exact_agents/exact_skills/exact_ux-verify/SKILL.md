@@ -95,7 +95,7 @@ site data.
 Report the checked journey and states, concrete failures, screenshots,
 measurements, and untested device or engine coverage. For a reported defect,
 include before and after screenshots at the same viewport. Fix in-scope
-defects and rerun the affected checks.
+defects and rerun the affected checks; a role that cannot edit files reports them instead.
 Reuse results for unchanged code and inputs.
 
 Return evidence to the requesting task or `review`. This skill checks the

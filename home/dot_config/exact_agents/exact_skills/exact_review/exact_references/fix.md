@@ -14,7 +14,7 @@ For own work, apply verified fixes at once per step 4. Retest them per **Retest*
 fix loop owns follow-up reviews. An own MR/PR gets the full MR/PR flow of step 4, including the push
 ([git-policy.md](../../shared/git-policy.md)).
 For any other target, print the comments and wait for `--fix`. End with:
-`Reply fix to apply N findings.`
+`Next: reply fix to apply N findings.`
 After a report, a reply that starts with `fix` (`fix`, `fix all`, `fix 2`) means
 `--fix` for the same target. Treat every other reply as a normal request.
 

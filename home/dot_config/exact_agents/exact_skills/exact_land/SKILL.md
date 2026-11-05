@@ -114,6 +114,7 @@ defer worktree removal until the preview ends.
   owns that rule. Needs `agt` 0.10.0 ([agt.md](../shared/agt.md)):
   ```sh
   cd <MAIN_WT>
+  agt worktree remove <worktree-path>          # plan: read ignored_lost, copy out what is needed
   agt worktree remove <worktree-path> --yes
   ```
   Report the backup id it prints. If it refuses, follow the `worktree` skill's **Blocked removal** and **Submodules** sections, keep the branch, and report the refusal.
