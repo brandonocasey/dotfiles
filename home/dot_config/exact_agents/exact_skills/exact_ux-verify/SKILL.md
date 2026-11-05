@@ -51,8 +51,8 @@ For responsive changes, check narrow and wide layouts and sizes immediately
 around the actual CSS breakpoints. Include long content and the affected
 empty, loading, error, and populated states. Check every shipped locale at the
 narrowest width (320 px unless the project sets one); translations run longer
-and clip. Check light/dark themes and
-reduced motion when their styling or transitions changed.
+and clip. Check light/dark themes and reduced motion when their styling or
+transitions changed.
 
 ## Exercise the UI
 
