@@ -10,7 +10,10 @@
 - When one rule lives in two places (native and browser, CLI and UI, Rust and TypeScript, readiness check and real run), change both in one change and test both with the same input. A dry run, preview, or readiness check MUST call the code the real run calls.
 - In loops over user-sized collections, never scan another collection per item (build a Set or index first), never allocate or re-hash per item, and never build one regex or query from all the data. State the expected size and run one case at 10 times it before reporting.
 - Never simplify away input validation at trust boundaries, error handling that prevents data loss, security measures, or accessibility basics
-- Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks
+- Handle undefined/null where the type system or the callers do not rule it out; always include a message when you raise an error; no nested ternaries; early returns over nested `else` blocks; no `&&` or `and` to make a value conditional (`...(cond ? {x} : {})`, not `...cond && {x}`) unless the repo uses that idiom
+- Make each argument's meaning clear at the call site; `load(url, true, false)` fails this. For booleans and same-typed arguments a caller could swap, use the language's form: labels, keyword arguments, an options object or struct, or an enum. Do not change released public signatures for this
+- Type data by its real shape: a named type, not a catch-all like `any`, `Any`, `dict`, or TypeScript `object`. For data of unknown shape, use a checked type (`unknown`) and narrow it
+- Before adding a field, option, check, or dependency to existing code, search history for it (`git log -S'<name>' -- <path>`). If an earlier change removed it, read that change and its PR, re-add it only if the reason no longer holds, and say why in the PR description
 - Add logs at appropriate levels. Add trace logs only where a failure would otherwise be hard to diagnose
 - Export only what a current caller uses. Keep the public API minimal
 - In a loop over independent items (repositories, files, worktrees, records), one item's failure warns and the loop goes on. An item that vanished before you acted on it counts as done, not as an error. Record what was done before any step that can fail.
