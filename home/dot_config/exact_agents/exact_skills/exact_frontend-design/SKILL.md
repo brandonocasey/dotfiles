@@ -1,9 +1,11 @@
 ---
-description: "User-invoked only: design distinctive new or reshaped UI with intentional visual direction and typography."
+description: "Design new or reshaped UI with intentional visual direction and typography."
 license: Complete terms in LICENSE.txt
 name: frontend-design
 disable-model-invocation: true
 ---
+
+Scope: Design distinctive new or reshaped UI, including visual direction and typography. Use for interface design work requiring intentional aesthetic choices.
 
 # Frontend Design
 
