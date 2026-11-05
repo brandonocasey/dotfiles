@@ -45,8 +45,11 @@ fi
 
 if ! [ -f "$state/$sid.haiku" ]; then
   prompt=$(printf '%s' "$input" | jq -r '.prompt // "" | .[:1000]')
-  # A hand-back from another session is not the topic; wait for a real prompt.
-  case $prompt in '' | /* | 'Another Claude session sent a message'*) exit 0 ;; esac
+  # A hand-back from another session, or Claude's own nudge after a usage
+  # limit resets, is not the topic; wait for a real prompt.
+  case $prompt in
+  '' | /* | 'Another Claude session sent a message'* | 'Your claude.ai usage limit has reset'*) exit 0 ;;
+  esac
   # Greetings and pings make filler titles; leave the session for the next prompt.
   [ "$(printf '%s' "$prompt" | wc -w)" -ge 4 ] || exit 0
   : >"$state/$sid.haiku"
