@@ -2,7 +2,7 @@
 effort: medium
 disable-model-invocation: true
 name: worktree-cleanup
-description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation. Use for 'clean up worktrees' or 'prune old branches'."
+description: "Clean verified merged worktrees and branches; assess retained work. Other removals require confirmation."
 ---
 
 `disk-cleanup` also runs this skill as a required step, under the limits in
