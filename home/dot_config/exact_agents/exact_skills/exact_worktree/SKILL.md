@@ -1,6 +1,6 @@
 ---
 name: worktree
-description: "Create, reuse, or remove isolated Git worktrees. Use before starting branch work, or to recover, restore, or remove a worktree."
+description: "Create, reuse, or remove isolated Git worktrees before branch work."
 ---
 
 Do branch work in a worktree. Never switch branches in the main checkout.

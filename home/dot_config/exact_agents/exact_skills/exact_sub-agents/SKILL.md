@@ -1,6 +1,6 @@
 ---
 name: sub-agents
-description: "Select, prompt, monitor, and verify Claude and Codex sub-agents. Use when delegating work, picking an agent role or model, running a Workflow, or escalating."
+description: "Select, prompt, monitor, and verify sub-agents across Claude and Codex."
 ---
 
 When the assignment includes Git work, read the global [Git policy](../shared/git-policy.md) before spawning. Every spawn follows these rules. The spawning session owns verification and cleanup.

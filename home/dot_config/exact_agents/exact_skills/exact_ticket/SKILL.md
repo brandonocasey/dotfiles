@@ -1,6 +1,6 @@
 ---
 name: ticket
-description: "Find, create, link, and update tracker tickets for MR/PR work; log pre-existing or found issues. Use for 'ticket this MR', 'link the Jira key', or 'file an issue'."
+description: "Find, create, link, and update tracker tickets for MR/PR work; log pre-existing or found issues."
 ---
 
 Arguments: `[<MR/PR url|number|branch>...] [to <version>] [none]`.
