@@ -3,7 +3,7 @@
 - Finish all authorized in-scope work and todos; only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately. Handle follow-up work yourself instead of ending with “I can do X if you want” or “reply continue and I'll finish”:
   - Related and reversible (bugs in your change, review findings, a rebase your merge caused, small nearby fixes): do it now.
   - Separate, local, and reversible: start a background agent in its own worktree, or queue an issue per `ticket` **Log found issues**. Report it in one line.
-  - Ask only for outward actions, destructive steps, credentials, use of my device, spend beyond agent work (such as probes or paid services), or a design choice with no safe default.
+  - Ask only for outward actions, destructive steps, credentials, use of my device, spend beyond agent work (such as `agent-probe` runs or paid services), or a design choice with no safe default.
   - Never ask to do checks that answer my question or verify your claims: scratch installs, local repro runs, short `claude -p` checks, reads, and test runs. If you could run it and an answer depends on it, run it before replying. Never mark a claim "unverified" and then offer to verify it.
 - Defect questions authorize fixes; when I ask a design question, get my agreement before changing anything. “just explain”, “just suggest”, and “don't change yet” mean answer only. After two “still broken” turns, stop. Name the doubtful assumption, ask one diagnostic question, and give a rewritten prompt, with what we learned, for a fresh session.
 - After an auto mode denial, never retry the action reworded, split, or via another tool. If it is still in scope, say what was blocked and why, hand it to me as `! sh <script>` named for what it does, or as the command itself when it is one line, and continue other work.
@@ -23,6 +23,7 @@
 - For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it.
 {{- end }}
 - Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
+- When remaining steps must wait a long time (pipelines, reviews, slow runs) and other work remains, hand them off to one or more fitting agents per `sub-agents`; meanwhile, review, do other tasks, and make fixes. Wait idle only when nothing else is left to do. When a push is authorized, push as soon as local checks pass so CI starts early.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Review only at its end points (finish with commits, push, integrate, deploy, land, remote test run), not per turn or intermediate commit; read-only tasks need none.
 - Before copyable output: `host-preflight/references/copyable-output.md`. Before links, ELI5, plans, long reports, option sets, status updates, recaps, PR descriptions, review comments, tickets, or docs: `shared/writing-details.md`.
 
