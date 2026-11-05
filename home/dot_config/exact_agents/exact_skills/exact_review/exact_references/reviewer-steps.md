@@ -75,6 +75,10 @@ read the diff looking for things that seem off — attack it:
   selector, export, flag, route, or file path, grep the whole repository, including unit,
   E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
   in suites the author did not run were the most common CI-only failure after a review.
+- **Trace removed links.** For every removed dependency, edge, or wrapper (depends_on,
+  import, hook, middleware, ordering or readiness constraint), list what it guaranteed,
+  including transitively (start order, readiness, initialization, cleanup), and show
+  which path still provides each guarantee.
 - **Check maintainability** against the **Maintainability** rules in
   [code-quality.md](../../code-standards/references/code-quality.md). For each new
   function, block, or constant, search the repository once for code that already does
