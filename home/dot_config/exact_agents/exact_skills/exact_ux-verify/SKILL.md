@@ -1,6 +1,6 @@
 ---
 name: ux-verify
-description: "Verify user-facing output after a change: CLI and service output, messages, errors, generated files, and UI (layouts, themes, interaction states) in a browser."
+description: "Verify user-facing output: CLI and service output, messages, errors, generated files, and UI changes, responsive layouts, themes, and interaction states in a browser."
 ---
 
 Check the affected user journeys against the requested behavior. A user-facing

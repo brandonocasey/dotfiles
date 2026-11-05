@@ -1,10 +1,11 @@
 ---
 disable-model-invocation: true
 name: open-ended
-description: "User-invoked only: run an open-ended task (audit, gap hunt, \"find all X\", \"improve X\") in rounds of fresh sub-agents until rounds stop finding anything new."
+description: "User-invoked only: run an open-ended task in rounds of fresh sub-agents until rounds stop finding anything new."
 ---
 
-For tasks with no fixed end. One session anchors on its first ideas. Fresh agents miss
+Use this for tasks with no fixed end, such as audits, gap hunts, "find all X",
+or "improve X". One session anchors on its first ideas. Fresh agents miss
 different things, so repeat rounds until they run dry.
 
 Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`

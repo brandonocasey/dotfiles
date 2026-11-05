@@ -1,7 +1,7 @@
 ---
 effort: medium
 name: land
-description: "On request, commit and fast-forward the branch into the local default branch, then clean up; never fetch or push. Use for 'land this' or 'merge locally'."
+description: "On request, commit and fast-forward into the local default branch, then clean up; never fetch or push."
 ---
 
 Land the current branch into the local default branch (`TARGET`, resolved in

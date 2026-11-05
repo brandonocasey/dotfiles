@@ -1,6 +1,6 @@
 ---
 name: jenkins
-description: "Inspect Jenkins jobs, builds, and logs, or start requested builds and hive package releases via jenkins-api."
+description: "Inspect Jenkins jobs, builds, and logs, or trigger requested builds via jenkins-api."
 ---
 
 Use `jenkins-api` (`~/.local/bin/jenkins-api`). It calls the Jenkins REST API

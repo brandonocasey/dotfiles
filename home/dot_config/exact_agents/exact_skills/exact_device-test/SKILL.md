@@ -1,11 +1,12 @@
 ---
 name: device-test
-description: "Hands-on testing on a real device (AirPlay, iPhone, TV, Control Center) where the user must act; a checklist page returns results. Fallback after browser or real-safari."
+description: "Hands-on testing on a real device (AirPlay, iPhone, TV) where the user must act; checklist page returns results."
 ---
 
-Try `real-safari` or the `browser` skill first; this is the fallback. The user
-is the sensor, so spend their attention once: preflight, then one page, then
-read results.
+Use when a check needs a person or hardware the agent cannot drive: AirPlay
+targets, a real iPhone, TVs, Control Center. Try `real-safari` or the
+`browser` skill first; this is the fallback. The user is the sensor, so spend
+their attention once: preflight, then one page, then read results.
 
 ## Preflight (do all before handing over)
 
