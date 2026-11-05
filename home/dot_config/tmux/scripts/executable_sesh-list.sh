@@ -16,44 +16,46 @@ kill)
   ;;
 list)
   shift
-  states=$(tmux list-panes -a -F '#{session_name}	#{E:@agent_status}' 2>/dev/null)
-  tools=$(tmux list-panes -a -F '#{session_name}	#{E:@agent_tool}' 2>/dev/null)
-  colors=$(tmux list-sessions -F '#{session_name}	#{@session_color}' 2>/dev/null)
-  order=$(tmux list-sessions -F '#{session_created}	#{session_name}' 2>/dev/null | sort -n | cut -f2-)
+  # One tmux call and one awk pass: under heavy CPU load, each extra
+  # process per line made the picker wait seconds for its list.
+  panes=$(tmux list-panes -a -F '#{session_name}	#{session_created}	#{@session_color}	#{E:@agent_status}	#{E:@agent_tool}' 2>/dev/null)
   # sesh sorts tmux sessions by activity, so they jump around on every
   # switch. Put them in a fixed order (by creation time); other entries keep theirs.
-  sesh list "$@" | ORDER=$order awk '
-    BEGIN { n = split(ENVIRON["ORDER"], o, "\n"); for (i = 1; i <= n; i++) idx[o[i]] = i }
+  sesh list "$@" | PANES=$panes awk '
+    function hex(h) {
+      return (index("0123456789abcdef", substr(h, 1, 1)) - 1) * 16 + index("0123456789abcdef", substr(h, 2, 1)) - 1
+    }
+    BEGIN {
+      n = split(ENVIRON["PANES"], p, "\n")
+      for (i = 1; i <= n; i++) {
+        split(p[i], f, "\t")
+        s = f[1]
+        created[s] = f[2]
+        color[s] = tolower(f[3])
+        if (f[4] ~ /D7AF00/) state[s] = "input"
+        else if (f[4] ~ /5FD700/ && state[s] == "") state[s] = "working"
+        if (f[5] != "" && !((s, f[5]) in seen)) {
+          seen[s, f[5]] = 1
+          used[s] = used[s] (used[s] == "" ? "" : " ") f[5]
+        }
+      }
+    }
     {
-      name = $0
+      line = $0
+      name = line
       gsub(/\033\[[0-9;]*m/, "", name)
       sub(/^[^ ]* /, "", name)
-      printf "%d\t%s\n", (name in idx) ? idx[name] : 100000 + NR, $0
-    }' | sort -n -s -k1,1 | cut -f2- | while IFS= read -r line; do
-    name=$(printf '%s\n' "$line" | sed 's/\x1b\[[0-9;]*m//g')
-    name=${name#* }
-    mine=$(printf '%s\n' "$states" | awk -F '\t' -v n="$name" '$1 == n { print $2 }')
-    color=$(printf '%s\n' "$colors" | awk -F '\t' -v n="$name" '$1 == n { print $2; exit }')
-    case $color in
-    \#??????)
-      hex=${color#\#}
-      rgb=$(printf '%d;%d;%d' "0x$(printf '%s' "$hex" | cut -c1-2)" \
-        "0x$(printf '%s' "$hex" | cut -c3-4)" "0x$(printf '%s' "$hex" | cut -c5-6)")
-      line=$(printf '%s\033[38;2;%sm%s\033[39m' "${line%"$name"}" "$rgb" "$name")
-      ;;
-    esac
-    used=$(printf '%s\n' "$tools" | awk -F '\t' -v n="$name" '$1 == n && $2 != "" && !seen[$2]++ { printf "%s%s", sep, $2; sep = " " }')
-    case $mine in
-    *D7AF00*) dot='\033[38;5;178m● ' ;;
-    *5FD700*) dot='\033[38;5;76m● ' ;;
-    *) dot= ;;
-    esac
-    if [ -n "$dot$used" ]; then
-      printf "%s\t$dot\033[38;5;245m%s\033[0m\n" "$line" "$used"
-    else
-      printf '%s\n' "$line"
-    fi
-  done
+      c = color[name]
+      if (c ~ /^#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]$/ && substr(line, length(line) - length(name) + 1) == name)
+        line = sprintf("%s\033[38;2;%d;%d;%dm%s\033[39m", substr(line, 1, length(line) - length(name)),
+          hex(substr(c, 2, 2)), hex(substr(c, 4, 2)), hex(substr(c, 6, 2)), name)
+      dot = state[name] == "input" ? "\033[38;5;178m● " : state[name] == "working" ? "\033[38;5;76m● " : ""
+      key = (name in created) ? created[name] : 10000000000 + NR
+      if (dot used[name] != "")
+        printf "%s\t%s\t%s\033[38;5;245m%s\033[0m\n", key, line, dot, used[name]
+      else
+        printf "%s\t%s\n", key, line
+    }' | sort -n -s -k1,1 | cut -f2-
   ;;
 *) exit 2 ;;
 esac
