@@ -456,6 +456,12 @@ class ClaudePortNameTests(TmuxCase):
             subprocess.run(git + args, env=self.env, check=True, capture_output=True, timeout=10)
         return main, main / ".worktrees" / branch
 
+    def worktree_in(self, main, branch):
+        tree = main / ".worktrees" / branch
+        subprocess.run(["git", "-C", str(main), "worktree", "add", "-q", "-b", branch, str(tree)],
+                       env=self.env, check=True, capture_output=True, timeout=10)
+        return main, tree
+
     def bash_done(self, stdout, sid="one"):
         self.run_hook("auto-title", "branch", payload=dict(
             session_id=sid, hook_event_name="PostToolUse", tool_name="Bash",
@@ -527,6 +533,26 @@ class ClaudePortNameTests(TmuxCase):
         (tree / "sub dir").mkdir()
         self.run_hook("auto-title", "branch", payload=dict(change, new_cwd=str(tree / "sub dir")))
         self.assertEqual((self.state / "one.branch").read_text(), "feat/x-y.1\n")
+
+    def test_same_branch_keeps_chosen_name(self):
+        main, tree = self.worktree()
+        self.env["CLAUDE_PID"] = "4242"
+        (tree / "src").mkdir()
+        start = dict(session_id="one", source="startup", cwd=str(tree), session_title="47950 Auth spike")
+        self.run_hook("auto-title", "new", payload=start)
+        cd = dict(session_id="one", hook_event_name="CwdChanged", old_cwd=str(tree))
+        self.run_hook("auto-title", "branch", payload=dict(cd, new_cwd=str(tree / "src")))
+        self.assertFalse((self.state / "one.branch").exists())
+        self.run_hook("auto-title", "new", payload=dict(start, source="startup", session_title=""))
+        self.assertEqual(self.prompt("47950"), "47950 feat/x-y.1")
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="two", source="clear", session_title="47950 feat/x-y.1"))
+        self.port("two", "41230")
+        self.run_hook("auto-title", "branch", payload=dict(cd, session_id="two", new_cwd=str(tree / "src")))
+        self.assertEqual(self.prompt("47950 feat/x-y.1", sid="two"), "41230 feat/x-y.1 Part 2")
+        _, other = self.worktree_in(main, "feat/other")
+        self.run_hook("auto-title", "branch", payload=dict(cd, session_id="two", new_cwd=str(other)))
+        self.assertEqual(self.prompt("41230 feat/x-y.1 Part 2", sid="two"), "41230 feat/other")
 
     def test_start_in_linked_worktree_names_session(self):
         main, tree = self.worktree()

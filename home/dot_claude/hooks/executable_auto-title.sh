@@ -44,16 +44,25 @@ worktree_branch() {
   git -C "$1" symbolic-ref --short -q HEAD
 }
 
-# Keeps the branch as the pending name, cut so it fits beside the port: a
-# branch has no spaces, so the 60-character cut would drop all of it.
-save_branch() {
-  cut=$(sh "$tmux_hook" tidy "$1" 54)
-  [ -n "$cut" ] && printf '%s\n' "$cut" >"$state/$sid.branch"
-}
-
 # Claude's PID stays the same across /clear; the session ID does not.
 handoff=
-case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *) handoff=$state/pid-$CLAUDE_PID.branch ;; esac
+named=$state/$sid.named
+case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *)
+  handoff=$state/pid-$CLAUDE_PID.branch
+  named=$state/pid-$CLAUDE_PID.named
+  ;;
+esac
+
+# Keeps the branch as the pending name, cut so it fits beside the port: a
+# branch has no spaces, so the 60-character cut would drop all of it. Only a
+# move to another branch renames, so work in the same branch keeps a name
+# from `claude -n`, /rename, or Part N.
+save_branch() {
+  cut=$(sh "$tmux_hook" tidy "$1" 54)
+  [ -n "$cut" ] && [ "$cut" != "$(cat "$named" 2>/dev/null)" ] || return 1
+  printf '%s\n' "$cut" >"$named"
+  printf '%s\n' "$cut" >"$state/$sid.branch"
+}
 
 if [ "$1" = end ]; then
   [ -n "$handoff" ] && [ -s "$state/$sid.branch" ] && mv -f "$state/$sid.branch" "$handoff"
@@ -85,11 +94,12 @@ if [ "$1" = new ]; then
     mv -f "$handoff" "$state/$sid.branch" 2>/dev/null
     exit 0
   fi
-  [ -n "$handoff" ] && rm -f "$handoff"
-  # A name from `claude -n` wins over the branch.
-  [ -z "$base" ] || exit 0
+  rm -f "$handoff" "$named"
   branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.cwd // empty')")
-  [ -n "$branch" ] && save_branch "$branch"
+  [ -n "$branch" ] || exit 0
+  save_branch "$branch"
+  # A name from `claude -n` wins over the branch it starts in.
+  [ -z "$base" ] || rm -f "$state/$sid.branch"
   exit 0
 fi
 
