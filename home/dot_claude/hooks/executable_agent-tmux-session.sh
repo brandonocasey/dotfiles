@@ -2,11 +2,16 @@
 # Renames the tmux session that holds an agent to the agent's session title, in
 # plain words (Fix stop-hook loop). Usage:
 #   agent-tmux-session.sh claude|codex   SessionStart or Stop hook, JSON on stdin
-#   agent-tmux-session.sh set <title>    from auto-title.sh, right after Haiku
+#   agent-tmux-session.sh set <title> [sid]
+#                                        from auto-title.sh, right after Haiku
 #   agent-tmux-session.sh restore        SessionEnd hook, JSON on stdin
-#   agent-tmux-session.sh sync <title>   from the Claude status line after /rename;
+#   agent-tmux-session.sh sync <title> [sid]
+#                                        from the Claude status line after /rename;
 #                                        renames only when the title changed
 #   agent-tmux-session.sh tidy <title>   print the cleaned title only
+#   agent-tmux-session.sh ported <title> <sid>
+#                                        print the title with the session's port
+#   agent-tmux-session.sh bare <title>   print the title without a port in front
 # The first rename saves the session's old name; restore puts it back when the
 # agent exits, unless the user renamed the session since or another agent pane
 # still uses it. /clear keeps the name. Over ssh it never restores.
@@ -34,10 +39,45 @@ safe() {
   tidy "$1" | LC_ALL=C sed -e 's/[:#]/ /g' -e 's/\./_/g' -e 's/  */ /g' -e 's/^ //' -e 's/ $//'
 }
 
-if [ "$agent" = tidy ]; then
+# Claude session names start with the session's port ("47950 Fix login"). A
+# block port already in front is replaced; the pattern MUST match
+# session-port.sh's block layout.
+bare() {
+  printf '%s' "$1" | LC_ALL=C sed -E 's/^4[0-8][0-9][0-9]0( +|$)//'
+}
+
+session_port() {
+  [ -n "$1" ] || return 0
+  sid_file=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
+  port=$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline/port-$sid_file" 2>/dev/null)
+  case $port in '' | *[!0-9]*) ;; *) printf '%s' "$port" ;; esac
+}
+
+# The title with the port of session <sid> in front; unchanged without a port.
+ported() {
+  port=$(session_port "$2")
+  if [ -z "$port" ]; then
+    printf '%s' "$1"
+    return 0
+  fi
+  rest=$(bare "$1")
+  printf '%s%s' "$port" "${rest:+ $rest}"
+}
+
+case $agent in
+tidy)
   tidy "${2:-}"
   exit 0
-fi
+  ;;
+bare)
+  bare "${2:-}"
+  exit 0
+  ;;
+ported)
+  ported "${2:-}" "${3:-}"
+  exit 0
+  ;;
+esac
 
 if [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] && command -v tmux >/dev/null 2>&1; then
   target=tmux
@@ -75,7 +115,7 @@ rename() {
 }
 
 if [ "$agent" = set ]; then
-  rename "${2:-}"
+  rename "$(ported "${2:-}" "${3:-}")"
   exit 0
 fi
 
@@ -83,9 +123,12 @@ fi
 # user renamed in tmux keeps that name until the title changes again.
 if [ "$agent" = sync ]; then
   [ "$target" = tmux ] || exit 0
+  # The port-only name from session start is no title; keep the Haiku one.
+  [ -n "$(bare "${2:-}")" ] || exit 0
   session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_id}' 2>/dev/null) || exit 0
-  [ "$(safe "${2:-}")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
-  rename "${2:-}"
+  title=$(ported "${2:-}" "${3:-}")
+  [ "$(safe "$title")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
+  rename "$title"
   exit 0
 fi
 
@@ -179,11 +222,16 @@ session_title() {
     [ -r "$transcript" ] || return 0
     haiku=
     [ -n "$sid" ] && [ -s "$haiku_file" ] && haiku=$(cat "$haiku_file")
-    jq -rn --arg haiku "$haiku" '
+    { IFS= read -r custom; IFS= read -r ai; } <<EOF
+$(jq -rn '
       reduce (inputs | select(.type == "custom-title" or .type == "ai-title")) as $e
         ({}; .[$e.type] = ($e.customTitle // $e.aiTitle)) |
-      .["custom-title"] // (if $haiku != "" then $haiku else null end) // .["ai-title"] // empty
-    ' "$transcript" 2>/dev/null
+      .["custom-title"] // "", .["ai-title"] // ""
+    ' "$transcript" 2>/dev/null)
+EOF
+    # The port-only name from session start counts as no title.
+    [ -n "$(bare "$custom")" ] || custom=
+    printf '%s' "${custom:-${haiku:-$ai}}"
     return 0
   fi
   [ -r "$index_file" ] || return 0
@@ -219,15 +267,17 @@ if [ "$agent" = watch-codex ]; then
   exit 0
 fi
 
-# The title entry can land just after the hook fires, so retry briefly.
+# The title entry can land just after the hook fires, so retry briefly. A
+# Claude session without a title yet is named by its port alone.
 attempt=0
 while [ "$attempt" -lt 10 ]; do
   title=$(session_title)
   if [ -n "$title" ]; then
-    rename "$title"
+    rename "$(ported "$title" "${sid:-}")"
     exit 0
   fi
   attempt=$((attempt + 1))
   sleep 0.1
 done
+rename "$(ported '' "${sid:-}")"
 exit 0

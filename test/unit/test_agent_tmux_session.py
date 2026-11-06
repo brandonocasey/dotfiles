@@ -10,16 +10,18 @@ import time
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
-HOOK = REPO / "home/dot_claude/hooks/executable_agent-tmux-session.sh"
 HOOKS = json.loads((REPO / "home/dot_codex/hooks.json").read_text())["hooks"]
 SCRATCH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
 
 
-@unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
-class CodexTmuxSessionTests(unittest.TestCase):
+class TmuxCase(unittest.TestCase):
+    """An isolated tmux server with the hooks copied under a temporary HOME."""
+    prefix = "agent-tmux-test-"
+    hooks = ()
+
     def setUp(self):
         SCRATCH.mkdir(parents=True, exist_ok=True)
-        self.temp = tempfile.TemporaryDirectory(prefix="codex-tmux-test-", dir=SCRATCH)
+        self.temp = tempfile.TemporaryDirectory(prefix=self.prefix, dir=SCRATCH)
         self.addCleanup(self.temp.cleanup)
         self.home = Path(self.temp.name)
         # Unix socket paths MUST fit the platform limit even with a long XDG root.
@@ -35,9 +37,33 @@ class CodexTmuxSessionTests(unittest.TestCase):
         self.addCleanup(lambda: self.tmux("kill-server", check=False))
         pane = self.tmux("display-message", "-p", "#{pane_id}").strip()
         self.env.update(TMUX=f"{self.socket},0,0", TMUX_PANE=pane)
-        target = self.home / ".claude/hooks/agent-tmux-session.sh"
-        target.parent.mkdir(parents=True)
-        shutil.copyfile(HOOK, target)
+        hooks = self.home / ".claude/hooks"
+        hooks.mkdir(parents=True)
+        for name in ("agent-tmux-session", *self.hooks):
+            shutil.copyfile(REPO / f"home/dot_claude/hooks/executable_{name}.sh", hooks / f"{name}.sh")
+
+    def tmux(self, *args, check=True):
+        return subprocess.run(["tmux", "-S", str(self.socket), *args], env=self.env,
+                              text=True, capture_output=True, check=check, timeout=5).stdout
+
+    def name(self):
+        return self.tmux("display-message", "-p", "-t", self.env["TMUX_PANE"], "#{session_name}").strip()
+
+    def wait_name(self, expected):
+        deadline = time.monotonic() + 4
+        while time.monotonic() < deadline:
+            if self.name() == expected:
+                return
+            time.sleep(0.03)
+        self.assertEqual(self.name(), expected)
+
+
+@unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
+class CodexTmuxSessionTests(TmuxCase):
+    prefix = "codex-tmux-test-"
+
+    def setUp(self):
+        super().setUp()
         self.index = self.home / ".codex/session_index.jsonl"
         self.index.parent.mkdir()
         self.parents = []
@@ -53,10 +79,6 @@ class CodexTmuxSessionTests(unittest.TestCase):
         driver.chmod(0o755)
         self.driver = driver
         self.parent = self.start_parent()
-
-    def tmux(self, *args, check=True):
-        return subprocess.run(["tmux", "-S", str(self.socket), *args], env=self.env,
-                              text=True, capture_output=True, check=check, timeout=5).stdout
 
     def start_parent(self, pane=None):
         env = dict(self.env)
@@ -87,17 +109,6 @@ class CodexTmuxSessionTests(unittest.TestCase):
     def title(self, value, sid="one"):
         with self.index.open("a") as stream:
             stream.write(json.dumps(dict(id=sid, thread_name=value)) + "\n")
-
-    def name(self):
-        return self.tmux("display-message", "-p", "-t", self.env["TMUX_PANE"], "#{session_name}").strip()
-
-    def wait_name(self, expected):
-        deadline = time.monotonic() + 4
-        while time.monotonic() < deadline:
-            if self.name() == expected:
-                return
-            time.sleep(0.03)
-        self.assertEqual(self.name(), expected)
 
     def test_title_created_after_startup_and_idle_rename(self):
         self.fire()
@@ -244,6 +255,123 @@ class CodexTmuxSessionTests(unittest.TestCase):
         self.title("After exit")
         time.sleep(1.2)
         self.assertEqual(self.name(), "Before exit")
+
+
+@unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
+class ClaudePortNameTests(TmuxCase):
+    prefix = "claude-port-test-"
+    hooks = ("auto-title", "session-port")
+
+    def setUp(self):
+        super().setUp()
+        self.state = self.home / ".local/state/agents/auto-title"
+        self.state.mkdir(parents=True)
+        self.ports = self.home / ".cache/claude-statusline"
+        self.ports.mkdir(parents=True)
+        # Haiku MUST never run here; these cases all end before it would.
+        bindir = self.home / "bin"
+        bindir.mkdir()
+        (bindir / "claude").write_text("#!/bin/sh\nexit 1\n")
+        (bindir / "claude").chmod(0o755)
+        self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
+        self.env.pop("CLAUDE_CODE_SESSION_ATTENDED", None)
+        self.port("one", "47950")
+
+    def port(self, sid, value):
+        (self.ports / f"port-{sid}").write_text(value + "\n")
+
+    def run_hook(self, hook, *args, payload=None):
+        return subprocess.run(["sh", str(self.home / f".claude/hooks/{hook}.sh"), *args],
+                              input=json.dumps(payload or {}), text=True, env=self.env,
+                              capture_output=True, check=True, timeout=10).stdout
+
+    def ported(self, title, sid="one"):
+        return self.run_hook("agent-tmux-session", "ported", title, sid)
+
+    def prompt(self, old, text="hi", sid="one"):
+        out = self.run_hook("auto-title", payload=dict(
+            session_id=sid, session_title=old, prompt=text,
+            transcript_path=str(self.home / "missing.jsonl")))
+        return json.loads(out)["hookSpecificOutput"]["sessionTitle"] if out else None
+
+    def test_ported_titles(self):
+        cases = {"Fix login": "47950 Fix login", "": "47950", "47950": "47950",
+                 "41230 Fix login": "47950 Fix login", "47950  Two spaces": "47950 Two spaces",
+                 "40005 Not a block": "47950 40005 Not a block", "123 apples": "47950 123 apples",
+                 "49000 Out of range": "47950 49000 Out of range", "419990 Six digits": "47950 419990 Six digits"}
+        for title, expected in cases.items():
+            self.assertEqual(self.ported(title), expected, title)
+        self.assertEqual(self.ported("Fix login", "unknown"), "Fix login")
+        self.port("bad", "4795x")
+        self.assertEqual(self.ported("Fix login", "bad"), "Fix login")
+        self.assertEqual(self.ported("Fix login", ""), "Fix login")
+        self.assertEqual(self.run_hook("agent-tmux-session", "bare", "41230 Fix"), "Fix")
+
+    def test_claude_hook_names_tmux_session_with_port(self):
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text("")
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(session_id="one", transcript_path=str(transcript)))
+        self.assertEqual(self.name(), "47950")
+        transcript.write_text('{"type":"custom-title","customTitle":"41230 Fix v1.2: login"}\n')
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(session_id="one", transcript_path=str(transcript)))
+        self.assertEqual(self.name(), "47950 Fix v1_2 login")
+
+    def test_port_only_custom_title_is_no_title(self):
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text('{"type":"ai-title","aiTitle":"Native title"}\n'
+                              '{"type":"custom-title","customTitle":"47950"}\n')
+        payload = dict(session_id="one", transcript_path=str(transcript))
+        self.run_hook("agent-tmux-session", "claude", payload=payload)
+        self.assertEqual(self.name(), "47950 Native title")
+        (self.state / "one.haiku").write_text("Haiku title\n")
+        self.run_hook("agent-tmux-session", "claude", payload=payload)
+        self.assertEqual(self.name(), "47950 Haiku title")
+
+    def test_set_and_sync_add_port(self):
+        self.run_hook("agent-tmux-session", "set", "Haiku title", "one")
+        self.assertEqual(self.name(), "47950 Haiku title")
+        self.run_hook("agent-tmux-session", "sync", "47950", "one")
+        self.assertEqual(self.name(), "47950 Haiku title")
+        self.run_hook("agent-tmux-session", "sync", "Renamed", "one")
+        self.assertEqual(self.name(), "47950 Renamed")
+
+    def test_session_start_sets_port_title(self):
+        out = self.run_hook("session-port", payload=dict(session_id="two", source="startup"))
+        port = (self.ports / "port-two").read_text().strip()
+        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], port)
+        out = self.run_hook("session-port", payload=dict(
+            session_id="two", source="resume", session_title="40000 Old name"))
+        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], f"{port} Old name")
+        out = self.run_hook("session-port", payload=dict(
+            session_id="two", source="compact", session_title=f"{port} Old name"))
+        self.assertEqual(out, "")
+
+    def test_user_name_gets_port_on_next_prompt(self):
+        (self.state / "one").touch()
+        self.assertEqual(self.prompt("My name"), "47950 My name")
+        self.assertIsNone(self.prompt("47950 My name"))
+        self.assertEqual(self.prompt("41230 My name"), "47950 My name")
+
+    def test_first_name_is_user_named_check_without_port(self):
+        self.assertIsNone(self.prompt("47950"))
+        self.assertFalse((self.state / "one").exists())
+        self.assertEqual(self.prompt("Picked by user"), "47950 Picked by user")
+        self.assertTrue((self.state / "one").exists())
+
+    def test_haiku_title_gets_port(self):
+        (self.state / "one.haiku").write_text("Fix login\n")
+        self.assertEqual(self.prompt("47950"), "47950 Fix login")
+        self.assertIn("Fix login", (self.state / "titles").read_text().splitlines())
+        (self.state / "one").unlink()
+        self.assertIsNone(self.prompt("47950 Fix login"))
+
+    def test_clear_replaces_ported_generated_name(self):
+        (self.state / "titles").write_text("Old generated\n")
+        self.run_hook("auto-title", "new", payload=dict(session_id="one"))
+        self.assertIsNone(self.prompt("47950 Old generated"))
+        self.assertFalse((self.state / "one").exists())
 
 
 if __name__ == "__main__":

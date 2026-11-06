@@ -12,7 +12,8 @@
 # gets its old block back. When the statusline saw an outside process on the
 # session's port, it leaves a .conflict file and resuming picks a new block.
 # Compaction keeps the block: the session's exported PORT MUST NOT change
-# mid-session.
+# mid-session. The session's name gets the port in front, through
+# agent-tmux-session.sh ported.
 input=$(cat)
 sid=$(printf '%s' "$input" | jq -j '.session_id // empty' 2>/dev/null | tr -c 'A-Za-z0-9._-' '_')
 source=$(printf '%s' "$input" | jq -r '.source // empty' 2>/dev/null)
@@ -61,6 +62,7 @@ done
 port=$(cat "$file" 2>/dev/null)
 case $port in *[!0-9]*) port="" ;; esac
 # Blocks from an older layout, or one an outside process took, are replaced.
+# agent-tmux-session.sh bare MUST match this layout.
 if [ -n "$port" ] && { [ "$port" -lt 40000 ] || [ "$port" -gt 48990 ] ||
   [ $(((port - 40000) % 10)) -ne 0 ] ||
   { [ "$source" != compact ] && [ -f "$file.conflict" ]; }; }; then
@@ -100,4 +102,10 @@ if [ -n "$CLAUDE_ENV_FILE" ]; then
     done
   } >> "$CLAUDE_ENV_FILE"
 fi
+
+# Every session's name starts with its port, from the first screen on.
+title=$(printf '%s' "$input" | jq -r '.session_title // empty' 2>/dev/null)
+named=$(sh "$(dirname "$0")/agent-tmux-session.sh" ported "$title" "$sid")
+[ -n "$named" ] && [ "$named" != "$title" ] &&
+  jq -n --arg t "$named" '{hookSpecificOutput: {hookEventName: "SessionStart", sessionTitle: $t}}'
 exit 0
