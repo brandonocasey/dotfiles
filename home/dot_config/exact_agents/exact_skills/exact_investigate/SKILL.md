@@ -126,8 +126,8 @@ service, a browser bug, or user data, add a safe workaround in reach if one
 exists, and go to section 6 for the rest.
 
 1. Load `worktree` and `code-standards`. Work in a worktree on a new branch.
-2. Reproduce the report per the bug-fix bullet of `code-standards` **Tests &
-   Lint**: a test that fails for the reported reason, else the exact manual
+2. Reproduce the report per the bug-fix bullet of `code-standards`
+   `references/tests-and-lint.md`: a test that fails for the reported reason, else the exact manual
    check. That bullet also owns the fix proof: the existing suite, reverting
    only the fix, and leaving the repro test unchanged.
 3. Make the smallest change that makes the test pass. When two fixes are

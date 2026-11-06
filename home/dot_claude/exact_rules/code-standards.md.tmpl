@@ -1,0 +1,19 @@
+---
+paths:
+  - "**/*.{rs,ts,tsx,mts,cts,js,jsx,mjs,cjs,swift,m,mm,c,cc,cpp,h,hpp,go,py,rb,java,kt,kts,dart,gs,lua,sh,bash,zsh,fish,ps1,html,css,scss,vue,svelte,sql,feature}"
+  - "**/*.{json,jsonc,json5,toml,yaml,yml,ini,conf,plist,xcconfig,gradle,rules}"
+  - "**/*.{sh,bash,zsh,fish,js,cjs,mjs,ts,py,lua,json,jsonc,toml,yaml,yml,ini,conf}.tmpl"
+  - "**/{Makefile,Dockerfile,Justfile,Brewfile,*.Brewfile}"
+  - "**/bin/*"
+  - "**/scripts/*"
+  - "**/{executable,modify}_*"
+  - "**/.chezmoiscripts/**"
+  - "**/.docker/*"
+---
+# Code standards
+
+Same text as the `code-standards` skill's code-quality.md, tests-and-lint.md, and comments.md; while this is in context, do not read them. Apply it to code, tests, scripts, and config you write, change, or review.
+
+{{ include (joinPath .chezmoi.sourceDir "dot_config/exact_agents/exact_skills/exact_code-standards/exact_references/code-quality.md") | replace "](../../" "](~/.config/agents/skills/" }}
+{{ include (joinPath .chezmoi.sourceDir "dot_config/exact_agents/exact_skills/exact_code-standards/exact_references/tests-and-lint.md") | replace "](../../" "](~/.config/agents/skills/" }}
+{{ include (joinPath .chezmoi.sourceDir "dot_config/exact_agents/exact_skills/exact_code-standards/exact_references/comments.md") | replace "](../../" "](~/.config/agents/skills/" }}

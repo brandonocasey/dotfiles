@@ -16,6 +16,7 @@ Fix bugs and remove ineffective text. Preserve every rule that changes behavior.
   Defaults: `~/.config/agents/AGENTS.md` and the main-session rules in chezmoi's `.chezmoitemplates/main-rules.md`.
   Both render into the Gemini, opencode, and pi rules files; the main rules also render into `~/.claude/output-styles/main.md` and Codex `developer_instructions`.
   The Writing section comes from `.chezmoitemplates/writing-rules.md`, which also renders `shared/writing.md`; edit that template.
+  `~/.claude/rules/code-standards.md` renders from the code-standards references code-quality.md, tests-and-lint.md, and comments.md, plus its `paths:` list; edit those references, not the rule.
 - **Harness config:** audit `~/.claude*/settings.json` hooks and `statusLine`, `~/.claude*/hooks/`,
   `~/.codex/config.toml`, `~/.codex/hooks.json`, and the repository's `.claude/skills/` and `.agents/skills/`.
   MCP servers: `mcpServers` and `disabledMcpServers` (top level and per project) in `~/.claude.json` and `~/.claude*/.claude.json`; project and plugin `.mcp.json`; and Codex `[mcp_servers.*]`.
@@ -97,6 +98,7 @@ One harness's setting does not control another.
 ## Checks for all targets
 
 - **Sweeps:** run the existence, orphan, parity, and byte-count checks via `cheap`.
+- **Edit-time form:** [instruction-edits.md](../shared/instruction-edits.md) is the path-scoped, edit-time subset of these checks. When you change either, update the other to match.
 - **References and claims:** check paths, files, steps, skill names, memory pointers, and harness claims on disk or in current documentation.
   Verify the proposed fix target exists before flagging a defect.
 - **Contradictions and duplicates:** check within and across files. Keep each rule in its natural owner; refer there elsewhere.

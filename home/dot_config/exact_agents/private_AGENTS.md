@@ -25,6 +25,7 @@
 - zsh: no words starting with `=` (use `printf '--- %s\n'`); write `${B}:refs/...` and quote refspecs.
 - Delete your own task dir at task end; `agt cleanup` handles leftovers. Delete with literal paths or `find <dir> -delete`, never `rm` on a variable or glob.
 - Run `chezmoi apply/add/re-add` as a standalone command, never chained. Run MR/PR approve and merge as separate commands. Do not append `; echo rc=$?` to commands.
+- Edit a chezmoi-managed file (most under `~/.claude`, `~/.codex`, `~/.config`, and `~/.local/bin`) through the source that `chezmoi source-path <file>` prints. Before editing a source, read `~/.claude/rules/chezmoi-source.md` unless it is in context, and for a hook or guard also `matchers-and-guards.md` there.
 - To find a past session, run `agt sessions search` first.
 - If a stop-hook objection repeats and needs my decision, reply with the decision needed and call no tools.
 
