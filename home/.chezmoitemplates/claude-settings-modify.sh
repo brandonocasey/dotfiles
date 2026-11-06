@@ -140,6 +140,7 @@ managed=$(
   },
   "model": "sonnet",
   "autoCompactWindow": 433000,
+  "idleCompaction": true,
   "promptCacheTtl": "1h",
   "env": {
     "BASH_MAX_OUTPUT_LENGTH": "6000",
