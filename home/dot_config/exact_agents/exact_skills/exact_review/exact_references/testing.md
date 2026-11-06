@@ -126,7 +126,10 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
    a line, and put the possible fix in the body, as a suggestion block when it is a
    line change ([remote-comments.md](remote-comments.md)). Use the severity scale of
    [output.md](output.md); `--type question` for a behavior change the user must
-   confirm. File a `pre-existing` failure as `--type comment` with a body that starts
+   confirm. File each line of a failed `code-shape` check as its own
+   `--type requirement` comment with no severity, whose body quotes the limit from
+   [code-quality.md](../../code-standards/references/code-quality.md) **Readability**.
+   File a `pre-existing` failure as `--type comment` with a body that starts
    `Pre-existing bug (<severity>):`, so it never blocks approval. The tester's
    identity comes from the check's run.
 4. A retest that still fails, or a tester note on an open QA thread (another possible

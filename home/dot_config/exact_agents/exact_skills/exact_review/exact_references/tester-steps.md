@@ -14,6 +14,12 @@ When the repository enforces size, accessibility, or performance budgets, check
 whether the change moves them. Never install dependencies; report missing ones as
 blocked.
 
+Also run `code-shape check --base <start>` in the checkout, where `<start>` is
+the start of the pinned range, or `HEAD` for a working diff. Add `--head <end>`
+when the checkout is not at the range's end. Report it as one automated check
+named `code-shape`: pass on exit 0, fail on exit 1 with each printed line as a
+failure, and blocked on exit 2 with its message.
+
 ## Choose the cases
 
 Skip this and the next section when the prompt says `Cases: skipped`.
