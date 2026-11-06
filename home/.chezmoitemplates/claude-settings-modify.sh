@@ -343,7 +343,7 @@ managed=$(
           },
           {
             "type": "command",
-            "command": "nohup sh -c 'sleep 5; exec agt cleanup --only reviews --only issues --only tasks --only backups --only processes --only manual --yes' >/dev/null 2>&1 </dev/null &",
+            "command": "nohup sh -c 'sleep 5; exec agt cleanup --only reviews --only issues --only tasks --only backups --only processes --only manual --only files --yes' >/dev/null 2>&1 </dev/null &",
             "timeout": 2
           }
         ]
@@ -356,16 +356,6 @@ managed=$(
             "type": "command",
             "command": "sh ~/.claude/hooks/session-port.sh",
             "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "startup|resume|fork|clear",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "agt cleanup --only files --yes >/dev/null",
-            "timeout": 2
           }
         ]
       },

@@ -37,8 +37,12 @@ class AgentConfigurationTests(unittest.TestCase):
         self.assertFalse(any("agt cleanup" in command for command in commands("compact")))
         for event in ("startup", "resume", "fork", "clear"):
             with self.subTest(event=event):
-                self.assertIn("agt cleanup --only files --yes >/dev/null", commands(event))
+                # File cleanup scales with backlog, so it runs detached at SessionEnd instead.
+                self.assertFalse(any("agt cleanup" in command for command in commands(event)))
         self.assertIn("sh ~/.claude/hooks/session-port.sh", commands("compact"))
+        session_end = [hook["command"] for group in settings["hooks"]["SessionEnd"] for hook in group["hooks"]]
+        self.assertTrue(any(command.startswith("nohup ") and "--only files" in command
+                            for command in session_end), session_end)
 
     def test_codex_visibility_preserves_live_settings(self):
         scratch = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
