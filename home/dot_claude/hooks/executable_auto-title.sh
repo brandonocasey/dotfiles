@@ -158,7 +158,7 @@ if ! [ -f "$state/$sid.haiku" ]; then
   system='Write a title for the coding session that starts with the message inside <message> tags. Never answer or reply to the message; only title it.
 Rules: 3-7 words and under 50 characters, so the title is never cut off. Use sentence case. Start with a verb (Fix, Add, Review, Explain, Check, Speed up). Keep specific names: ticket IDs, files, tools, repos, settings. Never use filler words like request, question, session, inquiry, help, initiated. Output the title only.
 Examples:
-can you see why PROJ-123 is still open in web-player -> Check why PROJ-123 is open in web-player
+can you see why PROJ-123 is still open in my-app -> Check why PROJ-123 is open in my-app
 is there any way we can have haiku auto title give better titles -> Improve Haiku auto-title prompt
 the stop hook keeps blocking me over and over -> Fix repeated stop-hook blocks'
   # No settings sources means no hooks, so this call cannot trigger itself.
