@@ -31,6 +31,18 @@ error inputs. For each output the change touches, check:
   without a TTY (`NO_COLOR`), machine-readable output (JSON, exit status), and
   generated files that open in their target tool.
 
+Run each output where the user meets it. For a terminal UI, status line,
+prompt, or slash command, start the real interactive program in a `tmux` pane
+at the user's width and theme, type what the user types, and read the screen
+with `tmux capture-pane -p -e`. Headless, piped, and print-mode runs skip
+drawing, colors, widths, and link handling. Compare a row meant to match
+built-in output character by character. For a chat app or other service, view
+the result in the real client or read it back from the service (post only where
+the task authorizes it), and check the service's documented limits, such as
+label length or block count, for text you wrote. A fake harness proves only
+your side. If you cannot reach the real surface, report `unverified: <surface>`
+instead of claiming it works.
+
 Quote the observed output in the evidence. When the change has no UI, stop here
 and return the evidence.
 
@@ -47,12 +59,17 @@ other breakpoint to prove that it did not change.
 For a reported defect, first reproduce it at the user's viewport and theme.
 Take a before screenshot. A phone screenshot from the user means a phone width.
 
-For responsive changes, check narrow and wide layouts and sizes immediately
-around the actual CSS breakpoints. Include long content and the affected
-empty, loading, error, and populated states. Check every shipped locale at the
-narrowest width (320 px unless the project sets one); translations run longer
-and clip. Check light/dark themes and reduced motion when their styling or
-transitions changed.
+Screenshot each state the change affects, not only the main one: empty,
+loading, error, paused, static, and populated, plus frames in the middle of an
+animation. One screenshot per state is enough; do not multiply states by
+viewports. Open each screenshot and name what you checked: legible, aligned,
+and matching nearby UI and any reference the user gave. Screenshots show
+appearance, so back layout claims with the measurements below. For responsive
+changes, check narrow and wide layouts and sizes immediately around the actual
+CSS breakpoints, with long content. Check every shipped locale at the narrowest
+width (320 px unless the project sets one); translations run longer and clip.
+Check light/dark themes and reduced motion when their styling or transitions
+changed.
 
 ## Exercise the UI
 

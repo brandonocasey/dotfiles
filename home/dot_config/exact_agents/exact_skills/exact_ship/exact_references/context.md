@@ -8,10 +8,15 @@ remote target details:
   → a matching CLI if installed, else the host's REST API with a token the user approves, else plain `git push`
   and use the create-MR/PR URL the remote prints on push.
 - `TICKET` — issue/ticket key (e.g. `PUBS-1234`) from the branch name or unpushed commit
-  subjects. Unset if none. When commits require a key and none is found, apply step 3's
-  ticket rules (user said no ticket; dx, docs, or test-only skip). If a ticket is due, create it
-  before the commit gate: read `ticket`'s conventions, then follow its step 4
-  without the MR/PR URL. Step 3 then reuses that key.
+  subjects. Unset if none. Also read the repo's conventions for a rule that gives one kind
+  of change its own ticket or project, such as a separate test-automation ticket for specs.
+  If one applies to the diff and no commit subject or existing title carries that kind's key,
+  find or create it with `ticket` before the commit gate (its step 4, without the MR/PR URL).
+  Use that key alongside `TICKET` in new commits of that kind and in the title. Separately,
+  when commits require a key and none is found, apply step 3's ticket rules (user said no
+  ticket; dx, docs, or test-only skip unless the conventions require a ticket for them). If a
+  ticket is due, create it before the commit gate: read `ticket`'s conventions, then follow
+  its step 4 without the MR/PR URL. Step 3 then reuses that key.
 - `REMOTE_DEFAULT` — resolve `origin` through **Remote default name** in
   [default-branch.md](../../shared/default-branch.md).
 - `EXISTING` — find an open MR/PR for `BRANCH` before selecting its target

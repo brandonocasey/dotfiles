@@ -73,7 +73,7 @@ If auto-merge cannot be disabled and the user agrees to push, review before the 
   - The user asked for a ticket: run [ticket](../ticket/SKILL.md) and use its key.
   - The user said no ticket: ship without one.
   - Otherwise run `ticket` to find or create one; it picks the project.
-    Skip the ticket for dx, docs, or test-only changes. Ask once only when two candidate tickets match.
+    Skip the ticket for dx, docs, or test-only changes unless the repo's conventions require one for them. Ask once only when two candidate tickets match.
 - **Description**: follow the repository template when present. Otherwise:
   - Use a few sentences on why and the resulting behavior, then as few bullets as
     cover behavior changes, risks, and how it was verified.

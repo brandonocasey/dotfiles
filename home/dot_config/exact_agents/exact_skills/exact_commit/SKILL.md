@@ -41,7 +41,9 @@ Optional argument: a target file or chunk. Commit only that target.
   revert, security, test, ux
 - Repository conventions (commitlint config, AGENTS.md, CONTRIBUTING) override
   every default here: types, scope, ticket suffix, header length, breaking-change
-  format
+  format. A rule that gives one kind of change its own ticket key, such as a test
+  ticket for specs, puts that key in that kind's commits; if none is known, find it
+  with `ticket` or ask.
 - Do not use `chore` or `style` unless those conventions require them.
 - If the repo's `type-enum` lacks a type, map it:
   `ux` → `feat`; `a11y` and `i18n` → `fix` for a repair, else `feat`;

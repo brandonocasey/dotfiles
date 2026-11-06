@@ -48,6 +48,17 @@ ask what to do.
 After all chunks: show `git log --oneline <COMMIT_BASE>..HEAD` so the user sees what is about to
 move.
 
+**Required checks.** After the last commit, before pushing or landing, run the
+checks the repository requires on the committed `HEAD` with a clean tree: those
+its agent instructions, CONTRIBUTING, and hook configs name, plus the lint,
+format, type, and unused-code jobs its CI runs that run locally in a few
+minutes. A pass before a later commit, amend, or rebase, or on a tree with
+uncommitted files, does not count; the reuse rule in **Manual check** covers
+manual evidence only. Check each commit subject in `<COMMIT_BASE>..HEAD` and the
+branch name against the repository's documented convention (type, scope, ticket
+key, length), and run its commit or title lint script when it has one. Fix
+failures per `commit` and rerun. Add the commands to the `Checked:` line below.
+
 **Manual check.** Before pushing or landing, verify the commits in
 `<COMMIT_BASE>..HEAD`, including commits this run created. Follow AGENTS.md's
 manual-check rule; refactors also need passing relevant tests. For behavior

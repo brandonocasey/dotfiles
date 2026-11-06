@@ -34,6 +34,12 @@ threads that the request covers (fix only those threads):
   recommended default.
 - **Questions**: if the answer does not change user-visible behavior, choose the
   recommended answer, apply it, and state the choice in one line.
+- **Each fix**: load the `code-standards` skill before the first fix. Apply its
+  **Tests & Lint** bullet that starts "After fixing a finding or failure" to every
+  fix, including rule, skill, and doc fixes. For those, also `rg` the old wording
+  and changed names for other files and sections that state or cite the same rule.
+  In the report, list for each finding the search you ran and the other sites you
+  changed or checked beyond the cited line, or `none`.
 - With `--fix`, never end with comments for the user to post; apply them.
 - End with at most one question, for the excluded items only.
 

@@ -20,7 +20,7 @@
 - Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `consult` (escalation).
 {{- end }}
 {{- if .claude }}
-- For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it.
+- For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it. Below that, load `design` before the first edit when the request adds a flag, mode, setting, or stored field, or changes a file format, a public interface, or a contract another component reads. If reading the code shows such a change, load it then.
 {{- end }}
 - Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
 - When remaining steps must wait a long time (pipelines, reviews, slow runs) and other work remains, hand them off to one or more fitting agents per `sub-agents`; meanwhile, review, do other tasks, and make fixes. Wait idle only when nothing else is left to do. When a push is authorized, push as soon as local checks pass so CI starts early.

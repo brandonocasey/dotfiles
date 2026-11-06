@@ -46,6 +46,13 @@ reason. Stop when the list is done.
 
 Run repository setup and start commands within the prompt's scope.
 Automated tests, static inspection, and screenshots alone do not replace manual interaction.
+Run each case on the surface the user meets, within the prompt's scope: the
+changed build or installed copy, an already-running instance for reload or
+migration changes, and the real service in its test or dry-run mode. Confirm the
+run uses the changed build and settings. When only a stand-in is reachable, such
+as a fresh instance, a stub or fake service, or a scripted or headless run in
+place of an interactive terminal or native app session, name the stand-in and
+report the real case as blocked, not passed. A headless browser is not a stand-in.
 Follow `ux-verify` for every user-facing result, and `browser` for browser work.
 
 - **UI:** exercise real controls in the browser. Check the affected states,
