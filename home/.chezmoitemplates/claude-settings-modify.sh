@@ -304,6 +304,16 @@ managed=$(
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.local/bin/code-shape hook",
+            "timeout": 60
+          }
+        ]
       }
     ],
     "CwdChanged": [

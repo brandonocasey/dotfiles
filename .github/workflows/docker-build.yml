@@ -18,6 +18,12 @@ jobs:
         with:
           node-version: lts/*
 
+      - uses: astral-sh/setup-uv@v10
+
+      # The code-shape tests run uv offline, so put lizard in the uv cache first.
+      - name: Cache the code-shape parser
+        run: uv run --quiet --script home/private_dot_local/bin/executable_code-shape --help
+
       - name: Install test tools
         run: |
           sudo apt-get update

@@ -115,6 +115,12 @@ Claude's cleanup notice and output-expiry hooks run on startup, resume, fork,
 and clear. They skip compaction. Output cleanup removes disposable report copies
 untouched for seven days.
 
+After each Claude Code edit, `code-shape` checks the functions the edit added or
+made worse against the nesting, cognitive complexity, and parameter limits in
+the code-standards skill's code-quality.md, and tells the agent which to fix.
+The review's tester runs `code-shape check --base <rev>` on the whole change.
+It runs through `uv`, which downloads its pinned `lizard` parser on first use.
+
 To update `frontend-design`, copy the upstream files into
 `home/dot_config/exact_agents/exact_skills/exact_frontend-design/`. Keep the
 local `description` frontmatter, the `Scope:` line, and the `ux-verify`

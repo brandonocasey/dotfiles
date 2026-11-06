@@ -1,0 +1,361 @@
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.9"
+# dependencies = ["lizard==1.25.0"]
+# ///
+"""Report functions that a change adds or makes worse past the limits in
+code-quality.md: more than 3 nested control blocks, cognitive complexity over 15
+(25 in C and C++), or more than 4 parameters.
+
+    code-shape hook                           Claude Code PostToolUse hook; reads the event on stdin
+    code-shape check --base REV [--head REV]  check files changed from REV to REV or the working tree
+"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+
+import lizard
+
+MAX_NESTING = 3
+MAX_PARAMETERS = 4
+MAX_COGNITIVE = 15
+MAX_COGNITIVE_C_FAMILY = 25
+
+C_FAMILY_SUFFIXES = {".c", ".h", ".cc", ".cpp", ".cxx", ".hh", ".hpp", ".hxx"}
+CHECKED_SUFFIXES = C_FAMILY_SUFFIXES | {
+    ".rs", ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".swift", ".kt", ".java",
+}
+# lizard drops the parentheses of tuple and function types in these languages and
+# counts `cb: (Int, Int) -> Int` as two parameters, so they are recounted from source.
+RECOUNTED_SUFFIXES = {".rs", ".kt", ".swift"}
+# Git modes of symlinks and submodules, which have no source text of their own.
+SKIPPED_MODES = {"120000", "160000"}
+
+HOOK_REASON = (
+    "code-shape: this edit added or worsened functions past the Readability limits in"
+    " code-quality.md: at most 3 nested control blocks, cognitive complexity 15 (25 in"
+    " C and C++), and 4 parameters. Restructure each one:\n"
+)
+
+# A line that opens a control block: if/else, a loop, match/switch/when, try/catch,
+# or with, after an optional closing brace. Kotlin's `else ->` arm is not one.
+CONTROL_AT_START = re.compile(
+    r"^(\}\s*)?(else\s+if|else(?!\s*->)|elif|elseif|if|for|while|loop|do|repeat|match|switch"
+    r"|when|try|catch|except|finally|with|async\s+for|async\s+with)\b"
+)
+# A control block used as a value that opens a brace: `let x = match y {`.
+CONTROL_AS_VALUE = re.compile(r"(=|=>|return|\()\s*(match|if|switch|when)\b.*\{\s*$")
+COMMENT_START = re.compile(r"^(//|#|/\*|\*|--)")
+# Lines that neither open nor close a block: a lone `{`, a case label, and the `) {`
+# or `):` that ends a multi-line condition.
+NEUTRAL_LINE = re.compile(r"^(\{|case\b.*|default\s*:.*|[)\]]+.*[{:])\s*$")
+# A method's receiver: `self`, `&self`, `&'a mut self`, `mut self`, or Python's `cls`.
+RECEIVER = re.compile(r"^\s*(&\s*('\w+\s+)?)?(mut\s+)?(self|cls)\b")
+# One signature token: a string, a char literal, an arrow or comparison whose `<` or
+# `>` is not a bracket, or any other single character.
+SIGNATURE_TOKEN = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])\'|->|=>|[<>]=|.', re.DOTALL)
+WHITESPACE = re.compile(r"\s*")
+OPENING_BRACKETS = "([{<"
+CLOSING_BRACKETS = ")]}>"
+
+ANALYZER = lizard.FileAnalyzer(lizard.get_extensions(["cognitive"]))
+
+
+class ShapeError(Exception):
+    """An input this script needs could not be read."""
+
+
+@dataclass
+class Shape:
+    name: str
+    line: int
+    text: str
+    nesting: int
+    cognitive: int
+    parameters: int
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(
+        description="Report functions a change adds or makes worse past the code-quality.md limits."
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("hook", help="read a Claude Code PostToolUse event on stdin")
+    check_parser = commands.add_parser("check", help="check the source files changed since a revision")
+    check_parser.add_argument("--base", required=True, help="revision to compare against")
+    check_parser.add_argument("--head", help="revision to check (default: the working tree)")
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "hook":
+            return run_hook()
+        return run_check(args.base, args.head)
+    except ShapeError as error:
+        print(f"code-shape: {error}", file=sys.stderr)
+        return 1 if args.command == "hook" else 2
+
+
+def run_hook():
+    try:
+        event = json.load(sys.stdin)
+    except json.JSONDecodeError as error:
+        raise ShapeError(f"the hook input is not JSON: {error}") from error
+    reply = hook_reply(event)
+    if reply:
+        print(json.dumps(reply))
+    return 0
+
+
+def hook_reply(event):
+    """Return the PostToolUse reply for an Edit, Write, or MultiEdit event, or None when
+    the edited file has no new or worse breaks."""
+    file_path = (event.get("tool_input") or {}).get("file_path")
+    if not file_path or not could_be_source(file_path):
+        return None
+    path = Path(event.get("cwd") or ".", file_path)
+    after = read_text(path)
+    suffix = source_suffix(file_path, after)
+    if suffix is None:
+        return None
+    response = event.get("tool_response")
+    if not isinstance(response, dict) or "originalFile" not in response:
+        raise ShapeError("the hook input has no tool_response.originalFile to compare against")
+    messages = breaks(str(path), suffix, response["originalFile"] or "", after)
+    if not messages:
+        return None
+    return {"decision": "block", "reason": HOOK_REASON + "\n".join(messages)}
+
+
+def run_check(base, head):
+    root = git(".", "rev-parse", "--show-toplevel").strip()
+    messages = []
+    checked = 0
+    for old_path, new_path in changed_files(root, base, head):
+        after = git(root, "show", f"{head}:{new_path}") if head else read_text(Path(root, new_path))
+        suffix = source_suffix(new_path, after)
+        if suffix is None:
+            continue
+        checked += 1
+        before = git(root, "show", f"{base}:{old_path}") if old_path else ""
+        messages += breaks(new_path, suffix, before, after)
+    for message in messages:
+        print(message)
+    print(f"code-shape: {len(messages)} breaks in {checked} changed source files", file=sys.stderr)
+    return 1 if messages else 0
+
+
+def changed_files(root, base, head):
+    """List (base path, or None for a new file; head path) for each added, changed, or
+    renamed file that could hold source, from base to head, or to the working tree and
+    its untracked files."""
+    revisions = [base] if head is None else [base, head]
+    files = list(parse_raw_diff(git(root, "diff", "--raw", "-z", "-M", *revisions, "--")))
+    if head is None:
+        files += [(None, path) for path in untracked_files(root)]
+    return [(old, new) for old, new in files if could_be_source(new)]
+
+
+def parse_raw_diff(raw):
+    """Yield (old path or None, new path) from `git diff --raw -z` output, skipping
+    deletions, symlinks, and submodules."""
+    fields = raw.split("\0")
+    index = 0
+    while index + 1 < len(fields):
+        old_mode, new_mode, _, _, status = fields[index].lstrip(":").split()
+        path_count = 2 if status[0] in "RC" else 1
+        paths = fields[index + 1:index + 1 + path_count]
+        index += 1 + path_count
+        if status[0] == "D" or {old_mode, new_mode} & SKIPPED_MODES:
+            continue
+        yield (None if status[0] == "A" else paths[0]), paths[-1]
+
+
+def untracked_files(root):
+    """List untracked, unignored regular files; nested repositories and symlinks are left out."""
+    paths = git(root, "ls-files", "--others", "--exclude-standard", "-z").split("\0")
+    return [path for path in paths if Path(root, path).is_file() and not Path(root, path).is_symlink()]
+
+
+def could_be_source(path):
+    """Tell whether a file is worth reading: it has a checked suffix, or none, as scripts do."""
+    suffix = Path(path).suffix
+    return suffix in CHECKED_SUFFIXES or not suffix
+
+
+def source_suffix(path, source):
+    """Return the suffix of the language to parse source as, or None to skip the file,
+    for a path that could_be_source accepts. An extensionless script counts as Python
+    or JavaScript when its shebang runs one."""
+    suffix = Path(path).suffix
+    if suffix:
+        return suffix
+    shebang = source.split("\n", 1)[0] if source.startswith("#!") else ""
+    if "python" in shebang or "uv run" in shebang:
+        return ".py"
+    if "node" in shebang:
+        return ".js"
+    return None
+
+
+def read_text(path):
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError as error:
+        raise ShapeError(f"cannot read {path}: {error}") from error
+
+
+def git(root, *args):
+    result = subprocess.run(["git", "-C", root, *args], capture_output=True)
+    if result.returncode != 0:
+        error = result.stderr.decode("utf-8", errors="replace").strip()
+        raise ShapeError(f"git {' '.join(args)} failed: {error}")
+    return result.stdout.decode("utf-8", errors="replace")
+
+
+def breaks(path, suffix, before_source, after_source):
+    """Describe each limit that a function in after_source breaks, when the function is
+    new or breaks it worse than in before_source. suffix names the language."""
+    changed, previous_by_name = pair_changed_functions(
+        measure(path, suffix, before_source), measure(path, suffix, after_source)
+    )
+    messages = []
+    for shape in changed:
+        candidates = previous_by_name[shape.name]
+        messages += limit_breaks(path, suffix, shape, candidates.pop(0) if candidates else None)
+    return messages
+
+
+def pair_changed_functions(before, after):
+    """Return the after functions whose text changed, and the before functions they may
+    come from, grouped by name in file order."""
+    unmatched_by_text = defaultdict(list)
+    for index, shape in enumerate(before):
+        unmatched_by_text[shape.text].append(index)
+    unchanged = set()
+    changed = []
+    for shape in after:
+        twins = unmatched_by_text[shape.text]
+        if twins:
+            unchanged.add(twins.pop(0))
+        else:
+            changed.append(shape)
+    previous_by_name = defaultdict(list)
+    for index, shape in enumerate(before):
+        if index not in unchanged:
+            previous_by_name[shape.name].append(shape)
+    return changed, previous_by_name
+
+
+def limit_breaks(path, suffix, shape, previous):
+    """Describe each limit shape breaks, unless previous already broke it as badly."""
+    cognitive_cap = MAX_COGNITIVE_C_FAMILY if suffix in C_FAMILY_SUFFIXES else MAX_COGNITIVE
+    limits = (
+        ("nesting depth", "nesting", MAX_NESTING),
+        ("cognitive complexity", "cognitive", cognitive_cap),
+        ("parameters", "parameters", MAX_PARAMETERS),
+    )
+    messages = []
+    for label, field, cap in limits:
+        value = getattr(shape, field)
+        old_value = None if previous is None else getattr(previous, field)
+        if value <= cap or (old_value is not None and value <= old_value):
+            continue
+        history = "new function" if old_value is None else f"was {old_value}"
+        messages.append(f"{path}:{shape.line}: {shape.name}: {label} {value} > {cap} ({history})")
+    return messages
+
+
+def measure(path, suffix, source):
+    """Measure each function lizard finds in source, parsed as the language of suffix."""
+    lines = source.splitlines()
+    shapes = []
+    lizard_path = path if path.endswith(suffix) else path + suffix
+    for function in ANALYZER.analyze_source_code(lizard_path, source).function_list:
+        shapes.append(Shape(
+            name=function.name,
+            line=function.start_line,
+            text="\n".join(lines[function.start_line - 1:function.end_line]),
+            nesting=nesting_depth(lines[function.start_line:function.end_line]),
+            cognitive=function.cognitive_complexity,
+            parameters=parameter_count(function, lines, suffix),
+        ))
+    return shapes
+
+
+def nesting_depth(body_lines):
+    """Return the most control blocks that enclose any one line, judged by indentation."""
+    open_block_indents = []
+    deepest = 0
+    for line in body_lines:
+        stripped = line.strip()
+        if not stripped or COMMENT_START.match(stripped) or NEUTRAL_LINE.match(stripped):
+            continue
+        indent = len(line.expandtabs(4)) - len(line.expandtabs(4).lstrip())
+        while open_block_indents and indent <= open_block_indents[-1]:
+            open_block_indents.pop()
+        deepest = max(deepest, len(open_block_indents))
+        if CONTROL_AT_START.match(stripped) or CONTROL_AS_VALUE.search(stripped):
+            open_block_indents.append(indent)
+    return deepest
+
+
+def parameter_count(function, lines, suffix):
+    """Count a function's parameters, leaving out a method's receiver."""
+    parameters = source_parameters(function, lines) if suffix in RECOUNTED_SUFFIXES else None
+    if parameters is None:
+        parameters = function.full_parameters
+    if parameters and RECEIVER.match(parameters[0]):
+        return len(parameters) - 1
+    return len(parameters)
+
+
+def source_parameters(function, lines):
+    """Split the parameter list after the function's name in its source into top-level
+    parts, or return None when the source shows no such list."""
+    text = "\n".join(lines[function.start_line - 1:function.end_line])
+    bare_name = re.split(r"::|\.", function.name)[-1]
+    for name in re.finditer(rf"\b{re.escape(bare_name)}\b[?!]?", text):
+        start = WHITESPACE.match(text, name.end()).end()
+        if text.startswith("<", start):
+            generics = bracket_group(text, start)
+            if generics is None:
+                return None
+            start = WHITESPACE.match(text, generics[0]).end()
+        if text.startswith("(", start):
+            group = bracket_group(text, start)
+            return None if group is None else group[1]
+    return None
+
+
+def bracket_group(text, start):
+    """Return (end, parts) for the bracket group that opens at text[start]: the index
+    after its closing bracket and its top-level comma-separated parts. Return None when
+    the group never closes."""
+    depth = 0
+    parts = []
+    current = []
+    for token in SIGNATURE_TOKEN.finditer(text, start):
+        value = token.group()
+        if value in OPENING_BRACKETS:
+            depth += 1
+            if depth == 1:
+                continue
+        elif value in CLOSING_BRACKETS:
+            depth -= 1
+            if depth == 0:
+                parts.append("".join(current))
+                return token.end(), [part for part in parts if part.strip()]
+        elif value == "," and depth == 1:
+            parts.append("".join(current))
+            current = []
+            continue
+        current.append(value)
+    return None
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
