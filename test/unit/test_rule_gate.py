@@ -1,14 +1,17 @@
 """Check the rule-gate hook denies edits whose rules may be missing from context, until a denied edit is retried."""
 import contextlib
 import fcntl
+import importlib.util
 import itertools
 import json
 import os
 from pathlib import Path
 import re
+import resource
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 
@@ -235,6 +238,28 @@ class AgentTests(RuleGateTestCase):
                     fcntl.flock(locked, fcntl.LOCK_UN)
                 self.assertIn("permissionDecision", proc.stdout.read())
                 self.assertEqual(proc.wait(timeout=10), 0)
+
+    def test_hooks_waiting_on_a_replaced_state_file_keep_each_others_records(self):
+        self.rule("py.md", ["**/*.py"])
+        self.state.mkdir(parents=True)
+        files = [self.work / f"{n}.py" for n in range(6)]
+        with contextlib.ExitStack() as stack, open(self.state / self.session, "a+") as locked:
+            fcntl.flock(locked, fcntl.LOCK_EX)
+            procs = []
+            for file in files:
+                payload = self.event(hook_event_name="PreToolUse", tool_name="Edit",
+                                     tool_input={"file_path": str(file)})
+                proc = subprocess.Popen([sys.executable, "-I", str(HOOK)], env=self.env, stdin=subprocess.PIPE,
+                                        stdout=subprocess.DEVNULL, text=True)
+                stack.enter_context(proc)
+                assert proc.stdin is not None
+                proc.stdin.write(json.dumps(payload))
+                proc.stdin.close()
+                procs.append(proc)
+            time.sleep(1)
+            fcntl.flock(locked, fcntl.LOCK_UN)
+            self.assertEqual([proc.wait(timeout=10) for proc in procs], [0] * len(files))
+        self.assertEqual(len((self.state / self.session).read_text().splitlines()), len(files))
 
 
 class RetryTests(RuleGateTestCase):
@@ -592,6 +617,40 @@ class GlobTests(RuleGateTestCase):
         file = self.work / "a.py"
         self.assertDenied(self.edit(file), file, "~/.claude/rules/link/real.md")
 
+    def test_sibling_directories_for_one_real_directory_list_a_rule_once(self):
+        self.rule("real.md", ["**/*.py"], directory=self.root / "elsewhere")
+        rules = self.home / ".claude/rules"
+        for name in ("b", "a", "c"):
+            (rules / name).symlink_to(self.root / "elsewhere")
+        file = self.work / "a.py"
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/a/real.md")
+
+    def test_a_fifo_rule_is_skipped_without_blocking(self):
+        rules = self.home / ".claude/rules"
+        os.mkfifo(rules / "fifo.md")
+        (rules / "link.md").symlink_to(rules / "fifo.md")
+        self.rule("py.md", ["**/*.py"])
+        file = self.work / "a.py"
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+
+    def test_a_rule_that_is_a_fifo_when_opened_has_no_globs(self):
+        spec = importlib.util.spec_from_file_location("rule_gate", HOOK)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        fifo = self.root / "fifo.md"
+        os.mkfifo(fifo)
+        globs = []
+        thread = threading.Thread(target=lambda: globs.append(module.rule_globs(fifo)), daemon=True)
+        thread.start()
+        thread.join(5)
+        blocked = thread.is_alive()
+        if blocked:
+            os.close(os.open(fifo, os.O_WRONLY))
+            thread.join()
+        self.assertFalse(blocked, "opening the FIFO blocked")
+        self.assertEqual(globs, [[]])
+
     def test_symlinked_rule_file_is_followed_and_recorded_by_realpath(self):
         real = self.rule("real.md", ["**/*.py"], directory=self.root / "elsewhere")
         (self.home / ".claude/rules/link.md").symlink_to(real)
@@ -688,6 +747,29 @@ class FailOpenTests(RuleGateTestCase):
         finally:
             self.state.chmod(0o755)
         self.assertHookFailed(result, r"\[Errno 13\] Permission denied: '.+'")
+
+    def test_a_failed_state_write_keeps_the_old_records(self):
+        self.rule("py.md", ["**/*.py"])
+        first = self.work / "a.py"
+        self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md")
+        saved = (self.state / self.session).read_bytes()
+
+        def limit_file_size():
+            resource.setrlimit(resource.RLIMIT_FSIZE, (len(saved), len(saved)))
+
+        payload = self.event(hook_event_name="PreToolUse", tool_name="Edit",
+                             tool_input={"file_path": str(self.work / "b.py")})
+        result = subprocess.run([sys.executable, "-I", str(HOOK)], env=self.env, capture_output=True, text=True,
+                                input=json.dumps(payload), timeout=30, preexec_fn=limit_file_size)
+        self.assertHookFailed(result, r"\[Errno 27\] File too large")
+        self.assertEqual((self.state / self.session).read_bytes(), saved)
+        self.assertEqual(self.state_files(), [self.session])
+
+    def test_a_rule_symlink_whose_target_path_has_a_newline_is_not_recorded(self):
+        real = self.rule("nl\nname.md", ["**/*.py"], directory=self.root / "elsewhere")
+        (self.home / ".claude/rules/link.md").symlink_to(real)
+        self.loaded("path_glob_match", self.home / ".claude/rules/link.md")
+        self.assertEqual(self.state_files(), [])
 
     def test_rule_loads_with_unusable_paths_keep_the_other_records(self):
         rule = self.rule("py.md", ["**/*.py"])

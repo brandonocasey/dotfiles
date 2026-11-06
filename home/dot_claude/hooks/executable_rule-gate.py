@@ -11,7 +11,9 @@ import hashlib
 import json
 import os
 import re
+import stat
 import sys
+import tempfile
 import time
 from pathlib import Path, PurePosixPath
 from typing import TypeGuard
@@ -56,6 +58,21 @@ def valid_path(value: object) -> TypeGuard[str]:
 
 
 @contextlib.contextmanager
+def open_locked(path: Path):
+    """Yield the state file under an exclusive lock, reopening it when a save replaced it while this process waited."""
+    while True:
+        with open(path, "a+b") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                current = os.path.samestat(os.fstat(f.fileno()), os.stat(path))
+            except FileNotFoundError:
+                current = False
+            if current:
+                yield f
+                return
+
+
+@contextlib.contextmanager
 def locked_records(path: Path):
     """Yield the (key, rule path) records of a state file under an exclusive lock, and save changes.
 
@@ -63,9 +80,8 @@ def locked_records(path: Path):
     file denied in the agent's current tool batch, or `<agent id>/<file digest>` once that batch has ended.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    # Bytes split only on \n and round-trip undecodable names; encoding first keeps the old records if it fails.
-    with open(path, "a+b") as f:
-        fcntl.flock(f, fcntl.LOCK_EX)
+    with open_locked(path) as f:
+        # Bytes split only on \n and round-trip undecodable names.
         f.seek(0)
         lines = f.read().decode("utf-8", "surrogateescape").split("\n")
         records = {tuple(line.split(" ", 1)) for line in lines if " " in line}
@@ -73,8 +89,15 @@ def locked_records(path: Path):
         yield records
         if records != before:
             data = "".join(f"{key} {rule}\n" for key, rule in sorted(records)).encode("utf-8", "surrogateescape")
-            f.truncate(0)
-            f.write(data)
+            # A dot-led name is never a session id. Replacing the file keeps the old records if the write fails.
+            fd, temp = tempfile.mkstemp(dir=path.parent, prefix=".")
+            try:
+                with os.fdopen(fd, "wb") as out:
+                    out.write(data)
+                os.replace(temp, path)
+            except BaseException:
+                os.unlink(temp)
+                raise
 
 
 def prune(directory: Path) -> None:
@@ -220,13 +243,20 @@ def inline_globs(value: str) -> list[str]:
     return [g for g in (unquote(p.strip()) for p in split_commas(unquote(value))) if g]
 
 
+def open_nonblocking(path: str, flags: int) -> int:
+    """Open without waiting for a writer, which a FIFO would block on forever."""
+    return os.open(path, flags | os.O_NONBLOCK)
+
+
 def rule_globs(rule: Path) -> list[str]:
     """The globs of a rule's frontmatter `paths:`: a block list, a flow list on one or more lines, or one string.
 
-    Like Claude Code, read no frontmatter when the closing `---` is missing.
+    Like Claude Code, read no frontmatter when the closing `---` is missing. A rule that is not a regular file has none.
     """
     globs = []
-    with open(rule, encoding="utf-8-sig", errors="replace") as f:
+    with open(rule, encoding="utf-8-sig", errors="replace", opener=open_nonblocking) as f:
+        if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
+            return []
         if f.readline().strip() != "---":
             return []
         in_paths, flow = False, ""
@@ -262,8 +292,13 @@ def rule_files(directory: Path) -> list[Path]:
     """The `.md` files under the directory, following symlinks and visiting each real directory once."""
     found, seen = [], {os.path.realpath(directory)}
     for root, dirs, files in os.walk(directory, followlinks=True):
-        dirs[:] = [d for d in sorted(dirs) if os.path.realpath(os.path.join(root, d)) not in seen]
-        seen.update(os.path.realpath(os.path.join(root, d)) for d in dirs)
+        unseen = []
+        for d in sorted(dirs):
+            real = os.path.realpath(os.path.join(root, d))
+            if real not in seen:
+                seen.add(real)
+                unseen.append(d)
+        dirs[:] = unseen
         found += [Path(root, f) for f in files if f.endswith(".md")]
     return sorted(found, key=lambda p: p.relative_to(directory).as_posix())
 
@@ -340,10 +375,14 @@ def on_instructions_loaded(data: dict) -> None:
         forget_agent(data)
         return
     session, key = agent_ids(data)
-    if reason != "path_glob_match" or not session or not key or not (valid_path(rule) and "\n" not in rule):
+    if reason != "path_glob_match" or not session or not key or not valid_path(rule):
+        return
+    # A newline in the stored realpath would split the record.
+    real = os.path.realpath(rule)
+    if "\n" in real:
         return
     with locked_records(state_dir() / session) as records:
-        mark_loaded(records, key, os.path.realpath(rule))
+        mark_loaded(records, key, real)
 
 
 def on_post_tool_batch(data: dict) -> None:
