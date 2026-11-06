@@ -107,9 +107,11 @@ printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings"
      elif $win > 0 then {limit: $win, label: ($win | fmt_tokens)}
      else null end) as $ceil
   | (if $ceil != null and $used > 0 then
-       (($used * 100 / $ceil.limit) | round) as $p
+       # Tenths of a percent; integer maths keeps the string free of float noise.
+       (($used * 1000 / $ceil.limit) | round) as $t
+       | "\($t / 10 | floor).\($t % 10)" as $p
        | (if $ceil.label != "" then $ceil.label + dim + ":" + reset else "" end)
-         + esc + ($p | pct_color) + "m\($p)%" + reset
+         + esc + ($t / 10 | pct_color) + "m\($p)%" + reset
      else "" end) as $ctx_seg
   | ([$model_seg, $ctx_seg] | map(select(. != "")) | join(dim + "|" + reset)) as $stats
   # Stats first, then who the agent is, then what it is doing. The progress

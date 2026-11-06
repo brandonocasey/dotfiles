@@ -329,9 +329,9 @@ if [ -n "$rl_locked" ]; then
 fi
 
 # --- Color picker for a used% value ---
-# green <65, yellow 65-79, red >=80
+# green <65, yellow 65-79, red >=80, judged on the shown value ("79.9").
 color_for_pct() {
-  local used=$1
+  local used=${1%.*}
   if [ "$used" -ge 80 ]; then printf '31'
   elif [ "$used" -ge 65 ]; then printf '33'
   else printf '32'
@@ -396,9 +396,10 @@ elapsed_awk='
 # $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
 # per day of a window over a day long, else one per hour, whose last cell is
-# darker (fill faint, track 22 levels darker). Every bar is 63 cells, the most
-# that keeps the widest line ("23.9h", "100%", "▲100%") within 80 columns:
-# 7 days of 9 cells, or 5 hours of 12 or 13 split at the nearest cell. Cells are
+# darker (fill faint, track 22 levels darker). Every bar is 55 cells, the most
+# that keeps the widest line ("23.9h", "100.0%", "▼100.0%") whole in an 80-column
+# terminal, where Claude Code indents the line 2 columns and cuts it 2 short of
+# the edge: 7 days of 7 or 8 cells split at the nearest cell, or 5 hours of 11. Cells are
 # "▇", which leaves the top eighth of the line blank so stacked bars don't
 # touch; full-height eighth glyphs would, so fill rounds to whole cells. The
 # bar marks the same zones rate_seg colours by: up to one step's share past
@@ -407,7 +408,7 @@ elapsed_awk='
 # lighter grey up to where an even pace would put usage now (budget still free
 # at this pace), then dark grey, olive, or maroon by zone, so it shows how far
 # # ahead turns yellow or red right now. The gap is usage minus pace in points:
-# "▲12%" while usage is over pace, "▼8%" while under, "0%" grey on pace. The
+# "▲12.3%" while usage is over pace, "▼8.1%" while under, "0.0%" grey on pace. The
 # percentage and the gap take the colour of the bar's last filled cell.
 pace_gauge() {
   awk -v p="$1" -v r="$2" -v n="$now" -v w="$3" -v t="$4" -v c="$5" -v dim="$rl_dim" \
@@ -416,7 +417,7 @@ pace_gauge() {
   function zone(x) { return x > red ? 31 : x > yellow ? 33 : 0 }
   BEGIN {
     K = w / (w > 86400 ? 86400 : 3600)
-    N = 63; cw = 100 / N
+    N = 55; cw = 100 / N
     # cut[j]: a segment ends at the edge before cell j.
     for (k = 1; k < K; k++) cut[int(k * N / K + 0.5)] = 1
     pre = "\033[" dim
@@ -429,8 +430,8 @@ pace_gauge() {
     b = int((e >= w ? w - 1 : e) / t) * s
     yellow = b + s; red = b + 2 * s
     u = int(p * N / 100 + 0.5)
-    # Full once the shown percentage reads 100.
-    if (u > N || p >= 99.5) u = N
+    # Full once the shown percentage reads 100.0.
+    if (u > N || p >= 99.95) u = N
     full = u == N
     # The last filled cell sets the colour of the percentage and the gap too.
     c = 32
@@ -449,10 +450,10 @@ pace_gauge() {
     }
     out = out "\033[0m"
     d = p - pace
-    d = d < 0 ? -int(-d + 0.5) : int(d + 0.5)
+    d = d < 0 ? -int(-d * 10 + 0.5) / 10 : int(d * 10 + 0.5) / 10
     # Fields are tab-separated so align_gauges can line up stacked gauges.
-    gap = d > 0 ? pre c "m▲" d "%" : d < 0 ? pre c "m▼" (-d) "%" : pre "38;5;245m0%"
-    printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
+    gap = d > 0 ? pre c "m▲" sprintf("%.1f", d) "%" : d < 0 ? pre c "m▼" sprintf("%.1f", -d) "%" : pre "38;5;245m0.0%"
+    printf "%s\t%s%sm%.1f%%\033[0m\t%s\033[0m", out, pre, c, int(p * 10 + 0.5) / 10, gap
   }'
 }
 
@@ -473,7 +474,7 @@ rate_seg() {
     seg=$(countdown_str "$reset")
   fi
   if [ -n "$pct" ]; then
-    p=$(printf '%.0f' "$pct")
+    p=$(awk -v p="$pct" 'BEGIN{printf "%.1f", int(p * 10 + 0.5) / 10}')
     if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
       c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" \
         "${dt_awk_vars[@]}" "$elapsed_awk"' BEGIN {
@@ -487,10 +488,10 @@ rate_seg() {
       seg="$seg"$'\t'"$(pace_gauge "$pct" "$reset" "$window" "$step" "$c")"
     elif [ -n "$seg" ]; then
       c=$(color_for_pct "$p")
-      seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%d%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
+      seg=$(printf '%s\033[%s38;5;245m:\033[0m\033[%s%sm%s%%\033[0m' "$seg" "$rl_dim" "$rl_dim" "$c" "$p")
     else
       c=$(color_for_pct "$p")
-      seg=$(printf '\033[%s%sm%d%%\033[0m' "$rl_dim" "$c" "$p")
+      seg=$(printf '\033[%s%sm%s%%\033[0m' "$rl_dim" "$c" "$p")
     fi
   fi
   printf '%s' "$seg"
@@ -541,9 +542,9 @@ fi
 # that is the real ceiling; otherwise against the model's context window.
 ctx_used_pct=""
 if [ -n "$compact_at" ] && [ -n "$ctx_used_tokens" ]; then
-  ctx_used_pct=$(awk -v u="$ctx_used_tokens" -v w="$compact_at" 'BEGIN{printf "%d", u * 100 / w + 0.5}')
+  ctx_used_pct=$(awk -v u="$ctx_used_tokens" -v w="$compact_at" 'BEGIN{printf "%.1f", int(u * 1000 / w + 0.5) / 10}')
 elif [ -n "$ctx_remaining" ]; then
-  ctx_used_pct=$(awk -v r="$ctx_remaining" 'BEGIN{printf "%d", 100 - r + 0.5}')
+  ctx_used_pct=$(awk -v r="$ctx_remaining" 'BEGIN{printf "%.1f", int((100 - r) * 10 + 0.5) / 10}')
 fi
 
 # Short token count: "312k", "1.2M".
@@ -947,14 +948,14 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
   [ "$cc_n" -gt 0 ] && cc_val=$(printf '\033[38;5;247m⟳%d\033[0m' "$cc_n")
 fi
 
-# Context window usage, led by the window only when unusual ("40%",
-# "200k:40%"), then in the same segment the compaction count, the idle time,
+# Context window usage, led by the window only when unusual ("40.3%",
+# "200k:40.3%"), then in the same segment the compaction count, the idle time,
 # and the prompt cache's time to live once 30 minutes or less remain
-# ("40%:⟳2", "40%:12m", "40%:⟳1:47m:13m", "40%:3h10m:cold").
+# ("40.3%:⟳2", "40.3%:12m", "40.3%:⟳1:47m:13m", "40.3%:3h10m:cold").
 ctx_seg=""
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
-  ctx_seg=$(printf '\033[%sm%d%%\033[0m' "$c" "$ctx_used_pct")
+  ctx_seg=$(printf '\033[%sm%s%%\033[0m' "$c" "$ctx_used_pct")
   [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
 fi
 for v in "$cc_val" "$idle_val" "$pc_val"; do
