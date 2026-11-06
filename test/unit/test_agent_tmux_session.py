@@ -145,7 +145,7 @@ class CodexTmuxSessionTests(unittest.TestCase):
                            f"if tick and os.environ['TMUX_PANE'] == {self.env['TMUX_PANE']!r}:\n"
                            f"    gate = open({str(gate)!r}, 'a')\n"
                            "    fcntl.flock(gate, fcntl.LOCK_SH)\n"
-                           f"result = subprocess.run([{shutil.which('tmux')!r}, *sys.argv[1:]], capture_output=True)\n"
+                           f"result = subprocess.run([{shutil.which('tmux')!r}, *sys.argv[1:]], capture_output=True, timeout=5)\n"
                            "if tick:\n"
                            f"    with open({str(trace)!r}, 'a') as stream:\n"
                            "        stream.write(json.dumps(dict(pane=os.environ['TMUX_PANE'], output=result.stdout.decode())) + '\\n')\n"
@@ -155,8 +155,8 @@ class CodexTmuxSessionTests(unittest.TestCase):
         self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
 
         def drain():
-            # Watchers outlive their parent by one tick; the wrapper writes Python
-            # caches under HOME, so wait for them before the temp dir is removed.
+            # Watchers outlive their parent by one tick and still write under HOME,
+            # so wait for them before the temp dir is removed.
             self.stop_parents()
             deadline = time.monotonic() + 5
             while (subprocess.run(["pgrep", "-f", str(self.home)], capture_output=True).returncode == 0
@@ -185,9 +185,8 @@ class CodexTmuxSessionTests(unittest.TestCase):
             time.sleep(0.01)
         self.assertGreaterEqual(len(ticks(first)), 2)
         time.sleep(0.1)
-        # Hold the first pane's ticks while it is inactive: the second watcher needs
-        # a tick of its own to rename, and under load that outlasts the first
-        # watcher's tick interval, so the first tick would see "0 1".
+        # Hold first-pane ticks until the test switches back, so none reads the
+        # pane while it is inactive.
         with gate.open("a") as held:
             fcntl.flock(held, fcntl.LOCK_EX)
             self.tmux("select-pane", "-t", second)
