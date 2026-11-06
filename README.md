@@ -56,10 +56,11 @@ chezmoi apply --exclude=scripts ~/.config/agents/skills
 
 Chezmoi manages `frontend-design`, copied from
 [anthropics/skills](https://github.com/anthropics/skills/tree/main/skills/frontend-design)
-with local changes: a shorter description, a `Scope:` line, and an explicit-only
-rule that hands verification to `ux-verify`. Its `agents/openai.yaml` makes Codex require an
-explicit invocation. The managed Claude settings apply the same restriction to
-the skill and to its plugin.
+with local changes: a shorter description, a `Scope:` line, and a line that
+hands verification to `ux-verify`. Agents may invoke it themselves: its
+`agents/openai.yaml` allows implicit invocation in Codex, and the managed Claude
+settings list it by name only. The settings keep the upstream plugin disabled,
+so only this copy loads.
 
 Chezmoi also manages `ux-verify` in the shared skills directory. Codex and
 Claude can select it automatically.
@@ -116,8 +117,8 @@ untouched for seven days.
 
 To update `frontend-design`, copy the upstream files into
 `home/dot_config/exact_agents/exact_skills/exact_frontend-design/`. Keep the
-local `description` and `disable-model-invocation` frontmatter, the `Scope:`
-line, and the explicit-only paragraph under the title.
+local `description` frontmatter, the `Scope:` line, and the `ux-verify`
+paragraph under the title.
 
 ## Backup
 Run `bash ./backup-settings.sh`. It zips shell history, zoxide data, `~/.ssh`,

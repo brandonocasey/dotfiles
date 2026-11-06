@@ -153,7 +153,7 @@ managed=$(
     "DISABLE_AUTOUPDATER": "1"
   },
   "skillOverrides": {
-    "frontend-design": "user-invocable-only",
+    "frontend-design": "name-only",
     "jira-triage": "name-only",
     "mr-triage": "name-only",
     "release-verify": "name-only",
