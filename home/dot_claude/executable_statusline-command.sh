@@ -803,6 +803,24 @@ else
   srv_ip=${srv_out%%$'\n'*}
   [ "$srv_out" = "$srv_ip" ] || srv_seg=${srv_out#*$'\n'}
 fi
+# In tmux the segment moves to tmux's status line: the pane option
+# @agent_addr holds the full address in the segment's colour, and tmux.conf
+# shows it for the active pane while Claude runs there.
+if [ -n "$TMUX_PANE" ]; then
+  if [ -n "$srv_seg" ]; then
+    srv_tmux=${srv_seg//@.IP@/$srv_ip}
+    srv_tmux=$(printf '%s' "${srv_tmux//@IP@/$srv_ip}" | sed -E $'s/\033\\[[0-9;]*m//g; s/\033\\]8;;[^\a]*\a//g')
+    case $srv_seg in
+      *$'\033[31m'*) srv_style="fg=red" ;;
+      *$'\033[2;35m'*) srv_style="fg=magenta,dim" ;;
+      *) srv_style="fg=magenta" ;;
+    esac
+    tmux set-option -p -t "$TMUX_PANE" @agent_addr "#[$srv_style]$srv_tmux" </dev/null >/dev/null 2>&1 &
+  else
+    tmux set-option -p -u -t "$TMUX_PANE" @agent_addr </dev/null >/dev/null 2>&1 &
+  fi
+  srv_seg=""
+fi
 
 # The account (grey) leads the first line and links to claude.ai.
 who_seg=""
@@ -1051,7 +1069,7 @@ if [ -n "$sp_seg" ]; then
   parts=$(printf '%s%s\033[38;5;245mspend\033[0m %s' "$parts" "$sep" "$sp_seg")
 fi
 
-# The first line is "<account>|<IP>:<port>|", the model, context, and any
+# The first line is "<account>|<IP>:<port>|" (the address only outside tmux), the model, context, and any
 # spend limit, then "<git status> <project>#<branch>", which ends the line since a long
 # branch name runs longest. The gauge lines follow.
 [ -n "$loc_seg" ] && parts="$parts$sep$loc_seg"
