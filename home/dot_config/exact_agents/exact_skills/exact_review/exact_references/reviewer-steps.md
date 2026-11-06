@@ -96,7 +96,8 @@ read the diff looking for things that seem off — attack it:
   and the rule, and give the rewrite or say to delete it. Skip directives tools read
   (shebangs, lint or type pragmas, license headers) and comments the change did not add.
   Also report added code that comments.md says needs a comment but has none, and
-  give the comment.
+  give the comment or a clearer name that makes it unneeded. In a repository the
+  user does not own, the comment-density rule in comments.md wins.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.
