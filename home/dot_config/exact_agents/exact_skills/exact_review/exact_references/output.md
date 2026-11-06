@@ -6,8 +6,8 @@ breaks, when, and the fix. Write comments to post per
 
 Severity scale (keep in sync with the `reviewer` role): `bug` (wrong behavior
 reachable in production), `question` (design choice worth confirming with the
-author), `requirement` (an explicit repository rule or `code-standards`
-**Maintainability** rule violation), or `nit`
+author), `requirement` (a violation of an explicit repository rule or of a
+`code-standards` rule that the review steps list for `requirement` findings), or `nit`
 (optional style feedback, only when requested). Give each `bug` a severity: `high`
 (data loss, security hole, crash, or a broken main path), `medium` (wrong result on
 a common path), or `low` (rare edge case or minor effect).
