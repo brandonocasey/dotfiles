@@ -9,6 +9,10 @@ remove = [
   'command -v adb >/dev/null 2>&1 || exit 0; sh "$HOME/.config/agents/skills/host-preflight/scripts/android-emu" rm "$AGT_WORKTREE"',
 ]
 
+# Without this, `agt review publish` keeps approvals and comments local and posts nothing.
+[pull_requests]
+push = "manual"
+
 # Publish rom-weaver reviews to GitHub after `agt review run end`.
 [[tracker]]
 host = "github.com"
