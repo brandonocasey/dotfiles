@@ -15,6 +15,10 @@
 #   agent-tmux-session.sh bare <title>   print the title without a port in front
 #   agent-tmux-session.sh part <title>   print the name for work continued after
 #                                        /clear: the title with the next Part N
+#   agent-tmux-session.sh pending <sid> <transcript>
+#                                        print the branch waiting to name <sid>
+#   agent-tmux-session.sh custom <transcript>
+#                                        print the last custom title
 # The first rename saves the session's old name; restore puts it back when the
 # agent exits, unless the user renamed the session since or another agent pane
 # still uses it. /clear does not restore it. Over ssh it never restores.
@@ -78,14 +82,25 @@ cleared_name() {
   cat "$title_state/$1.cleared" 2>/dev/null
 }
 
-# A branch auto-title.sh found mid-turn names the session until Claude takes it
-# as the title at the next prompt. Right after /clear, it may still be in the
-# Claude process's handoff file.
+# A branch auto-title.sh found mid-turn names session <sid> until Claude takes
+# it as the title at the next prompt. Right after /clear, it may still be in the
+# Claude process's handoff file. A /rename since it was found (<custom> differs
+# from the custom title then) wins over it.
 pending_branch() {
   [ -n "$1" ] || return 0
+  if [ -f "$title_state/$1.branch-from" ] &&
+    [ "$(bare "$2")" != "$(bare "$(cat "$title_state/$1.branch-from")")" ]; then
+    return 0
+  fi
   cat "$title_state/$1.branch" 2>/dev/null && return 0
   case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *) cat "$title_state/pid-$CLAUDE_PID.branch" 2>/dev/null ;; esac
   return 0
+}
+
+# The last custom title (/rename or a hook's) in a Claude transcript.
+custom_title() {
+  [ -r "$1" ] || return 0
+  jq -rn 'reduce (inputs | select(.type == "custom-title")) as $e (""; $e.customTitle // "")' "$1" 2>/dev/null
 }
 
 # "Fix login" becomes "Fix login Part 2", and "Fix login Part 2" becomes "Fix
@@ -135,6 +150,14 @@ ported)
   ;;
 part)
   part "${2:-}"
+  exit 0
+  ;;
+pending)
+  pending_branch "${2:-}" "$(custom_title "${3:-}")"
+  exit 0
+  ;;
+custom)
+  custom_title "${2:-}"
   exit 0
   ;;
 esac
@@ -188,7 +211,7 @@ fi
 if [ "$agent" = sync ]; then
   [ "$target" = tmux ] || exit 0
   no_title "${2:-}" "$(cleared_name "${3:-}")" && exit 0
-  [ -z "$(pending_branch "${3:-}")" ] || exit 0
+  [ -z "$(pending_branch "${3:-}" "${2:-}")" ] || exit 0
   session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_id}' 2>/dev/null) || exit 0
   title=$(ported "${2:-}" "${3:-}")
   [ "$(safe "$title")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
@@ -288,7 +311,7 @@ esac
 # carried name with its next Part N.
 session_title() {
   if [ "$agent" = claude ]; then
-    branch=$(pending_branch "$sid")
+    branch=$(pending_branch "$sid" "$(custom_title "$transcript")")
     if [ -n "$branch" ]; then
       printf '%s' "$branch"
       return 0

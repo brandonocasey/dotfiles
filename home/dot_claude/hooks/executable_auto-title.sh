@@ -27,6 +27,7 @@ fi
 sid=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [ -n "$sid" ] || exit 0
 old=$(printf '%s' "$input" | jq -r '.session_title // empty')
+transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
 tmux_hook=$(cd "$(dirname "$0")" && pwd)/agent-tmux-session.sh
 base=$(sh "$tmux_hook" bare "$old")
 # Sets the name when it differs from the current one, then ends the hook.
@@ -56,11 +57,13 @@ esac
 # Keeps the branch as the pending name, cut so it fits beside the port: a
 # branch has no spaces, so the 60-character cut would drop all of it. Only a
 # move to another branch renames, so work in the same branch keeps a name
-# from `claude -n`, /rename, or Part N.
+# from `claude -n`, /rename, or Part N. The custom title now is kept, so a
+# /rename before the next prompt wins (agent-tmux-session.sh pending).
 save_branch() {
   cut=$(sh "$tmux_hook" tidy "$1" 54)
   [ -n "$cut" ] && [ "$cut" != "$(cat "$named" 2>/dev/null)" ] || return 1
   printf '%s\n' "$cut" >"$named"
+  sh "$tmux_hook" custom "$transcript" >"$state/$sid.branch-from"
   printf '%s\n' "$cut" >"$state/$sid.branch"
 }
 
@@ -70,6 +73,8 @@ if [ "$1" = end ]; then
 fi
 
 if [ "$1" = branch ]; then
+  # A sub-agent's worktree is not the branch the session works in.
+  [ -z "$(printf '%s' "$input" | jq -r '.agent_id // empty')" ] || exit 0
   if [ "$(printf '%s' "$input" | jq -r '.hook_event_name // empty')" = CwdChanged ]; then
     branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.new_cwd // empty')")
   else
@@ -88,7 +93,7 @@ if [ "$1" = branch ]; then
 fi
 
 if [ "$1" = new ]; then
-  rm -f "$state/$sid" "$state/$sid.haiku" "$state/$sid.branch"
+  rm -f "$state/$sid" "$state/$sid.haiku" "$state/$sid.branch" "$state/$sid.branch-from"
   if [ "$(printf '%s' "$input" | jq -r '.source // empty')" = clear ]; then
     [ -n "$old" ] && printf '%s\n' "$old" >"$state/$sid.cleared"
     mv -f "$handoff" "$state/$sid.branch" 2>/dev/null
@@ -103,9 +108,10 @@ if [ "$1" = new ]; then
   exit 0
 fi
 
-if [ -s "$state/$sid.branch" ]; then
-  title=$(cat "$state/$sid.branch")
-  rm -f "$state/$sid.branch" "$state/$sid.cleared"
+title=$(sh "$tmux_hook" pending "$sid" "$transcript")
+rm -f "$state/$sid.branch" "$state/$sid.branch-from"
+if [ -n "$title" ]; then
+  rm -f "$state/$sid.cleared"
   touch "$state/$sid"
   finish "$(sh "$tmux_hook" ported "$title" "$sid")"
 fi
@@ -125,7 +131,6 @@ fi
 
 # Set by `claude -n`, /rename, or a resumed session's earlier name; keep it.
 # Claude's own generated title and this hook's Haiku title may be replaced.
-transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
 native=
 [ -r "$transcript" ] && native=$(grep '"type":"ai-title"' "$transcript" | tail -n 1 | jq -r '.aiTitle // empty')
 user_named() {

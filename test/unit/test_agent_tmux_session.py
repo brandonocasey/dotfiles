@@ -289,10 +289,10 @@ class ClaudePortNameTests(TmuxCase):
     def ported(self, title, sid="one"):
         return self.run_hook("agent-tmux-session", "ported", title, sid)
 
-    def prompt(self, old, text="hi", sid="one"):
+    def prompt(self, old, text="hi", sid="one", transcript="missing.jsonl"):
         out = self.run_hook("auto-title", payload=dict(
             session_id=sid, session_title=old, prompt=text,
-            transcript_path=str(self.home / "missing.jsonl")))
+            transcript_path=str(self.home / transcript)))
         return json.loads(out)["hookSpecificOutput"]["sessionTitle"] if out else None
 
     def test_ported_titles(self):
@@ -462,26 +462,27 @@ class ClaudePortNameTests(TmuxCase):
                        env=self.env, check=True, capture_output=True, timeout=10)
         return main, tree
 
-    def bash_done(self, stdout, sid="one"):
+    def bash_done(self, stdout, sid="one", transcript="missing.jsonl"):
         self.run_hook("auto-title", "branch", payload=dict(
             session_id=sid, hook_event_name="PostToolUse", tool_name="Bash",
+            transcript_path=str(self.home / transcript),
             tool_input=dict(command="agt worktree create x"),
             tool_response=dict(stdout=stdout, stderr="", interrupted=False)))
 
     def test_agt_worktree_output_names_session_after_branch(self):
         _, tree = self.worktree()
-        line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False, warnings=[]))
-        self.bash_done(f"Preparing\n{line}\ndone\n")
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
         transcript = self.home / "claude.jsonl"
         transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
+        line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False, warnings=[]))
+        self.bash_done(f"Preparing\n{line}\ndone\n", transcript="claude.jsonl")
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(session_id="one", transcript_path=str(transcript)))
         self.assertEqual(self.name(), "47950 feat/x-y_1")
         self.run_hook("agent-tmux-session", "sync", "47950 Old", "one")
         self.assertEqual(self.name(), "47950 feat/x-y_1")
         (self.state / "one").touch()
-        self.assertEqual(self.prompt("47950 Old"), "47950 feat/x-y.1")
+        self.assertEqual(self.prompt("47950 Old", transcript="claude.jsonl"), "47950 feat/x-y.1")
         self.assertFalse((self.state / "one.branch").exists())
         self.assertIsNone(self.prompt("47950 feat/x-y.1"))
         self.assertIsNone(self.prompt("47950 Renamed later"))
@@ -510,6 +511,38 @@ class ClaudePortNameTests(TmuxCase):
         for title in ("é" * 40, "€" * 30, "😀" * 20, "a" + "é" * 40):
             out = self.run_hook("agent-tmux-session", "tidy", title, "55").rstrip("\n")
             self.assertTrue(title.startswith(out) and len(out.encode()) <= 55, out)
+
+    def test_rename_after_branch_found_wins(self):
+        _, tree = self.worktree()
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
+        line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False))
+        self.run_hook("auto-title", "branch", payload=dict(
+            session_id="one", hook_event_name="PostToolUse", transcript_path=str(transcript),
+            tool_response=dict(stdout=line + "\n")))
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.run_hook("agent-tmux-session", "sync", "47950 Old", "one")
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        with transcript.open("a") as stream:
+            stream.write('{"type":"custom-title","customTitle":"Mine"}\n')
+        self.run_hook("agent-tmux-session", "sync", "Mine", "one")
+        self.assertEqual(self.name(), "47950 Mine")
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(session_id="one", transcript_path=str(transcript)))
+        self.assertEqual(self.name(), "47950 Mine")
+        out = self.run_hook("auto-title", payload=dict(
+            session_id="one", session_title="Mine", prompt="hi", transcript_path=str(transcript)))
+        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], "47950 Mine")
+        self.assertFalse((self.state / "one.branch").exists())
+
+    def test_subagent_worktree_leaves_session_name(self):
+        _, tree = self.worktree()
+        line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False))
+        self.run_hook("auto-title", "branch", payload=dict(
+            session_id="one", agent_id="a1", hook_event_name="PostToolUse",
+            tool_response=dict(stdout=line + "\n")))
+        self.assertFalse((self.state / "one.branch").exists())
+        self.assertEqual(self.name(), "original")
 
     def test_agt_lookalike_output_is_ignored(self):
         main, tree = self.worktree()
