@@ -849,23 +849,34 @@ esac
 # turn ends with a turn_duration entry or an interrupt; turns woken by
 # hooks/cache-keepalive.sh don't count. A turn runs from a typed prompt, or else
 # from the model's first write: local commands, "!" shell commands, their notes,
-# and notifications often wake no model. Parsing takes ~15 ms, so each session
-# reuses its result until the transcript changes.
+# and notifications often wake no model.
+# The same pass finds the output speed of the last model reply (grey "ϟ99", in
+# tokens per second): its output tokens over the time from the entry before it
+# to its last entry, so the wait for the first token counts too. Keepalive
+# replies don't count. Parsing takes ~15 ms, so each session reuses both
+# results until the transcript changes.
 idle_val=""
+tps_val=""
 if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
   idle_key=$(stat -c %s:%Y "$transcript" 2>/dev/null || stat -f %z:%m "$transcript" 2>/dev/null)
   idle_cache="$rl_dir/idle-$rl_sid"
-  idle_line=""
-  { read -r idle_line < "$idle_cache"; } 2>/dev/null
-  if [ -n "$idle_key" ] && [ "${idle_line% *}" = "$idle_key" ]; then
-    idle_end=${idle_line##* }
-  else
-    idle_end=$(tail -n 400 "$transcript" | jq -nrR '
+  idle_cached_key="" idle_end="" tps=""
+  { read -r idle_cached_key idle_end tps < "$idle_cache"; } 2>/dev/null
+  if [ -z "$idle_key" ] || [ "$idle_cached_key" != "$idle_key" ]; then
+    read -r idle_end tps < <(tail -n 400 "$transcript" | jq -nrR '
       # Ends a turn; a keepalive turn leaves the last real end in place.
       def done($e): (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false;
+      def ts: try (capture("^(?<s>[^.]+)(\\.(?<f>[0-9]+))?Z$") | (.s + "Z" | fromdate) + ("0." + (.f // "0") | tonumber)) catch null;
       reduce (inputs | fromjson? | select(.type == "user" or .type == "assistant" or .subtype == "turn_duration")) as $e
-        ({end: null, busy: false, ka: false};
+        ({end: null, busy: false, ka: false, prev: null, rid: null, start: null, stop: null, out: 0};
          ($e.message.content // "") as $c
+         | ($e.timestamp // "" | ts) as $t
+         | (if $e.type == "assistant" and $e.requestId != null and $e.message.model != "<synthetic>"
+             and ($e.message.usage.output_tokens // 0) > 0 and (.ka | not) then
+             (if $e.requestId != .rid then .rid = $e.requestId | .start = .prev else . end)
+             | .stop = $t | .out = $e.message.usage.output_tokens
+           else . end)
+         | (if $e.type != "system" then .prev = $t else . end)
          | if $e.subtype == "turn_duration" then done($e)
            elif $e.type == "user" and $e.origin.kind == "task-notification" and ($c | type) == "string"
              and ($c | contains("cache-keepalive: the session is idle")) then .ka = true
@@ -878,9 +889,14 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
            elif $e.type == "assistant" and $e.message.model != "<synthetic>"
              or ($c | type) == "array" and any($c[]; .type == "tool_result") then .busy = true
            else . end)
-      | if .busy or .end == null then "" else .end | sub("\\.[0-9]+Z$"; "Z") | fromdate end' 2>/dev/null)
-    [ -n "$idle_key" ] && printf '%s %s\n' "$idle_key" "$idle_end" > "$idle_cache"
+      | "\(if .busy or .end == null then "-" else .end | sub("\\.[0-9]+Z$"; "Z") | fromdate end) \(
+          if .start != null and .stop != null and .stop > .start then .out / (.stop - .start) | round else "-" end)"' 2>/dev/null)
+    [ -n "$idle_key" ] && printf '%s %s %s\n' "$idle_key" "${idle_end:--}" "${tps:--}" > "$idle_cache"
   fi
+  case $tps in
+    '' | *[!0-9]*) ;;
+    *) tps_val=$(printf '\033[38;5;247mϟ%d\033[0m' "$tps") ;;
+  esac
   case $idle_end in
     '' | *[!0-9]*) ;;
     *)
@@ -945,6 +961,8 @@ for v in "$cc_val" "$idle_val" "$pc_val"; do
   [ -n "$v" ] || continue
   if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$v"); else ctx_seg=$v; fi
 done
+# The model segment still ends the line here, so the speed joins it: "O5.5hϟ99".
+parts="$parts$tps_val"
 [ -n "$ctx_seg" ] && parts="$parts$sep$ctx_seg"
 
 # Project and branch as "project#branch": the project (green) is the git
