@@ -851,11 +851,10 @@ esac
 # hooks/cache-keepalive.sh don't count. A turn runs from a typed prompt, or else
 # from the model's first write: local commands, "!" shell commands, their notes,
 # and notifications often wake no model.
-# The same pass finds the output speed of the last model reply (grey "ϟ99", in
-# tokens per second): its output tokens over the time from the entry before it
-# to its last entry, so the wait for the first token counts too. Keepalive
-# replies don't count. Parsing takes ~15 ms, so each session reuses both
-# results until the transcript changes.
+# The same pass finds the last reply's output speed (grey "ϟ99"): its output
+# tokens per second since the entry before it, first-token wait included.
+# Parsing takes ~15 ms, so each session reuses both results until the
+# transcript changes.
 idle_val=""
 tps_val=""
 if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
@@ -868,12 +867,15 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
     read -r idle_end tps < <(tail -n 400 "$transcript" | jq -nrR '
       # Ends a turn; a keepalive turn leaves the last real end in place.
       def done($e): (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false;
-      def ts: try (capture("^(?<s>[^.]+)(\\.(?<f>[0-9]+))?Z$") | (.s + "Z" | fromdate) + ("0." + (.f // "0") | tonumber)) catch null;
+      def ts: try ((capture("^(?<s>[^.]+)(\\.(?<f>[0-9]+))?Z$") // null)
+        | if . == null then null else (.s + "Z" | fromdate) + ("0." + (.f // "0") | tonumber) end) catch null;
       reduce (inputs | fromjson? | select(.type == "user" or .type == "assistant" or .subtype == "turn_duration")) as $e
         ({end: null, busy: false, ka: false, prev: null, rid: null, start: null, stop: null, out: 0};
          ($e.message.content // "") as $c
          | ($e.timestamp // "" | ts) as $t
+         # An interrupted reply has no stop_reason and only a placeholder token count.
          | (if $e.type == "assistant" and $e.requestId != null and $e.message.model != "<synthetic>"
+             and $e.message.stop_reason != null
              and ($e.message.usage.output_tokens // 0) > 0 and (.ka | not) then
              (if $e.requestId != .rid then .rid = $e.requestId | .start = .prev else . end)
              | .stop = $t | .out = $e.message.usage.output_tokens
@@ -891,7 +893,7 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
            elif $e.type == "assistant" and $e.message.model != "<synthetic>"
              or ($c | type) == "array" and any($c[]; .type == "tool_result") then .busy = true
            else . end)
-      | "\(if .busy or .end == null then "-" else .end | sub("\\.[0-9]+Z$"; "Z") | fromdate end) \(
+      | "\(if .busy or .end == null then "-" else (.end | ts | values | floor) // "-" end) \(
           if .start != null and .stop != null and .stop > .start then .out / (.stop - .start) | round else "-" end)"' 2>/dev/null)
     [ -n "$idle_key" ] && printf '%s %s %s\n' "$idle_key" "${idle_end:--}" "${tps:--}" > "$idle_cache"
   fi
