@@ -10,6 +10,8 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[2]
 CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
+CLAUDE_SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
+SCRATCH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
 
 
 def render_codex_modifier(directory):
@@ -24,7 +26,34 @@ def render_codex_modifier(directory):
     return script
 
 
+def render_claude_settings(directory, data):
+    """Render the Claude settings modifier with data that overrides private.toml."""
+    config = Path(directory) / "chezmoi.toml"
+    config.write_text("")
+    return subprocess.run(
+        ["chezmoi", "--source", str(REPO), "--config", str(config),
+         "--override-data", json.dumps(data), "execute-template"],
+        input=CLAUDE_SETTINGS.read_text(), text=True, capture_output=True, timeout=10)
+
+
 class AgentConfigurationTests(unittest.TestCase):
+    def test_claude_auto_mode_environment_from_private_data(self):
+        cases = [("a\nTEXT\nprintf injected >&2", ["$defaults", "a\nTEXT\nprintf injected >&2"]),
+                 (" \t", ["$defaults"])]
+        SCRATCH.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=SCRATCH) as directory:
+            for value, expected in cases:
+                with self.subTest(value=value):
+                    rendered = render_claude_settings(directory, {"claudeAutoModeEnvironment": value})
+                    self.assertEqual(rendered.returncode, 0, rendered.stderr)
+                    result = subprocess.run(["bash", "-c", rendered.stdout], input="{}", text=True,
+                                            capture_output=True, check=True, timeout=10)
+                    self.assertEqual(result.stderr, "")
+                    self.assertEqual(json.loads(result.stdout)["autoMode"]["environment"], expected)
+            rendered = render_claude_settings(directory, {"claudeAutoModeEnvironment": 5})
+            self.assertNotEqual(rendered.returncode, 0)
+            self.assertIn("claudeAutoModeEnvironment", rendered.stderr)
+
     def test_claude_cleanup_skips_compaction(self):
         template = (REPO / "home/.chezmoitemplates/claude-settings-modify.sh").read_text()
         settings = json.loads(template.split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0])

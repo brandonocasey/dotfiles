@@ -554,14 +554,18 @@ fi
 
 # Trusted orgs and hosts stay out of the public repo: they come from the
 # git-ignored home/.chezmoidata/private.toml, absent on other machines.
+# toJson keeps the value on one line, so it can never end the heredoc.
+{{- $autoModeEnvironment := get . "claudeAutoModeEnvironment" }}
+{{- if not (kindIs "string" $autoModeEnvironment) }}
+{{-   fail "claudeAutoModeEnvironment in home/.chezmoidata/private.toml must be a string" }}
+{{- end }}
 auto_mode_environment=$(
   cat <<'TEXT'
-{{ get . "claudeAutoModeEnvironment" }}
+{{ $autoModeEnvironment | toJson }}
 TEXT
 )
-if [ -n "$auto_mode_environment" ]; then
-  managed=$(printf '%s' "$managed" | jq -c --arg text "$auto_mode_environment" '.autoMode.environment += [$text]')
-fi
+managed=$(printf '%s' "$managed" | jq -c --argjson text "$auto_mode_environment" '
+  if $text | test("\\S") then .autoMode.environment += [$text] else . end')
 
 # A corrupt or non-object live file MUST fall back to the managed defaults.
 # Slurp so a half-written file with two concatenated values still parses.
