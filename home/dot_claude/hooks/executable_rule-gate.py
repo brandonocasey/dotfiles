@@ -423,15 +423,13 @@ def on_pre_tool_use(data: dict) -> str | None:
         return None
     # Every edit of a file is denied until the agent's tool batch ends, because the agent sent them all before it saw a
     # deny. Its next edit of that file is the retry, and the rule counts as read from then on.
-    # Checks use the records from before this edit, so two rule names with one realpath are both listed.
     denied = f"{key}/{hashlib.sha256(os.fsencode(path)).hexdigest()}"
     unread = []
     with locked_records(state_dir() / session) as records:
-        before = set(records)
         for name, real in rules:
-            if (key, real) in before:
+            if (key, real) in records:
                 continue
-            if (denied, real) in before:
+            if (denied, real) in records:
                 mark_loaded(records, key, real)
             else:
                 records.add((f"{denied}/batch", real))
