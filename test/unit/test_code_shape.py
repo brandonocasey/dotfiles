@@ -63,7 +63,38 @@ DEEP_CALLBACK = dedent("""\
       }
     });
     """)
-# Each layout below nests 4 deep, except the Kotlin `else ->` arm, which nests 3.
+ADDED_CALLBACK = "items.map(function (x) {\n  return x * 2;\n});\n"
+RUN_A = dedent("""\
+    class A:
+        def run(self, x):
+            if x > 0:
+                if x > 1:
+                    if x > 2:
+                        if x > 3:
+                            x -= 1
+            return x
+    """)
+RUN_A_SHALLOWER = dedent("""\
+    class A:
+        def run(self, x):
+            if x > 0:
+                if x > 1:
+                    if x > 2:
+                        x -= 1
+            return x
+    """)
+RUN_B = dedent("""\
+    class B:
+        def run(self, x):
+            for y in x:
+                for z in y:
+                    if z:
+                        if y:
+                            x -= 1
+            return x
+    """)
+# Each layout below nests 4 deep, except the Kotlin `else ->` arm, which nests 3. In
+# nested_def.py and callback.js, only the inner function holds the deepest line.
 NESTING_LAYOUTS = {
     "switch.c": dedent("""\
         int pick(int x) {
@@ -178,6 +209,35 @@ NESTING_LAYOUTS = {
                 pass
             return x
         """),
+    "nested_def.py": dedent("""\
+        def outer():
+            def inner(x):
+                if x > 0:
+                    if x > 1:
+                        if x > 2:
+                            if x > 3:
+                                x -= 1
+                return x
+            return inner
+        """),
+    "callback.js": dedent("""\
+        function outer(items, ready) {
+          if (ready) {
+            items.forEach(function (x) {
+              if (x > 1) {
+                if (x > 2) {
+                  if (x > 3) {
+                    x -= 1;
+                  }
+                }
+              }
+            });
+          }
+          return items;
+        }
+        """),
+    # The deepest line comes last, so counting the form feed as a line break misses it.
+    "formfeed.py": "\x0c\n" + nested_python(4, "tail").replace("    return x\n", ""),
 }
 
 
@@ -289,15 +349,33 @@ class CheckTests(CodeShapeTestCase):
             "allman.cpp:1: allman: nesting depth 4 > 3 (new function)",
             "comment.py:1: commented: nesting depth 4 > 3 (new function)",
             "guarded.py:1: guarded: nesting depth 4 > 3 (new function)",
+            "nested_def.py:2: outer.inner: nesting depth 4 > 3 (new function)",
+            "callback.js:3: (anonymous): nesting depth 4 > 3 (new function)",
+            "formfeed.py:2: tail: nesting depth 4 > 3 (new function)",
         ]))
 
-    def test_unchanged_functions_with_shared_names_are_skipped(self):
+    def test_functions_are_compared_with_their_own_earlier_version(self):
         callbacks = "items.forEach(function (x) {\n  return x;\n});\n" + DEEP_CALLBACK
-        self.write("callbacks.js", callbacks)
-        self.commit("callbacks")
-        self.write("callbacks.js", "items.map(function (x) {\n  return x * 2;\n});\n" + callbacks)
-        result = self.code_shape("check", "--base", "HEAD")
-        self.assertEqual((result.returncode, result.stdout), (0, ""), result.stderr)
+        changed_callbacks = callbacks.replace("return x;", "return x + 1;").replace("x -= 1;", "x -= 2;")
+        statements = "".join(f"const value{n} = {n};\n" for n in range(20))
+        swapped = statements + DEEP_CALLBACK + "items.forEach(function (x) {\n  return x + 1;\n});\n"
+        cases = [
+            ("callback added above unchanged ones", "unchanged.js", callbacks, ADDED_CALLBACK + callbacks, []),
+            ("callback added above changed ones", "changed.js", callbacks, ADDED_CALLBACK + changed_callbacks, []),
+            ("callbacks moved below other code", "moved.js", callbacks + statements, swapped, []),
+            ("method added above a changed one of the same name", "shared.py", RUN_A,
+             RUN_B + "\n\n" + RUN_A_SHALLOWER, ["shared.py:2: run: nesting depth 4 > 3 (new function)"]),
+            ("copy added above the original", "copy.py", RUN_A, RUN_A.replace("class A", "class B") + "\n\n" + RUN_A,
+             ["copy.py:2: run: nesting depth 4 > 3 (new function)"]),
+        ]
+        for name, path, before, after, expected in cases:
+            with self.subTest(name):
+                self.write(path, before)
+                self.commit(name)
+                self.write(path, after)
+                result = self.code_shape("check", "--base", "HEAD")
+                self.assertEqual((result.returncode, result.stdout.splitlines()),
+                                 (1 if expected else 0, expected), result.stderr)
 
     def test_symlinks_and_submodules_are_skipped(self):
         self.write("legacy.py", LEGACY)
@@ -314,21 +392,35 @@ class CheckTests(CodeShapeTestCase):
         self.write("legacy.py", LEGACY)
         self.commit("legacy")
         cases = [
-            ("another function edited", "legacy.py", LEGACY.replace("x + 1", "x + 2"), []),
-            ("same depth", "legacy.py", LEGACY.replace("x -= 1", "x -= 2"), []),
-            ("shallower but still over", "legacy.py", SHALLOWER, []),
-            ("deeper", "legacy.py", DEEPER, DEEPER_BREAKS),
-            ("renamed", "moved.py", LEGACY.replace("x + 1", "x + 2"), []),
+            ("another function edited", None, LEGACY.replace("x + 1", "x + 2"), []),
+            ("same depth", None, LEGACY.replace("x -= 1", "x -= 2"), []),
+            ("shallower but still over", None, SHALLOWER, []),
+            ("deeper", None, DEEPER, DEEPER_BREAKS),
+            ("renamed with git mv", "git", LEGACY.replace("x + 1", "x + 2"), []),
+            ("moved without git", "filesystem", LEGACY, []),
+            ("moved without git and made deeper", "filesystem", DEEPER,
+             [line.replace("legacy.py", "moved.py") for line in DEEPER_BREAKS]),
         ]
-        for name, path, text, expected in cases:
+        for name, move, text, expected in cases:
             with self.subTest(name):
-                if path != "legacy.py":
+                path = "legacy.py" if move is None else "moved.py"
+                if move == "git":
                     self.git("mv", "legacy.py", path)
+                elif move == "filesystem":
+                    (self.repo / "legacy.py").rename(self.repo / path)
                 self.write(path, text)
                 result = self.code_shape("check", "--base", "HEAD")
                 self.assertEqual((result.returncode, result.stdout.splitlines()),
                                  (1 if expected else 0, expected), result.stderr)
                 self.git("reset", "-q", "--hard")
+                self.git("clean", "-fdq")
+
+    def test_checkout_without_an_index_has_no_breaks(self):
+        self.write("legacy.py", LEGACY)
+        self.commit("legacy")
+        (self.repo / ".git" / "index").unlink()
+        result = self.code_shape("check", "--base", "HEAD")
+        self.assertEqual((result.returncode, result.stdout), (0, ""), result.stderr)
 
     def test_head_revision_is_read_from_git(self):
         self.write("legacy.py", LEGACY)
