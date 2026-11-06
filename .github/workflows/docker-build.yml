@@ -30,3 +30,24 @@ jobs:
 
       - name: Node tests
         run: node --test home/dot_config/exact_agents/exact_skills/*/exact_test/*.test.*js
+
+  # Claude Code runs the hooks with the python3 on PATH, which can be Apple's Python 3.9.
+  hooks-python39:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.9'
+
+      - name: Install zsh
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends zsh
+
+      - name: Hook tests on Python 3.9
+        working-directory: test/unit
+        run: python -m unittest -v test_bash_guard test_continue_guard test_edit_guard test_rule_gate
