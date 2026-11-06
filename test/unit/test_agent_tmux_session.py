@@ -275,6 +275,7 @@ class ClaudePortNameTests(TmuxCase):
         (bindir / "claude").chmod(0o755)
         self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
         self.env.pop("CLAUDE_CODE_SESSION_ATTENDED", None)
+        self.env.pop("CLAUDE_JOB_DIR", None)
         self.port("one", "47950")
 
     def port(self, sid, value):
@@ -306,6 +307,33 @@ class ClaudePortNameTests(TmuxCase):
         self.assertEqual(self.ported("Fix login", "bad"), "Fix login")
         self.assertEqual(self.ported("Fix login", ""), "Fix login")
         self.assertEqual(self.run_hook("agent-tmux-session", "bare", "41230 Fix"), "Fix")
+
+    def test_headless_session_keeps_its_title(self):
+        self.env["CLAUDE_CODE_SESSION_ATTENDED"] = "0"
+        self.assertEqual(self.ported("Fix login"), "Fix login")
+        out = self.run_hook("session-port", payload=dict(
+            session_id="two", source="startup", session_title="Fix login"))
+        self.assertEqual(out, "")
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text("")
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(session_id="one", transcript_path=str(transcript)))
+        self.assertEqual(self.name(), "original")
+
+    def test_headless_run_leaves_parent_session_name(self):
+        self.tmux("rename-session", "47950 Fix login")
+        self.tmux("set-option", "@agent_orig_name", "main")
+        self.tmux("set-option", "@agent_name", "47950 Fix login")
+        self.env["CLAUDE_CODE_SESSION_ATTENDED"] = "0"
+        self.run_hook("agent-tmux-session", "restore", payload=dict(session_id="child", reason="other"))
+        self.assertEqual(self.name(), "47950 Fix login")
+        del self.env["CLAUDE_CODE_SESSION_ATTENDED"]
+        self.run_hook("agent-tmux-session", "restore", payload=dict(session_id="one", reason="other"))
+        self.assertEqual(self.name(), "main")
+
+    def test_background_session_keeps_port(self):
+        self.env.update(CLAUDE_CODE_SESSION_ATTENDED="0", CLAUDE_JOB_DIR=str(self.home / "job"))
+        self.assertEqual(self.ported("Fix login"), "47950 Fix login")
 
     def test_claude_hook_names_tmux_session_with_port(self):
         transcript = self.home / "claude.jsonl"

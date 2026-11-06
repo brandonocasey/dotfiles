@@ -39,15 +39,22 @@ safe() {
   tidy "$1" | LC_ALL=C sed -e 's/[:#]/ /g' -e 's/\./_/g' -e 's/  */ /g' -e 's/^ //' -e 's/ $//'
 }
 
-# Claude session names start with the session's port ("47950 Fix login"). A
-# block port already in front is replaced; the pattern MUST match
+# Headless Claude runs (claude -p, the SDK) are unattended without a job dir;
+# background sessions (claude --bg) have one.
+headless() {
+  [ "${CLAUDE_CODE_SESSION_ATTENDED:-1}" = 0 ] && [ -z "${CLAUDE_JOB_DIR:-}" ]
+}
+
+# Attended Claude session names start with the session's port ("47950 Fix
+# login"). A block port already in front is replaced; the pattern MUST match
 # session-port.sh's block layout.
 bare() {
   printf '%s' "$1" | LC_ALL=C sed -E 's/^4[0-8][0-9][0-9]0( +|$)//'
 }
 
+# Headless runs keep Claude's own title.
 session_port() {
-  [ -n "$1" ] || return 0
+  [ -n "$1" ] && ! headless || return 0
   sid_file=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
   port=$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline/port-$sid_file" 2>/dev/null)
   case $port in '' | *[!0-9]*) ;; *) printf '%s' "$port" ;; esac
@@ -89,6 +96,10 @@ ported)
   exit 0
   ;;
 esac
+
+# A headless run inherits the pane of the agent that started it, so it MUST
+# NOT rename or restore that agent's tmux session.
+case $agent in claude | restore) headless && exit 0 ;; esac
 
 if [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] && command -v tmux >/dev/null 2>&1; then
   target=tmux

@@ -103,7 +103,7 @@ if [ -n "$CLAUDE_ENV_FILE" ]; then
   } >> "$CLAUDE_ENV_FILE"
 fi
 
-# Every session's name starts with its port, from the first screen on.
+# Every attended session's name starts with its port, from the first screen on.
 title=$(printf '%s' "$input" | jq -r '.session_title // empty' 2>/dev/null)
 named=$(sh "$(dirname "$0")/agent-tmux-session.sh" ported "$title" "$sid")
 [ -n "$named" ] && [ "$named" != "$title" ] &&
