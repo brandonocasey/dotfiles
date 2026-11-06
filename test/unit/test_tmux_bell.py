@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 
 REPO = Path(__file__).resolve().parents[2]
@@ -58,6 +59,40 @@ class TmuxBellTests(unittest.TestCase):
     def state(self):
         return self.tmux("show-options", "-pqv", "-t", self.pane, "@agent_state")
 
+    def bell(self):
+        return self.tmux("display-message", "-p", "#{window_bell_flag}")
+
+    def wait_for(self, condition, seconds):
+        deadline = time.monotonic() + seconds
+        while not condition() and time.monotonic() < deadline:
+            time.sleep(0.2)
+        return condition()
+
+    def wait_for_state(self, expected, seconds):
+        self.wait_for(lambda: self.state() == expected, seconds)
+        return self.state()
+
+    def watchers(self):
+        return [line for line in subprocess.check_output(["ps", "-A", "-o", "args="], text=True).splitlines()
+                if "watch-codex" in line and str(self.home) in line]
+
+    def start_codex(self, terminal_seconds):
+        """Runs the registered Codex Stop hook in the pane under a process named
+        codex. Like Codex, it keeps a server child on the pane's terminal; with
+        terminal_seconds it also runs a command in a new session, like a
+        background terminal."""
+        codex = self.home / "bin/codex"
+        codex.parent.mkdir(exist_ok=True)
+        codex.symlink_to("/bin/sh")
+        payload = self.home / "stop.json"
+        payload.write_text(json.dumps(dict(hook_event_name="Stop", session_id="test")))
+        command = next(hook["command"] for group in HOOKS["Stop"] for hook in group["hooks"]
+                       if "tmux-bell.sh" in hook["command"])
+        terminal = (f"/usr/bin/perl -MPOSIX -e 'setsid(); sleep {terminal_seconds}' & "
+                    if terminal_seconds else "")
+        self.tmux("respawn-pane", "-k", "-t", self.pane, "-e", f"HOOK={command}", "-e", f"PAYLOAD={payload}",
+                  str(codex), "-c", f'/bin/sleep 20 & {terminal}sh -c "$HOOK" <"$PAYLOAD"; read -r line')
+
     def test_registered_stop_marks_input_with_system_client_on_path(self):
         self.tmux("set-option", "-p", "-t", self.pane, "@agent_state", "working")
         self.fire("Stop")
@@ -83,6 +118,42 @@ class TmuxBellTests(unittest.TestCase):
                 self.fire("Stop")
                 self.assertEqual(self.state(), "")
                 self.env[key] = "1" if key == "CLAUDE_CODE_SESSION_ATTENDED" else ""
+
+    def test_claude_stop_marks_background_while_background_tasks_run(self):
+        task = dict(id="b1", type="local_bash", status="running", description="sleep")
+        # The window keeps its bell flag, so the case without a bell runs first.
+        cases = (("Stop", [task], "background", "0"), ("Stop", [], "input", "1"),
+                 ("Notification", [task], "input", "1"))
+        for event, tasks, expected, bell in cases:
+            with self.subTest(event=event, tasks=len(tasks)):
+                self.tmux("set-option", "-p", "-t", self.pane, "@agent_state", "working")
+                result = subprocess.run(
+                    ["sh", str(self.home / ".claude/hooks/tmux-bell.sh")], env=self.env, text=True,
+                    input=json.dumps(dict(hook_event_name=event, background_tasks=tasks)),
+                    capture_output=True, timeout=5, check=True)
+                self.assertEqual((result.stdout, result.stderr), ("", ""))
+                self.assertEqual(self.state(), expected)
+                self.assertEqual(self.bell(), bell)
+
+    def test_codex_stop_without_background_terminal_marks_input(self):
+        self.start_codex(terminal_seconds=0)
+        self.assertEqual(self.wait_for_state("input", 5), "input")
+        self.assertEqual(self.watchers(), [])
+
+    def test_codex_stop_marks_background_until_terminal_ends(self):
+        self.start_codex(terminal_seconds=2)
+        self.assertEqual(self.wait_for_state("background", 5), "background")
+        self.assertEqual(self.bell(), "0")
+        self.assertEqual(self.wait_for_state("input", 10), "input")
+        self.assertEqual(self.bell(), "1")
+
+    def test_codex_watcher_leaves_a_later_state_alone(self):
+        self.start_codex(terminal_seconds=1)
+        self.assertEqual(self.wait_for_state("background", 5), "background")
+        self.assertTrue(self.wait_for(self.watchers, 5))
+        self.fire("UserPromptSubmit")
+        self.assertTrue(self.wait_for(lambda: not self.watchers(), 10))
+        self.assertEqual(self.state(), "working")
 
 
 if __name__ == "__main__":

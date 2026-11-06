@@ -1,8 +1,9 @@
 #!/bin/sh
 # Feeds the sesh picker (sesh-pick.sh). Colors each tmux session's
 # name with its @session_color, as in the status line, and adds its
-# agent state after the name, colored like the window list: a yellow ●
-# when any pane waits for input, else a green ● when any pane works. Then
+# agent state after the name, colored like the window list: a red ●
+# when any pane needs input, else a yellow ● when any pane waits with
+# background work running, else a green ● when any pane works. Then
 # come its project (green, from project.sh on the active pane's directory)
 # and the agents it runs (claude, codex), from tmux.conf's @agent_tool.
 # It reads the state from the colors in tmux.conf's @agent_status; keep them in
@@ -42,7 +43,8 @@ list)
         s = f[1]
         created[s] = f[2]
         color[s] = tolower(f[3])
-        if (f[4] ~ /D7AF00/) state[s] = "input"
+        if (f[4] ~ /D70000/) state[s] = "input"
+        else if (f[4] ~ /D7AF00/ && state[s] != "input") state[s] = "background"
         else if (f[4] ~ /5FD700/ && state[s] == "") state[s] = "working"
         if (f[6] != "") proj[s] = project[f[6]]
         if (f[5] != "" && !((s, f[5]) in seen)) {
@@ -60,7 +62,10 @@ list)
       if (c ~ /^#[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]$/ && substr(line, length(line) - length(name) + 1) == name)
         line = sprintf("%s\033[38;2;%d;%d;%dm%s\033[39m", substr(line, 1, length(line) - length(name)),
           hex(substr(c, 2, 2)), hex(substr(c, 4, 2)), hex(substr(c, 6, 2)), name)
-      dot = state[name] == "input" ? "\033[38;5;178m● " : state[name] == "working" ? "\033[38;5;76m● " : ""
+      dot = ""
+      if (state[name] == "input") dot = "\033[38;5;160m● "
+      else if (state[name] == "background") dot = "\033[38;5;178m● "
+      else if (state[name] == "working") dot = "\033[38;5;76m● "
       key = (name in created) ? created[name] : 10000000000 + NR
       pr = proj[name] == "" ? "" : "\033[38;5;76m" proj[name] (used[name] == "" ? "" : " ")
       if (dot pr used[name] != "")
