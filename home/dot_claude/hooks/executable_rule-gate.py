@@ -5,6 +5,9 @@ Claude Code skips rules for files outside the working folder, loads a new file's
 does not reload rules after a compaction.
 """
 
+# Hooks run on the python3 on PATH, which can be Apple's Python 3.9.
+from __future__ import annotations
+
 import contextlib
 import fcntl
 import hashlib
@@ -16,7 +19,10 @@ import sys
 import tempfile
 import time
 from pathlib import Path, PurePosixPath
-from typing import TypeGuard
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import TypeGuard  # Python 3.10+
 
 EDIT_TOOLS = ("Edit", "Write", "MultiEdit")
 STATE_MAX_AGE_SECONDS = 7 * 24 * 3600

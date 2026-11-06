@@ -1,4 +1,6 @@
 """Check the Bash PreToolUse guard hook blocks, fixes and allows the commands it should."""
+from __future__ import annotations
+
 import json
 import os
 from pathlib import Path

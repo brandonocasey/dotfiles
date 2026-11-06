@@ -13,6 +13,9 @@ after the edit, so a line that keeps its existing suppression does not ask.
 Exit 0 always; the decision is the JSON on stdout.
 """
 
+# Hooks run on the python3 on PATH, which can be Apple's Python 3.9.
+from __future__ import annotations
+
 import difflib
 import json
 import os

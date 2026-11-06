@@ -31,6 +31,9 @@ session have no safe fix.
 Exit 2 cancels the call and shows the message to the model.
 """
 
+# Hooks run on the python3 on PATH, which can be Apple's Python 3.9.
+from __future__ import annotations
+
 import json
 import os
 import re
