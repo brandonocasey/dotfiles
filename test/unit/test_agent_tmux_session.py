@@ -363,16 +363,38 @@ class ClaudePortNameTests(TmuxCase):
     def test_haiku_title_gets_port(self):
         (self.state / "one.haiku").write_text("Fix login\n")
         self.assertEqual(self.prompt("47950"), "47950 Fix login")
-        self.assertIn("Fix login", (self.state / "titles").read_text().splitlines())
         (self.state / "one").unlink()
         self.assertIsNone(self.prompt("47950 Fix login"))
 
-    def test_clear_replaces_ported_generated_name(self):
-        (self.state / "titles").write_text("Old generated\n")
-        self.run_hook("auto-title", "new", payload=dict(session_id="one"))
-        self.assertIsNone(self.prompt("47950 Old generated"))
+    def test_clear_drops_carried_name(self):
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="one", source="clear", session_title="45060 My name"))
+        self.assertEqual(self.prompt("45060 My name"), "47950")
         self.assertFalse((self.state / "one").exists())
+        self.assertIsNone(self.prompt("47950"))
+        self.assertFalse((self.state / "one.cleared").exists())
+        self.assertEqual(self.prompt("45060 My name"), "47950 My name")
 
+    def test_startup_records_no_cleared_name(self):
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="one", source="startup", session_title="Named with -n"))
+        self.assertFalse((self.state / "one.cleared").exists())
+
+    def test_tmux_drops_carried_name_after_clear(self):
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text('{"type":"custom-title","customTitle":"45060 Old"}\n')
+        payload = dict(session_id="one", transcript_path=str(transcript))
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(payload, source="clear", session_title="45060 Old"))
+        self.assertEqual(self.name(), "47950")
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="one", source="clear", session_title="45060 Old"))
+        self.run_hook("agent-tmux-session", "claude", payload=payload)
+        self.assertEqual(self.name(), "47950")
+        self.run_hook("agent-tmux-session", "sync", "45060 Old", "one")
+        self.assertEqual(self.name(), "47950")
+        self.run_hook("agent-tmux-session", "sync", "Renamed", "one")
+        self.assertEqual(self.name(), "47950 Renamed")
 
 if __name__ == "__main__":
     unittest.main()

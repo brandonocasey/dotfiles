@@ -5,8 +5,8 @@
 # soon as Haiku answers; Claude shows it above the prompt from the next prompt.
 # Skips unattended runs (claude -p), sessions the user named, slash commands,
 # and prompts under 4 words.
-# SessionStart hook with `new` (startup or /clear): the next title replaces a
-# name this hook set that /clear carried over.
+# SessionStart hook with `new` (startup or /clear): /clear carries the old
+# name over, so it records that name, and the next prompt drops it.
 # Every name, the user's too, keeps the session's port in front (see
 # agent-tmux-session.sh ported); titles are compared without it.
 [ "${CLAUDE_CODE_SESSION_ATTENDED:-1}" = 0 ] && exit 0
@@ -18,7 +18,6 @@ sid=$(printf '%s' "$input" | jq -r '.session_id // empty')
 old=$(printf '%s' "$input" | jq -r '.session_title // empty')
 tmux_hook=$(cd "$(dirname "$0")" && pwd)/agent-tmux-session.sh
 base=$(sh "$tmux_hook" bare "$old")
-generated() { grep -Fxq -- "$base" "$state/titles" 2>/dev/null; }
 # Sets the name when it differs from the current one, then ends the hook.
 finish() {
   [ -n "$1" ] && [ "$1" != "$old" ] &&
@@ -28,16 +27,21 @@ finish() {
 
 if [ "$1" = new ]; then
   rm -f "$state/$sid" "$state/$sid.haiku"
-  touch "$state/$sid.new"
+  [ "$(printf '%s' "$input" | jq -r '.source // empty')" = clear ] && [ -n "$old" ] &&
+    printf '%s\n' "$old" >"$state/$sid.cleared"
   exit 0
 fi
-current=$(sh "$tmux_hook" ported "$old" "$sid")
+if [ -f "$state/$sid.cleared" ] && [ "$old" = "$(cat "$state/$sid.cleared")" ]; then
+  base=
+  current=$(sh "$tmux_hook" ported '' "$sid")
+else
+  rm -f "$state/$sid.cleared"
+  current=$(sh "$tmux_hook" ported "$old" "$sid")
+fi
 [ -f "$state/$sid" ] && finish "$current"
 
 # Set by `claude -n`, /rename, or a resumed session's earlier name; keep it.
 # Claude's own generated title and this hook's Haiku title may be replaced.
-# /clear carries the old name over, so a new session also replaces a name this
-# hook set. Names the user chose are never in that list.
 transcript=$(printf '%s' "$input" | jq -r '.transcript_path // empty')
 native=
 [ -r "$transcript" ] && native=$(grep '"type":"ai-title"' "$transcript" | tail -n 1 | jq -r '.aiTitle // empty')
@@ -45,7 +49,6 @@ user_named() {
   [ -n "$base" ] || return 1
   [ "$base" = "$native" ] && return 1
   [ "$base" = "$(cat "$state/$sid.haiku" 2>/dev/null)" ] && return 1
-  [ -f "$state/$sid.new" ] && generated && return 1
   return 0
 }
 if user_named; then
@@ -102,10 +105,6 @@ title=$(cat "$state/$sid.haiku")
 }
 
 touch "$state/$sid"
-rm -f "$state/$sid.new"
 find "$state" -type f -mtime +30 -delete 2>/dev/null
-# Remember set names so /clear can tell them from user-chosen names.
-{ tail -n 499 "$state/titles" 2>/dev/null; printf '%s\n' "$title"; } >"$state/titles.$sid.tmp" &&
-  mv "$state/titles.$sid.tmp" "$state/titles"
 
 finish "$(sh "$tmux_hook" ported "$title" "$sid")"

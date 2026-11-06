@@ -14,7 +14,7 @@
 #   agent-tmux-session.sh bare <title>   print the title without a port in front
 # The first rename saves the session's old name; restore puts it back when the
 # agent exits, unless the user renamed the session since or another agent pane
-# still uses it. /clear keeps the name. Over ssh it never restores.
+# still uses it. /clear does not restore it. Over ssh it never restores.
 # Inside tmux it renames directly. Over ssh from a local tmux (the remote TERM is
 # tmux* or screen*), it sends a marked window-name escape to $SSH_TTY; the
 # window-renamed hook in the local tmux.conf turns that into a session rename.
@@ -51,6 +51,17 @@ session_port() {
   sid_file=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
   port=$(cat "${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline/port-$sid_file" 2>/dev/null)
   case $port in '' | *[!0-9]*) ;; *) printf '%s' "$port" ;; esac
+}
+
+# After /clear, Claude carries the old name over and auto-title.sh records it.
+# That name, and the port-only name from session start, count as no title.
+cleared_name() {
+  [ -n "$1" ] || return 0
+  cat "${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title/$1.cleared" 2>/dev/null
+}
+
+no_title() {
+  [ -z "$(bare "$1")" ] || [ "$1" = "$2" ]
 }
 
 # The title with the port of session <sid> in front; unchanged without a port.
@@ -123,8 +134,7 @@ fi
 # user renamed in tmux keeps that name until the title changes again.
 if [ "$agent" = sync ]; then
   [ "$target" = tmux ] || exit 0
-  # The port-only name from session start is no title; keep the Haiku one.
-  [ -n "$(bare "${2:-}")" ] || exit 0
+  no_title "${2:-}" "$(cleared_name "${3:-}")" && exit 0
   session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_id}' 2>/dev/null) || exit 0
   title=$(ported "${2:-}" "${3:-}")
   [ "$(safe "$title")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
@@ -160,6 +170,10 @@ claude)
   [ -n "$transcript" ] || exit 0
   sid=$(printf '%s' "$hook_input" | jq -r '.session_id // empty' 2>/dev/null)
   haiku_file=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title/$sid.haiku
+  cleared=$(cleared_name "$sid")
+  # At /clear, auto-title.sh may not have recorded the carried name yet.
+  [ "$(printf '%s' "$hook_input" | jq -r '.source // empty' 2>/dev/null)" = clear ] &&
+    cleared=$(printf '%s' "$hook_input" | jq -r '.session_title // empty' 2>/dev/null)
   ;;
 codex)
   session_id=$(printf '%s' "$hook_input" | jq -r '.session_id // empty' 2>/dev/null)
@@ -229,8 +243,7 @@ $(jq -rn '
       .["custom-title"] // "", .["ai-title"] // ""
     ' "$transcript" 2>/dev/null)
 EOF
-    # The port-only name from session start counts as no title.
-    [ -n "$(bare "$custom")" ] || custom=
+    no_title "$custom" "$cleared" && custom=
     printf '%s' "${custom:-${haiku:-$ai}}"
     return 0
   fi
