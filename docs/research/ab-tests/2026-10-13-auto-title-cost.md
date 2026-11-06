@@ -15,7 +15,7 @@ Cost estimate from third-party Haiku 5.5 pricing pages, then real `claude -p` ca
 - Lean non-bare call: starts at 620 tokens, 112 output tokens, $0.00018 for the first call, 1.2 s, title "Fix Login Timeout Bug in Auth Service". With CLAUDE.md files also turned off: 13 output tokens, $0.000013 cached, 0.9 s.
 - Plain `claude -p`: 210,575 starting tokens, 3,753 output tokens, $0.0098, 28.8 s. It worked on the task like a full agent (read code in three repos, no edits). Never use a plain call for this.
 - Measured lean cost: about $0.0002 per title at most, about $0.16 a month at 30 sessions a day. The assistant noted its $0.05 estimate was a bit low. On a subscription these calls count against usage limits instead of costing dollars.
-- A real-session test passed: a session got the title "Billing Database Postgres 17 Migration" in 1.8 s, saved the same way as `/rename`. Slash-command prompts, later prompts and sessions that already had a name were skipped.
+- A real-session test passed: a session got the title "Database Version Migration Plan" in 1.8 s, saved the same way as `/rename`. Slash-command prompts, later prompts and sessions that already had a name were skipped.
 
 ## Validity
 - Single calls, not repeated.

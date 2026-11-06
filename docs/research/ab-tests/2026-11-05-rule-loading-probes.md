@@ -1,6 +1,6 @@
 # Rule-loading probes and quality-rules analysis
 
-- Date: 2026-11-05 to 2026-11-06  Sessions: 2697176b (2026-11-05 22:21 to 2026-11-06 18:34 UTC, hive)  Raw data: `~/.cache/agents/output/quality-rules/proposals.md` and `loading-options.md` survive (checked with `test -e`). The scratch dir `quality-rules-review` in the chezmoi worktree is deleted.
+- Date: 2026-11-05 to 2026-11-06  Sessions: 2697176b (2026-11-05 22:21 to 2026-11-06 18:34 UTC, work repo)  Raw data: `~/.cache/agents/output/quality-rules/proposals.md` and `loading-options.md` survive (checked with `test -e`). The scratch dir `quality-rules-review` in the chezmoi worktree is deleted.
 - Related: [tester value analysis](2026-11-05-tester-value-analysis.md) (same day, same family of evidence analyses), [path-loaded quality rules](../changes/2026-11-06-path-loaded-quality-rules.md), [review-driven code rules](../changes/2026-11-05-review-driven-code-rules.md)
 
 ## Question
@@ -30,7 +30,7 @@ How do code-quality rules get loaded reliably in the main session and in sub-age
 Path-scoped rules for code standards plus a rule-gate hook that denies the first edit of a matching file until the rules are read. This covers files outside the working folder and edits after compaction. It is option 1 of 5 in `loading-options.md` ("Path-scoped rule plus a gate hook ... recommended").
 
 ## History
-- 2026-11-05 — Evidence analysis and probes run in session 2697176b (hive).
+- 2026-11-05 — Evidence analysis and probes run in session 2697176b (work repo).
 - 2026-11-05 — `395ba50f feat(review): trace what removed links guaranteed` (04:40 EST), `6e11c86d dx(code-standards): add review-driven code rules` (13:52 EST) and `7bd40559 dx(review): check added comments against the comment rules` (14:20 EST). The old record listed these under this test. They were committed before session 2697176b started (22:21 UTC is 17:21 EST), so they are related by theme (review-driven findings) and not by this session. Session not found (searched `agt sessions search` for the commit wording).
 - 2026-11-06 — `f712b4a5 dx(rules): load and tighten code quality rules`. Adds path-scoped rules (code-standards, tests, shell-scripts, chezmoi-source, matchers-and-guards, builds-and-dependencies, instruction-edits) under `home/dot_claude/exact_rules/`. Why: agents often edited code without the standards in context.
 - 2026-11-06 — `8e376208 dx(claude): gate edits until path rules are read`. Adds `rule-gate.py` and its tests. It denies the first edit of each matching file and clears records on compaction.

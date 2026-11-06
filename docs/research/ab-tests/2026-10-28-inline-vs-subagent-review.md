@@ -1,6 +1,6 @@
 # Inline review vs sub-agent review: toy rounds and a real-bug round
 
-- Date: 2026-10-28  Sessions: e93ffbb5 (R1-R3; session spans 2026-10-28 04:54-14:46 UTC, hive), 2a73f606 (verification and R4, 2026-10-28 14:52-21:45 UTC)  Raw data: answer keys at `~/.local/state/agents/answer-keys/review-inline-ab4/keys-real/r01..r25.json` (25 files, checked with `test -e`). 87 headless run transcripts survive as Claude project dirs named `*review-inline-ab*`. `results.md` is deleted.
+- Date: 2026-10-28  Sessions: e93ffbb5 (R1-R3; session spans 2026-10-28 04:54-14:46 UTC, work repo), 2a73f606 (verification and R4, 2026-10-28 14:52-21:45 UTC)  Raw data: answer keys at `~/.local/state/agents/answer-keys/review-inline-ab4/keys-real/r01..r25.json` (25 files, checked with `test -e`). 87 headless run transcripts survive as Claude project dirs named `*review-inline-ab*`. `results.md` is deleted.
 - Related: [Oct 14 Opus vs Sonnet reviewer](2026-10-14-reviewer-model-opus-vs-sonnet.md) (source of the 25 real-bug cases), [review replays vs Opus](2026-10-30-review-replays-vs-opus.md) (later dropped the inline mode), [global rules vs no rules](2026-10-28-global-rules-vs-none.md), [light vs normal reviewer](../changes/2026-10-14-light-vs-normal-reviewer.md)
 
 ## Question

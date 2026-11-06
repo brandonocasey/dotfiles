@@ -5,7 +5,7 @@
 - Related: [LSP tool token A/B](../ab-tests/2026-10-14-lsp-tool-tokens.md), [Best-practices pass](2026-10-best-practices-pass.md), [Review read ranges](2026-10-14-review-read-ranges.md)
 
 ## Change
-After an A/B (3 runs per setup, tracing a shared-name `publish` method in the vitrine repo), the session enabled LSP plugins, added the LSP tool to the explorer, worker, consult and tester roles (and reviewer, in `78752a06`), and set the rule: "For a named symbol's references or definition, use LSP first when available, loading it if deferred; otherwise ... `ast-grep` ... `rg -n`". Language servers were installed through mise plus a TypeScript 7 wrapper `typescript-language-server`.
+After an A/B (3 runs per setup, tracing a shared-name `publish` method in a work repo), the session enabled LSP plugins, added the LSP tool to the explorer, worker, consult and tester roles (and reviewer, in `78752a06`), and set the rule: "For a named symbol's references or definition, use LSP first when available, loading it if deferred; otherwise ... `ast-grep` ... `rg -n`". Language servers were installed through mise plus a TypeScript 7 wrapper `typescript-language-server`.
 
 ## History
 - 2026-10-12 — `47555eea dx(claude): enable lsp plugins for code navigation` and `8236cf3b dx(claude): enable rust lsp plugin`: plugins enabled in the settings template, before this change; they stayed off in practice because the settings script reset `enabledPlugins` on each apply (per `4a1b8bfc`).

@@ -22,7 +22,7 @@ Not found: any later session where the user confirmed or denied that links work 
 
 ## Sources
 - [tmux feature table (tty-features.c)](https://raw.githubusercontent.com/tmux/tmux/master/tty-features.c) — which terminals get the `hyperlinks` feature.
-- [Ghostty link hover with mouse reporting (mirror commit)](https://git.uoc.run.place/Applied-Software/ghostty/commit/318641f5a19699cfdace5dfe5afc3051fd681722) — hover works under mouse reporting only with the modifier.
+- Ghostty link hover with mouse reporting (mirror commit), Ghostty commit `318641f5` (link removed) — hover works under mouse reporting only with the modifier.
 - [claudeissues.com #90026](https://claudeissues.com/issue/90026-feature-fullscreen-tui-show-hover-feedback-on-links) — fullscreen TUI link hover.
 
 ## Evidence

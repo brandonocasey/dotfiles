@@ -55,7 +55,7 @@ To add an entry, copy a doc of the same kind and keep its sections. Name it `YYY
 - [Prompt-cache TTL, credential-read denies, cold-cache hook](changes/2026-10-14-cache-ttl-and-permission-denies.md) — current; 1h TTL, Read denies, cold-cache hook live
 - [Setup audit: sandbox, auto mode, Codex guard](changes/2026-10-13-setup-audit-sandbox-auto-mode.md) — changed; sandbox off, auto-mode rules; Codex hook dropped 10-19
 - [Codex rules file to prompt for merges and force pushes](changes/2026-10-13-codex-rules-file.md) — current; prompt rules live, no real-session prompt test found
-- [Datadog MCP loaded only via claude-dd](changes/2026-10-08-datadog-mcp-claude-dd.md) — removed 10-12; context-lean hides connector tools instead
+- [Observability MCP loaded only via a separate launcher](changes/2026-10-08-observability-mcp-opt-in.md) — removed 10-12; context-lean hides connector tools instead
 
 ### Terminal and UI
 
@@ -65,7 +65,7 @@ To add an entry, copy a doc of the same kind and keep its sections. Name it `YYY
 ### Incidental doc use (the change was not driven by the source)
 
 - [Codex tester sandbox and log access](changes/2026-10-21-codex-tester-sandbox.md) — replaced twice; now danger-full-access on all OSes
-- [BambooHR days to calendar out-of-office](changes/2026-10-15-bamboohr-calendar-ooo.md) — current; probe passed (HTTP 200), review fixed 5 bugs
+- [HR days to calendar out-of-office](changes/2026-10-15-hr-days-to-calendar-ooo.md) — current; probe passed (HTTP 200), review fixed 5 bugs
 - [tmux plugins installed on apply](changes/2026-10-13-tmux-plugins-on-apply.md) — current; runs only when the plugin list changes
 - [Rule trims driven by a local audit](changes/2026-10-13-rule-trims-local-audit.md) — current; 74 of 77 trim items applied, bare-Bash trim reverted
 

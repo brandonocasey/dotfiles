@@ -7,7 +7,7 @@
 Does having the LSP tool (Claude Code LSP plugins on) reduce tokens for symbol tracing?
 
 ## Setup
-Headless runs that trace a `publish` method in the vitrine repo. Its name is shared by another `publish`, so `rg` returns false matches. 3 runs per setup, with plugins forced off or on per run and alternated. An empty-prompt baseline ran first (2 runs per setting). Before this test, the session had added the LSP tool to the reviewer role and a search rule saying to use LSP "when available".
+Headless runs that trace a `publish` method in a work repo. Its name is shared by another `publish`, so `rg` returns false matches. 3 runs per setup, with plugins forced off or on per run and alternated. An empty-prompt baseline ran first (2 runs per setting). Before this test, the session had added the LSP tool to the reviewer role and a search rule saying to use LSP "when available".
 
 ## Results
 Average input tokens per run.
@@ -21,8 +21,8 @@ Average input tokens per run.
 
 ## Validity
 - 3 runs per setup; runs vary up to 3x. The session wrote: "direction, not exact" and that the gaps between rows are within run-to-run noise, apart from the forced-LSP row.
-- The early version of the test (before it moved into the vitrine repo) did not show a difference; the model never touched LSP in 5 tries.
-- Rust LSP did not work on this machine at the time (`rust-analyzer` failed with "infinite recursion detected" in the juncture repo, a mise and rustup loop). The user chose the rustup fix, then asked for mise instead and automatic reruns in chezmoi, so the three servers install through mise. This did not affect the vitrine trace.
+- The early version of the test (before it moved into that repo) did not show a difference; the model never touched LSP in 5 tries.
+- Rust LSP did not work on this machine at the time (`rust-analyzer` failed with "infinite recursion detected" in another work repo, a mise and rustup loop). The user chose the rustup fix, then asked for mise instead and automatic reruns in chezmoi, so the three servers install through mise. This did not affect the trace.
 
 ## Decision
 Strengthen the rule to "For a named symbol's references or definition, use LSP first when available, loading it if deferred", give the LSP tool to the reviewer, explorer, worker, consult and tester roles, and turn the three LSP plugins on (TypeScript, Python, Rust). The user replied "1, but mention when available" (option 1: strengthen the rule), then ran the rule script. The user ran the plugin-on script (`lsp-on.sh`) at 21:23 UTC because the assistant could not edit settings.

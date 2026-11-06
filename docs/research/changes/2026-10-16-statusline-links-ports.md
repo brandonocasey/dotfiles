@@ -31,8 +31,8 @@ No measurement. What the sessions reported:
 
 ## Sources
 - [Claude Code statusline docs](https://code.claude.com/docs/en/statusline) — status line input has only the main session's model, context and transcript. The reply: "Per the docs ... Unverified: I checked the docs and changelog for 2.1.296, not the live input while you view a subagent".
-- [Ghostty copy_url_to_clipboard #4676 (mirror commit)](https://git.uoc.run.place/Applied-Software/ghostty/commit/5e8ce20e71eaf149949ec54e4897d65ab287d47d) — OSC 8 links and click behavior in Ghostty.
-- [OSC 8 copy fix #7491 (mirror commit)](https://git.uoc.run.place/Applied-Software/ghostty/commit/f599f8c867efb0e4d7bd21873d6415ad9e4f33aa) — OSC 8 links and click behavior in Ghostty.
+- Ghostty copy_url_to_clipboard #4676 (mirror commit), Ghostty commit `5e8ce20e` (link removed) — OSC 8 links and click behavior in Ghostty.
+- OSC 8 copy fix #7491 (mirror commit), Ghostty commit `f599f8c8` (link removed) — OSC 8 links and click behavior in Ghostty.
 
 ## Evidence
 Cited in the reply. Sessions 46d4871f (2026-10-15) and e8cb296d (2026-10-16). The Ghostty links are mirror commits found by the session; whether they were fetched or seen as search snippets was not recorded in S.

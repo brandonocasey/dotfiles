@@ -15,9 +15,9 @@ What caused the roughly 595k-token calls ($4.83 for one reply) seen in the outpu
 - Root cause: ToolSearch was missing, so about 595-617 connector tools were sent inline, about 600k tokens per call. The agents-md plugin was not the cause. In the concise-style session, plugin on and off both used 50,403 tokens with project settings; only the run with user settings jumped to 588k.
 - The three costly or probe runs and what turned tool search off:
   - Oct 14 output-style A/B (the $4.83 run, 595k-601k tokens): `--tools Read` left out ToolSearch. Claude Code logs "ToolSearchTool is not available".
-  - Oct 12 borg probe (602,951 tokens written): a deliberate `ENABLE_TOOL_SEARCH=false` test.
+  - Oct 12 probe in a personal repo (602,951 tokens written): a deliberate `ENABLE_TOOL_SEARCH=false` test.
   - Oct 13 home-dir probe (603,224): ran through a local relay set as `ANTHROPIC_BASE_URL`. Claude Code's built-in docs say tool search is off by default with a custom base URL.
-- Size: 595 connector tools, 2.08M characters. Datadog alone is 1.36M, Notion about 270k, Gmail or Atlassian about 80k.
+- Size: 595 connector tools, 2.08M characters. One observability connector alone is 1.36M, a notes connector about 270k, a mail or issue-tracker connector about 80k.
 - Why the A/B numbers looked random: connectors connect a few seconds after a headless run starts. Short runs finished first and stayed small (about 50k). Longer runs had all the tools added in full.
 - `--strict-mcp-config` removes all 617 connector tools. `--tools Read` drops ToolSearch. `--tools Read,ToolSearch` keeps it. context-lean does not disable ToolSearch, and Claude Code defers MCP tools by default.
 - With ToolSearch present the context-lean mod deferred 2 tools (Agent and Skill); without it 0 (after the fix). In the real request without ToolSearch, all 617 connector tools (1.57M characters) were sent in full from the first request.

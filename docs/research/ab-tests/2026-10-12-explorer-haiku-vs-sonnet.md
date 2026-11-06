@@ -1,20 +1,20 @@
 # Explorer routing: Haiku vs Sonnet on 5 search tasks
 
-- Date: 2026-10-12 (15:55-16:12 UTC)  Sessions: f3be5936 (borg repo; the tasks ran in web-player)  Raw data: none.
+- Date: 2026-10-12 (15:55-16:12 UTC)  Sessions: f3be5936 (a personal repo; the tasks ran in a work repo)  Raw data: none.
 - Related: [Haiku delegation probes](2026-10-30-haiku-delegation-probes.md) (later superseded the explorer routing), [Effort trials](2026-11-02-effort-trials.md)
 
 ## Question
 Can searches move from Sonnet to Haiku?
 
 ## Setup
-5 tasks of rising difficulty in web-player: usage listing, config lookup, test selection, ad-loading trace, `play()` trace. One Haiku and one Sonnet agent each (10 agents), graded by the assistant against its own exact answers.
+5 tasks of rising difficulty in a work repo: usage listing, config lookup, test selection, loading-path trace, public-API call trace. One Haiku and one Sonnet agent each (10 agents), graded by the assistant against its own exact answers.
 
 ## Results
 Per task (Haiku vs Sonnet; Haiku cost as a share of Sonnet, estimated from each agent's reported token count at list prices):
 - Config default: Haiku correct and more complete; Sonnet correct but cited one wrong line (238 vs 244). About 55%.
 - List all usages of an event: both found all 10 files (Haiku also flagged a borderline 11th). About 37%.
-- Trace `play()` to the video element: Haiku missed the first hop (the public API wrapper that also blocks play in the free edition); Sonnet complete. About 75%, and 2.4x slower.
-- Trace how VAST ads load: Haiku gave exact lines but missed that some builds bundle the ad code; Sonnet complete with a few line numbers off. About 57%.
+- Trace a public API call to the underlying element: Haiku missed the first hop (the public API wrapper that also gates the call in a restricted edition); Sonnet complete. About 75%, and 2.4x slower.
+- Trace a loading path: Haiku gave exact lines but missed that some builds bundle that code; Sonnet complete with a few line numbers off. About 57%.
 - Pick tests for a changed file: Haiku missed one test folder; Sonnet found it but made up the import line it cited. About 45%.
 - On hard traces Haiku made 2-3x more tool calls, so the savings shrank. Sonnet invented one fact; Haiku invented none.
 - Correction to the earlier record: it said no per-arm cost figures were reported and called Haiku test selection "strong". The session's final table gave the cost estimates above and said Haiku missed one test folder.

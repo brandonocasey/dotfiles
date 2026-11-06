@@ -5,10 +5,10 @@
 - Related: [auto-compact 400k](2026-10-14-auto-compact-400k.md), [compact-bench test](../ab-tests/2026-10-07-compact-bench-500k.md), [not adopted](not-adopted.md)
 
 ## Change
-None. The session answered "what are the negatives of auto-compact at ~500k", gathered studies and Anthropic guidance, estimated the cost saving, and ran a local A/B on web-player. Its attempt to set `autoCompactWindow` 500k in `~/.claude-two/settings.json` was blocked by the auto mode classifier (reason shown: Self-Modification), and the settings stayed as they were.
+None. The session answered "what are the negatives of auto-compact at ~500k", gathered studies and Anthropic guidance, estimated the cost saving, and ran a local A/B on a work repo. Its attempt to set `autoCompactWindow` 500k in `~/.claude-two/settings.json` was blocked by the auto mode classifier (reason shown: Self-Modification), and the settings stayed as they were.
 
 ## History
-- 2026-10-07 — Session 990ee95c (17:21Z to 21:57Z). The user asked about negatives, studies, Anthropic guidance, dollar savings ("12$ per session?"), and whether quality drops after a compact. Then: "is there any way that we can benchmark something like this locally ... you do it in the web-players repo with a big task. I want to compare cost, quality, and time taken. I want to make sure that we don't allow sessions to cheat off of one another."
+- 2026-10-07 — Session 990ee95c (17:21Z to 21:57Z). The user asked about negatives, studies, Anthropic guidance, dollar savings ("12$ per session?"), and whether quality drops after a compact. Then: "is there any way that we can benchmark something like this locally ... you do it in a work repo with a big task. I want to compare cost, quality, and time taken. I want to make sure that we don't allow sessions to cheat off of one another."
 - 2026-10-07 — Three rounds ran (see the [test doc](../ab-tests/2026-10-07-compact-bench-500k.md)). The user asked to "do round 3" and later "delete" the 13 GB of scratch copies.
 - 2026-10-07 — Commits: none from this session. A search of `git log --grep=compact` found `a0a1ba46`, `2145d42a` and `ce9f9ea6`, which are the later 400k/433k commits with no link to this benchmark.
 - 2026-10-14 — The 400k change was made in other sessions (01c1e1f7, dda15a16). See [auto-compact 400k](2026-10-14-auto-compact-400k.md).

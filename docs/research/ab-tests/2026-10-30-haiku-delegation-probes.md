@@ -34,14 +34,14 @@ Which tasks can go to Haiku to save cost, and where does Haiku break?
 - Usage lists and file finds go to `cheap`. Explorer moved to Haiku xhigh.
 - `cheap` does first-pass failure triage (worker diagnoses).
 - Workflows pass `claude-haiku-5-5` explicitly.
-- Haiku routes added to jenkins, ticket, session-resume, write-docs and llm-setup-audit.
+- Haiku routes added to the CI-server skill, ticket, session-resume, write-docs and llm-setup-audit.
 - Reviewer unchanged. The nested sub-agents ban was kept (option 1; the user asked "should we let agents spawn sub agents cheaper than them?" and "whats the risk?", then chose 1).
 
 ## History
 - 2026-10-14 — `61727b38 dx(claude): set per-model effort, cheap at xhigh`. Earlier baseline: cheap on Haiku at xhigh, explorer on Sonnet medium.
 - 2026-10-30 — Probes run in session c974856b.
-- 2026-10-30 13:29 — `8eac3c48 dx(skills): stop pinning sonnet in four skills`. A pinned model switches the session model and rewrites the prompt cache. Four skills (disk-cleanup, jira-versions, land, worktree-cleanup) lost their Sonnet pin.
-- 2026-10-30 13:43 — `9a476e31 dx(skills): hand more read-only work to haiku agents`. Explorer from Sonnet medium to Haiku xhigh. `cheap` triage routing, a "confirm with one broader `rg`" step for explorer lists, `claude-haiku-5-5` for workflow `cheap` and `explorer` agents, and cheap-agent steps in jenkins, ticket, session-resume, write-docs and llm-setup-audit. The `roles.md` lines "explorer matched Sonnet on usage lists and call traces" and "Haiku matched Sonnet on log triage" start here.
+- 2026-10-30 13:29 — `8eac3c48 dx(skills): stop pinning sonnet in four skills`. A pinned model switches the session model and rewrites the prompt cache. Four skills (disk-cleanup, issue-tracker versions, land, worktree-cleanup) lost their Sonnet pin.
+- 2026-10-30 13:43 — `9a476e31 dx(skills): hand more read-only work to haiku agents`. Explorer from Sonnet medium to Haiku xhigh. `cheap` triage routing, a "confirm with one broader `rg`" step for explorer lists, `claude-haiku-5-5` for workflow `cheap` and `explorer` agents, and cheap-agent steps in the CI-server skill, ticket, session-resume, write-docs and llm-setup-audit. The `roles.md` lines "explorer matched Sonnet on usage lists and call traces" and "Haiku matched Sonnet on log triage" start here.
 - 2026-10-30 13:49 — `fe308270 dx(skills): keep audit skill under size limit, fix replay count`. Housekeeping after the replay count changed (the review replay, see that test).
 - 2026-11-02 — `750e9971 dx(agents): lower haiku roles to medium effort`. Explorer and cheap dropped from xhigh to medium after a 20-of-20 trial (see effort trials).
-- Today: `explorer` and `cheap` are `claude-haiku-5-5`, effort `medium`. `roles.md` keeps the triage line and "Probe: Haiku matched Sonnet on log triage". `workflows.md` still says "For `cheap` and `explorer` agents always pass `claude-haiku-5-5`". `sub-agents/SKILL.md`: "Sub-agents never spawn sub-agents." The Haiku routes in jenkins, ticket, session-resume and write-docs are present.
+- Today: `explorer` and `cheap` are `claude-haiku-5-5`, effort `medium`. `roles.md` keeps the triage line and "Probe: Haiku matched Sonnet on log triage". `workflows.md` still says "For `cheap` and `explorer` agents always pass `claude-haiku-5-5`". `sub-agents/SKILL.md`: "Sub-agents never spawn sub-agents." The Haiku routes in the CI-server skill, ticket, session-resume and write-docs are present.

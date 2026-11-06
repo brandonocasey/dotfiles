@@ -9,7 +9,7 @@ Does the stronger review wording work on Opus, and do harder tasks separate the 
 ## Setup
 - 6 Opus runs (archive x3, refund x3) with the reworded rule.
 - Then 3 harder tasks (CSV import, coupons, order edit; hidden spec and edge tests; reference solutions pass), calibrated with 9 no-rules Opus runs.
-- Then 4 tasks from real repo history (vitrine notifications TS 33 files, agent-review sparse checkout and tracking worktree, agt check cache), built. Only 3 calibration runs finished.
+- Then 4 tasks from real repo history (a work repo's notifications feature in TypeScript, 33 files, agent-review sparse checkout and tracking worktree, agt check cache), built. Only 3 calibration runs finished.
 
 ## Results
 - Reworded rule: review ran 6 of 6 (vs 6 of 24 under current rules). Every final report stated the review result.

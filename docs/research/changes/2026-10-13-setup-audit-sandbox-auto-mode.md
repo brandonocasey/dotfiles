@@ -1,12 +1,12 @@
 # Setup audit against current Claude Code and Codex docs: sandbox, auto mode, Codex guard
 
-- Status (2026-11-06): changed. Current Claude settings: `"sandbox": {"enabled": false}` and no narrow merge/approve/Jira-write allows in `home/.chezmoitemplates/claude-settings-modify.sh`; an `autoMode.allow` entry covers MR/PR and Jira actions the user asked for, including re-enabling paused auto-merge; Codex `web_search = "cached"` in `home/dot_codex/modify_private_config.toml.tmpl`. The Codex force-push guard hook from this audit is gone (removed 2026-10-19, see History).
+- Status (2026-11-06): changed. Current Claude settings: `"sandbox": {"enabled": false}` and no narrow merge/approve/issue-tracker-write allows in `home/.chezmoitemplates/claude-settings-modify.sh`; an `autoMode.allow` entry covers MR/PR and issue-tracker actions the user asked for, including re-enabling paused auto-merge; Codex `web_search = "cached"` in `home/dot_codex/modify_private_config.toml.tmpl`. The Codex force-push guard hook from this audit is gone (removed 2026-10-19, see History).
 - Topic: Settings, permissions and security
 - Related: [Codex rules file](2026-10-13-codex-rules-file.md), [Prompt-cache TTL and permission denies](2026-10-14-cache-ttl-and-permission-denies.md), [Codex tester sandbox](2026-10-21-codex-tester-sandbox.md)
 
 ## Change
 - Global Claude sandbox turned off, with its dead config removed.
-- Narrow allow rules for merges, approvals and Jira writes removed so the auto-mode classifier sees them (`Bash(glab mr approve*)`, `Bash(glab mr merge*)`, `Bash(gh pr merge*)`, `Bash(gh pr review*--approve*)`, `Bash(jira-api POST *)`, `Bash(jira-api PUT *)`). An `autoMode` allow rule restores merges the user asked for and auto-merge re-enabled after a push.
+- Narrow allow rules for merges, approvals and issue-tracker writes removed so the auto-mode classifier sees them (`Bash(glab mr approve*)`, `Bash(glab mr merge*)`, `Bash(gh pr merge*)`, `Bash(gh pr review*--approve*)`, `Bash(<issue-tracker CLI> POST *)`, `Bash(<issue-tracker CLI> PUT *)`). An `autoMode` allow rule restores merges the user asked for and auto-merge re-enabled after a push.
 - A Codex force-push guard hook (`guard.py`, wired in `hooks.json`).
 - Codex `web_search = "cached"` (default under full access is live).
 - Session logs chmod 600 (done locally; no commit).
@@ -16,13 +16,13 @@ Correction to S: S listed "blanket `Bash`/`Task` allows" removed in this audit. 
 Earlier, 2026-10-12, read-only allow rules and a sandbox with auto-allow were added (session 67edba11) and then reversed by this audit.
 
 ## History
-- 2026-10-12 — session 67edba11 (borg): user: "I pretty much never want to deny claude code running commands, but i'm not sure how to stop needing to babysit everything. Would it be better to have a virtual machine ...". The assistant recommended the built-in sandbox with auto-allow, plus `/fewer-permission-prompts`; a VM or dev container was costed but not chosen.
+- 2026-10-12 — session 67edba11 (personal repo): user: "I pretty much never want to deny claude code running commands, but i'm not sure how to stop needing to babysit everything. Would it be better to have a virtual machine ...". The assistant recommended the built-in sandbox with auto-allow, plus `/fewer-permission-prompts`; a VM or dev container was costed but not chosen.
 - 2026-10-12 — commit `f8b0eb32 dx(claude): allow common read-only commands`: adds read-only allows (`tmux capture-pane`, `chezmoi status`/`diff`/`source-path`, `glab mr list`/`view`, `claude plugin validate`).
 - 2026-10-12 — commit `f73670c7 dx(claude): enable sandbox with open network`: sandbox enabled with auto-allow, all domains, write access to agent dirs. (Not in S.)
 - 2026-10-12 — commit `8ee8f585 dx(claude): route outward commands to auto mode`: adds `excludedCommands` (glab, gh, git push, curl, ssh, tmux, claude, codex and others) so they leave the sandbox, widens writable paths to `~/Projects`, `~/.cache` and `~/Library/Caches`, and adds an auto-mode rule to retry with `dangerouslyDisableSandbox` after sandbox failures.
 - 2026-10-13 — commit `02856e46 dx(claude): turn off the local sandbox`: `settings.local.json` set `sandbox.enabled` false, which overrode the global block. (Not in S; this is the "local settings file" the audit found.)
 - 2026-10-13 to 10-14 — session bd76000a: `/open-ended` "audit my setup for current codex and claude code best practices". 6 audit rounds, 37 confirmed findings; top finding: neither tool had an enforced safety boundary. The user told it which to fix.
-- 2026-10-13 — commit `d67738e3 security(claude): route merges and approvals through auto mode`: sandbox off in global settings, dead sandbox config removed, narrow merge/approve/Jira allows removed, merge auto-mode rule added, retry-with-`dangerouslyDisableSandbox` rule dropped, sandbox override removed from `settings.local.json`. A duplicate of this commit exists as `91ef45c3` (same subject, same time, not reachable from main); S listed both.
+- 2026-10-13 — commit `d67738e3 security(claude): route merges and approvals through auto mode`: sandbox off in global settings, dead sandbox config removed, narrow merge/approve/issue-tracker allows removed, merge auto-mode rule added, retry-with-`dangerouslyDisableSandbox` rule dropped, sandbox override removed from `settings.local.json`. A duplicate of this commit exists as `91ef45c3` (same subject, same time, not reachable from main); S listed both.
 - 2026-10-13 — commit `ac18047a security(codex): deny force pushes the rules cannot prompt`: adds `home/dot_codex/hooks/executable_guard.py` and `hooks.json`; also changes the pr-fix push command to the one plain form the Codex rules prompt on. 82 test cases, two reviews.
 - 2026-10-13 — commit `1c69eb92 security(codex): use cached web search under full access`.
 - 2026-10-15 — `1cc6cc7d dx(claude): simplify auto-mode rules` and `2f1ff037 dx(claude): restore dropped auto-mode exceptions` rewrote the auto-mode allow list; the merge rule with the re-enable-auto-merge wording survives in today's file.
@@ -50,4 +50,4 @@ Session 67edba11:
 - [Claude Code dev container](https://docs.anthropic.com/en/docs/claude-code/devcontainer) — reference container with a network firewall.
 
 ## Evidence
-bd76000a was audit style with sub-agent doc reads, an 82-case guard test and two reviews (6 audit rounds, 37 confirmed findings). The assistant stated one open point, "I didn't confirm how auto mode treats the bare Bash rule", which bd76000a later resolved. The sandbox decision was reversed within a day. Sessions bd76000a (2026-10-13/14) and 67edba11 (2026-10-12, borg; VM vs sandbox question and `/fewer-permission-prompts`). Doc pages were fetched by sub-agents and summarized; per-claim quotes were not kept.
+bd76000a was audit style with sub-agent doc reads, an 82-case guard test and two reviews (6 audit rounds, 37 confirmed findings). The assistant stated one open point, "I didn't confirm how auto mode treats the bare Bash rule", which bd76000a later resolved. The sandbox decision was reversed within a day. Sessions bd76000a (2026-10-13/14) and 67edba11 (2026-10-12, personal repo; VM vs sandbox question and `/fewer-permission-prompts`). Doc pages were fetched by sub-agents and summarized; per-claim quotes were not kept.

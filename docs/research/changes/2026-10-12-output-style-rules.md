@@ -8,7 +8,7 @@
 Main-session-only rules moved out of the shared `AGENTS.md` into `~/.claude/output-styles/main.md` (`keep-coding-instructions: true`), and role bodies are shared across Claude and Codex. Gemini, opencode and pi get a full copy of the shared plus main rules in their own instruction files.
 
 ## History
-- 2026-10-12 — session d1531dd8 (borg), `/llm-setup-audit`. User: "would it be better to let agents read the global claude.md?", then "can we add a file that only the main session reads?", then "do all of the proposals and the output style".
+- 2026-10-12 — session d1531dd8 (personal repo), `/llm-setup-audit`. User: "would it be better to let agents read the global claude.md?", then "can we add a file that only the main session reads?", then "do all of the proposals and the output style".
 - 2026-10-12 14:43 local — `0248759e dx(agents): move main-session rules to output style`: adds the output style, shrinks `private_AGENTS.md` (26 lines changed), adds main-rules copies for opencode, gemini and pi, and registers the style in the managed `settings.json`.
 - 2026-10-12 14:43 local — `700218a6 dx(agents): share role bodies across claude and codex`: role bodies become shared templates (`explorer`, `reviewer`, `tester`, `worker`, `deep-review`, `manual-tester`), replacing per-harness copies (35 files changed).
 - 2026-10-12 — `68dbce7f dx(agents): limit claude-two rule to claude`: "The claude-two command rule applies only in Claude Code. Codex, Gemini, opencode, and pi no longer load it."
@@ -23,4 +23,4 @@ Measured in the session: the shared file dropped from about 2.65k to 1.4k tokens
 - [Codex config reference](https://learn.chatgpt.com/docs/config-file/config-reference) (also under developers.openai.com/codex/...) — `developer_instructions`. "Every role file must set its own, which replaces the main one (per the docs; I haven't tested it)".
 
 ## Evidence
-Cited in the reply with an explicit "haven't tested" for the Codex half. The assistant's reply also cited a Codex custom-agents page (https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents), which the earlier note omitted. Session d1531dd8 (2026-10-12, borg; `/llm-setup-audit`, then "can we add a file that only the main session reads?").
+Cited in the reply with an explicit "haven't tested" for the Codex half. The assistant's reply also cited a Codex custom-agents page (https://learn.chatgpt.com/docs/agent-configuration/subagents#custom-agents), which the earlier note omitted. Session d1531dd8 (2026-10-12, personal repo; `/llm-setup-audit`, then "can we add a file that only the main session reads?").

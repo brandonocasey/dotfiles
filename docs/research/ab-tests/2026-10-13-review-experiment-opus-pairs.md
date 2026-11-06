@@ -1,12 +1,12 @@
 # Review experiment: single Opus xhigh vs xhigh plus Sonnet vs xhigh plus Opus low
 
-- Date: 2026-10-13 (15:40-18:20 UTC; test about 16:10-16:25)  Sessions: 1602cbf2 (web-player)  Raw data: `~/.cache/agents/scratch/review-experiment/` is deleted (`test -e` fails). No run transcripts found under that name.
+- Date: 2026-10-13 (15:40-18:20 UTC; test about 16:10-16:25)  Sessions: 1602cbf2 (work repo)  Raw data: `~/.cache/agents/scratch/review-experiment/` is deleted (`test -e` fails). No run transcripts found under that name.
 - Related: [Review misses and the deep review](../changes/2026-10-13-review-misses-deep-review.md), [Review loop](../changes/2026-10-13-review-loop.md), [Deep vs normal reviewer](2026-10-08-deep-vs-normal-reviewer.md), [Reviewer model A/B](2026-10-14-reviewer-model-opus-vs-sonnet.md)
 
 ## Question
-Why did reviews miss 5 issues that a human reviewer ("DJ") found on MR 3 in claude-marketplace, and does a stronger or paired reviewer find them?
+Why did reviews miss 5 issues that a coworker found on one work-repo MR, and does a stronger or paired reviewer find them?
 
-Cause found before the test (session, 15:54 UTC): the earlier review was set up badly, not run on a weak model. Its brief told the reviewer the hooks were "copied unchanged from a personal plugin already in use" and to focus on install and README issues. The deeper `deep-review` was skipped although the rules required it for this change (persistence, concurrency, trust boundaries, more than about 400 lines of logic). Only one Sonnet medium reviewer ran, and neither reviewer ran the code. The DJ review bot (https://gitlab.com/jwpconnatix/groups/aipoc/review-bot, read in the session) runs Opus 5.5 at xhigh on the diff only, with a fixed brief that never shows the author's reasons.
+Cause found before the test (session, 15:54 UTC): the earlier review was set up badly, not run on a weak model. Its brief told the reviewer the hooks were "copied unchanged from a personal plugin already in use" and to focus on install and README issues. The deeper `deep-review` was skipped although the rules required it for this change (persistence, concurrency, trust boundaries, more than about 400 lines of logic). Only one Sonnet medium reviewer ran, and neither reviewer ran the code. The coworker's review bot (a work repo, read in the session) runs Opus 5.5 at xhigh on the diff only, with a fixed brief that never shows the author's reasons.
 
 ## Setup
 Original MR code, a fixed new brief, 6 independent reviews: Opus xhigh x2, Sonnet medium x2, Opus low x2. Scored on 5 known findings: names, `##` split, resend, unordered writes, scanning untrusted results.
@@ -17,7 +17,7 @@ Original MR code, a fixed new brief, 6 independent reviews: Opus xhigh x2, Sonne
 - Sonnet medium #1: 2/5 (47 s, 31k tokens). Sonnet medium #2: 2/5 (53 s, 27k, 1 false positive).
 - Opus low #1: 0/5 (38 s, 22k; spotted finding 1 but held it back). Opus low #2: 1/5 (30 s, 20k).
 - Combined: xhigh alone 3/5, plus Sonnet 3/5, plus Opus low 3/5.
-- Nobody caught findings 4 and 5 (performance and resource issues). The brief never asked about them; DJ's prompt lists `performance` and `resource-management`.
+- Nobody caught findings 4 and 5 (performance and resource issues). The brief never asked about them; the bot's prompt lists `performance` and `resource-management`.
 - xhigh also found 2 extra real bugs in code the pushed fixes did not touch (restore-notice, empty-text), unverified at the time.
 - Cost about 7x the tokens and 13x the time of Sonnet.
 - Assistant's reading: effort mattered more than model; Opus at low did worse than Sonnet at medium.

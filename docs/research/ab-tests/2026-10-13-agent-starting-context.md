@@ -1,6 +1,6 @@
 # Agent starting-context audit
 
-- Date: 2026-10-13 (17:59-18:22 UTC)  Sessions: 8be7c9b7 (web-player)  Raw data: none.
+- Date: 2026-10-13 (17:59-18:22 UTC)  Sessions: 8be7c9b7 (work repo)  Raw data: none.
 - Related: [Reviewer model A/B](2026-10-14-reviewer-model-opus-vs-sonnet.md) (first-request context of every role, a day later), [Agents.md without CLAUDE.md probe](2026-10-15-agents-md-without-claude-md.md), [Output-style rules](../changes/2026-10-12-output-style-rules.md) (sub-agents skip CLAUDE.md with `omitClaudeMd`)
 
 ## Question
@@ -24,7 +24,7 @@ How many tokens does each agent start with, and what can be trimmed?
 - The live session cached old agent settings, so the effect showed only in new sessions; the "before" numbers came from the earlier runs in the same session.
 - Part sizes are character-count estimates that add up to the measured totals.
 - `claude`, `general-purpose` and `claude-code-guide` are built in, so they cannot be reconfigured; the fix is to use named roles.
-- Risk accepted: worker no longer sees repo rules on lint, the old-TV browser floor or commit format, so each spawn prompt must pass them.
+- Risk accepted: worker no longer sees repo rules on lint, platform support rules or commit format, so each spawn prompt must pass them.
 
 ## Decision
 Add `omitClaudeMd: true` to `worker` and `manual-tester`. The review found that worker lost its safety rules along with the instruction files and had no scratch-folder rule, so a safety line (no pushes, external posts, credential use or deletion unless the prompt allows) and the scratch rule were added to the role files. Original files were backed up before the edit.
