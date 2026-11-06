@@ -51,6 +51,7 @@ fi
 # --- Git branch ---
 [ -z "$cwd" ] && cwd="$PWD"
 git_info=""
+git_status=""
 git_root_name=""
 git_top=""
 repo_url=""
@@ -135,6 +136,24 @@ if cd "$cwd" 2>/dev/null &&
     [ "$git_info" = "$default_branch" ] && git_info=""
   else
     case "$git_info" in master | main | develop | dev) git_info="" ;; esac
+  fi
+
+  # Status of the shown checkout in Powerlevel10k's order: "⇣behind ⇡ahead
+  # *stashes ~conflicted +staged !unstaged ?untracked", zero counts left out.
+  # Porcelain v2 C-quotes unusual paths, so every entry is one line.
+  if [ -n "$git_top" ]; then
+    git_status=$(git -C "$git_top" --no-optional-locks status --porcelain=v2 --branch --show-stash 2>/dev/null | awk '
+      /^# branch\.ab / { ahead = substr($3, 2); behind = substr($4, 2) }
+      /^# stash / { stash = $3 }
+      /^u / { conflicted++ }
+      /^[12] / { if (substr($2, 1, 1) != ".") staged++; if (substr($2, 2, 1) != ".") unstaged++ }
+      /^\? / { untracked++ }
+      function add(sym, n) { if (n + 0) out = out " " sym n }
+      END {
+        add("⇣", behind); add("⇡", ahead); add("*", stash); add("~", conflicted)
+        add("+", staged); add("!", unstaged); add("?", untracked)
+        print substr(out, 2)
+      }')
   fi
 fi
 
@@ -987,6 +1006,8 @@ loc_seg=""
 if [ -n "$git_info" ]; then
   loc_seg=$(printf '%s\033[38;5;245m#\033[0m\033]8;;%s\a\033[97m%s\033[0m\033]8;;\a' "$loc_seg" "$loc_link" "$git_info")
 fi
+# The git status goes in front, in cyan, so a narrow terminal cuts the branch first.
+[ -n "$git_status" ] && loc_seg=$(printf '\033[36m%s\033[0m %s' "$git_status" "$loc_seg")
 
 # 5-hour and 7-day windows: "<countdown> <gauge>" each, no labels, one line
 # each so their bars line up. Each links to the claude.ai usage page.
@@ -1031,7 +1052,7 @@ if [ -n "$sp_seg" ]; then
 fi
 
 # The first line is "<account>|<IP>:<port>|", the model, context, and any
-# spend limit, then "<project>#<branch>", which ends the line since a long
+# spend limit, then "<git status> <project>#<branch>", which ends the line since a long
 # branch name runs longest. The gauge lines follow.
 [ -n "$loc_seg" ] && parts="$parts$sep$loc_seg"
 
