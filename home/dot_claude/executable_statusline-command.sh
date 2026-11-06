@@ -637,6 +637,20 @@ lan_ip() {
   [ -z "$host" ] && host=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i < NF; i++) if ($i == "src") { print $(i + 1); exit } }')
   printf '%s' "$host"
 }
+# SGR colours of the segment: a listening port or no port, a port nothing
+# listens on, and a port held outside the session.
+srv_sgr_live=35
+srv_sgr_idle="2;35"
+srv_sgr_conflict=31
+# Fills the address markers in $1 with the full address $2.
+srv_fill() {
+  local s=${1//@.IP@/$2}
+  printf '%s' "${s//@IP@/$2}"
+}
+# Prints $1 without SGR and OSC 8 escapes.
+plain_text() {
+  printf '%s' "$1" | sed -E $'s/\033\\[[0-9;]*m//g; s/\033\\]8;;[^\a]*\a//g'
+}
 srv_detect() {
   local listen pids cwds titles procs rows ports host assigned shown row
   host=$(lan_ip)
@@ -722,7 +736,7 @@ srv_detect() {
     shown=${row%%$'\t'*}
   fi
   if [ -z "$shown" ]; then
-    [ -n "$host" ] && printf '\033[35m@.IP@\033[0m'
+    [ -n "$host" ] && printf '\033[%sm@.IP@\033[0m' "$srv_sgr_live"
     return 0
   fi
   # A process outside the session on the assigned port (one whose visible
@@ -730,14 +744,14 @@ srv_detect() {
   # and the .conflict file makes session-port.sh pick a new block on resume.
   # The file goes once the port is the session's again or free.
   if [ -n "$row" ]; then
-    srv_link "$shown" "${row##*$'\t'}" "35" "@IP@:$shown"
+    srv_link "$shown" "${row##*$'\t'}" "$srv_sgr_live" "@IP@:$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   elif [ -n "$assigned" ] && printf '%s\n' "$listen" | awk -F '\t' -v p="$assigned" '
     { sub(/.*:/, "", $2) } $2 == p { found = 1 } END { exit !found }'; then
-    printf '\033[31m@IP@:%s\033[0m' "$shown"
+    printf '\033[%sm@IP@:%s\033[0m' "$srv_sgr_conflict" "$shown"
     : > "$rl_dir/port-$rl_sid.conflict"
   else
-    printf '\033[2;35m@IP@:%s\033[0m' "$shown"
+    printf '\033[%sm@IP@:%s\033[0m' "$srv_sgr_idle" "$shown"
     rm -f "$rl_dir/port-$rl_sid.conflict"
   fi
   return 0
@@ -754,7 +768,7 @@ srv_seg=""
 srv_ip=""
 if [ -z "$rl_sid" ]; then
   srv_ip=$(lan_ip)
-  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[35m@.IP@\033[0m')
+  [ -n "$srv_ip" ] && srv_seg=$(printf '\033[%sm@.IP@\033[0m' "$srv_sgr_live")
 else
   srv_cache="$rl_dir/servers-ip-$rl_sid"
   srv_mtime=$(stat -c %Y "$srv_cache" 2>/dev/null || stat -f %m "$srv_cache" 2>/dev/null)
@@ -803,22 +817,22 @@ else
   srv_ip=${srv_out%%$'\n'*}
   [ "$srv_out" = "$srv_ip" ] || srv_seg=${srv_out#*$'\n'}
 fi
-# In tmux the segment moves to tmux's status line: the pane option
-# @agent_addr holds the full address in the segment's colour, and tmux.conf
-# shows it for the active pane while Claude runs there.
+# In tmux the address goes to the pane option @agent_addr, in the segment's
+# colour, instead of this line.
 if [ -n "$TMUX_PANE" ]; then
   if [ -n "$srv_seg" ]; then
-    srv_tmux=${srv_seg//@.IP@/$srv_ip}
-    srv_tmux=$(printf '%s' "${srv_tmux//@IP@/$srv_ip}" | sed -E $'s/\033\\[[0-9;]*m//g; s/\033\\]8;;[^\a]*\a//g')
+    srv_tmux=$(plain_text "$(srv_fill "$srv_seg" "$srv_ip")")
     case $srv_seg in
-      *$'\033[31m'*) srv_style="fg=red" ;;
-      *$'\033[2;35m'*) srv_style="fg=magenta,dim" ;;
+      *$'\033['"$srv_sgr_conflict"m*) srv_style="fg=red" ;;
+      *$'\033['"$srv_sgr_idle"m*) srv_style="fg=magenta,dim" ;;
       *) srv_style="fg=magenta" ;;
     esac
-    tmux set-option -p -t "$TMUX_PANE" @agent_addr "#[$srv_style]$srv_tmux" </dev/null >/dev/null 2>&1 &
+    srv_tmux_args=(set-option -p -t "$TMUX_PANE" @agent_addr "#[$srv_style]$srv_tmux")
   else
-    tmux set-option -p -u -t "$TMUX_PANE" @agent_addr </dev/null >/dev/null 2>&1 &
+    srv_tmux_args=(set-option -p -u -t "$TMUX_PANE" @agent_addr)
   fi
+  # Hook shells may find a system tmux client incompatible with the server.
+  { srv_tmux_cmd=$(sh "$HOME/.config/tmux/scripts/tmux-client.sh") && "$srv_tmux_cmd" "${srv_tmux_args[@]}"; } </dev/null >/dev/null 2>&1 &
   srv_seg=""
 fi
 
@@ -1077,9 +1091,8 @@ fi
 # Show the full IP address while the first line fits the terminal's $COLUMNS,
 # else only its last octet: "7:48990", or ".7" without a port. Links keep the
 # full address. Without $COLUMNS the line stays short.
-srv_full=${parts//@.IP@/$srv_ip}
-srv_full=${srv_full//@IP@/$srv_ip}
-srv_vis=$(printf '%s' "$srv_full" | sed -E $'s/\033\\[[0-9;]*m//g; s/\033\\]8;;[^\a]*\a//g')
+srv_full=$(srv_fill "$parts" "$srv_ip")
+srv_vis=$(plain_text "$srv_full")
 case $COLUMNS in
   '' | *[!0-9]*) srv_fits="" ;;
   *) [ "${#srv_vis}" -le "$COLUMNS" ] && srv_fits=1 || srv_fits="" ;;
