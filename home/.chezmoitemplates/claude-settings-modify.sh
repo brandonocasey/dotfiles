@@ -126,8 +126,7 @@ managed=$(
   },
   "autoMode": {
     "environment": [
-      "$defaults",
-      "Organization: JW Player / Connatix. Trusted source control: gitlab.com/jwpconnatix/*, forgejo.koof.win/bcasey/*. Trusted internal domains: jwplayer.atlassian.net."
+      "$defaults"
     ],
     "allow": [
       "$defaults",
@@ -541,6 +540,17 @@ if ! command -v jq >/dev/null 2>&1; then
     printf '%s\n' "$managed"
   fi
   exit 0
+fi
+
+# Trusted orgs and hosts stay out of the public repo: they come from the
+# git-ignored home/.chezmoidata/private.toml, absent on other machines.
+auto_mode_environment=$(
+  cat <<'TEXT'
+{{ get . "claudeAutoModeEnvironment" }}
+TEXT
+)
+if [ -n "$auto_mode_environment" ]; then
+  managed=$(printf '%s' "$managed" | jq -c --arg text "$auto_mode_environment" '.autoMode.environment += [$text]')
 fi
 
 # A corrupt or non-object live file MUST fall back to the managed defaults.

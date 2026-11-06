@@ -6,3 +6,6 @@ state/
 
 # Python bytecode from tests
 __pycache__/
+
+# Machine-local chezmoi data (work org, private hosts)
+home/.chezmoidata/private.toml
