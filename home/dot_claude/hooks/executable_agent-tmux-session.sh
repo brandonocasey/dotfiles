@@ -8,7 +8,8 @@
 #   agent-tmux-session.sh sync <title> [sid]
 #                                        from the Claude status line after /rename;
 #                                        renames only when the title changed
-#   agent-tmux-session.sh tidy <title>   print the cleaned title only
+#   agent-tmux-session.sh tidy <title> [max]
+#                                        print the cleaned title only
 #   agent-tmux-session.sh ported <title> <sid>
 #                                        print the title with the session's port
 #   agent-tmux-session.sh bare <title>   print the title without a port in front
@@ -28,12 +29,19 @@ agent=${1:-}
 marker='agent-session:'
 title_state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title
 
-# The title as plain words (case kept), at most 60 (or $2) characters, cut at a
-# word break, without a closing period. Claude shows this form.
+# The title as plain words (case kept), at most 60 (or $2) bytes, cut at a
+# word break, without a closing period. Claude shows this form. A cut drops a
+# split UTF-8 character; tmux rejects a name with one.
 tidy() {
   printf '%s' "$1" | LC_ALL=C tr -d '[:cntrl:]' |
     LC_ALL=C sed -e 's/[.!?]*[[:space:]]*$//' -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' |
-    awk -v m="${2:-60}" '{ if (length($0) > m) { s = substr($0, 1, m + 1); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, m) } print }'
+    LC_ALL=C awk -v m="${2:-60}" '{
+      if (length($0) > m) {
+        s = substr($0, 1, m + 1); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, m)
+        sub(/([\300-\337]|[\340-\357][\200-\277]?|[\360-\367][\200-\277]?[\200-\277]?)$/, "")
+      }
+      print
+    }'
 }
 
 # The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
@@ -114,7 +122,7 @@ ported() {
 
 case $agent in
 tidy)
-  tidy "${2:-}"
+  tidy "${2:-}" "${3:-}"
   exit 0
   ;;
 bare)

@@ -20,6 +20,10 @@
 state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title
 mkdir -p "$state"
 input=$(cat)
+# Runs after every Bash call, so skip most of them before any jq.
+if [ "$1" = branch ]; then
+  case $input in *'"CwdChanged"'* | *reused*) ;; *) exit 0 ;; esac
+fi
 sid=$(printf '%s' "$input" | jq -r '.session_id // empty')
 [ -n "$sid" ] || exit 0
 old=$(printf '%s' "$input" | jq -r '.session_title // empty')
@@ -40,6 +44,13 @@ worktree_branch() {
   git -C "$1" symbolic-ref --short -q HEAD
 }
 
+# Keeps the branch as the pending name, cut so it fits beside the port: a
+# branch has no spaces, so the 60-character cut would drop all of it.
+save_branch() {
+  cut=$(sh "$tmux_hook" tidy "$1" 54)
+  [ -n "$cut" ] && printf '%s\n' "$cut" >"$state/$sid.branch"
+}
+
 # Claude's PID stays the same across /clear; the session ID does not.
 handoff=
 case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *) handoff=$state/pid-$CLAUDE_PID.branch ;; esac
@@ -50,7 +61,6 @@ if [ "$1" = end ]; then
 fi
 
 if [ "$1" = branch ]; then
-  case $input in *'"CwdChanged"'* | *reused*) ;; *) exit 0 ;; esac
   if [ "$(printf '%s' "$input" | jq -r '.hook_event_name // empty')" = CwdChanged ]; then
     branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.new_cwd // empty')")
   else
@@ -63,8 +73,8 @@ if [ "$1" = branch ]; then
     [ "$(worktree_branch "$(printf '%s' "$created" | jq -r .path)")" = "$branch" ] || exit 0
   fi
   [ -n "$branch" ] || exit 0
-  printf '%s\n' "$branch" >"$state/$sid.branch"
-  sh "$tmux_hook" set "$branch" "$sid"
+  save_branch "$branch" || exit 0
+  sh "$tmux_hook" set "$(cat "$state/$sid.branch")" "$sid"
   exit 0
 fi
 
@@ -79,7 +89,7 @@ if [ "$1" = new ]; then
   # A name from `claude -n` wins over the branch.
   [ -z "$base" ] || exit 0
   branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.cwd // empty')")
-  [ -n "$branch" ] && printf '%s\n' "$branch" >"$state/$sid.branch"
+  [ -n "$branch" ] && save_branch "$branch"
   exit 0
 fi
 

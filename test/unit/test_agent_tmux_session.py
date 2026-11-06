@@ -480,6 +480,31 @@ class ClaudePortNameTests(TmuxCase):
         self.assertIsNone(self.prompt("47950 feat/x-y.1"))
         self.assertIsNone(self.prompt("47950 Renamed later"))
 
+    def test_long_branch_is_cut_to_fit_beside_port(self):
+        branch = "feat/" + "a" * 70
+        _, tree = self.worktree(branch)
+        self.bash_done(json.dumps(dict(path=str(tree), branch=branch, reused=False)) + "\n")
+        self.assertEqual(self.name(), "47950 feat/" + "a" * 49)
+        (self.state / "one").touch()
+        self.assertEqual(self.prompt("47950 Old"), "47950 feat/" + "a" * 49)
+
+    def test_branch_that_tidies_to_nothing_is_skipped(self):
+        _, tree = self.worktree("!!!")
+        self.run_hook("auto-title", "branch", payload=dict(
+            session_id="one", hook_event_name="CwdChanged", new_cwd=str(tree)))
+        self.assertFalse((self.state / "one.branch").exists())
+        self.assertEqual(self.name(), "original")
+
+    def test_cut_never_splits_a_character(self):
+        branch = "feat/" + "a" * 48 + "é" + "bb"
+        _, tree = self.worktree(branch)
+        self.run_hook("auto-title", "branch", payload=dict(
+            session_id="one", hook_event_name="CwdChanged", new_cwd=str(tree)))
+        self.assertEqual(self.name(), "47950 feat/" + "a" * 48)
+        for title in ("é" * 40, "€" * 30, "😀" * 20, "a" + "é" * 40):
+            out = self.run_hook("agent-tmux-session", "tidy", title, "55").rstrip("\n")
+            self.assertTrue(title.startswith(out) and len(out.encode()) <= 55, out)
+
     def test_agt_lookalike_output_is_ignored(self):
         main, tree = self.worktree()
         decoys = [dict(path=str(tree), branch="other", reused=True),
