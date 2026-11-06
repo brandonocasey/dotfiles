@@ -1,6 +1,6 @@
 # Sources for the code-standards rules
 
-The research behind the **Readability** and placement rules in code-quality.md, the comment rules in comments.md, and the test rules in tests-and-lint.md. Read it only when asked why a rule exists, or before changing these rules; no rule depends on it. Gathered on 2026-11-06.
+The research behind the **Readability** and placement rules in code-quality.md, the comment rules in comments.md, and the test rules in tests-and-lint.md. Read it only when asked why a rule exists; no rule depends on it. Gathered on 2026-11-06.
 
 ## Review and style guides
 

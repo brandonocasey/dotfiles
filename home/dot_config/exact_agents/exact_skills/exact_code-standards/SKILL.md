@@ -13,4 +13,4 @@ Before writing a plan, read [planning.md](references/planning.md).
 
 ## Sources
 
-[sources.md](references/sources.md) lists the research behind these rules, with links. Read it only when asked why a rule exists, or before changing these rules.
+[sources.md](references/sources.md) lists the research behind these rules, with links. Read it only when asked why a rule exists.
