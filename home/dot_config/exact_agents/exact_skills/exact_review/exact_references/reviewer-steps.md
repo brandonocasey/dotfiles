@@ -97,7 +97,10 @@ read the diff looking for things that seem off — attack it:
   depends on runtime behavior, name the check that would confirm it.
 - **Attack the tests.** New/changed tests: would they still pass if the fix were reverted
   or subtly wrong? Report missing or ineffective coverage only when you can name
-  the important uncovered behavior. Preserve the ban on weakening existing tests.
+  the important uncovered behavior. Also report each new test that breaks the
+  [tests-and-lint.md](../../code-standards/references/tests-and-lint.md) bullets that
+  start "Add a test only when" and "Test behavior, not structure"; name the test and
+  quote the clause. Preserve the ban on weakening existing tests.
 - **Check the platform contract.** When the code hooks into a host runtime
   (framework, engine, plugin or mod API, browser, OS), list each host behavior the
   code relies on: event order and timing, naming and normalization, lifecycle
@@ -138,7 +141,8 @@ read the diff looking for things that seem off — attack it:
   differently. A comment is a defect when it misstates one or breaks comments.md. A
   `requirement` finding quotes the rule and names its file: AGENTS.md, CLAUDE.md, or
   REVIEW.md at the root or in any changed directory, the **Maintainability** section
-  of code-quality.md, or comments.md. Skip paths a REVIEW.md lists under `Skip:`.
+  of code-quality.md, comments.md, or the tests-and-lint.md bullets that
+  **Attack the tests** names. Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown
 

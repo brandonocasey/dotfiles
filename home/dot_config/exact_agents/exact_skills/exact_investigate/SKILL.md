@@ -140,7 +140,8 @@ exists, and go to section 6 for the rest.
    nearby inputs before and after the fix to catch other behavior changes.
 6. After the fix is proven, have `explorer` list sites with the same pattern. Fix
    a site in the same change only when a test or a direct read shows the same cause;
-   list the rest as follow-ups. Add a test per fixed site.
+   list the rest as follow-ups. Add a test per fixed site that has its own copy of
+   the code; a fix in shared code needs one test through a real caller.
 7. Commit per `commit`. This is an end point: run `review` per
    `review/references/when-to-run.md` **Timing**. Push or open a pull request
    only when the Git rules allow it.
