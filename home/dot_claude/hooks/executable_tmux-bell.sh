@@ -19,12 +19,13 @@ tmux_command=$(sh "$HOME/.config/tmux/scripts/tmux-client.sh" 2>/dev/null) || ex
 
 # Codex runs each command in a new session, without the pane's terminal; its MCP
 # servers keep that terminal. Prints the PIDs of commands of Codex process $1
-# still running, apart from hooks and process $2.
+# still running, apart from hooks and process $2. Exited commands Codex has not
+# reaped yet are zombies, not running work.
 codex_terminals() {
   pane_tty=$("$tmux_command" display-message -p -t "$TMUX_PANE" '#{pane_tty}' 2>/dev/null) || return 0
-  ps -A -o pid=,ppid=,tty=,args= 2>/dev/null |
+  ps -A -o pid=,ppid=,stat=,tty=,args= 2>/dev/null |
     awk -v codex="$1" -v skip="${2:-}" -v tty="${pane_tty#/dev/}" \
-      '$2 == codex && $1 != skip && $3 != tty && $0 !~ /\.claude\/hooks\// { print $1 }'
+      '$2 == codex && $1 != skip && $3 !~ /^Z/ && $4 != tty && $0 !~ /\.claude\/hooks\// { print $1 }'
 }
 
 ring() {
