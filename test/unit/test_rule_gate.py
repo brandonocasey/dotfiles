@@ -109,6 +109,7 @@ class FirstEditTests(RuleGateTestCase):
         self.rule("py.md", ["**/*.py"])
         file = self.outside / "pkg/a.py"
         self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done()
         self.assertPasses(self.edit(file))
 
     def test_new_file_in_a_missing_directory_is_gated(self):
@@ -133,6 +134,7 @@ class FirstEditTests(RuleGateTestCase):
                 self.session = next(self.sessions)
                 file = self.work / "a.py"
                 self.assertDenied(self.edit(file, tool), file, "~/.claude/rules/py.md")
+                self.batch_done()
                 self.assertPasses(self.edit(file, tool))
 
     def test_other_tools_pass_without_a_record(self):
@@ -147,6 +149,7 @@ class FirstEditTests(RuleGateTestCase):
         self.rule("b-two.md", ["**/*.py"])
         file = self.work / "a.py"
         self.assertDenied(self.edit(file), file, "~/.claude/rules/a-one.md and ~/.claude/rules/b-two.md")
+        self.batch_done()
         self.rule("c-three.md", ["**/*.py"])
         self.assertDenied(self.edit(file), file, "~/.claude/rules/c-three.md")
         self.session = next(self.sessions)
@@ -168,6 +171,7 @@ class AgentTests(RuleGateTestCase):
         file = self.work / "a.py"
         self.assertPasses(self.edit(file))
         self.assertDenied(self.edit(file, agent_id="agent-1", agent_type="Explore"), file, "~/.claude/rules/py.md")
+        self.batch_done(agent_id="agent-1", agent_type="Explore")
         self.assertPasses(self.edit(file, agent_id="agent-1", agent_type="Explore"))
         self.assertDenied(self.edit(file, agent_id="agent-2"), file, "~/.claude/rules/py.md")
 
@@ -187,6 +191,7 @@ class AgentTests(RuleGateTestCase):
         self.loaded("compact", self.work / "CLAUDE.md")
         self.loaded("compact", self.work / "sub/CLAUDE.md")
         self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done()
         self.assertPasses(self.edit(file))
         self.assertPasses(self.edit(file, agent_id="agent-1"))
 
@@ -197,6 +202,7 @@ class AgentTests(RuleGateTestCase):
             self.loaded("path_glob_match", rule, **fields)
         self.pre_compact(agent_id="agent-1", agent_type="Explore")
         self.assertDenied(self.edit(file, agent_id="agent-1"), file, "~/.claude/rules/py.md")
+        self.batch_done(agent_id="agent-1")
         self.assertPasses(self.edit(file))
         self.assertPasses(self.edit(file, agent_id="agent-2"))
         self.pre_compact()
@@ -216,6 +222,7 @@ class AgentTests(RuleGateTestCase):
         self.assertEqual(self.state_files(), [])
         file = self.work / "a.py"
         self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done()
         self.loaded("session_start", rule)
         self.assertPasses(self.edit(file))
 
@@ -275,12 +282,13 @@ class RetryTests(RuleGateTestCase):
         self.assertPasses(self.edit(self.work / "d.py"))
         self.assertEqual((self.state / self.session).read_text().splitlines(), [f"main {rule.resolve()}"])
 
-    def test_a_second_edit_in_the_same_batch_does_not_count_as_the_retry(self):
+    def test_every_edit_of_a_denied_file_in_the_same_batch_is_denied(self):
         self.rule("py.md", ["**/*.py"])
         first, second = self.work / "a.py", self.work / "b.py"
         self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md")
-        self.assertPasses(self.edit(first))
+        self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md")
         self.assertDenied(self.edit(second), second, "~/.claude/rules/py.md")
+        self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md")
         self.batch_done()
         self.assertPasses(self.edit(first))
         self.assertPasses(self.edit(self.work / "c.py"))
@@ -328,6 +336,7 @@ class RetryTests(RuleGateTestCase):
                 self.batch_done()
                 compact()
                 self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+                self.batch_done()
                 self.assertPasses(self.edit(file))
 
     def test_denied_edits_belong_to_one_agent(self):
@@ -337,10 +346,11 @@ class RetryTests(RuleGateTestCase):
         self.assertDenied(self.edit(file, agent_id="agent-1"), file, "~/.claude/rules/py.md")
         self.batch_done(agent_id="agent-1")
         self.assertPasses(self.edit(file, agent_id="agent-1"))
-        self.assertPasses(self.edit(file, agent_id="agent-10"))
+        self.assertDenied(self.edit(file, agent_id="agent-10"), file, "~/.claude/rules/py.md")
         self.assertDenied(self.edit(other, agent_id="agent-10"), other, "~/.claude/rules/py.md")
         self.pre_compact(agent_id="agent-1")
         self.assertDenied(self.edit(other), other, "~/.claude/rules/py.md")
+        self.batch_done(agent_id="agent-10")
         self.assertPasses(self.edit(file, agent_id="agent-10"))
 
     def test_two_names_for_one_rule_are_both_listed(self):

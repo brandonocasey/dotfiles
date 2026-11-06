@@ -76,8 +76,8 @@ def open_locked(path: Path):
 def locked_records(path: Path):
     """Yield the (key, rule path) records of a state file under an exclusive lock, and save changes.
 
-    A key is an agent id for a rule in that agent's context, `<agent id>/<file digest>/batch` for the first edit of that
-    file denied in the agent's current tool batch, or `<agent id>/<file digest>` once that batch has ended.
+    A key is an agent id for a rule in that agent's context, `<agent id>/<file digest>/batch` for edits of that file
+    denied in the agent's current tool batch, or `<agent id>/<file digest>` once that batch has ended.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     with open_locked(path) as f:
@@ -421,11 +421,11 @@ def on_pre_tool_use(data: dict) -> str | None:
     rules = matching_rules(match_path_for(path, resolve(folder)))
     if not rules:
         return None
-    # Each file is denied once per rule. An edit of a denied file after the agent's tool batch ends is its retry, and
-    # the rule counts as read from then on; another edit of that file in the same batch passes without counting.
+    # Every edit of a file is denied until the agent's tool batch ends, because the agent sent them all before it saw a
+    # deny. Its next edit of that file is the retry, and the rule counts as read from then on.
     # Checks use the records from before this edit, so two rule names with one realpath are both listed.
     denied = f"{key}/{hashlib.sha256(os.fsencode(path)).hexdigest()}"
-    fresh = []
+    unread = []
     with locked_records(state_dir() / session) as records:
         before = set(records)
         for name, real in rules:
@@ -433,12 +433,12 @@ def on_pre_tool_use(data: dict) -> str | None:
                 continue
             if (denied, real) in before:
                 mark_loaded(records, key, real)
-            elif (f"{denied}/batch", real) not in before:
+            else:
                 records.add((f"{denied}/batch", real))
-                fresh.append((name, real))
-    if not fresh:
+                unread.append((name, real))
+    if not unread:
         return None
-    listed = join_names([f"~/.claude/rules/{name}" for name, _ in fresh])
+    listed = join_names([f"~/.claude/rules/{name}" for name, _ in unread])
     return (f"rule-gate: the rules for {given} may not be in your context yet. Read {listed}, then retry this edit, "
             "changed if those rules require it. Skip a read only if that rule's full text is already in your context.")
 
