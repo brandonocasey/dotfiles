@@ -26,25 +26,33 @@ def render_codex_modifier(directory):
     return script
 
 
-def render_claude_settings(directory, data):
-    """Render the Claude settings modifier with data that overrides private.toml."""
+def render_claude_settings(directory, data=None):
+    """Render the Claude settings modifier with data that overrides private.toml.
+
+    Without data, the source is an empty folder, as on a machine with no private.toml.
+    """
     config = Path(directory) / "chezmoi.toml"
     config.write_text("")
+    source = Path(directory) / "empty-source"
+    source.mkdir(exist_ok=True)
+    override = ["--override-data", json.dumps(data)] if data is not None else []
     return subprocess.run(
-        ["chezmoi", "--source", str(REPO), "--config", str(config),
-         "--override-data", json.dumps(data), "execute-template"],
+        ["chezmoi", "--source", str(REPO if data is not None else source), "--config", str(config),
+         *override, "execute-template"],
         input=CLAUDE_SETTINGS.read_text(), text=True, capture_output=True, timeout=10)
 
 
 class AgentConfigurationTests(unittest.TestCase):
     def test_claude_auto_mode_environment_from_private_data(self):
-        cases = [("a\nTEXT\nprintf injected >&2", ["$defaults", "a\nTEXT\nprintf injected >&2"]),
-                 (" \t", ["$defaults"])]
+        cases = [({"claudeAutoModeEnvironment": "a\nTEXT\nprintf injected >&2"},
+                  ["$defaults", "a\nTEXT\nprintf injected >&2"]),
+                 ({"claudeAutoModeEnvironment": " \t"}, ["$defaults"]),
+                 (None, ["$defaults"])]
         SCRATCH.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="agent-config-test-", dir=SCRATCH) as directory:
-            for value, expected in cases:
-                with self.subTest(value=value):
-                    rendered = render_claude_settings(directory, {"claudeAutoModeEnvironment": value})
+            for data, expected in cases:
+                with self.subTest(data=data):
+                    rendered = render_claude_settings(directory, data)
                     self.assertEqual(rendered.returncode, 0, rendered.stderr)
                     result = subprocess.run(["bash", "-c", rendered.stdout], input="{}", text=True,
                                             capture_output=True, check=True, timeout=10)
