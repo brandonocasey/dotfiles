@@ -853,7 +853,8 @@ esac
 # and notifications often wake no model.
 # The same pass finds the last reply's output speed (grey "ϟ99"): its output
 # tokens per second since the entry before it, first-token wait included.
-# Parsing takes ~15 ms, so each session reuses both results until the
+# Replies under 100 tokens keep the earlier speed, since that wait dominates
+# them. Parsing takes ~15 ms, so each session reuses both results until the
 # transcript changes.
 idle_val=""
 tps_val=""
@@ -876,7 +877,7 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
          # An interrupted reply has no stop_reason and only a placeholder token count.
          | (if $e.type == "assistant" and $e.requestId != null and $e.message.model != "<synthetic>"
              and $e.message.stop_reason != null
-             and ($e.message.usage.output_tokens // 0) > 0 and (.ka | not) then
+             and ($e.message.usage.output_tokens // 0) >= 100 and (.ka | not) then
              (if $e.requestId != .rid then .rid = $e.requestId | .start = .prev else . end)
              | .stop = $t | .out = $e.message.usage.output_tokens
            else . end)
