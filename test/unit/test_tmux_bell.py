@@ -100,7 +100,7 @@ class TmuxBellTests(unittest.TestCase):
         self.assertEqual(self.tmux("display-message", "-p", "#{window_bell_flag}"), "1")
 
     def test_prompt_and_tool_completion_mark_working(self):
-        for event in ("UserPromptSubmit", "PostToolUse"):
+        for event in ("UserPromptSubmit", "PreToolUse", "PostToolUse"):
             with self.subTest(event=event):
                 self.tmux("set-option", "-p", "-t", self.pane, "@agent_state", "input")
                 self.fire(event)

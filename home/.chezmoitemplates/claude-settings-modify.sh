@@ -272,6 +272,17 @@ managed=$(
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "^(?!(AskUserQuestion|ExitPlanMode)$)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/tmux-bell.sh working",
+            "async": true,
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [

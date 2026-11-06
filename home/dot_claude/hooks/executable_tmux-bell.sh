@@ -4,7 +4,7 @@
 #   input    Stop and permission prompts; also rings the bell so tmux flags the window.
 #            On Stop (hook JSON on stdin) it marks background instead while the
 #            agent's background work runs, without the bell.
-#   working  prompt submitted or a tool finished
+#   working  prompt submitted, or a tool starts or finishes
 #   clear    agent exited
 # Skips unattended runs (claude -p), codex started by Claude (it shares Claude's
 # pane), and sessions outside tmux. Prints nothing: hook output costs tokens.
