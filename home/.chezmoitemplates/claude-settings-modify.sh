@@ -244,6 +244,11 @@ managed=$(
             "type": "command",
             "command": "python3 -I ~/.claude/hooks/edit-guard.py",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/rule-gate.py",
+            "timeout": 5
           }
         ]
       },
@@ -355,6 +360,39 @@ managed=$(
             "command": "sh ~/.claude/hooks/agent-tmux-session.sh claude",
             "async": true,
             "timeout": 3
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/rule-gate.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/rule-gate.py",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I ~/.claude/hooks/rule-gate.py",
+            "timeout": 5
           }
         ]
       }
