@@ -1,4 +1,5 @@
 """Exercise the registered Codex title hook against an isolated tmux server."""
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -138,15 +139,31 @@ class CodexTmuxSessionTests(unittest.TestCase):
         bindir = self.home / "bin"
         bindir.mkdir()
         wrapper = bindir / "tmux"
-        wrapper.write_text("#!/usr/bin/python3\nimport json, os, subprocess, sys, time\n"
+        gate = self.home / "first-ticks.lock"
+        wrapper.write_text("#!/usr/bin/python3\nimport fcntl, json, os, subprocess, sys, time\n"
+                           "tick = sys.argv[-1].startswith('#{pane_active} #{window_active}')\n"
+                           f"if tick and os.environ['TMUX_PANE'] == {self.env['TMUX_PANE']!r}:\n"
+                           f"    gate = open({str(gate)!r}, 'a')\n"
+                           "    fcntl.flock(gate, fcntl.LOCK_SH)\n"
                            f"result = subprocess.run([{shutil.which('tmux')!r}, *sys.argv[1:]], capture_output=True)\n"
-                           "if sys.argv[-1].startswith('#{pane_active} #{window_active}'):\n"
+                           "if tick:\n"
                            f"    with open({str(trace)!r}, 'a') as stream:\n"
                            "        stream.write(json.dumps(dict(pane=os.environ['TMUX_PANE'], output=result.stdout.decode())) + '\\n')\n"
                            "sys.stdout.buffer.write(result.stdout)\nsys.stderr.buffer.write(result.stderr)\n"
                            "sys.exit(result.returncode)\n")
         wrapper.chmod(0o755)
         self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
+
+        def drain():
+            # Watchers outlive their parent by one tick; the wrapper writes Python
+            # caches under HOME, so wait for them before the temp dir is removed.
+            self.stop_parents()
+            deadline = time.monotonic() + 5
+            while (subprocess.run(["pgrep", "-f", str(self.home)], capture_output=True).returncode == 0
+                   and time.monotonic() < deadline):
+                time.sleep(0.05)
+
+        self.addCleanup(drain)
         self.parent = self.start_parent()
         first = self.env["TMUX_PANE"]
         second = self.tmux("split-window", "-d", "-P", "-F", "#{pane_id}", "sleep 60").strip()
@@ -168,11 +185,16 @@ class CodexTmuxSessionTests(unittest.TestCase):
             time.sleep(0.01)
         self.assertGreaterEqual(len(ticks(first)), 2)
         time.sleep(0.1)
-        self.tmux("select-pane", "-t", second)
-        self.wait_name("Second pane")
-        self.tmux("select-pane", "-t", first)
-        self.assertTrue(all(row["output"].split()[:2] == ["1", "1"] for row in ticks(first)))
+        # Hold the first pane's ticks while it is inactive: the second watcher needs
+        # a tick of its own to rename, and under load that outlasts the first
+        # watcher's tick interval, so the first tick would see "0 1".
+        with gate.open("a") as held:
+            fcntl.flock(held, fcntl.LOCK_EX)
+            self.tmux("select-pane", "-t", second)
+            self.wait_name("Second pane")
+            self.tmux("select-pane", "-t", first)
         self.wait_name("First pane")
+        self.assertTrue(all(row["output"].split()[:2] == ["1", "1"] for row in ticks(first)))
 
     def test_manual_name_survives_until_title_changes(self):
         self.title("Agent title")
