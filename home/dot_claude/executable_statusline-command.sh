@@ -863,7 +863,8 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
   idle_cache="$rl_dir/idle-$rl_sid"
   idle_cached_key="" idle_end="" tps=""
   { read -r idle_cached_key idle_end tps < "$idle_cache"; } 2>/dev/null
-  if [ -z "$idle_key" ] || [ "$idle_cached_key" != "$idle_key" ]; then
+  # A line without a speed field comes from an older version of this script.
+  if [ -z "$idle_key" ] || [ "$idle_cached_key" != "$idle_key" ] || [ -z "$tps" ]; then
     read -r idle_end tps < <(tail -n 400 "$transcript" | jq -nrR '
       # Ends a turn; a keepalive turn leaves the last real end in place.
       def done($e): (if .ka then .ka = false else .end = $e.timestamp end) | .busy = false;
