@@ -12,3 +12,31 @@ Read and cite a page only when a finding depends on it.
 - Claude token counting: https://platform.claude.com/docs/en/build-with-claude/token-counting
 - GPT-6 guidance: https://developers.openai.com/api/docs/guides/latest-model
 - GPT-6 skills and prompts: https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra
+- Claude Code best practices: https://code.claude.com/docs/en/best-practices
+- Claude Code hooks reference: https://code.claude.com/docs/en/hooks
+- Claude Code workflows: https://code.claude.com/docs/en/workflows
+- Claude Code environment variables: https://code.claude.com/docs/en/env-vars.md
+- Claude Code settings: https://code.claude.com/docs/en/settings
+- Claude Code permissions: https://code.claude.com/docs/en/permissions
+- Claude Code permission modes: https://code.claude.com/docs/en/permission-modes
+- Claude Code sandboxing: https://code.claude.com/docs/en/sandboxing
+- Claude Code configure auto mode: https://code.claude.com/docs/en/auto-mode-config
+- Claude Code output styles: https://code.claude.com/docs/en/output-styles
+- Claude Code code-intelligence plugins: https://code.claude.com/docs/en/plugins/code-intelligence
+- Claude Code sessions: https://code.claude.com/docs/en/sessions
+- Claude Code statusline: https://code.claude.com/docs/en/statusline
+- Claude Code interactive mode: https://code.claude.com/docs/en/interactive-mode
+- Claude Code goal: https://code.claude.com/docs/en/goal
+- Claude Code managed MCP: https://code.claude.com/docs/en/managed-mcp.md
+- Claude Code legal and compliance: https://code.claude.com/docs/en/legal-and-compliance
+- Claude Code fullscreen: https://code.claude.com/docs/en/fullscreen
+- Claude Code dev container (legacy docs.anthropic.com URL): https://docs.anthropic.com/en/docs/claude-code/devcontainer
+- Claude pricing: https://platform.claude.com/docs/en/about-claude/pricing
+- Claude cookbook, automatic context compaction: https://platform.claude.com/cookbook/tool-use-automatic-context-compaction
+- Codex config reference: https://developers.openai.com/codex/config-reference
+- Codex config reference (learn.chatgpt.com): https://learn.chatgpt.com/docs/config-file/config-reference
+- Codex agent approvals and security: https://developers.openai.com/codex/agent-approvals-security
+- Codex rules: https://developers.openai.com/codex/rules
+- Codex rules (learn.chatgpt.com): https://learn.chatgpt.com/docs/agent-configuration/rules
+- Codex CLI slash commands: https://developers.openai.com/codex/cli/slash-commands
+- Codex sandboxing: https://learn.chatgpt.com/docs/sandboxing
