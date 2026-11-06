@@ -394,35 +394,155 @@ class ClaudePortNameTests(TmuxCase):
         (self.state / "one").unlink()
         self.assertIsNone(self.prompt("47950 Fix login"))
 
-    def test_clear_drops_carried_name(self):
+    def test_part_names(self):
+        cases = {"45060 Fix login": "Fix login Part 2", "Fix login Part 2": "Fix login Part 3",
+                 "47950 feat/x Part 9": "feat/x Part 10", "Part 2": "Part 2 Part 2",
+                 "Fix Part 0": "Fix Part 0 Part 2", "Fix part 2": "Fix part 2 Part 2",
+                 "": "", "45060": ""}
+        for title, expected in cases.items():
+            self.assertEqual(self.run_hook("agent-tmux-session", "part", title), expected, title)
+        long = self.run_hook("agent-tmux-session", "part", "word " * 20 + "Part 99")
+        self.assertTrue(long.endswith(" Part 100"), long)
+        self.assertLessEqual(len(long), 54)
+        self.assertLessEqual(len(self.run_hook("agent-tmux-session", "part", "x" * 80)), 54)
+
+    def test_clear_continues_as_next_part(self):
         self.run_hook("auto-title", "new", payload=dict(
             session_id="one", source="clear", session_title="45060 My name"))
-        self.assertEqual(self.prompt("45060 My name"), "47950")
-        self.assertFalse((self.state / "one").exists())
-        self.assertIsNone(self.prompt("47950"))
+        self.assertEqual(self.prompt("45060 My name"), "47950 My name Part 2")
+        self.assertTrue((self.state / "one").exists())
+        self.assertIsNone(self.prompt("47950 My name Part 2"))
         self.assertFalse((self.state / "one.cleared").exists())
-        self.assertEqual(self.prompt("45060 My name"), "47950 My name")
+        self.port("two", "41230")
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="two", source="clear", session_title="47950 My name Part 2"))
+        self.assertEqual(self.prompt("47950 My name Part 2", sid="two"), "41230 My name Part 3")
+
+    def test_clear_of_unnamed_session_waits_for_haiku(self):
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="one", source="clear", session_title="45060"))
+        self.assertEqual(self.prompt("45060"), "47950")
+        self.assertFalse((self.state / "one").exists())
 
     def test_startup_records_no_cleared_name(self):
         self.run_hook("auto-title", "new", payload=dict(
             session_id="one", source="startup", session_title="Named with -n"))
         self.assertFalse((self.state / "one.cleared").exists())
 
-    def test_tmux_drops_carried_name_after_clear(self):
+    def test_tmux_shows_next_part_after_clear(self):
         transcript = self.home / "claude.jsonl"
         transcript.write_text('{"type":"custom-title","customTitle":"45060 Old"}\n')
         payload = dict(session_id="one", transcript_path=str(transcript))
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(payload, source="clear", session_title="45060 Old"))
-        self.assertEqual(self.name(), "47950")
+        self.assertEqual(self.name(), "47950 Old Part 2")
+        self.tmux("rename-session", "elsewhere")
         self.run_hook("auto-title", "new", payload=dict(
             session_id="one", source="clear", session_title="45060 Old"))
         self.run_hook("agent-tmux-session", "claude", payload=payload)
-        self.assertEqual(self.name(), "47950")
+        self.assertEqual(self.name(), "47950 Old Part 2")
         self.run_hook("agent-tmux-session", "sync", "45060 Old", "one")
-        self.assertEqual(self.name(), "47950")
+        self.assertEqual(self.name(), "47950 Old Part 2")
         self.run_hook("agent-tmux-session", "sync", "Renamed", "one")
         self.assertEqual(self.name(), "47950 Renamed")
+
+    def worktree(self, branch="feat/x-y.1"):
+        """A repository with a linked worktree on <branch>; returns (main, worktree)."""
+        main = self.home / "repo"
+        main.mkdir()
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(main)]
+        for args in (["init", "-q", "-b", "main"], ["commit", "-q", "--allow-empty", "-m", "init"],
+                     ["worktree", "add", "-q", "-b", branch, str(main / ".worktrees" / branch)]):
+            subprocess.run(git + args, env=self.env, check=True, capture_output=True, timeout=10)
+        return main, main / ".worktrees" / branch
+
+    def bash_done(self, stdout, sid="one"):
+        self.run_hook("auto-title", "branch", payload=dict(
+            session_id=sid, hook_event_name="PostToolUse", tool_name="Bash",
+            tool_input=dict(command="agt worktree create x"),
+            tool_response=dict(stdout=stdout, stderr="", interrupted=False)))
+
+    def test_agt_worktree_output_names_session_after_branch(self):
+        _, tree = self.worktree()
+        line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False, warnings=[]))
+        self.bash_done(f"Preparing\n{line}\ndone\n")
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
+        self.run_hook("agent-tmux-session", "claude",
+                      payload=dict(session_id="one", transcript_path=str(transcript)))
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.run_hook("agent-tmux-session", "sync", "47950 Old", "one")
+        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        (self.state / "one").touch()
+        self.assertEqual(self.prompt("47950 Old"), "47950 feat/x-y.1")
+        self.assertFalse((self.state / "one.branch").exists())
+        self.assertIsNone(self.prompt("47950 feat/x-y.1"))
+        self.assertIsNone(self.prompt("47950 Renamed later"))
+
+    def test_agt_lookalike_output_is_ignored(self):
+        main, tree = self.worktree()
+        decoys = [dict(path=str(tree), branch="other", reused=True),
+                  dict(path=str(main), branch="main", reused=True),
+                  dict(path=str(self.home / "gone"), branch="feat/x-y.1", reused=True),
+                  dict(path=str(tree), branch="feat/x-y.1", reused="yes"),
+                  dict(path=str(tree), branch="feat/x-y.1")]
+        for decoy in decoys:
+            self.bash_done(json.dumps(decoy) + "\n")
+            self.assertFalse((self.state / "one.branch").exists(), decoy)
+        self.bash_done("[1, 2]\n reused \nnot json {\n")
+        self.assertFalse((self.state / "one.branch").exists())
+        self.assertEqual(self.name(), "original")
+
+    def test_cwd_into_linked_worktree_names_session(self):
+        main, tree = self.worktree()
+        change = dict(session_id="one", hook_event_name="CwdChanged", old_cwd=str(self.home))
+        self.run_hook("auto-title", "branch", payload=dict(change, new_cwd=str(main)))
+        self.assertFalse((self.state / "one.branch").exists())
+        (tree / "sub dir").mkdir()
+        self.run_hook("auto-title", "branch", payload=dict(change, new_cwd=str(tree / "sub dir")))
+        self.assertEqual((self.state / "one.branch").read_text(), "feat/x-y.1\n")
+
+    def test_start_in_linked_worktree_names_session(self):
+        main, tree = self.worktree()
+        start = dict(session_id="one", source="startup", cwd=str(tree))
+        self.run_hook("auto-title", "new", payload=start)
+        self.assertEqual(self.prompt("47950"), "47950 feat/x-y.1")
+        self.run_hook("auto-title", "new", payload=dict(start, session_title="47950 Named with -n"))
+        self.assertFalse((self.state / "one.branch").exists())
+        self.run_hook("auto-title", "new", payload=dict(start, cwd=str(main)))
+        self.assertFalse((self.state / "one.branch").exists())
+
+    def test_clear_carries_pending_branch(self):
+        (self.state / "one.branch").write_text("feat/a\n")
+        self.env["CLAUDE_PID"] = "4242"
+        self.run_hook("auto-title", "end", payload=dict(session_id="one", reason="clear"))
+        self.port("two", "41230")
+        transcript = self.home / "claude.jsonl"
+        transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
+        self.run_hook("agent-tmux-session", "claude", payload=dict(
+            session_id="two", transcript_path=str(transcript), source="clear", session_title="47950 Old"))
+        self.assertEqual(self.name(), "41230 feat/a")
+        self.run_hook("auto-title", "new", payload=dict(
+            session_id="two", source="clear", session_title="47950 Old"))
+        self.assertEqual(self.prompt("47950 Old", sid="two"), "41230 feat/a")
+        self.assertFalse((self.state / "pid-4242.branch").exists())
+        self.env["CLAUDE_PID"] = "12a"
+        (self.state / "one.branch").write_text("feat/a\n")
+        self.run_hook("auto-title", "end", payload=dict(session_id="one", reason="clear"))
+        self.assertTrue((self.state / "one.branch").exists())
+
+    def test_late_haiku_leaves_branch_name(self):
+        (self.home / "bin/claude").write_text("#!/bin/sh\nsleep 0.5\necho Haiku title\n")
+        self.prompt("47950", text="please fix the login page bug")
+        (self.state / "one.branch").write_text("feat/a\n")
+        self.run_hook("agent-tmux-session", "set", "feat/a", "one")
+        deadline = time.monotonic() + 4
+        while not (self.state / "one.haiku").read_text() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        time.sleep(0.3)
+        self.assertEqual((self.state / "one.haiku").read_text(), "Haiku title\n")
+        self.assertEqual(self.name(), "47950 feat/a")
 
 if __name__ == "__main__":
     unittest.main()

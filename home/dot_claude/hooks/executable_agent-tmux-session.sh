@@ -12,6 +12,8 @@
 #   agent-tmux-session.sh ported <title> <sid>
 #                                        print the title with the session's port
 #   agent-tmux-session.sh bare <title>   print the title without a port in front
+#   agent-tmux-session.sh part <title>   print the name for work continued after
+#                                        /clear: the title with the next Part N
 # The first rename saves the session's old name; restore puts it back when the
 # agent exits, unless the user renamed the session since or another agent pane
 # still uses it. /clear does not restore it. Over ssh it never restores.
@@ -24,13 +26,14 @@
 
 agent=${1:-}
 marker='agent-session:'
+title_state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title
 
-# The title as plain words (case kept), at most 60 characters, cut at a word
-# break, without a closing period. Claude shows this form.
+# The title as plain words (case kept), at most 60 (or $2) characters, cut at a
+# word break, without a closing period. Claude shows this form.
 tidy() {
   printf '%s' "$1" | LC_ALL=C tr -d '[:cntrl:]' |
     LC_ALL=C sed -e 's/[.!?]*[[:space:]]*$//' -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' |
-    awk '{ if (length($0) > 60) { s = substr($0, 1, 61); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, 60) } print }'
+    awk -v m="${2:-60}" '{ if (length($0) > m) { s = substr($0, 1, m + 1); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, m) } print }'
 }
 
 # The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
@@ -64,7 +67,34 @@ session_port() {
 # That name, and the port-only name from session start, count as no title.
 cleared_name() {
   [ -n "$1" ] || return 0
-  cat "${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title/$1.cleared" 2>/dev/null
+  cat "$title_state/$1.cleared" 2>/dev/null
+}
+
+# A branch auto-title.sh found mid-turn names the session until Claude takes it
+# as the title at the next prompt. Right after /clear, it may still be in the
+# Claude process's handoff file.
+pending_branch() {
+  [ -n "$1" ] || return 0
+  cat "$title_state/$1.branch" 2>/dev/null && return 0
+  case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *) cat "$title_state/pid-$CLAUDE_PID.branch" 2>/dev/null ;; esac
+  return 0
+}
+
+# "Fix login" becomes "Fix login Part 2", and "Fix login Part 2" becomes "Fix
+# login Part 3". The base is cut so the part number survives the 60-character
+# cut of the name with its port in front.
+part() {
+  t=$(tidy "$(bare "$1")" 1000)
+  [ -n "$t" ] || return 0
+  n=$(printf '%s' "$t" | LC_ALL=C sed -nE 's/^.+ Part ([1-9][0-9]{0,5})$/\1/p')
+  if [ -n "$n" ]; then
+    t=${t% Part $n}
+    n=$((n + 1))
+  else
+    n=2
+  fi
+  suffix=" Part $n"
+  printf '%s%s' "$(tidy "$t" $((54 - ${#suffix})))" "$suffix"
 }
 
 no_title() {
@@ -93,6 +123,10 @@ bare)
   ;;
 ported)
   ported "${2:-}" "${3:-}"
+  exit 0
+  ;;
+part)
+  part "${2:-}"
   exit 0
   ;;
 esac
@@ -146,6 +180,7 @@ fi
 if [ "$agent" = sync ]; then
   [ "$target" = tmux ] || exit 0
   no_title "${2:-}" "$(cleared_name "${3:-}")" && exit 0
+  [ -z "$(pending_branch "${3:-}")" ] || exit 0
   session=$(tmux display-message -p -t "$TMUX_PANE" '#{session_id}' 2>/dev/null) || exit 0
   title=$(ported "${2:-}" "${3:-}")
   [ "$(safe "$title")" = "$(tmux show-options -qv -t "$session" @agent_name)" ] && exit 0
@@ -180,7 +215,7 @@ claude)
   transcript=$(printf '%s' "$hook_input" | jq -r '.transcript_path // empty' 2>/dev/null)
   [ -n "$transcript" ] || exit 0
   sid=$(printf '%s' "$hook_input" | jq -r '.session_id // empty' 2>/dev/null)
-  haiku_file=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title/$sid.haiku
+  haiku_file=$title_state/$sid.haiku
   cleared=$(cleared_name "$sid")
   # At /clear, auto-title.sh may not have recorded the carried name yet.
   [ "$(printf '%s' "$hook_input" | jq -r '.source // empty' 2>/dev/null)" = clear ] &&
@@ -240,10 +275,16 @@ watch-codex)
   ;;
 esac
 
-# Claude: /rename writes custom-title; it wins over auto-title.sh's Haiku title,
-# which wins over Claude's own ai-title.
+# Claude: a pending branch wins; then /rename's custom-title, then auto-title.sh's
+# Haiku title, then Claude's own ai-title. After /clear with none of them, the
+# carried name with its next Part N.
 session_title() {
   if [ "$agent" = claude ]; then
+    branch=$(pending_branch "$sid")
+    if [ -n "$branch" ]; then
+      printf '%s' "$branch"
+      return 0
+    fi
     [ -r "$transcript" ] || return 0
     haiku=
     [ -n "$sid" ] && [ -s "$haiku_file" ] && haiku=$(cat "$haiku_file")
@@ -255,7 +296,9 @@ $(jq -rn '
     ' "$transcript" 2>/dev/null)
 EOF
     no_title "$custom" "$cleared" && custom=
-    printf '%s' "${custom:-${haiku:-$ai}}"
+    title=${custom:-${haiku:-$ai}}
+    [ -n "$title" ] || title=$(part "$cleared")
+    printf '%s' "$title"
     return 0
   fi
   [ -r "$index_file" ] || return 0

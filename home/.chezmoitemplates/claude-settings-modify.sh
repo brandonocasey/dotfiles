@@ -295,9 +295,40 @@ managed=$(
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/auto-title.sh branch",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/auto-title.sh branch",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SessionEnd": [
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ~/.claude/hooks/auto-title.sh end",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "hooks": [
           {

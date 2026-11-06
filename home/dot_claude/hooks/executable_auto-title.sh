@@ -6,7 +6,14 @@
 # Skips unattended runs (claude -p), sessions the user named, slash commands,
 # and prompts under 4 words.
 # SessionStart hook with `new` (startup or /clear): /clear carries the old
-# name over, so it records that name, and the next prompt drops it.
+# name over, so it records that name, and the next prompt names the session
+# "<old name> Part N" (agent-tmux-session.sh part).
+# PostToolUse (Bash) and CwdChanged hook with `branch`: the branch the session
+# moves to, from `agt worktree create` output or a cwd in a linked worktree,
+# names the session at the next prompt, over any earlier name; tmux takes it
+# at once. A session that starts in a linked worktree takes its branch too.
+# SessionEnd hook with `end` (/clear): a branch not yet taken carries over to
+# the session /clear starts in the same Claude process.
 # Every name, the user's too, keeps the session's port in front (see
 # agent-tmux-session.sh ported); titles are compared without it.
 [ "${CLAUDE_CODE_SESSION_ATTENDED:-1}" = 0 ] && exit 0
@@ -25,13 +32,69 @@ finish() {
   exit 0
 }
 
-if [ "$1" = new ]; then
-  rm -f "$state/$sid" "$state/$sid.haiku"
-  [ "$(printf '%s' "$input" | jq -r '.source // empty')" = clear ] && [ -n "$old" ] &&
-    printf '%s\n' "$old" >"$state/$sid.cleared"
+# The branch checked out at <dir> when <dir> is in a linked worktree.
+worktree_branch() {
+  [ -n "$1" ] || return 0
+  dirs=$(git -C "$1" rev-parse --path-format=absolute --git-dir --git-common-dir 2>/dev/null) || return 0
+  [ "$(printf '%s\n' "$dirs" | sed -n 1p)" != "$(printf '%s\n' "$dirs" | sed -n 2p)" ] || return 0
+  git -C "$1" symbolic-ref --short -q HEAD
+}
+
+# Claude's PID stays the same across /clear; the session ID does not.
+handoff=
+case ${CLAUDE_PID:-} in '' | *[!0-9]*) ;; *) handoff=$state/pid-$CLAUDE_PID.branch ;; esac
+
+if [ "$1" = end ]; then
+  [ -n "$handoff" ] && [ -s "$state/$sid.branch" ] && mv -f "$state/$sid.branch" "$handoff"
   exit 0
 fi
+
+if [ "$1" = branch ]; then
+  case $input in *'"CwdChanged"'* | *reused*) ;; *) exit 0 ;; esac
+  if [ "$(printf '%s' "$input" | jq -r '.hook_event_name // empty')" = CwdChanged ]; then
+    branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.new_cwd // empty')")
+  else
+    # `agt worktree create` prints one JSON line with path, branch, and reused.
+    created=$(printf '%s' "$input" | jq -c '.tool_response.stdout // "" | strings | split("\n")[] |
+      fromjson? | objects | select((.path | type) == "string" and (.branch | type) == "string" and
+      (.reused | type) == "boolean")' 2>/dev/null | tail -n 1)
+    [ -n "$created" ] || exit 0
+    branch=$(printf '%s' "$created" | jq -r .branch)
+    [ "$(worktree_branch "$(printf '%s' "$created" | jq -r .path)")" = "$branch" ] || exit 0
+  fi
+  [ -n "$branch" ] || exit 0
+  printf '%s\n' "$branch" >"$state/$sid.branch"
+  sh "$tmux_hook" set "$branch" "$sid"
+  exit 0
+fi
+
+if [ "$1" = new ]; then
+  rm -f "$state/$sid" "$state/$sid.haiku" "$state/$sid.branch"
+  if [ "$(printf '%s' "$input" | jq -r '.source // empty')" = clear ]; then
+    [ -n "$old" ] && printf '%s\n' "$old" >"$state/$sid.cleared"
+    mv -f "$handoff" "$state/$sid.branch" 2>/dev/null
+    exit 0
+  fi
+  [ -n "$handoff" ] && rm -f "$handoff"
+  # A name from `claude -n` wins over the branch.
+  [ -z "$base" ] || exit 0
+  branch=$(worktree_branch "$(printf '%s' "$input" | jq -r '.cwd // empty')")
+  [ -n "$branch" ] && printf '%s\n' "$branch" >"$state/$sid.branch"
+  exit 0
+fi
+
+if [ -s "$state/$sid.branch" ]; then
+  title=$(cat "$state/$sid.branch")
+  rm -f "$state/$sid.branch" "$state/$sid.cleared"
+  touch "$state/$sid"
+  finish "$(sh "$tmux_hook" ported "$title" "$sid")"
+fi
 if [ -f "$state/$sid.cleared" ] && [ "$old" = "$(cat "$state/$sid.cleared")" ]; then
+  title=$(sh "$tmux_hook" part "$old")
+  if [ -n "$title" ]; then
+    touch "$state/$sid"
+    finish "$(sh "$tmux_hook" ported "$title" "$sid")"
+  fi
   base=
   current=$(sh "$tmux_hook" ported '' "$sid")
 else
@@ -91,7 +154,8 @@ the stop hook keeps blocking me over and over -> Fix repeated stop-hook blocks'
       exit 0
     fi
     printf '%s\n' "$title" >"$state/$sid.haiku"
-    sh "$tmux_hook" set "$title" "$sid"
+    # A branch or name that arrived meanwhile keeps tmux.
+    [ -f "$state/$sid" ] || [ -f "$state/$sid.branch" ] || sh "$tmux_hook" set "$title" "$sid"
   ) </dev/null >/dev/null 2>&1 &
   finish "$current"
 fi
