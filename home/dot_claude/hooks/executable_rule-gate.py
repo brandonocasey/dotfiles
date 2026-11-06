@@ -388,7 +388,8 @@ def on_instructions_loaded(data: dict) -> None:
 def on_post_tool_batch(data: dict) -> None:
     """Mark the edits denied in the agent's ended tool batch as shown to it, so its next edit of such a file is a retry.
 
-    Claude Code sends this once per batch, after every call in it, before the agent's next model request.
+    Claude Code sends this once per batch, after every call in it, before the agent's next model request. It skips a
+    batch the user interrupts, so the agent's next edit of a file denied there is denied once more.
     """
     session, key = agent_ids(data)
     if not (session and key):
