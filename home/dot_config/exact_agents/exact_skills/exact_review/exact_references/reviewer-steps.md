@@ -80,18 +80,23 @@ read the diff looking for things that seem off — attack it:
   including transitively (start order, readiness, initialization, cleanup), and show
   which path still provides each guarantee.
 - **Check maintainability** against the **Maintainability** rules in
-  [code-quality.md](../../code-standards/references/code-quality.md). For each new
-  function, block, or constant, search the repository once for code that already does
-  it. Report logic the change copies (name both places), changes the task does not
-  need, and code placed outside the module that owns its concern (name that module).
-  Report one only when you can name the existing copy, the hunk the task does not
-  need, or the owning module.
+  [code-quality.md](../../code-standards/references/code-quality.md), including
+  **Readability**. For each new function, block, or constant, search the repository
+  once for code that already does it. Report logic the change copies (name both
+  places), changes the task does not need, code placed outside the module that owns
+  its concern (name that module), and added or rewritten code that breaks a
+  **Readability** rule. Read each new or changed function as a teammate who does not
+  know the task. Report one only when you can name the existing copy, the hunk the
+  task does not need, or the owning module, or quote the hard-to-read code and give
+  the rewrite.
 - **Check added comments** against [comments.md](../../code-standards/references/comments.md).
   List every comment line the change adds, including doc comments and new files. Report
   each one that breaks a rule there: too long, lists cases, restates the code, explains
   the change or earlier behavior, or says how a caller uses the item. Quote the comment
   and the rule, and give the rewrite or say to delete it. Skip directives tools read
   (shebangs, lint or type pragmas, license headers) and comments the change did not add.
+  Also report added code that comments.md says needs a comment but has none, and
+  give the comment.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.
@@ -137,12 +142,13 @@ read the diff looking for things that seem off — attack it:
   Do not shorten a useful description just for length.
 - Report verified defects and violations of explicit repository requirements.
   Include optional style suggestions only when requested. A name is a defect when it
-  misstates a contract or behavior, not merely because it could be shorter or styled
-  differently. A comment is a defect when it misstates one or breaks comments.md. A
-  `requirement` finding quotes the rule and names its file: AGENTS.md, CLAUDE.md, or
-  REVIEW.md at the root or in any changed directory, the **Maintainability** section
-  of code-quality.md, comments.md, or the tests-and-lint.md bullets that
-  **Attack the tests** names. Skip paths a REVIEW.md lists under `Skip:`.
+  misstates a contract or behavior or breaks the naming rule in **Readability**, not
+  merely because it could be shorter or styled differently. A comment is a defect
+  when it misstates one or breaks comments.md. A `requirement` finding quotes the
+  rule and names its file: AGENTS.md, CLAUDE.md, or REVIEW.md at the root or in any
+  changed directory, the **Maintainability** section of code-quality.md,
+  comments.md, or the tests-and-lint.md bullets that **Attack the tests** names.
+  Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown
 
