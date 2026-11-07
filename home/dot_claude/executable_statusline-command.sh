@@ -449,8 +449,7 @@ pace_gauge() {
     b = int((e >= w ? w - 1 : e) / t) * s
     yellow = b + s; red = b + 2 * s
     u = int(p * N / 100 + 0.5)
-    # Full once the shown percentage reads 100.
-    if (u > N || p >= 99.5) u = N
+    if (u > N) u = N
     full = u == N
     # The last filled cell sets the colour of the percentage and the gap too.
     c = 32
@@ -488,13 +487,17 @@ pace_gauge() {
 # than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
 # and red mark only usage warnings and an expiring prompt cache.
 rate_seg() {
-  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c
+  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c digits=1
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
     seg=$(countdown_str "$reset")
   fi
+  # The server sends windowed (5h, 7d) usage in whole percents, so a decimal
+  # there would only read ".0".
+  if [ -n "$window" ]; then
+    digits=0
+  fi
   if [ -n "$pct" ]; then
-    # The server reports usage in whole percents, so a decimal would only read ".0".
-    p=$(awk -v p="$pct" 'BEGIN{printf "%d", int(p + 0.5)}')
+    p=$(awk -v p="$pct" -v d="$digits" 'BEGIN{m = 10 ^ d; printf "%." d "f", int(p * m + 0.5) / m}')
     if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
       c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" \
         "${dt_awk_vars[@]}" "$elapsed_awk"' BEGIN {
