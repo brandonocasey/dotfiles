@@ -471,6 +471,7 @@ pace_gauge() {
     d = d < 0 ? -int(-d * 10 + 0.5) / 10 : int(d * 10 + 0.5) / 10
     # Fields are tab-separated so align_gauges can line up stacked gauges.
     gap = d > 0 ? pre c "m▲" sprintf("%.1f", d) "%" : d < 0 ? pre c "m▼" sprintf("%.1f", -d) "%" : pre "38;5;245m0.0%"
+    # The server sends 5h and 7d usage in whole percents, so a decimal would only read ".0".
     printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
@@ -487,17 +488,12 @@ pace_gauge() {
 # than two, or at 100%. Otherwise color_for_pct colours it. Elsewhere yellow
 # and red mark only usage warnings and an expiring prompt cache.
 rate_seg() {
-  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c digits=1
+  local reset=$1 pct=$2 window=$3 step=$4 seg="" p c
   if [ -n "$reset" ] && [ "$reset" != "null" ]; then
     seg=$(countdown_str "$reset")
   fi
-  # The server sends windowed (5h, 7d) usage in whole percents, so a decimal
-  # there would only read ".0".
-  if [ -n "$window" ]; then
-    digits=0
-  fi
   if [ -n "$pct" ]; then
-    p=$(awk -v p="$pct" -v d="$digits" 'BEGIN{m = 10 ^ d; printf "%." d "f", int(p * m + 0.5) / m}')
+    p=$(awk -v p="$pct" 'BEGIN{printf "%.1f", int(p * 10 + 0.5) / 10}')
     if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
       c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" \
         "${dt_awk_vars[@]}" "$elapsed_awk"' BEGIN {
