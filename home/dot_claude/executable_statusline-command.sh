@@ -415,8 +415,8 @@ elapsed_awk='
 # $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
 # per day of a window over a day long, else one per hour, whose last cell is
-# darker (fill faint, track 22 levels darker). Every bar is 55 cells, the most
-# that keeps the widest line ("23.9h", "100.0%", "▼100.0%") whole in an 80-column
+# darker (fill faint, track 22 levels darker). Every bar is 55 cells, which
+# keeps the widest line ("23.9h", "100%", "▼100.0%") whole in an 80-column
 # terminal, where Claude Code indents the line 2 columns and cuts it 2 short of
 # the edge: 7 days of 7 or 8 cells split at the nearest cell, or 5 hours of 11. Cells are
 # "▇", which leaves the top eighth of the line blank so stacked bars don't
@@ -449,8 +449,8 @@ pace_gauge() {
     b = int((e >= w ? w - 1 : e) / t) * s
     yellow = b + s; red = b + 2 * s
     u = int(p * N / 100 + 0.5)
-    # Full once the shown percentage reads 100.0.
-    if (u > N || p >= 99.95) u = N
+    # Full once the shown percentage reads 100.
+    if (u > N || p >= 99.5) u = N
     full = u == N
     # The last filled cell sets the colour of the percentage and the gap too.
     c = 32
@@ -472,7 +472,7 @@ pace_gauge() {
     d = d < 0 ? -int(-d * 10 + 0.5) / 10 : int(d * 10 + 0.5) / 10
     # Fields are tab-separated so align_gauges can line up stacked gauges.
     gap = d > 0 ? pre c "m▲" sprintf("%.1f", d) "%" : d < 0 ? pre c "m▼" sprintf("%.1f", -d) "%" : pre "38;5;245m0.0%"
-    printf "%s\t%s%sm%.1f%%\033[0m\t%s\033[0m", out, pre, c, int(p * 10 + 0.5) / 10, gap
+    printf "%s\t%s%sm%d%%\033[0m\t%s\033[0m", out, pre, c, int(p + 0.5), gap
   }'
 }
 
@@ -493,7 +493,8 @@ rate_seg() {
     seg=$(countdown_str "$reset")
   fi
   if [ -n "$pct" ]; then
-    p=$(awk -v p="$pct" 'BEGIN{printf "%.1f", int(p * 10 + 0.5) / 10}')
+    # The server reports usage in whole percents, so a decimal would only read ".0".
+    p=$(awk -v p="$pct" 'BEGIN{printf "%d", int(p + 0.5)}')
     if [ -n "$window" ] && [ -n "$step" ] && [ -n "$seg" ]; then
       c=$(awk -v p="$pct" -v r="$reset" -v n="$now" -v w="$window" -v t="$step" \
         "${dt_awk_vars[@]}" "$elapsed_awk"' BEGIN {
