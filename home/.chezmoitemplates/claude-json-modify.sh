@@ -28,8 +28,9 @@ const hasBrowser = Object.values(servers).some((server) => {
 
 // Run the pinned mise install through `exec`, so no npx/npm wrapper processes sit in each session.
 // Use Chrome for Testing when installed: installed Chrome leaks a 1.4 GiB copy per killed launch.
+// OmniboxEverywhere adds a macOS menu bar search icon per browser, even headless.
 const chromeCommand = "sh";
-const chromeArgs = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""];
+const chromeArgs = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --chromeArg=--disable-features=OmniboxEverywhere --acceptInsecureCerts --no-usage-statistics \"$@\""];
 const oldChromeArgs = [
   ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated"],
   ["chrome-devtools-mcp@1.10.1", "--headless", "--isolated", "--acceptInsecureCerts"],
@@ -37,6 +38,7 @@ const oldChromeArgs = [
 ].map((args) => args.join(" "));
 const oldShArgs = [
   ["-c", "exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics"],
+  ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""],
 ].map((args) => args.join(" "));
 const chrome = servers["chrome-devtools"];
 if (!hasBrowser && !("chrome-devtools" in servers)) {

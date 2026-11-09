@@ -5,7 +5,7 @@
       "command": "sh",
       "args": [
         "-c",
-        "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --acceptInsecureCerts --no-usage-statistics \"$@\""
+        "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --chromeArg=--disable-features=OmniboxEverywhere --acceptInsecureCerts --no-usage-statistics \"$@\""
       ],
       "env": {}
     }

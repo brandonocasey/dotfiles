@@ -127,7 +127,7 @@ CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCL
 [mcp_servers.chrome-devtools]
 default_tools_approval_mode = "approve"
 command = "sh"
-args = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --acceptInsecureCerts --no-usage-statistics \"$@\""]
+args = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --headless --isolated --chromeArg=--disable-features=OmniboxEverywhere --acceptInsecureCerts --no-usage-statistics \"$@\""]
 
 [mcp_servers.chrome-devtools.tools.new_page]
 approval_mode = "approve"
@@ -137,7 +137,7 @@ approval_mode = "approve"
 
 [mcp_servers.chrome-headed]
 command = "sh"
-args = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --acceptInsecureCerts --no-usage-statistics \"$@\""]
+args = ["-c", "if b=$(\"$HOME/.local/bin/chrome-for-testing\" path 2>/dev/null); then set -- --executablePath \"$b\"; fi; exec \"$HOME/.local/share/mise/shims/chrome-devtools-mcp\" --isolated --chromeArg=--mute-audio --chromeArg=--disable-features=OmniboxEverywhere --acceptInsecureCerts --no-usage-statistics \"$@\""]
 enabled = false
 
 [mcp_servers.firefox-devtools]
