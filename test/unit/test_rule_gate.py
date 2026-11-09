@@ -1,4 +1,5 @@
-"""Check the rule-gate hook denies edits whose rules may be missing from context, until a denied edit is retried."""
+"""Check the rule-gate hook denies edits whose rules may be missing from context, until the rules are read whole or a
+denied edit is retried."""
 import contextlib
 import fcntl
 import importlib.util
@@ -68,8 +69,19 @@ class RuleGateTestCase(unittest.TestCase):
     def pre_compact(self, **fields):
         self.assertPasses(self.run_hook(self.event(hook_event_name="PreCompact", **fields)))
 
-    def batch_done(self, **fields):
-        self.assertPasses(self.run_hook(self.event(hook_event_name="PostToolBatch", tool_calls=[], **fields)))
+    def batch_done(self, *calls, **fields):
+        self.assertPasses(self.run_hook(self.event(hook_event_name="PostToolBatch", tool_calls=list(calls), **fields)))
+
+    def numbered(self, text, first=1):
+        """The text as a Read result shows it: each line after its number and a tab."""
+        return "\n".join(f"{n}\t{line}" for n, line in enumerate(text.split("\n"), first))
+
+    def read(self, file, shown=None, tool="Read"):
+        """A finished call that read the file, by default returning its whole text as the Read tool does."""
+        if shown is None:
+            shown = self.numbered(Path(file).read_text())
+        return {"tool_name": tool, "tool_input": {"file_path": str(file)}, "tool_use_id": "toolu_01",
+                "tool_response": shown}
 
     def assertDenied(self, result, file, rules):
         self.assertEqual((result.returncode, result.stderr), (0, ""))
@@ -370,6 +382,117 @@ class RetryTests(RuleGateTestCase):
         self.batch_done()
         self.assertPasses(self.edit(file))
         self.assertPasses(self.edit(self.work / "b.py"))
+
+
+class RuleReadTests(RuleGateTestCase):
+    UNCHANGED = ("File unchanged since last read. The content from the earlier Read tool_result in this conversation "
+                 "is still current — refer to that instead of re-reading.")
+
+    def test_a_rule_read_whole_lets_the_first_edit_pass(self):
+        rule = self.rule("sub dir/py;1.md", ["**/*.py"])
+        text = rule.read_text()
+        whole = self.numbered(text)
+        (self.root / "profile").mkdir()
+        (self.root / "profile/rules").symlink_to(self.home / ".claude/rules")
+        arrows = "\n".join(f"{n:>6}→{line}" for n, line in enumerate(text.split("\n"), 1))
+        cases = {
+            "absolute path": [self.read(rule)],
+            "path under ~": [self.read("~/.claude/rules/sub dir/py;1.md", whole)],
+            "path relative to the session directory": [self.read(os.path.relpath(rule, self.work), whole)],
+            "symlink to the rules directory": [self.read(self.root / "profile/rules/sub dir/py;1.md")],
+            "text blocks": [self.read(rule, [{"type": "text", "text": whole}, {"type": "image", "source": {}}])],
+            "another line number format": [self.read(rule, arrows)],
+            "after a call of another tool": [self.read(rule, "py;1.md", tool="Bash"), self.read(rule)],
+        }
+        for name, calls in cases.items():
+            with self.subTest(name):
+                self.session = next(self.sessions)
+                self.batch_done(*calls)
+                self.assertPasses(self.edit(self.work / "a.py"))
+        self.assertEqual((self.state / self.session).read_text().splitlines(), [f"main {rule.resolve()}"])
+
+    def test_a_read_that_does_not_show_the_whole_rule_leaves_the_edit_denied(self):
+        rule = self.rule("py.md", ["**/*.py"])
+        other = self.rule("txt.md", ["**/*.txt"])
+        text = rule.read_text()
+        lines, whole = text.split("\n"), self.numbered(text)
+        cases = {
+            "read from the second line": self.read(rule, self.numbered("\n".join(lines[1:]), first=2)),
+            "read without the last lines": self.read(rule, self.numbered("\n".join(lines[:4]))),
+            "a line cut short": self.read(rule, whole.replace("# py.md", "# py")),
+            "an unchanged-file notice": self.read(rule, self.UNCHANGED),
+            "no result": {"tool_name": "Read", "tool_input": {"file_path": str(rule)}},
+            "a result object": self.read(rule, {"type": "text", "file": {"filePath": str(rule), "content": text}}),
+            "another tool": self.read(rule, tool="Grep"),
+            "another rule": self.read(other),
+        }
+        file = self.work / "a.py"
+        for name, call in cases.items():
+            with self.subTest(name):
+                self.session = next(self.sessions)
+                self.batch_done(call)
+                self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+
+    def test_a_read_of_a_file_that_is_not_a_rule_records_nothing(self):
+        text = self.rule("py.md", ["**/*.py"]).read_text()
+        copies = [self.work / "py.md", self.home / ".claude/rules-old/py.md", self.home / ".claude/rules/py.txt"]
+        for copy in copies:
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            copy.write_text(text)
+            with self.subTest(copy):
+                self.batch_done(self.read(copy))
+        self.assertEqual(self.state_files(), [])
+
+    def test_a_read_counts_only_for_the_agent_that_made_it(self):
+        rule = self.rule("py.md", ["**/*.py"])
+        file = self.work / "a.py"
+        self.batch_done(self.read(rule), agent_id="agent-1")
+        self.assertPasses(self.edit(file, agent_id="agent-1"))
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.session = next(self.sessions)
+        self.batch_done(self.read(rule))
+        self.assertPasses(self.edit(file))
+        self.assertDenied(self.edit(file, agent_id="agent-1"), file, "~/.claude/rules/py.md")
+
+    def test_a_rule_read_drops_denied_edits(self):
+        rule = self.rule("py.md", ["**/*.py"])
+        file = self.work / "a.py"
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done(self.read(rule))
+        self.assertPasses(self.edit(self.work / "b.py"))
+        self.assertEqual((self.state / self.session).read_text().splitlines(), [f"main {rule.resolve()}"])
+
+    def test_malformed_tool_calls_record_nothing(self):
+        rule = self.rule("py.md", ["**/*.py"])
+        call = self.read(rule)
+        relative = self.read(os.path.relpath(rule, self.work), call["tool_response"])
+        cases = {
+            "no tool_calls": {},
+            "call that is a list": {"tool_calls": [[call]]},
+            "no tool_input": {"tool_calls": [{k: v for k, v in call.items() if k != "tool_input"}]},
+            "file_path with NUL": {"tool_calls": [{**call, "tool_input": {"file_path": f"{rule}\0"}}]},
+            "result block that is not an object": {"tool_calls": [{**call, "tool_response": ["text"]}]},
+            "text block without text": {"tool_calls": [{**call, "tool_response": [{"type": "text"}]}]},
+            "cwd with NUL": {"tool_calls": [relative], "cwd": f"{self.work}\0"},
+        }
+        for name, fields in cases.items():
+            with self.subTest(name):
+                self.assertPasses(self.run_hook(self.event(hook_event_name="PostToolBatch", **fields)), name)
+        self.assertEqual(self.state_files(), [])
+
+    def test_a_read_of_an_unusable_rule_file_records_nothing(self):
+        rules = self.home / ".claude/rules"
+        os.mkfifo(rules / "fifo.md")
+        (rules / "dangling.md").symlink_to(self.root / "missing.md")
+        real = self.rule("nl\nname.md", ["**/*.py"], directory=self.root / "elsewhere")
+        (rules / "newline.md").symlink_to(real)
+        calls = {"fifo": self.read(rules / "fifo.md", ""),
+                 "dangling symlink": self.read(rules / "dangling.md", "File does not exist."),
+                 "target path with a newline": self.read(rules / "newline.md")}
+        for name, call in calls.items():
+            with self.subTest(name):
+                self.batch_done(call)
+        self.assertEqual(self.state_files(), [])
 
 
 class WorkingFolderTests(RuleGateTestCase):

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Deny edits whose ~/.claude/rules files may be missing from the agent's context, until it retries a denied edit.
+"""Deny edits whose ~/.claude/rules files may be missing from the agent's context, until it reads those rules whole or
+retries a denied edit.
 
 Claude Code skips rules for files outside the working folder, loads a new file's rules only with its first write, and
 does not reload rules after a compaction.
@@ -254,16 +255,21 @@ def open_nonblocking(path: str, flags: int) -> int:
     return os.open(path, flags | os.O_NONBLOCK)
 
 
+@contextlib.contextmanager
+def open_rule(rule: str | os.PathLike[str]):
+    """Yield the rule's text file, or None when it is not a regular file."""
+    with open(rule, encoding="utf-8-sig", errors="replace", opener=open_nonblocking) as f:
+        yield f if stat.S_ISREG(os.fstat(f.fileno()).st_mode) else None
+
+
 def rule_globs(rule: Path) -> list[str]:
     """The globs of a rule's frontmatter `paths:`: a block list, a flow list on one or more lines, or one string.
 
     Like Claude Code, read no frontmatter when the closing `---` is missing. A rule that is not a regular file has none.
     """
     globs = []
-    with open(rule, encoding="utf-8-sig", errors="replace", opener=open_nonblocking) as f:
-        if not stat.S_ISREG(os.fstat(f.fileno()).st_mode):
-            return []
-        if f.readline().strip() != "---":
+    with open_rule(rule) as f:
+        if f is None or f.readline().strip() != "---":
             return []
         in_paths, flow = False, ""
         for line in f:
@@ -391,8 +397,72 @@ def on_instructions_loaded(data: dict) -> None:
         mark_loaded(records, key, real)
 
 
+def result_text(response: object) -> str:
+    """The text of a tool result as the agent receives it: one string, or the text blocks of a list."""
+    if isinstance(response, str):
+        return response
+    blocks = response if isinstance(response, list) else []
+    texts = [block.get("text") for block in blocks if isinstance(block, dict) and block.get("type") == "text"]
+    return "\n".join(text for text in texts if isinstance(text, str))
+
+
+def read_calls(data: dict) -> list[tuple[str, str]]:
+    """(realpath, result text) of each Read call in the hook input's tool batch."""
+    cwd, calls = data.get("cwd"), data.get("tool_calls")
+    if not isinstance(calls, list) or not (cwd is None or valid_path(cwd)):
+        return []
+    found = []
+    for call in calls:
+        if not isinstance(call, dict) or call.get("tool_name") != "Read":
+            continue
+        tool_input = call.get("tool_input")
+        given = tool_input.get("file_path") if isinstance(tool_input, dict) else None
+        if valid_path(given):
+            real = os.path.realpath(os.path.join(cwd or "", os.path.expanduser(given)))
+            found.append((real, result_text(call.get("tool_response"))))
+    return found
+
+
+def shows_whole_rule(shown: str, rule: str) -> bool:
+    """Whether the text holds every non-blank line of the rule file, in order, each at the end of a line.
+
+    A Read result starts each line with its number, and one that is partial, cut short, failed, or only says the file
+    is unchanged lacks some line. A rule that cannot be read or is not a regular file is never shown whole.
+    """
+    try:
+        with open_rule(rule) as f:
+            if f is None:
+                return False
+            wanted = [line for line in f.read().splitlines() if line.strip()]
+    except OSError:
+        return False
+    # Each search goes on where the last one stopped, which keeps the rule's line order.
+    remaining = iter(shown.splitlines())
+    for want in wanted:
+        if not any(line.endswith(want) for line in remaining):
+            return False
+    return True
+
+
+def rules_read_whole(data: dict) -> set[str]:
+    """The realpaths of the user rules whose whole text a Read call in the hook input's tool batch returned."""
+    reads = read_calls(data)
+    if not reads:
+        return set()
+    rules = {os.path.realpath(rule) for rule in rule_files(home() / ".claude/rules")}
+    # A newline in the stored realpath would split the record.
+    return {real for real, shown in reads if real in rules and "\n" not in real and shows_whole_rule(shown, real)}
+
+
+def end_denied_batch(records: set[tuple[str, ...]], key: str) -> None:
+    """Mark the edits denied in the agent's ended batch as shown to it, so its next edit of such a file is a retry."""
+    ended = {(owner, rule) for owner, rule in records if owner.startswith(f"{key}/") and owner.endswith("/batch")}
+    records.difference_update(ended)
+    records.update((owner.removesuffix("/batch"), rule) for owner, rule in ended)
+
+
 def on_post_tool_batch(data: dict) -> None:
-    """Mark the edits denied in the agent's ended tool batch as shown to it, so its next edit of such a file is a retry.
+    """Update the agent's records at the end of its tool batch: denied edits and rules it read whole.
 
     Claude Code sends this once per batch, after every call in it, before the agent's next model request. It skips a
     batch the user interrupts, so the agent's next edit of a file denied there is denied once more.
@@ -401,15 +471,17 @@ def on_post_tool_batch(data: dict) -> None:
     if not (session and key):
         return
     path = state_dir() / session
-    # Sessions without denied edits keep no state file; any other error must surface.
-    try:
-        path.stat()
-    except FileNotFoundError:
-        return
+    read = rules_read_whole(data)
+    # Sessions without denied edits or rule reads keep no state file; any other error must surface.
+    if not read:
+        try:
+            path.stat()
+        except FileNotFoundError:
+            return
     with locked_records(path) as records:
-        ended = {(owner, rule) for owner, rule in records if owner.startswith(f"{key}/") and owner.endswith("/batch")}
-        records.difference_update(ended)
-        records.update((owner.removesuffix("/batch"), rule) for owner, rule in ended)
+        end_denied_batch(records, key)
+        for rule in read:
+            mark_loaded(records, key, rule)
 
 
 def on_pre_tool_use(data: dict) -> str | None:
