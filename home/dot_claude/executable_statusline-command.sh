@@ -202,14 +202,14 @@ case "$model_raw" in
     ;;
 esac
 
-# --- Effort level (single letter; capital X for max, beside x for xhigh) ---
+# --- Effort level (single letter; x for max, e for xhigh/extra) ---
 effort=""
 case "$effort_raw" in
   low|LOW|Low)       effort="l" ;;
   medium|MEDIUM|Medium|med) effort="m" ;;
   high|HIGH|High)    effort="h" ;;
-  xhigh|XHIGH|xHigh|XHigh|extreme) effort="x" ;;
-  max|MAX|Max)       effort="X" ;;
+  xhigh|XHIGH|xHigh|XHigh|extreme) effort="e" ;;
+  max|MAX|Max)       effort="x" ;;
   "")                effort="" ;;
   *)                 effort=$(echo "$effort_raw" | cut -c1 | tr '[:upper:]' '[:lower:]') ;;
 esac

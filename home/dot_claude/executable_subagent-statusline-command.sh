@@ -52,8 +52,8 @@ printf '%s' "$input" | jq -c --argjson ctx "$ctx" --argjson settings "$settings"
     | if $e == "low" then "l"
       elif $e == "medium" or $e == "med" then "m"
       elif $e == "high" then "h"
-      elif $e == "xhigh" or $e == "extreme" then "x"
-      elif $e == "max" then "X"
+      elif $e == "xhigh" or $e == "extreme" then "e"
+      elif $e == "max" then "x"
       else .[0:1] end;
 
   def fmt_tokens:
