@@ -60,7 +60,7 @@ headless() {
   [ "${CLAUDE_CODE_SESSION_ATTENDED:-1}" = 0 ] && [ -z "${CLAUDE_JOB_DIR:-}" ]
 }
 
-# Attended Claude session names start with the session's port ("47950 Fix
+# Agent session names start with the session's port ("47950 Fix
 # login"). A block port already in front is replaced; the pattern MUST match
 # session-port.sh's block layout.
 bare() {
@@ -167,6 +167,8 @@ esac
 case $agent in claude | restore) headless && exit 0 ;; esac
 
 if [ -n "${TMUX:-}" ] && [ -n "${TMUX_PANE:-}" ] && command -v tmux >/dev/null 2>&1; then
+  tmux_command=$(sh "$HOME/.config/tmux/scripts/tmux-client.sh" 2>/dev/null) || exit 0
+  tmux() { "$tmux_command" "$@"; }
   target=tmux
 elif [ -n "${SSH_TTY:-}" ] && [ -w "$SSH_TTY" ]; then
   case ${TERM:-} in
@@ -255,6 +257,8 @@ claude)
 codex)
   session_id=$(printf '%s' "$hook_input" | jq -r '.session_id // empty' 2>/dev/null)
   [ -n "$session_id" ] || exit 0
+  printf '%s' "$hook_input" | sh "$(dirname "$0")/session-port.sh" codex >/dev/null
+  sid=$session_id
   index_file="${CODEX_HOME:-$HOME/.codex}/session_index.jsonl"
   # A detached watcher MUST stop when its Codex process exits or another session
   # takes this pane. Hook timeouts must not bound idle /rename synchronization.
@@ -299,6 +303,8 @@ watch-codex)
   case $owner in '' | *[!0-9]*) exit 0 ;; esac
   [ -n "$session_id" ] && [ -n "$token" ] || exit 0
   index_file="${CODEX_HOME:-$HOME/.codex}/session_index.jsonl"
+  sid_file=$(printf '%s' "$session_id" | tr -c 'A-Za-z0-9._-' '_')
+  port_file="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline/port-$sid_file"
   ;;
 *)
   echo "agent-tmux-session: unknown agent '$agent'; use claude, codex, or set" >&2
@@ -343,9 +349,14 @@ if [ "$agent" = watch-codex ]; then
   last_title=
   while kill -0 "$owner" 2>/dev/null &&
     [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ]; do
+    if [ ! -f "$port_file" ]; then
+      jq -cn --arg id "$session_id" '{session_id: $id, source: "compact"}' |
+        sh "$(dirname "$0")/session-port.sh" codex >/dev/null
+    fi
+    touch -c "$port_file" 2>/dev/null
     active=$(tmux display-message -p -t "$TMUX_PANE" '#{pane_active} #{window_active}' 2>/dev/null)
     if [ "$active" = '1 1' ]; then
-      title=$(session_title)
+      title=$(ported "$(session_title)" "$session_id")
       title_pane=$(tmux display-message -p -t "$TMUX_PANE" '#{@codex_title_pane}' 2>/dev/null)
       if [ -n "$title" ] && { [ "$title" != "$last_title" ] || [ "$title_pane" != "$TMUX_PANE" ]; }; then
         [ "$(tmux show-options -pqv -t "$TMUX_PANE" @codex_title_owner 2>/dev/null)" = "$token" ] || break

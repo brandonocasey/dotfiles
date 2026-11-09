@@ -92,6 +92,9 @@ if [ -z "$port" ]; then
 fi
 printf '%s\n' "$port" > "$file"
 
+# Codex shares reservations, but does not consume Claude's environment or title output.
+[ "${1:-}" = codex ] && exit 0
+
 if [ -n "$CLAUDE_ENV_FILE" ]; then
   {
     printf 'export PORT=%s\n' "$port"

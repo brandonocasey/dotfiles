@@ -24,7 +24,12 @@ Before that reload, the same configuration change runs tpm to install missing
 plugins and update all plugins.
 
 Codex's title hook watches the saved session name once per second while Codex
-runs. Delayed automatic titles, `/rename`, and resumed sessions update tmux
+runs. Tmux names start with the session's reserved port, as Claude's do,
+and show the port alone until a title is available. Both agents share the
+40000–48999 pool of ten-port blocks. The watcher keeps Codex's reservation
+alive and reserves a free block again if it expired during suspension.
+Later renames retain the reserved port prefix.
+Delayed automatic titles, `/rename`, and resumed sessions update tmux
 without waiting for a turn to finish. The active pane in the active window
 supplies the name; switching panes selects that pane's title. A manual tmux
 rename lasts until the next title change, pane switch, or title hook.

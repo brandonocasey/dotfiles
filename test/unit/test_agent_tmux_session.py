@@ -1,5 +1,7 @@
 """Exercise the registered Codex title hook against an isolated tmux server."""
-import fcntl
+import re
+import shlex
+import signal
 import json
 import os
 from pathlib import Path
@@ -41,6 +43,10 @@ class TmuxCase(unittest.TestCase):
         hooks.mkdir(parents=True)
         for name in ("agent-tmux-session", *self.hooks):
             shutil.copyfile(REPO / f"home/dot_claude/hooks/executable_{name}.sh", hooks / f"{name}.sh")
+        scripts = self.home / ".config/tmux/scripts"
+        scripts.mkdir(parents=True)
+        shutil.copyfile(REPO / "home/dot_config/tmux/scripts/executable_tmux-client.sh",
+                        scripts / "tmux-client.sh")
 
     def tmux(self, *args, check=True):
         return subprocess.run(["tmux", "-S", str(self.socket), *args], env=self.env,
@@ -61,11 +67,16 @@ class TmuxCase(unittest.TestCase):
 @unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
 class CodexTmuxSessionTests(TmuxCase):
     prefix = "codex-tmux-test-"
+    hooks = ("session-port",)
 
     def setUp(self):
         super().setUp()
         self.index = self.home / ".codex/session_index.jsonl"
         self.index.parent.mkdir()
+        self.ports = self.home / ".cache/claude-statusline"
+        self.ports.mkdir(parents=True)
+        (self.ports / "port-one").write_text("40000\n")
+        (self.ports / "port-two").write_text("40010\n")
         self.parents = []
         self.addCleanup(self.stop_parents)
         driver = self.home / "codex"
@@ -96,10 +107,10 @@ class CodexTmuxSessionTests(TmuxCase):
                 parent.wait(timeout=5)
             parent.stdout.close()
 
-    def fire(self, sid="one", event="SessionStart", parent=None):
+    def fire(self, sid="one", event="SessionStart", parent=None, source="startup"):
         command = next(hook["command"] for group in HOOKS[event] for hook in group["hooks"]
                        if "agent-tmux-session.sh codex" in hook["command"])
-        payload = dict(session_id=sid, hook_event_name=event, source="startup",
+        payload = dict(session_id=sid, hook_event_name=event, source=source,
                        transcript_path=str(self.home / f"{sid}.jsonl"), cwd=str(self.home))
         parent = parent or self.parent
         parent.stdin.write(json.dumps(dict(command=command, payload=payload)) + "\n")
@@ -110,132 +121,169 @@ class CodexTmuxSessionTests(TmuxCase):
         with self.index.open("a") as stream:
             stream.write(json.dumps(dict(id=sid, thread_name=value)) + "\n")
 
+    def watcher_pid(self, sid="one"):
+        pattern = "^sh " + re.escape(str(self.home / ".claude/hooks/agent-tmux-session.sh"))
+        watchers = subprocess.check_output(["pgrep", "-f", pattern + " watch-codex " + sid + " "],
+                                          text=True, timeout=5).splitlines()
+        self.assertEqual(len(watchers), 1)
+        return int(watchers[0])
+
+    def test_watcher_restores_reservation_pruned_during_suspension(self):
+        self.fire()
+        self.wait_name("40000")
+        reservation = self.ports / "port-one"
+        watcher = self.watcher_pid()
+        os.kill(watcher, signal.SIGSTOP)
+        try:
+            os.utime(reservation, (1, 1))
+            subprocess.run(["sh", str(self.home / ".claude/hooks/session-port.sh"), "codex"],
+                           input=json.dumps(dict(session_id="other", source="startup")),
+                           text=True, env=self.env, capture_output=True, check=True, timeout=5)
+            self.assertFalse(reservation.exists(), "Suspended reservation was not pruned")
+        finally:
+            os.kill(watcher, signal.SIGCONT)
+        deadline = time.monotonic() + 4
+        while not reservation.exists() and time.monotonic() < deadline:
+            time.sleep(0.03)
+        self.assertTrue(reservation.exists(), "Watcher did not restore its reservation")
+        port = reservation.read_text().strip()
+        self.assertNotEqual(port, (self.ports / "port-other").read_text().strip())
+        self.title("After waking")
+        self.wait_name(f"{port} After waking")
+
+    def test_allocates_port_before_title_and_keeps_it_on_resume(self):
+        inherited = self.home / "claude-env"
+        inherited.write_text("parent environment\n")
+        self.stop_parents()
+        self.env["CLAUDE_ENV_FILE"] = str(inherited)
+        self.parent = self.start_parent()
+        self.fire("new")
+        deadline = time.monotonic() + 4
+        reservation = self.ports / "port-new"
+        while not reservation.exists() and time.monotonic() < deadline:
+            time.sleep(0.03)
+        self.assertTrue(reservation.exists(), "Codex did not reserve a port")
+        port = reservation.read_text().strip()
+        self.assertRegex(port, r"^4[0-8][0-9][0-9]0$")
+        self.assertNotIn(port, ("40000", "40010"))
+        self.wait_name(port)
+        self.title("47950 Fix login", "new")
+        self.wait_name(f"{port} Fix login")
+        self.fire("new", source="resume")
+        self.fire("new", event="Stop")
+        self.wait_name(f"{port} Fix login")
+        self.assertEqual(reservation.read_text().strip(), port)
+        self.assertEqual(inherited.read_text(), "parent environment\n")
+        os.utime(reservation, (1, 1))
+        deadline = time.monotonic() + 4
+        while reservation.stat().st_mtime == 1 and time.monotonic() < deadline:
+            time.sleep(0.03)
+        self.assertGreater(reservation.stat().st_mtime, 1, "Live reservation expired")
+
+    def test_hook_without_codex_parent_keeps_port_prefix(self):
+        payload = self.home / "hook-input.json"
+        payload.write_text(json.dumps(dict(session_id="one", source="resume")))
+        output = self.home / "hook-output"
+        errors = self.home / "hook-errors"
+        keys = ("HOME", "CODEX_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "TMUX", "TMUX_PANE")
+        command = shlex.join(["env", *(f"{key}={self.env[key]}" for key in keys),
+                              "sh", str(self.home / ".claude/hooks/agent-tmux-session.sh"), "codex"])
+        for title in ("Fix direct hook", ""):
+            with self.subTest(title=title):
+                self.title(title)
+                self.tmux("run-shell", command + " < " + shlex.quote(str(payload)) +
+                          " > " + shlex.quote(str(output)) + " 2> " + shlex.quote(str(errors)))
+                self.assertEqual(output.read_text(), "")
+                self.assertEqual(errors.read_text(), "")
+                self.assertEqual(self.name(), "40000" + (f" {title}" if title else ""))
+
     def test_title_created_after_startup_and_idle_rename(self):
         self.fire()
         self.title("Fix late title")
-        self.wait_name("Fix late title")
+        self.wait_name("40000 Fix late title")
         self.title("Renamed while idle")
-        self.wait_name("Renamed while idle")
+        self.wait_name("40000 Renamed while idle")
 
     def test_resume_supersedes_previous_session(self):
         self.title("First session")
         self.fire()
-        self.wait_name("First session")
+        self.wait_name("40000 First session")
         self.title("Second session", "two")
         self.fire("two")
-        self.wait_name("Second session")
+        self.wait_name("40010 Second session")
         self.title("Stale first title")
         self.title("Current second title", "two")
-        self.wait_name("Current second title")
+        self.wait_name("40010 Current second title")
         time.sleep(1.2)
-        self.assertEqual(self.name(), "Current second title")
+        self.assertEqual(self.name(), "40010 Current second title")
 
     def test_active_pane_selects_session_title(self):
         self.title("First pane")
         self.fire()
-        self.wait_name("First pane")
+        self.wait_name("40000 First pane")
         pane = self.tmux("split-window", "-d", "-P", "-F", "#{pane_id}", "sleep 60").strip()
         self.title("Second pane", "two")
         self.fire("two", parent=self.start_parent(pane))
         time.sleep(1.2)
-        self.assertEqual(self.name(), "First pane")
+        self.assertEqual(self.name(), "40000 First pane")
         self.tmux("select-pane", "-t", pane)
-        self.wait_name("Second pane")
+        self.wait_name("40010 Second pane")
         self.tmux("select-pane", "-t", self.env["TMUX_PANE"])
-        self.wait_name("First pane")
+        self.wait_name("40000 First pane")
 
     def test_fast_pane_switch_restores_title_between_watcher_ticks(self):
-        self.stop_parents()
-        trace = self.home / "ticks.jsonl"
-        bindir = self.home / "bin"
-        bindir.mkdir()
-        wrapper = bindir / "tmux"
-        gate = self.home / "first-ticks.lock"
-        wrapper.write_text("#!/usr/bin/python3\nimport fcntl, json, os, subprocess, sys, time\n"
-                           "tick = sys.argv[-1].startswith('#{pane_active} #{window_active}')\n"
-                           f"if tick and os.environ['TMUX_PANE'] == {self.env['TMUX_PANE']!r}:\n"
-                           f"    gate = open({str(gate)!r}, 'a')\n"
-                           "    fcntl.flock(gate, fcntl.LOCK_SH)\n"
-                           f"result = subprocess.run([{shutil.which('tmux')!r}, *sys.argv[1:]], capture_output=True, timeout=5)\n"
-                           "if tick:\n"
-                           f"    with open({str(trace)!r}, 'a') as stream:\n"
-                           "        stream.write(json.dumps(dict(pane=os.environ['TMUX_PANE'], output=result.stdout.decode())) + '\\n')\n"
-                           "sys.stdout.buffer.write(result.stdout)\nsys.stderr.buffer.write(result.stderr)\n"
-                           "sys.exit(result.returncode)\n")
-        wrapper.chmod(0o755)
-        self.env["PATH"] = str(bindir) + os.pathsep + self.env["PATH"]
-
-        def drain():
-            # Watchers outlive their parent by one tick and still write under HOME,
-            # so wait for them before the temp dir is removed.
-            self.stop_parents()
-            deadline = time.monotonic() + 5
-            while (subprocess.run(["pgrep", "-f", str(self.home)], capture_output=True).returncode == 0
-                   and time.monotonic() < deadline):
-                time.sleep(0.05)
-
-        self.addCleanup(drain)
-        self.parent = self.start_parent()
         first = self.env["TMUX_PANE"]
         second = self.tmux("split-window", "-d", "-P", "-F", "#{pane_id}", "sleep 60").strip()
-
-        def ticks(pane):
-            if not trace.exists():
-                return []
-            return [row for line in trace.read_text().splitlines()
-                    if (row := json.loads(line))["pane"] == pane]
-
         self.title("First pane")
         self.title("Second pane", "two")
         self.fire()
-        self.wait_name("First pane")
-        time.sleep(0.5)
-        self.fire("two", parent=self.start_parent(second))
+        self.wait_name("40000 First pane")
         deadline = time.monotonic() + 4
-        while len(ticks(first)) < 2 and time.monotonic() < deadline:
+        while self.tmux("display-message", "-p", "#{@codex_title_pane}").strip() != first:
+            self.assertLess(time.monotonic(), deadline)
             time.sleep(0.01)
-        self.assertGreaterEqual(len(ticks(first)), 2)
-        time.sleep(0.1)
-        # Hold first-pane ticks until the test switches back, so none reads the
-        # pane while it is inactive.
-        with gate.open("a") as held:
-            fcntl.flock(held, fcntl.LOCK_EX)
+        watcher = self.watcher_pid()
+        # The first watcher MUST never observe its pane inactive during this switch.
+        os.kill(watcher, signal.SIGSTOP)
+        try:
+            self.fire("two", parent=self.start_parent(second))
             self.tmux("select-pane", "-t", second)
-            self.wait_name("Second pane")
+            self.wait_name("40010 Second pane")
             self.tmux("select-pane", "-t", first)
-        self.wait_name("First pane")
-        self.assertTrue(all(row["output"].split()[:2] == ["1", "1"] for row in ticks(first)))
+        finally:
+            os.kill(watcher, signal.SIGCONT)
+        self.wait_name("40000 First pane")
 
     def test_manual_name_survives_until_title_changes(self):
         self.title("Agent title")
         self.fire()
-        self.wait_name("Agent title")
+        self.wait_name("40000 Agent title")
         self.tmux("rename-session", "Manual name")
         time.sleep(1.2)
         self.assertEqual(self.name(), "Manual name")
         self.title("Changed agent title")
-        self.wait_name("Changed agent title")
+        self.wait_name("40000 Changed agent title")
 
     def test_duplicate_and_unsafe_title(self):
-        self.tmux("new-session", "-d", "-s", "Fix v1_2 issue", "sleep 60")
+        self.tmux("new-session", "-d", "-s", "40000 Fix v1_2 issue", "sleep 60")
         self.title("Fix v1.2: #issue!")
         self.fire()
-        self.wait_name("Fix v1_2 issue (2)")
+        self.wait_name("40000 Fix v1_2 issue (2)")
 
     def test_partial_index_recovers(self):
         self.index.write_text('{"id":')
         self.fire()
         self.index.write_text('{"id":\n{"id":"one","thread_name":"Recovered title"}\n')
-        self.wait_name("Recovered title")
+        self.wait_name("40000 Recovered title")
 
     def test_empty_and_invalid_titles_wait_for_valid_title(self):
         self.index.write_text('{"id":"one","thread_name":null}\n')
         self.fire()
         self.title("")
         time.sleep(1.2)
-        self.assertEqual(self.name(), "original")
+        self.assertEqual(self.name(), "40000")
         self.title("Valid title")
-        self.wait_name("Valid title")
+        self.wait_name("40000 Valid title")
 
     def test_claude_custom_title_still_wins(self):
         transcript = self.home / "claude.jsonl"
@@ -249,12 +297,12 @@ class CodexTmuxSessionTests(TmuxCase):
     def test_parent_exit_stops_syncing(self):
         self.title("Before exit")
         self.fire()
-        self.wait_name("Before exit")
+        self.wait_name("40000 Before exit")
         self.parent.stdin.close()
         self.parent.wait(timeout=5)
         self.title("After exit")
         time.sleep(1.2)
-        self.assertEqual(self.name(), "Before exit")
+        self.assertEqual(self.name(), "40000 Before exit")
 
 
 @unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
