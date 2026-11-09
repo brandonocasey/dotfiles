@@ -24,6 +24,8 @@ if OS.mac?
   # iOS Simulator input (tap, swipe, text); the idb client comes from mise (pipx:fb-idb)
   tap 'meta/fb'
   brew 'idb-companion'
+  # Silent audio output; ios-sim sends agent simulators' sound to it
+  cask 'blackhole-2ch'
   cask 'balenaetcher'
   cask 'brave-browser'
   cask 'calibre'

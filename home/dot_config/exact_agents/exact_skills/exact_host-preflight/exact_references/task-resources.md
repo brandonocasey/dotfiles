@@ -47,7 +47,11 @@ command for the task.
 Each worktree owns one simulator; a shared one lets another worktree's install replace the app
 under test (same bundle ID). Before any simulator work, get its UDID:
 `sh ~/.config/agents/skills/host-preflight/scripts/ios-sim [worktree]`. It clones the shut-down
-base device `ios-base` on first use, boots the clone, and prints the UDID. Pass that UDID as
+base device `ios-base` on first use, boots the clone, and prints the UDID. Each call also sends the
+simulator's sound to the silent BlackHole 2ch output, so playback needs no mute; if it warns that
+the simulator still plays aloud, tell the user. `ios-sim audio` lists simulators playing to a Mac
+output (name, UDID, output). Only when the user asks to hear it, run `ios-sim audio on [worktree]`;
+it stays audible until `ios-sim audio off [worktree]` or `rm`. Pass the UDID as
 `-destination "id=<udid>"` to `xcodebuild`, never `name=`, with
 `-derivedDataPath <worktree>/.cache/agents/DerivedData` so the build output goes with the
 worktree instead of the shared `~/Library/Developer/Xcode/DerivedData`. Drive it from the shell, which needs no
