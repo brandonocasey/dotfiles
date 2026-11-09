@@ -40,15 +40,19 @@ is complete. Use `agt task list` to find active records.
 
 ## Pause and continue
 
-Here `<out>` is `agents/output/<task>/` in the XDG cache root, beside `TODO.md`.
+Here `<keep>` is `${XDG_STATE_HOME:-~/.local/state}/agents/handoffs/<task>/`,
+for the `<task>` whose `TODO.md` is in `agents/output/<task>/`. It stays out of
+`agents/output`, which `agt cleanup` empties after 7 days unchanged. Remove it
+with `find <keep> -delete` when the task is complete.
 
 **Pause** when the user asks to stop or pause the task's work, not when they
 correct one action:
 
 1. Start nothing new. Send each running sub-agent (Claude Code: `SendMessage`):
    "Stop now. Stop your background jobs with TaskStop if you have it; leave
-   detached jobs running. Write a handoff file in your scratch directory with:
-   your assignment as given (task, owned files, checks, acceptance criteria),
+   detached jobs running. Write a handoff file in your scratch directory (a
+   scratch note, allowed for read-only roles too; use a shell heredoc if you
+   have no Write tool) with: your assignment as given (task, owned files, checks, acceptance criteria),
    what is done, findings so far, uncommitted changes, the next step, and each
    running job's log path and done condition. Then hand back once, ending with
    the line HANDOFF: <path>."
@@ -58,8 +62,8 @@ correct one action:
    a handoff.
 3. Stop your own background jobs by ID, except detached ones. Leave servers,
    worktrees, and uncommitted changes in place; a pause makes no commit.
-4. Copy each agent's handoff file to `<out>/handoffs/<agent-id>.md`. Write
-   `<out>/handoff.md`: this session's ID and title, worktree, branch, HEAD,
+4. Copy each agent's handoff file to `<keep>/agents/<agent-id>.md`, and
+   `TODO.md` to `<keep>/TODO.md`. Write `<keep>/handoff.md`: this session's ID and title, worktree, branch, HEAD,
    `git status --short` summary, granted authorizations in their exact words,
    your next step, and each stopped job with its log, done condition, and how
    to restart it. Add one line per sub-agent: role, agent ID, description,
@@ -73,18 +77,22 @@ correct one action:
    `claude -p` session (`orchestrate`) counts as a job: record its request file
    and starting commit.
 5. Create the task record when none exists. Then run
-   `agt task update <id> --revision <n> --status paused --next-step "Continue per <out>/handoff.md"`.
+   `agt task update <id> --revision <n> --status paused --next-step "Continue per <keep>/handoff.md"`,
+   with `<keep>` written out in full.
 6. Report what stopped, each handoff, and each agent stopped without one.
 
 **Continue** when the user asks to continue or resume paused work, such as
 "continue the work now", in this session or a new one:
 
-1. Use this session's paused task. Otherwise list records with `status: paused`
-   in `agt task list`. Match a task or session the user names against record IDs,
-   objectives, and the session line of each `<out>/handoff.md`. With no name,
-   take the only paused record for this repository; with several, ask.
-2. Run `show` and validate it as above. Read `<out>/handoff.md` and `TODO.md`,
-   keep the same `<task>` name, and run
+1. Use this session's paused task. A session with its own unpaused work goes
+   on with that work, unless the user names paused work. Otherwise list records
+   with `status: paused` in `agt task list`. Match a task or session the user
+   names against record IDs, objectives, and the session line of each
+   `<keep>/handoff.md`. With no name, take the only paused record for this
+   repository; with several, ask.
+2. Run `show` and validate it as above. Read `<keep>/handoff.md` and
+   `<keep>/TODO.md`, keep the same `<task>` name, and restore `TODO.md` to
+   `agents/output/<task>/` when it is gone. Then run
    `agt task update <id> --revision <n> --status active`.
 3. Restart the stopped jobs that are still needed.
 4. Never continue an old agent. For each agent not finished, spawn a fresh

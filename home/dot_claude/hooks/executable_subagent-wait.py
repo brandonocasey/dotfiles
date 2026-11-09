@@ -32,8 +32,8 @@ REPORT = (
     "once, at the end; plain reply text does not reach the main session. "
     "Without it, your final plain reply is the report."
 )
-# Keep in sync with session-resume's Pause message: a fresh agent continues
-# from either handoff with the same prompt.
+# This text MUST match session-resume's Pause message, so a fresh agent
+# continues from either handoff with the same prompt.
 NOTE = (
     "your assignment as given (task, owned files, checks, acceptance "
     "criteria), what is done, findings so far, uncommitted changes, the next "
