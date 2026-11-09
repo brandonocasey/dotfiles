@@ -172,6 +172,7 @@ managed=$(
     "anthropic-skills:pptx": "name-only",
     "anthropic-skills:xlsx": "name-only",
     "anthropic-skills:skill-creator": "name-only",
+    "skill-creator": "name-only",
     "anthropic-skills:morning": "user-invocable-only",
     "anthropic-skills:import-memory": "user-invocable-only",
     "keybindings-help": "user-invocable-only",
