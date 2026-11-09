@@ -13,7 +13,6 @@ static const unsigned GUEST_OUTPUT_SCOPE = 2;
 // CoreSimulator's value for "follow the Mac's default output", the route a booted simulator starts with.
 static NSString *const DEFAULT_OUTPUT_UID = @"__sim__hostUseSystemDefaultDeviceUID";
 static const int64_t ROUTE_TIMEOUT_NS = 5 * NSEC_PER_SEC;
-// Exit status when the host device is missing; other failures exit 1.
 static const int EXIT_NO_HOST_DEVICE = 2;
 
 @protocol SimAudioHostRoutable

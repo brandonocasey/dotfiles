@@ -8,7 +8,7 @@
 #   ios-sim audio on [path]   play that worktree's simulator through the Mac's default output
 #                             until `audio off` or `rm`, also when it starts later
 #   ios-sim audio off [path]  silence it again
-# device-audio lists what is playing and runs `audio` for every device kind.
+# List what is playing with device-audio.
 # The base device (default name "ios-base", override with IOS_SIM_BASE) must exist and be shut down:
 # it holds the shared setup (saved hosts, settings) that every clone starts from.
 set -eu
