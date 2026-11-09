@@ -6,3 +6,22 @@
 type = "archive"
 url = "https://github.com/tmux-plugins/tpm/archive/refs/tags/v3.1.0.tar.gz"
 stripComponents = 1
+
+# Anthropic skills track upstream main (no release tags exist). chezmoi
+# re-downloads at most daily on `chezmoi apply`; force with `chezmoi -R apply`.
+# exact drops files upstream removed.
+[".config/agents/skills/skill-creator"]
+type = "archive"
+url = "https://github.com/anthropics/skills/archive/refs/heads/main.tar.gz"
+stripComponents = 3
+include = ["*/skills/skill-creator/**"]
+exact = true
+refreshPeriod = "24h"
+
+[".config/agents/skills/frontend-design"]
+type = "archive"
+url = "https://github.com/anthropics/skills/archive/refs/heads/main.tar.gz"
+stripComponents = 3
+include = ["*/skills/frontend-design/**"]
+exact = true
+refreshPeriod = "24h"
