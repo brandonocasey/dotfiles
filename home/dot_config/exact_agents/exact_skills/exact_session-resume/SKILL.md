@@ -1,6 +1,6 @@
 ---
 name: session-resume
-description: "Save or resume task state across sessions, agents, or hosts."
+description: "Save or resume task state across sessions, agents, or hosts; pause work and its agents, then continue with fresh agents."
 ---
 
 Use `agt task` as the durable task record. Keep credentials, full transcripts,
@@ -37,6 +37,64 @@ reconcile the newer record with the pending change, and retry with its revision.
 
 Set `--status complete` only after all task work
 is complete. Use `agt task list` to find active records.
+
+## Pause and continue
+
+Here `<out>` is `agents/output/<task>/` in the XDG cache root, beside `TODO.md`.
+
+**Pause** when the user asks to stop or pause the task's work, not when they
+correct one action:
+
+1. Start nothing new. Send each running sub-agent (Claude Code: `SendMessage`):
+   "Stop now. Stop your background jobs with TaskStop if you have it; leave
+   detached jobs running. Write a handoff file in your scratch directory with:
+   your assignment as given (task, owned files, checks, acceptance criteria),
+   what is done, findings so far, uncommitted changes, the next step, and each
+   running job's log path and done condition. Then hand back once, ending with
+   the line HANDOFF: <path>."
+2. Start a background `agt wait --timeout 300 -- false` as a 5-minute timer and
+   wait for the handbacks. When it ends, stop each agent still running with
+   `TaskStop` and mark it stopped without a handoff.
+3. Stop your own background jobs by ID, except detached ones. Leave servers,
+   worktrees, and uncommitted changes in place; a pause makes no commit.
+4. Copy each agent's handoff file to `<out>/handoffs/<agent-id>.md`. Write
+   `<out>/handoff.md`: this session's ID and title, worktree, branch, HEAD,
+   `git status --short` summary, granted authorizations in their exact words,
+   your next step, and each stopped job with its log, done condition, and how
+   to restart it. Add one line per sub-agent: role, agent ID, description,
+   status (handed off, stopped without handoff, or finished), its handoff copy
+   or result path, and its transcript. `agt sessions search --session <your
+   session id>` prints your transcript; sub-agent transcripts are
+   `<transcript without .jsonl>/subagents/agent-<id>.jsonl`. In Claude Code,
+   `sh ~/.claude/hooks/agent-tmux-session.sh custom <transcript>` prints the
+   session title. A background
+   `claude -p` session (`orchestrate`) counts as a job: record its request file
+   and starting commit.
+5. Create the task record when none exists. Then run
+   `agt task update <id> --revision <n> --status paused --next-step "Continue per <out>/handoff.md"`.
+6. Report what stopped, each handoff, and each agent stopped without one.
+
+**Continue** when the user asks to continue or resume paused work, such as
+"continue the work now", in this session or a new one:
+
+1. Use this session's paused task. Otherwise list records with `status: paused`
+   in `agt task list`. Match a task or session the user names against record IDs,
+   objectives, and the session line of each `<out>/handoff.md`. With no name,
+   take the only paused record for this repository; with several, ask.
+2. Run `show` and validate it as above. Read `<out>/handoff.md` and `TODO.md`,
+   keep the same `<task>` name, and run
+   `agt task update <id> --revision <n> --status active`.
+3. Restart the stopped jobs that are still needed.
+4. Never continue an old agent. For each agent not finished, spawn a fresh
+   agent of the same role, per `sub-agents`, whose prompt starts: "Continue
+   from session `<description>` (agent `<id>`). Read the handoff `<path>` first;
+   it holds your assignment, state, and next step. Check it against the
+   worktree before acting, and do not redo finished steps. Read only the end of
+   the old transcript `<path>`, and only when the handoff lacks something you
+   need." For an agent stopped without a handoff, pass its original assignment
+   and transcript path instead. Restart a `claude -p` session with its request
+   file and the commits made since its starting commit.
+5. Continue your own work from the handoff's next step.
 
 These session commands need `agt` 0.18.0 or newer. Follow [agt.md](../shared/agt.md).
 For old context, run `agt sessions search` without `--query` to update the private incremental index and see scan
