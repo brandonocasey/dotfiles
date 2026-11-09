@@ -40,7 +40,7 @@ node_modules/
 /.agt/
 
 # Disposable agent task resources at the checkout root
-/.cache/agents/scratch/
+/.cache/agents/
 
 # Legacy agent scratch; remove once old .agent/ dirs are cleaned
 /.agent/
