@@ -36,7 +36,8 @@ repeat the superseded approach. After a stale-revision error, run `show` again,
 reconcile the newer record with the pending change, and retry with its revision.
 
 Set `--status complete` only after all task work
-is complete. Use `agt task list` to find active records.
+is complete, then remove its `<keep>` directory (**Pause and continue**). Use
+`agt task list` to find active records.
 
 ## Pause and continue
 
@@ -84,8 +85,9 @@ correct one action:
 **Continue** when the user asks to continue or resume paused work, such as
 "continue the work now", in this session or a new one:
 
-1. Use this session's paused task. A session with its own unpaused work goes
-   on with that work, unless the user names paused work. Otherwise list records
+1. When this session has work under way and the user names no paused work, go
+   on with that work; this section does not apply. Otherwise use this session's
+   paused task, if any. Otherwise list records
    with `status: paused` in `agt task list`. Match a task or session the user
    names against record IDs, objectives, and the session line of each
    `<keep>/handoff.md`. With no name, take the only paused record for this
