@@ -1,8 +1,10 @@
 #!/bin/sh
 # Opens the sesh picker (prefix + s or T in tmux.conf); tmux sessions show
 # their agent state, from sesh-list.sh.
+# fzf --tmux, not fzf-tmux -p: tmux starts the latter's popup through
+# default-shell (fish), and loading its config delays the picker.
 list=~/.config/tmux/scripts/sesh-list.sh
-choice=$(sh "$list" list -t --icons | fzf-tmux -p 80%,70% \
+choice=$(sh "$list" list -t --icons | fzf --tmux center,80%,70% \
   --no-sort --ansi --border-label ' sesh ' --prompt '🪟  ' \
   --header '  ^a all  ^t tmux  ^g configs  ^x zoxide  ^f find  ^d kill' \
   --bind 'tab:down,btab:up' \
