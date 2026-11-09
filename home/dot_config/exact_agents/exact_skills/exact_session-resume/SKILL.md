@@ -53,8 +53,9 @@ correct one action:
    running job's log path and done condition. Then hand back once, ending with
    the line HANDOFF: <path>."
 2. Start a background `agt wait --timeout 300 -- false` as a 5-minute timer and
-   wait for the handbacks. When it ends, stop each agent still running with
-   `TaskStop` and mark it stopped without a handoff.
+   wait until every agent hands back or the timer ends. Then stop the timer,
+   stop each agent still running with `TaskStop`, and mark it stopped without
+   a handoff.
 3. Stop your own background jobs by ID, except detached ones. Leave servers,
    worktrees, and uncommitted changes in place; a pause makes no commit.
 4. Copy each agent's handoff file to `<out>/handoffs/<agent-id>.md`. Write
@@ -64,7 +65,8 @@ correct one action:
    to restart it. Add one line per sub-agent: role, agent ID, description,
    status (handed off, stopped without handoff, or finished), its handoff copy
    or result path, and its transcript. `agt sessions search --session <your
-   session id>` prints your transcript; sub-agent transcripts are
+   session id>` lists your transcript, `<session id>.jsonl`, under `sources`;
+   sub-agent transcripts are
    `<transcript without .jsonl>/subagents/agent-<id>.jsonl`. In Claude Code,
    `sh ~/.claude/hooks/agent-tmux-session.sh custom <transcript>` prints the
    session title. A background
