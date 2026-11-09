@@ -276,12 +276,16 @@ test('a detached server keeps its token across restarts and stops on request', a
   const detachedPort = await availablePort();
   const start = () => run(['serve', '--config', config, '--state-dir', detachedState, '--port', String(detachedPort), '--detach', 'true']);
   fs.writeFileSync(config, JSON.stringify({ title: 'Detached', options: [{ id: 'choice-b', label: 'Choice B', kind: 'html', path: secondAsset }] }));
-  const first = JSON.parse(start().stdout);
-  assert.equal((await fetch(`http://127.0.0.1:${detachedPort}/?token=${first.token}`)).status, 200);
-  assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
-  await waitFor(() => !fs.existsSync(path.join(detachedState, 'server.json')));
-  const second = JSON.parse(start().stdout);
-  assert.equal(second.token, first.token);
-  // Stopping from a shell with another time zone still finds the server.
-  assert.match(run(['stop', '--state-dir', detachedState], { ...process.env, TZ: 'Asia/Tokyo' }).stdout, /stopped/);
+  try {
+    const first = JSON.parse(start().stdout);
+    assert.equal((await fetch(`http://127.0.0.1:${detachedPort}/?token=${first.token}`)).status, 200);
+    assert.match(run(['stop', '--state-dir', detachedState]).stdout, /stopped/);
+    await waitFor(() => !fs.existsSync(path.join(detachedState, 'server.json')));
+    const second = JSON.parse(start().stdout);
+    assert.equal(second.token, first.token);
+    // Stopping from a shell with another time zone still finds the server.
+    assert.match(run(['stop', '--state-dir', detachedState], { ...process.env, TZ: 'Asia/Tokyo' }).stdout, /stopped/);
+  } finally {
+    run(['stop', '--state-dir', detachedState]);
+  }
 });
