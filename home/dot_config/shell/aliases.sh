@@ -110,3 +110,9 @@ alias cdroot='cd "$(find-root)"'
 alias claude-two='CLAUDE_CONFIG_DIR=~/.claude-two claude'
 alias cl-deep='claude-two --model opus --effort high'
 alias cl-cheap='claude-two --model sonnet --effort low'
+
+# Claude Desktop; the second instance has its own data folder and claude-two config dir
+if [ "$(uname -s 2>/dev/null)" = Darwin ]; then
+	alias claude-desktop='open -a Claude'
+	alias claude-desktop-two='open -n -a Claude --env CLAUDE_CONFIG_DIR="$HOME/.claude-two" --args --user-data-dir="$HOME/Library/Application Support/Claude-two"'
+fi

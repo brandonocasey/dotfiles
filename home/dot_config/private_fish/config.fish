@@ -82,4 +82,9 @@ if status is-interactive
         vibetree shell init fish | source
     end
     alias claude-two="CLAUDE_CONFIG_DIR=~/.claude-two claude"
+    # Claude Desktop; the second instance has its own data folder and claude-two config dir
+    if test (uname) = Darwin
+        alias claude-desktop="open -a Claude"
+        alias claude-desktop-two="open -n -a Claude --env CLAUDE_CONFIG_DIR=$HOME/.claude-two --args '--user-data-dir=$HOME/Library/Application Support/Claude-two'"
+    end
 end
