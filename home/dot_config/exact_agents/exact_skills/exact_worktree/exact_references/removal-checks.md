@@ -25,12 +25,8 @@ initialized. Each refusal names the path and the reason.
 
 ### Blocked removal
 
-Dirty tracked files do not block removal: the backup keeps them. Untracked files
-block it, because no backup keeps them: commit or delete them, or pass `--force`
-once the user agrees they are disposable (`untracked_lost` in the plan). Ignored
-files do not block it, but no backup keeps them either: check `ignored_lost` in
-the plan. Only an agt refusal blocks. For each
-refusal in the plan:
+Only an agt refusal blocks. Dirty tracked, untracked, and ignored files follow
+[remove.md](remove.md). For each refusal in the plan:
 
 - Main checkout, a path that is not a linked worktree, or a locked worktree:
   never remove it; report it.
@@ -41,5 +37,6 @@ refusal in the plan:
   would clear it (push, commit, finish or abort the operation, move the files).
 
 When a refusal does not clear, retain the worktree, report the path and agt's
-reason, and ask. Do not commit, stash, or discard to clear it, and never pass
-`--force` by hand.
+reason, and ask. Do not commit, stash, or discard to clear it. Pass `--force`
+only for the untracked-file refusal, after the user agrees those files are
+disposable.

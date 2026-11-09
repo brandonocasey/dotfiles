@@ -3,7 +3,7 @@
 If you already changed files in the main checkout, move them into the worktree
 so the main checkout stays clean:
 
-1. Select the base per the `worktree` skill's **Create** section.
+1. Select the base per [create.md](create.md).
    Stash only this task's paths, new files included, under a unique label,
    and leave unrelated user work in place:
    `git -C <main-checkout> stash push --include-untracked -m <label> -- <paths>`.
@@ -11,8 +11,8 @@ so the main checkout stays clean:
    before you move it.
 2. Check that `stash@{0}` has your label, then record its commit ID:
    `git -C <main-checkout> rev-parse stash@{0}`.
-3. Create the worktree, then apply that ID there:
-   `git -C <main-checkout>/.worktrees/<branch> stash apply --index <stash-commit>`.
+3. Create the worktree, then apply that ID in the `path` its JSON prints:
+   `git -C <worktree-path> stash apply --index <stash-commit>`.
 4. Resolve a conflict when the combined result is clear ([git-policy.md](../../shared/git-policy.md));
    never discard either side just to make a conflict disappear. On an ambiguous
    conflict, retain the stash and report its ID and both checkout paths.

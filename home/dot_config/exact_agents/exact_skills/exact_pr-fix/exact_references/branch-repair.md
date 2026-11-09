@@ -14,8 +14,8 @@ For the user's own branch:
    `BASE` per [default-branch.md](../../shared/default-branch.md) **Fetch and
    pin**, and record the pinned commit as `BASE_SHA`.
 3. Run `git rebase BASE_SHA`. Resolve conflicts per
-   [git-policy.md](../../shared/git-policy.md); report the conflicting files
-   when the intended result is ambiguous.
+   [git-policy.md](../../shared/git-policy.md); when the intended result is
+   ambiguous, run `git rebase --abort`, then report the conflicting files.
 4. Run the repository's targeted checks for the touched paths.
 5. Push with `git push --force-if-includes --force-with-lease=BRANCH:OBSERVED_SHA origin HEAD:BRANCH`,
    as one command by itself. Codex prompts only for a force flag right after `git push`.

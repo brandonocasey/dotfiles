@@ -38,5 +38,6 @@ Map the `glab mr view` JSON to the blockers in SKILL.md:
   the MR state.
 - Any other status except `mergeable`: report the exact status and its owner.
 
-No GitLab merge-update command, and `glab mr rebase` rewrites the branch; report to the author per
-[branch-repair.md](branch-repair.md).
+For another author's MR, GitLab has no merge-update command, and `glab mr rebase`
+rewrites the branch: report to the author per [branch-repair.md](branch-repair.md).
+The user's own MR follows its own-branch steps.

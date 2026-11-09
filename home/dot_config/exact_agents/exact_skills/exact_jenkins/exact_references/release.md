@@ -13,7 +13,8 @@
 - Order:
   1. Confirm the MR is merged and the version is not already published.
   2. Start a dry run (`JWP_RELEASER_DRY_RUN=true`) and read its console log.
-  3. Start the real build with the same parameters, minus the dry-run flag.
+  3. Only when the dry-run log shows success, start the real build with the same
+     parameters and `JWP_RELEASER_DRY_RUN=false`. Otherwise stop and report the failing lines.
   4. Confirm the build number from `lastBuild` parameters, then wait for `building:false`.
   5. Check `npm view <pkg> dist-tags --prefer-online` on both registries
      (`https://npm-registry.longtailvideo.com/` and the GitLab package registry).

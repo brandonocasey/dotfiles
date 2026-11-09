@@ -30,13 +30,11 @@ Read and cite a page only when a finding depends on it.
 - Claude Code managed MCP: https://code.claude.com/docs/en/managed-mcp.md
 - Claude Code legal and compliance: https://code.claude.com/docs/en/legal-and-compliance
 - Claude Code fullscreen: https://code.claude.com/docs/en/fullscreen
-- Claude Code dev container (legacy docs.anthropic.com URL): https://docs.anthropic.com/en/docs/claude-code/devcontainer
+- Claude Code dev container: https://code.claude.com/docs/en/devcontainer
 - Claude pricing: https://platform.claude.com/docs/en/about-claude/pricing
 - Claude cookbook, automatic context compaction: https://platform.claude.com/cookbook/tool-use-automatic-context-compaction
-- Codex config reference: https://developers.openai.com/codex/config-reference
-- Codex config reference (learn.chatgpt.com): https://learn.chatgpt.com/docs/config-file/config-reference
-- Codex agent approvals and security: https://developers.openai.com/codex/agent-approvals-security
-- Codex rules: https://developers.openai.com/codex/rules
-- Codex rules (learn.chatgpt.com): https://learn.chatgpt.com/docs/agent-configuration/rules
-- Codex CLI slash commands: https://developers.openai.com/codex/cli/slash-commands
+- Codex config reference: https://learn.chatgpt.com/docs/config-file/config-reference
+- Codex agent approvals and security: https://learn.chatgpt.com/docs/agent-approvals-security
+- Codex rules: https://learn.chatgpt.com/docs/agent-configuration/rules
+- Codex CLI slash commands: https://learn.chatgpt.com/docs/developer-commands?surface=cli
 - Codex sandboxing: https://learn.chatgpt.com/docs/sandboxing

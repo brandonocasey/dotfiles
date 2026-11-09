@@ -54,8 +54,6 @@ preview prototype (**Scope**).
 - During `ship`, review after the push per ship's finish-scope.md.
 - During `land`, review after its step 3 rebase and checks, before the fast-forward.
   Check `agt review status` first, so a rebase alone triggers no second review.
-- Setup picks the review mode (`haiku` or `opus`; setup.md **Risk
-  tier**).
 - Wait for the independent result, verify findings, apply confirmed in-scope fixes,
   and retest them ([testing.md](testing.md) **Retest**) before reporting completion. Pushes and changes outside
   the intended behavior keep their existing authorization rules. Report the
@@ -87,15 +85,14 @@ preview prototype (**Scope**).
 - A follow-up change is one made after the review's fix loop ends. Repairs inside
   the loop, and their commits, are not follow-ups. Fixes for the review's own
   findings, including held questions the user decides later, are repairs, not
-  follow-ups. The fix loop's rules apply: only a major finding's fix gets a
-  re-check, by the same reviewer.
+  follow-ups. The fix loop ([loop.md](loop.md)) owns their re-checks: only a
+  major finding's fix gets one.
 - Follow-ups wait for the next end point (**Timing**), such as their own finished
   commit. Then review them together as one delta
   (`<last-reviewed-sha>..<new-head-sha>`) with surrounding context, even a
   one-line or prose-only edit. End the run with `agt review run end` after the
   last fix commit, so `status` counts the fix commits as reviewed.
-- The fix loop ([loop.md](loop.md)) owns re-checks of the review's own repairs.
-  Report unresolved findings explicitly. Do not rerun a review of the whole
+- Report unresolved findings explicitly. Do not rerun a review of the whole
   target merely to obtain a clean report after repairs.
 
 ## What review cannot replace

@@ -43,9 +43,10 @@ so the Skill tool cannot load it. The user's `disk-cleanup` request is the expli
 merge-evidence procedure for each repository, narrowed to merged/landed
 worktrees. Skip its relevance, closed-PR, and open-review
 removal paths. `agt worktree remove` backs up each worktree, even when PR evidence qualifies.
-Show its step 4 table in the disk-cleanup preview. disk-cleanup's batch approval
-replaces its step 4 prompt only when that batch covers these worktrees;
-otherwise ask its step 4 question.
+Show its step 4 table in the disk-cleanup preview. Its step 4 approves merged
+rows without asking; that does not apply here. Remove a worktree only when the
+approved disk-cleanup batch covers it, and ask once about the rows it does not
+cover, naming each.
 
 - Qualification and idleness checks come from `worktree-cleanup`. `agt worktree remove` snapshots
   the worktree and refuses a busy one. Do not restate or loosen them.

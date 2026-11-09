@@ -13,7 +13,7 @@ It needs Safari > Settings > Developer > "Allow remote automation and external
 agents". If tool calls fail, ask the user to turn that on.
 
 Without `--mcp`, use the WebDriver flow below: start
-`safaridriver -p <open port>` and drive it with the W3C WebDriver REST API via
+`safaridriver -p <free port>` (never `0`, which selects its default port) and drive it with the W3C WebDriver REST API via
 curl. Every endpoint below is relative to `http://localhost:<port>`.
 
 Remote automation must be enabled once per machine, or `POST /session` fails. If it

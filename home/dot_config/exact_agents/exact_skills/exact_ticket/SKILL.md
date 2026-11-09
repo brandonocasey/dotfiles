@@ -84,8 +84,9 @@ question. Never invent a key, project, status, or version.
      ticket unassigned and report it.
    - Never hand creation back to the user. Report a failed write with its error.
    - GitHub or GitLab ticket with a matching `agt` tracker: queue it with
-     `agt issue create --tracker <owner/repo> --title <title> --body - --add-label <label>
-     --add-assignee <login>`, reading the body from stdin. It prints a `local-` key.
+     `agt issue create --tracker <owner/repo> --title <title> --body - --add-assignee <login>`,
+     reading the body from stdin. Add `--add-label <label>` only for an existing tracker
+     label that matches the type picked above. It prints a `local-` key.
    - Then run `agt issue link <key> --pr <url> --comment`.
    - Run `agt issue list --tracker <owner/repo> --pending`. Stop and ask when
      anything besides this run's keys is pending.

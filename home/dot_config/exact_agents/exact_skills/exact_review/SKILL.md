@@ -81,16 +81,16 @@ After the reviewers return, re-verify per **Delegation**, reading only the code 
 finding depends on: the cited lines, their callers, and any guard that could refute it.
 Record every pass, its verified and killed findings, and the run in the store per
 [store.md](references/store.md).
-Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallback.
+Read [reviewer-steps.md](references/reviewer-steps.md) only for an inline fallback,
+or its step 2 paragraph that starts "For a security finding" when re-verifying a
+security finding.
 
 ## 3. Output
 
 When reporting results, read [output.md](references/output.md). It owns the
 finding format, remote comment links, evidence, and cleanup. Post comments only on
-an own MR/PR, or when the user asks, and only with `agt review publish`
-(`publish --not-own --only <ids>` on another person's MR/PR, per
-[output.md](references/output.md);
-[store.md](references/store.md)).
+an own MR/PR, or when the user asks, and only with `agt review publish`, as
+output.md describes.
 
 ## 4. Optional: --fix
 

@@ -48,7 +48,7 @@ in this store) still need `--target <key>`.
 
 | When | Command |
 |---|---|
-| Before the run's first reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Omit a flag whose value you cannot tell from the request or the commits: the run keeps the first pass's values for good. Later passes may add `--risk` and omit the rest |
+| Before the run's first reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. The array holds a `fix` entry when the review may fix (see below). `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Omit a flag whose value you cannot tell from the request or the commits: the run keeps the first pass's values for good. Later passes may add `--risk` and omit the rest |
 | Before later reviewers start | `pass start --run <run> --kind full\|fix-check --base <base> --reviewers -` |
 | After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a finding that re-verification refutes | `finding kill <id> --reason <text>` |
@@ -74,8 +74,12 @@ add text.
 `--reviewers -` reads a JSON array from stdin, one entry per reviewer: `model`,
 `effort`, `harness`, `harness_version`, and `starting_context` (see **IDs and
 signature** in [remote-comments.md](remote-comments.md)). A continued reviewer gives
-only its `id` and `starting_context`. Add the main session as reviewer `fix` when
-it fixes, with its model, effort, harness, and harness version. Test results go to
+only its `id` and `starting_context`. When the review may fix (own work, `--fix`,
+or a `fix` reply), add the main session to every pass's array as
+`{"id": "fix", "model": "<model>", "effort": "<effort>", "harness": "<harness>", "harness_version": "<version>"}`.
+`resolve --reviewer <run>.<pass>.fix` fails with `an agent author needs --model`
+when that pass has no `fix` entry; then pass the main session's `--model`,
+`--effort`, `--harness`, and `--harness-version` instead. Test results go to
 `agt qa` per [testing.md](testing.md) **Record**.
 
 ## Finding input

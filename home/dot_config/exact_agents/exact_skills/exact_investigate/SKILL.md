@@ -149,8 +149,8 @@ exists, and go to section 6 for the rest.
 If a hypothesis or fix fails, go back to section 4 with the new evidence, and
 classify the failure, retry, and stop early per
 [escalation.md](../sub-agents/references/escalation.md). After three failed fixes,
-each a distinct hypothesis, stop, name the doubtful assumption, and ask one
-diagnostic question.
+each a distinct hypothesis, stop. Use `consult` first when escalation.md calls
+for it. Then name the doubtful assumption and ask one diagnostic question.
 
 ## 6. Narrow down
 
@@ -166,7 +166,7 @@ When you cannot fix the issue, make it easy for the next person to fix:
 
 ## 7. Report
 
-Keep the full report in a file, per the long-output rule in
+Write the report per the long-output rule in
 [writing-details.md](../shared/writing-details.md). Start with the result:
 **Fixed** or **Narrowed**. Then give, in this order:
 

@@ -8,7 +8,7 @@ description: "Clean verified merged worktrees and branches; assess retained work
 `disk-cleanup` also runs this skill as a required step, under the limits in
 [agent-resources.md](../disk-cleanup/references/agent-resources.md).
 
-This needs `agt` 0.14.0 or newer ([agt.md](../shared/agt.md)). `agt cleanup --only worktrees` finds, judges,
+This needs `agt` 0.35.0 or newer ([agt.md](../shared/agt.md)). `agt cleanup --only worktrees` finds, judges,
 backs up, and removes landed worktrees and branches; this skill adds what it does not do.
 
 Clean only local state proven safe to remove. Use live PR state for GitHub or
@@ -28,7 +28,7 @@ each target was retained. "PR" means a GitHub pull request or GitLab merge reque
   Pass `--all-repos` only when the user asked for every repository. Always pass `--dirty` and
   `--recent`: they only lift guards on merged rows, and the snapshot backup keeps their tracked
   changes. `--dirty` also lets worktrees go whose `untracked_lost` or `ignored_lost` is not empty,
-  since no backup keeps those files (agt 0.35.0); list both for each row in the plan preview.
+  since no backup keeps those files; list both for each row in the plan preview.
   Report each removed dirty worktree's
   changed files with its backup id.
 - When removal fails with "does not point back", the worktree belongs to another clone: its

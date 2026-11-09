@@ -35,9 +35,10 @@ For every entry in `.gitmodules`, establish:
   worktree's clone.
 
 For a changed submodule that is not owned, the recorded commit must already
-exist on its remote: after `git -C <SUB_PATH> fetch --quiet`,
-`git -C <SUB_PATH> branch -r --contains HEAD` prints a branch. If it does not, report the submodule path
-and commit ID and stop; never push to a foreign remote.
+exist on its remote: `git -C <SUB_PATH> branch -r --contains HEAD` prints a
+branch. `ship` runs `git -C <SUB_PATH> fetch --quiet` first; `land` never
+fetches and uses the existing remote-tracking refs. If none prints, report the
+submodule path and commit ID and stop; never push to a foreign remote.
 
 ## Commit gate
 

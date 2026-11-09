@@ -22,7 +22,9 @@ When `ship` runs a review, enable auto-merge only after the review ends, any fix
 push lands, and no blocking finding remains. CI could otherwise merge unreviewed
 code. A method recorded by [auto-merge-pause.md](../../shared/auto-merge-pause.md)
 counts as the existing method. For a chain of dependent PRs on GitHub, do not
-enable auto-merge; merge per **Chains of dependent MRs/PRs** in
+enable auto-merge. For a GitLab chain, enable it only on an MR that targets the
+default branch: the bottom MR first, then each child after its parent merges
+and it is retargeted. Merge per **Chains of dependent MRs/PRs** in
 [dependent-branches.md](../../shared/dependent-branches.md).
 
 - GitHub: `gh pr merge <number> --auto --match-head-commit <HEAD_SHA>` with the

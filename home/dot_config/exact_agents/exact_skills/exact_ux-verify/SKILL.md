@@ -32,9 +32,11 @@ error inputs. For each output the change touches, check:
   generated files that open in their target tool.
 
 Run each output where the user meets it. For a terminal UI, status line,
-prompt, or slash command, start the real interactive program in a `tmux` pane
-at the user's width and theme, type what the user types, and read the screen
-with `tmux capture-pane -p -e`. Headless, piped, and print-mode runs skip
+prompt, or slash command, start the real interactive program in a detached
+`tmux` session of its own (`tmux new-session -d -s <name> -x <cols> -y <rows>`),
+never a pane of the user's session, at the user's width and theme. Type what
+the user types, read the screen with `tmux capture-pane -p -e -t <name>`, and
+end with `tmux kill-session -t <name>`, also on failure. Headless, piped, and print-mode runs skip
 drawing, colors, widths, and link handling. Compare a row meant to match
 built-in output character by character. For a chat app or other service, view
 the result in the real client or read it back from the service (post only where
@@ -53,8 +55,8 @@ relevant components, styles, and existing browser tests. Select the viewports,
 themes, and states affected by the change; avoid a full Cartesian product when
 the same behavior can be checked with a smaller set.
 
-When the request names a breakpoint or state, change only that scope. Check one
-other breakpoint to prove that it did not change.
+When the request names a breakpoint or state, the change must affect only that
+scope. Check one other breakpoint to prove that it did not change.
 
 For a reported defect, first reproduce it at the user's viewport and theme.
 Take a before screenshot. A phone screenshot from the user means a phone width.

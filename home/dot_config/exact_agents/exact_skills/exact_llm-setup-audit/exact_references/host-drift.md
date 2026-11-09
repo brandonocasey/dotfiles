@@ -1,10 +1,10 @@
 # Compare shared agent setup across hosts
 
 Run `host-preflight` before depending on remote tools. The read-only helper
-needs Node and Chezmoi on each host. Run it from this skill directory:
+needs Node and Chezmoi on each host. Run it from any directory:
 
 ```sh
-node scripts/check-drift.cjs --remote root@koof.win
+node ~/.config/agents/skills/llm-setup-audit/scripts/check-drift.cjs --remote root@koof.win
 ```
 
 Repeat `--remote` for more hosts. Repeat `--path` with home-relative files or

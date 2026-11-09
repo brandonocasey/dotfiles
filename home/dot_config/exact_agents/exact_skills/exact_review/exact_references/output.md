@@ -13,8 +13,7 @@ author), `requirement` (a violation of an explicit repository rule or of a
 a common path), or `low` (rare edge case or minor effect).
 
 Long reports follow the long-output rule in
-[writing-details.md](../../shared/writing-details.md). Comment blocks the user
-posts by hand print per `host-preflight/references/copyable-output.md`.
+[writing-details.md](../../shared/writing-details.md).
 
 1. **TLDR line** — one sentence: how many findings survived, whether any are real bugs
    vs. minor notes, how many are pre-existing, and the risk tier with its reason.
@@ -57,12 +56,13 @@ Before reporting findings, for a GitHub or GitLab MR/PR, run `agt review sync --
 
 On an own GitHub or GitLab MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
-printing comment blocks; the comment text goes only into the store. Otherwise do not
-post anything to the MR/PR unless the user asks. Then show the user
+printing comment blocks; the comment text goes only into the store. Otherwise post
+nothing to the MR/PR unless the user asks: print the comments for the user to
+post, per `host-preflight/references/copyable-output.md`, one fenced block per
+comment, numbered by finding. When the user asks to post some, show
 `agt review publish --not-own --only <finding ids the user chose> --dry-run`,
-and run it without `--dry-run` only when the dry-run writes match the request. Step 6 lists what `--threads` may
-post. Print for the user to post, per `host-preflight/references/copyable-output.md`:
-one fenced block per comment, numbered by finding. Report CI and
+and run it without `--dry-run` only when the dry-run writes match the request.
+Step 6 lists what `--threads` may post. Report CI and
 conflict status separately, with the observed source SHA and job or pipeline links.
 Pending checks are unverified, not passing.
 

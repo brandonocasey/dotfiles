@@ -6,7 +6,9 @@ description: "Check local or SSH tool availability before unfamiliar tools, agen
 Run `agent-preflight` before work depends on tools that can differ by host. For
 an SSH host, run `agent-preflight --remote user@host`. Treat an empty tool path
 as unavailable; report the missing command and inspected host. When `on_path`
-is false, use the returned absolute path.
+is false, use the returned absolute path. It reports a fixed tool list: check a
+tool absent from its output with `command -v <tool>` (over SSH,
+`ssh user@host command -v <tool>`).
 
 ## Conditional procedures
 

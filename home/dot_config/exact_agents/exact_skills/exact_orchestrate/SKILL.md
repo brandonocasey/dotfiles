@@ -63,6 +63,8 @@ other parts.
    `decisions.md`. For new or changed tutorials and how-tos, run the reader pass
    from `write-docs` yourself and send its findings back to the docs worker.
    Then `review-fix` on the docs commits.
-5. Remove the part worktrees per `worktree/SKILL.md`.
+5. Remove the merged parts' worktrees per `worktree/SKILL.md`. Keep each blocked
+   part's.
 6. **Report.** Per part and for the integration: commits, checks, the
-   `review-fix` result with its reviewed head, and every open question.
+   `review-fix` result with its reviewed head, every open question, and each
+   blocked part with its worktree path.

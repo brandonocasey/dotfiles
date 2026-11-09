@@ -45,10 +45,12 @@ If it cannot be disabled, report why and push only after the user agrees.
 
 Re-enable it once the work's pushes are complete: in `ship`, per its
 [finish-scope.md](../ship/references/finish-scope.md); otherwise right after the push. Use the
-recorded method and the last `HEAD_SHA`, with the commands in ship's
+recorded method and the head last pushed (`git ls-remote origin refs/heads/<BRANCH>`;
+`ship` records it as `HEAD_SHA`), with the commands in ship's
 [merge.md](../ship/references/merge.md) **Enable auto-merge**. Read the state back
 and report it. Restoring needs no new merge consent; it returns the user's setting.
 
-Leave it off while a blocking finding or failed repair remains. Then report that
-auto-merge is paused, with its method and the restore command. In a
+Leave it off when the work stops unfinished: a blocking finding, a failed
+repair, a rejected push, or the user's stop. Then report that auto-merge is
+paused, with its method and the restore command. In a
 `session-resume` record, put the pause and method in `nextStep` as plain text.

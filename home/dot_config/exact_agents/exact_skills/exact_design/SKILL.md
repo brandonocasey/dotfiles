@@ -6,7 +6,7 @@ description: "Before non-trivial implementation: settle unknowns and write a sho
 Size the phase to the cost of being wrong:
 
 - **None** for a clear one-file change.
-- **Short plan plus checkable criteria** for medium work: a `design.md` of at most 20 lines with goal, what must not change, ordered steps, and "done means". Skip decisions, rejected options, and open questions unless a choice has no safe default.
+- **Short plan plus checkable criteria** for medium work: a `design.md` of at most 20 lines with goal, what must not change, ordered steps, and "done means". List each default you took in one line. Skip rejected options and open questions unless a choice has no safe default.
 - **Full design plus user approval** for hard-to-reverse choices: data model, public API, cross-module boundary.
 
 ## Steps

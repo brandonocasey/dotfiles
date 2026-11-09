@@ -3,7 +3,7 @@ name: browser
 description: "Before browser MCP automation or browser test runs: page checks, screenshots, DOM/network inspection, playback. Real Safari: real-safari."
 ---
 
-Never foreground a browser or steal focus. Never play audible sound unless the
+Never bring a browser window to the front or steal focus, also in headed mode. Never play audible sound unless the
 task checks the audio itself.
 
 ## Test runners
@@ -35,7 +35,6 @@ Do not enable extra engines globally; each enabled server adds startup work to e
 Use headed mode only for DRM, fullscreen, picture-in-picture, casting, autoplay policy, audio checks, a real user gesture,
 or when the user asks to watch.
 The `safari` MCP uses Playwright WebKit; it has no FairPlay DRM.
-Never enable `safari-native` off macOS or when `safaridriver --help` lacks `--mcp`.
 For real Safari or Safari-only bugs, follow `real-safari` for driver selection and approval before starting the visible browser.
 
 Only `chrome-headed` starts muted (`--mute-audio`). Mute other headed pages before playback.

@@ -1,15 +1,12 @@
 ## Delegation
 
-- Default: one `reviewer`. In a side-by-side trial, a second, lighter reviewer
-  beside it found nothing extra. In a real-bug A/B test, Sonnet `xhigh` alone
-  caught 74% of bugs against Opus `xhigh`'s 91%, so Sonnet reviews only fresh fix
-  checks, to save cost. Replay of 12 `low`-tier commits (8 docs-only, 4 test-only):
-  Haiku `xhigh` raised 55 findings, 43 valid (29 matched Opus, 14 of 26 extras
-  confirmed); Sonnet `xhigh` raised 42, about 35 valid, at 6× the cost. So setup's
-  `haiku` mode takes the `low` tier. On mixed changes both missed most of Opus's
-  fixed findings (Haiku 0 of 13 medium/high, Sonnet `xhigh` 3 of 13), and on 6
-  `medium` commits Sonnet `xhigh` caught 9 of 11 medium findings against Haiku's 6.
-  Opus keeps every non-`low` tier.
+- Default: one `reviewer`; in a trial, a second, lighter one beside it found
+  nothing extra. Setup picks the model ([setup.md](setup.md) **Risk tier**), and
+  [loop.md](loop.md) step 2 picks it for fix checks. Keep those choices: in A/B
+  tests Sonnet `xhigh` caught 74% of real bugs against Opus `xhigh`'s 91%. Haiku
+  held up only on docs-only and test-only changes (43 of 55 findings valid, at a
+  sixth of Sonnet's cost); on mixed changes it found 0 of Opus's 13 medium or
+  high findings.
 - The review skill's step 0–2 owns `--agents` and per-target reviewer sets.
 
 An external tool's findings go through the same re-verification.

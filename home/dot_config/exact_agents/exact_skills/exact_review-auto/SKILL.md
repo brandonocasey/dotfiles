@@ -4,7 +4,7 @@ description: "Review and fix an MR/PR, then approve and merge it when no blockin
 ---
 
 Run the [review](../review/SKILL.md) skill with `--fix --approve --merge` added to the
-user's arguments. Read and follow that skill once. `--fix` runs its fix loop.
+user's arguments (with `--land`, only `--fix`). Read and follow that skill once. `--fix` runs its fix loop.
 Preserve the user's target and every other flag, such as `--agents` or `--no-test`.
 
 Invoking this skill is the user's request to fix, approve, and merge the target.

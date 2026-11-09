@@ -11,7 +11,9 @@ State plainly:
 - Auto-merge paused and restored, or still paused.
 - Any CI watch result already in, or whether the watch is running (do not wait
   for it) or why it was skipped.
-- The merge result or blocker when requested.
+- The merge result or blocker when requested. After a merge, also
+  `⚠ local <target> not updated: <reason>` when
+  [ff-local-target.md](../../shared/ff-local-target.md) skipped the fast-forward.
 - The `Checked:` line from the commit gate.
 - The cleanup result: the removed worktree path and the deleted branch with its
   last commit ID, or the reason both stayed.

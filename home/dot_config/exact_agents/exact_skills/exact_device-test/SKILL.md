@@ -6,7 +6,8 @@ description: "Hands-on testing on a real device (AirPlay, iPhone, TV) where the 
 Use when a check needs a person or hardware the agent cannot drive: AirPlay
 targets, a real iPhone, TVs, Control Center. Try `real-safari` or the
 `browser` skill first; this is the fallback. The user is the sensor, so spend
-their attention once: preflight, then one page, then read results.
+their attention once: preflight, then one page, then read results. Main
+session only: a sub-agent reports the check as untested.
 
 ## Preflight (do all before handing over)
 
@@ -16,11 +17,11 @@ their attention once: preflight, then one page, then read results.
    the device that URL, not localhost. The server prints a guess; swap in the en0 address if it is a VPN one. A QR code helps for phones.
 3. After starting the server (below) and before giving the user its URL,
    `curl` the LAN URL. A firewall prompt or VPN can block it.
-4. iPhone driven by the agent: Settings > (Apps >) Safari > Advanced > Remote
-   Automation must be on, and the phone unlocked and trusted. Stop and ask if
-   it drops mid-run; do not retry in a loop.
+4. Drive an iPhone yourself only after the user agrees. It needs Settings >
+   (Apps >) Safari > Advanced > Remote Automation on, and the phone unlocked
+   and trusted. Stop and ask if it drops mid-run; do not retry in a loop.
 5. HTTPS: clipboard, camera, mic, DRM (EME `requestMediaKeySystemAccess`), and service workers
-   need a secure context; LAN http fails there. Use a tunnel, local certificate, or localhost, and say so before the user
+   need a secure context; LAN http fails there. Use a tunnel or a local certificate (localhost works only when the device is the host machine), and say so before the user
    starts. Whether Safari's AirPlay picker works on http is unverified; test it.
 6. Check that the build under test is the one served (version string or
    hash), and that the target device is on and discoverable (AirPlay: same
@@ -53,7 +54,7 @@ scenario and continue.
 
 Reprint the scenario list when the user asks for it or after any change. After
 a fix, rerun only failed scenarios plus one that passed, with a fresh
-`--out` file. Stop the server when done or abandoned, including on failure, per
+`--out` file. Stop the server and any tunnel you started when done or abandoned, including on failure, per
 [task-resources.md](../host-preflight/references/task-resources.md).
 
 ## Report

@@ -50,9 +50,7 @@ the findings the user chose with
 
 ### IDs and signature
 
-- Run ID: `rv-` plus 4 random lowercase letters or digits, new per review run, from
-  `agt review pass start --kind full`.
-- Pass ID: `c<cycle>p<pass>`; `p0` is the full review, `p1`–`p3` the fix checks.
+- Run and pass IDs: [store.md](store.md) **Commands**.
 - Reviewer ID: `r<n>`, unique within the run, from `pass start`. A continued reviewer
   keeps its ID.
 - Signature: the reviewer's `model`, `effort` and `harness` (`claude-code` or

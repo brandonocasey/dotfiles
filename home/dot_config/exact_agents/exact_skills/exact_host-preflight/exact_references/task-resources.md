@@ -13,7 +13,7 @@ works on a worktree, use that worktree's scratch, not the main checkout's or
 
 Before using `.cache/agents/scratch/`, verify that the candidate path is ignored
 (`git check-ignore -v <candidate-path>`) and that no files under it are tracked. The
-managed global ignore file supplies `/.cache/agents/scratch/`; repository rules can override
+managed global ignore file supplies `/.cache/agents/`; repository rules can override
 it. If it is not effective, or the root conflicts with existing project files, use the XDG
 cache scratch directory and report why; do not change repository Git settings. Never reuse
 or overwrite an existing task directory or follow a symlink at the scratch root or task path.
@@ -100,6 +100,11 @@ an open-PR worktree stays. Inspect contents first: `.cache/agents/scratch/` or a
 match alone is not evidence that a file is disposable. Preserve unknown files
 and other tasks' directories; do not recursively remove a shared `.cache/agents/scratch/` root.
 Delete with literal resolved task paths, never `rm -rf "$VAR"`.
+
+At task end, when the worktree stays, shut down its simulator
+(`xcrun simctl shutdown <udid>`) and stop its emulator (`android-emu rm [worktree]`).
+The next `ios-sim` or `android-emu` call starts it again. Leave one running only
+while the user is using it.
 
 When removing a worktree, its remaining disposable `.cache/agents/scratch/` contents go with
 it, but directory removal does not stop processes. Remove it with

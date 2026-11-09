@@ -61,12 +61,11 @@ Some sources are `modify_` scripts, `.tmpl` templates, or `symlink_` entries, no
    Recommend one action for each: copy the target to its source (step 3), or `chezmoi apply <target>`.
    Ask once for all of them. Apply only the approved actions.
    If a listed source has no target, audit and edit the source itself.
-2. Never run source-writing commands (`add`, `re-add`, `edit`); they can write source files outside the audit.
+2. Never run `chezmoi add`, `re-add`, `edit`, `merge`, or `update`; they write source files or apply targets outside the audit.
    Never run `chezmoi apply` without a target.
 3. Before any copy, review the changes with `diff -u "$(chezmoi source-path <target>)" <target>`.
-   After the review fixes, copy each changed or new target to its source.
-   Copy only plain sources. For a `modify_`, `.tmpl`, or `symlink_` source, edit that script or template instead.
-   Find the path with `chezmoi source-path <target-or-directory>`; new names can require prefixes such as `private_`.
+   After the review fixes, copy each changed or new target to its source per `dotfiles-sync` step 3.
+   It owns which source types to copy or edit by hand, and new-file prefixes. Stop before its step 4; stage nothing.
    Require empty `chezmoi status <target>` output for every changed target.
 4. If `source-path` fails, edit the unmanaged target in place and report that it has no source copy.
 

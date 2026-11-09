@@ -18,7 +18,7 @@ Arguments: the task, `--rounds N` (most rounds, default 6), and `--angles N`
 2. Define done. Write the scope (paths, features, configs, sources) and one end
    check that says what "covered" means. If the task is too vague to scope, ask
    one question.
-3. Pick angles: distinct lenses that fit the task, one line each. For a code
+3. Pick `--angles` angles: distinct lenses that fit the task, one line each. For a code
    audit: correctness, error and edge paths, callers and sibling sites, tests.
 4. If a ledger for this task exists, resume from it. Otherwise create
    `agents/output/open-ended/<task-slug>/ledger.md` in the XDG cache root with the task, scope, end check,

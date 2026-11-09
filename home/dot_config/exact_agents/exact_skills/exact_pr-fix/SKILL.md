@@ -83,6 +83,10 @@ Replace `--author @me` with the parsed selection. If the list reaches its
 limit, raise the limit until the inventory is complete. If the selection is
 empty, report that and stop.
 
+When the selection names another repository (`--repo` or a URL), add
+`-R OWNER/REPO` to every `gh pr`, `gh repo`, and `gh run` command. Its branches
+are not the user's own (**Authorization**).
+
 For each pull request record the fields above plus its required-check state.
 Refresh this record after every mutation: a new head SHA makes earlier check
 results stale.
@@ -117,25 +121,25 @@ to a stale branch wastes a run.
   message and owner (**Authorization**). A review blocker does not stop branch
   and check work.
 
+Before any push (a fix, a rebase, or a conflict resolution), pause auto-merge
+and restore it after the last push, per
+[auto-merge-pause.md](../shared/auto-merge-pause.md). Before pushing a fix or a
+conflict resolution, review only the fix commits and any conflict resolutions
+per [when-to-run.md](../review/references/when-to-run.md) **Scope**, not the
+whole pull request, unless the user asks.
+
 ## Approve and merge
 
-Before pushing a fix or a conflict resolution, review only the fix commits
-and any conflict resolutions per
-[when-to-run.md](../review/references/when-to-run.md) **Scope**, not the whole
-pull request, unless the user asks.
-Before a fix that will be pushed, pause and later restore auto-merge per
-[auto-merge-pause.md](../shared/auto-merge-pause.md). Otherwise let an enabled
-auto-merge finish. Before any approval or manual merge, read
-[merge.md](references/merge.md). Without `--merge` or auto-merge, a passing
-pull request is complete; report it as ready.
+When nothing will be pushed, let an enabled auto-merge finish. Before any
+approval or manual merge, read [merge.md](references/merge.md). Without
+`--merge` or auto-merge, a passing pull request is complete; report it as ready.
 
 ## Clean up task resources
 
 On every exit path, follow
 [task-resources.md](../host-preflight/references/task-resources.md). Remove only
-worktrees this invocation created, never a pre-existing one. Keep a repository
-watcher running while other selected pull requests in that repository still need
-it. Retain or remove task-created worktrees per the `worktree` skill's **Remove**
+worktrees this invocation created, never a pre-existing one. Keep the one
+watcher running while any selected pull request still needs it. Retain or remove task-created worktrees per the `worktree` skill's **Remove**
 section (including review or policy blockers), and report retained paths and blockers.
 
 ## Report

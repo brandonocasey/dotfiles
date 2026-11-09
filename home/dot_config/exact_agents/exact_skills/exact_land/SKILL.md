@@ -7,8 +7,9 @@ description: "On request, commit and fast-forward into the local default branch,
 Land the current branch into the local default branch (`TARGET`, resolved in
 step 0), then clean up. The **Hard rules** apply to every step.
 
-Start only when the user asked to land or merge locally. Otherwise ask one
-question and stop.
+Start only when the user asked to land or merge locally, the consent
+[git-policy.md](../shared/git-policy.md) requires. Otherwise ask one question
+and stop.
 
 ## 0. Detect context (always run first)
 
@@ -28,6 +29,9 @@ superproject rebase and fast-forward, and its step 4 check runs after step 4 her
 If `BRANCH` == `TARGET`, do not stop or invent a branch. Do not warn or suggest
 moving commits unless the user asks.
 
+- Record `HEAD` now as `COMMIT_BASE` for this path: `<TARGET>..HEAD` is empty
+  here, so the gate and step 2 use this `<COMMIT_BASE>..HEAD`, the commits you
+  create.
 - Run the **Commit gate** from `shared/git-flow.md`, except its final clean-tree
   check: nothing moves on this path.
 - If the tree is already clean, say so plainly and stop.
@@ -69,10 +73,12 @@ git rebase <TARGET>
   combined result is clear; otherwise stop, show `git status` and the conflicting hunks, and ask
   how to resolve. Then continue with `git rebase --continue`; offer `git rebase --abort` to cancel.
 - If `TARGET` is already an ancestor of `BRANCH`, the rebase is a no-op — fine, proceed.
-- Re-run the step 2 tests and the **Manual check** of `shared/git-flow.md` only
-  when the rebase needed conflict resolution or edits; a clean rebase keeps
-  earlier evidence and review records (the review bullet below still runs a
-  review the change never had). The same applies after a step 2 fix commit.
+- After a rebase that moved `BRANCH`, rerun the **Required checks** of
+  `shared/git-flow.md` on the new `HEAD`. Re-run the step 2 tests and the
+  **Manual check** only when the rebase needed conflict resolution or edits; a
+  clean rebase keeps that evidence and the review records (the review bullet
+  below still runs a review the change never had). The same applies after a
+  step 2 fix commit.
 - Then run any review that `review/references/when-to-run.md` triggers, pinned to
   `<TARGET>..<BRANCH>` so it needs no fetch. Skip it when `agt review status --default-branch <TARGET>`
   reports `reviewed: true` and an empty `unreviewed_commits`; otherwise review from
@@ -111,7 +117,7 @@ defer worktree removal until the preview ends.
 
 - If `IN_WORKTREE`, remove the worktree first — a branch checked out in a live worktree can't be
   deleted. Move your shell out of it first, per the `worktree` skill's **Remove** section, which
-  owns that rule. Needs `agt` 0.10.0 ([agt.md](../shared/agt.md)):
+  owns that rule. Needs `agt` 0.35.0 ([agt.md](../shared/agt.md)):
   ```sh
   cd <MAIN_WT>
   agt worktree remove <worktree-path>          # plan: read ignored_lost, copy out what is needed
