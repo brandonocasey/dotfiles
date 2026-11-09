@@ -1,6 +1,7 @@
 #!/bin/bash
 # Prints an end-of-day standup built from today's Claude sessions. Run it by hand.
-# Usage: agent-standup
+# Usage: agent-standup [--send]
+# --send also DMs the standup to the user's own Slack DM.
 
 SLACK_USER=${AGENT_STANDUP_SLACK_USER:-U08NMC14XFB}
 MODEL=${AGENT_STANDUP_MODEL:-opus}
@@ -63,7 +64,7 @@ session_digest() {
         echo "$prompts"
         # Final replies get truncated, so collect every link the session mentioned.
         echo "LINKS: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null |
-            grep -oE 'https://(gitlab\.com|jwplayer\.atlassian\.net|github\.com)/[^] )>|"`*,]+' | sed 's/[.:;]*$//' | sort -u | tr '\n' ' ')"
+            grep -oE 'https://(gitlab\.com|[a-z0-9-]+\.atlassian\.net|github\.com)/[^] )>|"`*,]+' | sed 's/[.:;]*$//' | sort -u | tr '\n' ' ')"
         echo "LAST: $(jq -r --arg since "$since" 'select(.timestamp >= $since and .type == "assistant") | .message.content[]? | select(.type == "text") | .text' "$f" 2>/dev/null | tail -c 1500 | tr '\n' ' ')"
     done
 }
@@ -104,6 +105,7 @@ gitlab_digest() {
 sources="The digest's GitLab sections list the merge requests the user acted on today and the Claude Tag merge requests where the user is reviewer, with live state; trust that state over session text. Claude Tag work counts as the user's work; label it 'via Claude' when useful. Also gather two more sources with your tools, then merge all sources into one standup without duplicates:
 - Slack: slack_search_public_and_private with filters 'from:<@$SLACK_USER> on:$TODAY'. Ignore the user's DM with themself, including standups and morning briefs. Use only messages that show work: answers, decisions, help given, reviews, announcements. When a message asks Claude to do something (Claude Tag), read that thread with slack_read_thread and use Claude's outcome.
 - Jira: getAccessibleAtlassianResources for the cloudId, then searchJiraIssuesUsingJql with jql 'status CHANGED BY currentUser() AFTER startOfDay() OR fixVersion CHANGED BY currentUser() AFTER startOfDay() OR (reporter = currentUser() AND created >= startOfDay()) OR (assignee = currentUser() AND (status CHANGED AFTER startOfDay() OR assignee CHANGED AFTER startOfDay() OR created >= startOfDay()))'. Ticket creation, status moves, new assignments, and release assignments count as work; assigned tickets still open belong in Next.
+- Ticket cross-reference: collect every Jira ticket key (like ABC-123) in the digest (MR titles, branch names, LINKS, prompts, replies). Run searchJiraIssuesUsingJql again with jql 'key in (<those keys>) OR (assignee = currentUser() AND statusCategory != Done)' and fields summary, description, labels, status, issuetype, fixVersions, and parent. Use each ticket's real summary, status, and fix version to describe the work and to tie every MR to its ticket, even when the MR title has no key. Report the ticket's status and fix version when they matter, such as 'In Progress, targeted for release 1.2.3'.
 If a tool fails, continue with the other sources."
 read_tools="mcp__claude_ai_Slack__slack_search_public_and_private mcp__claude_ai_Slack__slack_read_thread mcp__claude_ai_Atlassian__getAccessibleAtlassianResources mcp__claude_ai_Atlassian__searchJiraIssuesUsingJql mcp__claude_ai_Atlassian_MCP__getAccessibleAtlassianResources mcp__claude_ai_Atlassian_MCP__searchJiraIssuesUsingJql"
 
@@ -115,7 +117,7 @@ if [ -z "$(printf %s "$digest" | tr -d '[:space:]')" ]; then
     exit 0
 fi
 
-format="Format exactly: no sections, 3-12 bullets total, each bullet under 20 words and starting with '• \`TYPE\` ' (the type in backticks, so it shows as a badge), where TYPE is one of Planned, KTLO, or Reactive. Planned is committed roadmap work: features, planned tickets, and reviews of them. KTLO is keep-the-lights-on upkeep: releases, tooling, refactors, test and docs maintenance, dependency work. Reactive is unplanned work pulled in by a customer, an incident, or an urgent request. Pick one type per bullet. Put work still in progress or assigned and open in bullets of its own, starting 'Next:' after the type tag. Group bullets by project: an italic project label on its own line, such as '_hive_', then that project's bullets. A project is a repository: take its name from the session's 'project:' header or the MR URL path. Use the Jira project key for ticket-only work, and '_Other_' for work with no project or a 'none' project. Order projects by amount of work. Each MR bullet names the MR and says in plain words what it changed, using its title; each ticket bullet says what the ticket is about. Never add a PUBS or SERV key to an MR bullet when the MR's title already contains that key; add one only when the title lacks it and the sessions tie the MR to that ticket.Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link every MR, ticket, pipeline, and release with Slack link syntax <url|label>, using labels like !1234, hive!1118, or PUBS-1234; take URLs from LINKS, and link a Jira key without one as <https://jwplayer.atlassian.net/browse/KEY|KEY>. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. No intro or outro."
+format="Format exactly: no sections, 3-14 bullets total, each bullet under 35 words and starting with '• \`TYPE\` ' (the type in backticks, so it shows as a badge), where TYPE is one of Planned, KTLO, or Reactive. Planned is committed roadmap work: features, planned tickets, and reviews of them. KTLO is keep-the-lights-on upkeep: releases, tooling, refactors, test and docs maintenance, dependency work. Reactive is unplanned work pulled in by a customer, an incident, or an urgent request. Pick one type per bullet. Put work still in progress or assigned and open in bullets of its own, starting 'Next:' after the type tag. Group bullets by project: an italic project label on its own line, such as '_hive_', then that project's bullets. A project is a repository: take its name from the session's 'project:' header or the MR URL path. Never label a group with a Jira project key; put ticket-only work under the repository it concerns, else '_Other_', which is also for work with no project or a 'none' project. Order projects by amount of work. Each MR bullet names the MR and says in plain words what was actually done: the problem or symptom, the cause when the sessions found one, the fix, and the result (CI state, review state, screenshots, test counts). Do not just repeat the MR title. Each ticket bullet says what the ticket is about, from its Jira summary, and what happened to it today. Use the ticket cross-reference to describe the work, not to add links. Using the attached MCPs (Slack, Jira), find which customer a fix or ticket is for and name that customer in its bullet; name none when the sources do not say. Never list tickets the user did not work on today. Releases and release monitoring each get their own bullet. Say merged, shipped, or released only when a final reply states it; otherwise say opened, in review, or in progress. Group related sessions; skip trivia, tests of tooling, and anything without an outcome. Link only MRs, with Slack link syntax; link a ticket only when the work has no MR, and then only its one main ticket. Never link pipelines, releases, commits, issues, or Slack threads, and never list more than one ticket per bullet. Slack link syntax is <url|label>, using labels like !1234, hive!1118, or ABC-1234; take URLs from LINKS, and link a Jira key without one as <SITE/browse/KEY|KEY>, where SITE is the base URL of the site from getAccessibleAtlassianResources. Never put bare URLs or Markdown links. Adding an MR or ticket to a release does not mean it merged. No intro or outro."
 intro="The input is a digest of today's work: the user's prompts and final replies from Claude Code sessions, plus GitLab activity. Write a standup"
 
 standup=$(echo "$digest" | ask_claude "$read_tools" "$intro. Print only the standup; send it nowhere.
@@ -126,3 +128,15 @@ if [ -z "$(printf %s "$standup" | tr -d '[:space:]')" ]; then
     exit 1
 fi
 printf '%s\n' "$standup"
+
+if [ "$1" = --send ]; then
+    link=$(ask_claude "mcp__claude_ai_Slack__slack_send_message" "Send the text below, unchanged, with slack_send_message to channel_id $SLACK_USER. Print only the message link.
+$standup")
+    if [ -z "$link" ]; then
+        log "standup send failed"
+        echo "agent-standup: Slack send failed; see $LOG" >&2
+        exit 1
+    fi
+    log "standup sent: $link"
+    echo "$link"
+fi
