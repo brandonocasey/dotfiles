@@ -62,10 +62,10 @@ esac
 top=$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree: ${1:-.}"
 common=$(git -C "$top" rev-parse --path-format=absolute --git-common-dir)
 repo=$(basename "$(dirname "$common")")
-branch=$(git -C "$top" branch --show-current)
-[ -n "$branch" ] || branch=$(basename "$top")
-name="wt-$repo-$(printf '%s' "$branch" | tr '/ ' '--')"
+# Keyed by path, not branch, so a branch switch keeps the same simulator (as in android-emu).
+name="wt-$repo-$(basename "$top")-$(printf '%s' "$top" | cksum | cut -d' ' -f1)"
 base=${IOS_SIM_BASE:-ios-base}
+audible=$AUDIBLE_DIR/$name
 
 # Prints "<udid> <state>" for the device with exactly this name.
 lookup() {
@@ -73,8 +73,22 @@ lookup() {
     jq -r --arg n "$1" '[.devices[][] | select(.name == $n)][0] // empty | "\(.udid) \(.state)"'
 }
 
+# Simulators made when the name followed the branch keep it until renamed here, with their audible marker.
+adopt_branch_named() {
+  branch=$(git -C "$top" branch --show-current)
+  [ -n "$branch" ] || branch=$(basename "$top")
+  old_name="wt-$repo-$(printf '%s' "$branch" | tr '/ ' '--')"
+  old=$(lookup "$old_name")
+  [ -n "$old" ] || return 0
+  xcrun simctl rename "${old%% *}" "$name" || die "cannot rename simulator $old_name to $name"
+  if [ -e "$AUDIBLE_DIR/$old_name" ]; then mv "$AUDIBLE_DIR/$old_name" "$audible"; fi
+}
+
 found=$(lookup "$name")
-audible=$AUDIBLE_DIR/$name
+if [ -z "$found" ]; then
+  adopt_branch_named
+  found=$(lookup "$name")
+fi
 is_booted=0
 [ "${found#* }" != Booted ] || is_booted=1
 case $mode in
