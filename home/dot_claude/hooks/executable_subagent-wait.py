@@ -32,6 +32,13 @@ REPORT = (
     "once, at the end; plain reply text does not reach the main session. "
     "Without it, your final plain reply is the report."
 )
+# Keep in sync with session-resume's Pause message: a fresh agent continues
+# from either handoff with the same prompt.
+NOTE = (
+    "your assignment as given (task, owned files, checks, acceptance "
+    "criteria), what is done, findings so far, uncommitted changes, the next "
+    "step, and each running job's log path and done condition"
+)
 
 
 def log(entry: dict) -> None:
@@ -245,9 +252,8 @@ def main() -> int:
             f"You have waited {int(waited // 60)} minutes on background work. "
             f"Stop waiting: write a handoff file to {target} (a scratch note, "
             "allowed for read-only roles too; use a shell heredoc if you have no "
-            "Write tool) with the task state, findings so far, the next step, "
-            "each running job's log path, and the condition that means it is "
-            "done. Stop your agt wait waiter with TaskStop if you have it; "
+            f"Write tool) with {NOTE}. "
+            "Stop your agt wait waiter with TaskStop if you have it; "
             "otherwise leave it. Then end your report with the line "
             f"HANDOFF: {target}. {REPORT}",
             {**entry, "waited": int(waited)},
@@ -268,9 +274,8 @@ def main() -> int:
         "handoff does not leave you parked until they end: "
         "`nohup setsid sh -c '<cmd> > <log> 2>&1; echo $? > <done-file>' "
         ">/dev/null 2>&1 &` returns at once. Then hand off now instead of "
-        "waiting: write a handoff file in your scratch directory with the task "
-        "state, findings so far, the next step, the job's log path, and its "
-        "done condition, and end your report with the line HANDOFF: <path>.",
+        f"waiting: write a handoff file in your scratch directory with {NOTE}, "
+        "and end your report with the line HANDOFF: <path>.",
         {**entry, "waited": int(waited)},
     )
 
