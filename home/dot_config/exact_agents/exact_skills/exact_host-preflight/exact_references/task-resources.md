@@ -49,9 +49,7 @@ under test (same bundle ID). Before any simulator work, get its UDID:
 `sh ~/.config/agents/skills/host-preflight/scripts/ios-sim [worktree]`. It clones the shut-down
 base device `ios-base` on first use, boots the clone, and prints the UDID. Each call also sends the
 simulator's sound to the silent BlackHole 2ch output, so playback needs no mute; if it warns that
-the simulator still plays aloud, tell the user. `ios-sim audio` lists simulators playing to a Mac
-output (name, UDID, output). Only when the user asks to hear it, run `ios-sim audio on [worktree]`;
-it stays audible until `ios-sim audio off [worktree]` or `rm`. Pass the UDID as
+the simulator still plays aloud, tell the user. To hear it, see **Device sound**. Pass the UDID as
 `-destination "id=<udid>"` to `xcodebuild`, never `name=`, with
 `-derivedDataPath <worktree>/.cache/agents/DerivedData` so the build output goes with the
 worktree instead of the shared `~/Library/Developer/Xcode/DerivedData`. Drive it from the shell, which needs no
@@ -72,7 +70,7 @@ replace the app under test (same application ID). Before any emulator work, get 
 `sh ~/.config/agents/skills/host-preflight/scripts/android-emu [worktree]`. It starts the base AVD
 `android-base` read-only on a port reserved for the worktree, waits for boot, and prints the serial
 (`emulator-5554`). A cold boot takes minutes, so run it with `run_in_background`. Installs vanish
-when the emulator stops. Pass the serial to every command:
+when the emulator stops. It starts with no sound; to hear it, see **Device sound**. Pass the serial to every command:
 `adb -s <serial>` (`install -r`, `shell am start -n`, `exec-out screencap -p > file.png`,
 `shell input tap X Y`, `swipe X1 Y1 X2 Y2`, `text "..."`, `shell uiautomator dump`, `shell pm clear`),
 `ANDROID_SERIAL=<serial>` for Gradle `installDebug` and `connectedAndroidTest`. Never rely on "the
@@ -84,6 +82,14 @@ missing, run `chezmoi apply` (it installs both), not a manual install. It reuses
 emulator it started itself, so a user emulator on a nearby port is safe. The same remove hook
 runs `android-emu rm`, which stops the emulator and frees the port; run it yourself only to stop
 an emulator while keeping its worktree.
+
+## Device sound
+
+`sh ~/.config/agents/skills/host-preflight/scripts/device-audio` lists each process sending sound
+to a Mac output: owner (`ios <simulator name>`, `android emulator-<port>`, or the program), PID,
+and output device. Only when the user asks to hear a worktree's devices, run `device-audio on
+[worktree]`; they stay audible until `device-audio off [worktree]` or `rm`, also across restarts.
+A running Android emulator restarts to switch (installs vanish), so run it with `run_in_background`.
 
 ## Cleanup
 

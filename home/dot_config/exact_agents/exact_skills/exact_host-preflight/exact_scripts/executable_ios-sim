@@ -5,10 +5,10 @@
 #                             use; every call sends its sound to the silent BlackHole 2ch output
 #                             (mac.Brewfile) unless `audio on` is set
 #   ios-sim rm [path]         shut down and delete that worktree's simulator
-#   ios-sim audio             list simulators sending sound to a host output: name, UDID, output UID
 #   ios-sim audio on [path]   play that worktree's simulator through the Mac's default output
-#                             until `audio off` or `rm`
+#                             until `audio off` or `rm`, also when it starts later
 #   ios-sim audio off [path]  silence it again
+# device-audio lists what is playing and runs `audio` for every device kind.
 # The base device (default name "ios-base", override with IOS_SIM_BASE) must exist and be shut down:
 # it holds the shared setup (saved hosts, settings) that every clone starts from.
 set -eu
@@ -16,7 +16,7 @@ set -eu
 SILENT_OUTPUT_UID=BlackHole2ch_UID
 # CoreSimulator's value for "follow the Mac's default output", the route a booted simulator starts with.
 DEFAULT_OUTPUT_UID=__sim__hostUseSystemDefaultDeviceUID
-# One empty file per UDID whose sound the user turned on.
+# One empty file per simulator name whose sound the user turned on.
 AUDIBLE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/agents/ios-sim/audible
 
 die() { printf 'ios-sim: %s\n' "$*" >&2; exit 1; }
@@ -39,50 +39,24 @@ route_audio() {
 
 route_silent() {
   helper=$(build_audio_helper) || { echo "ios-sim: cannot build the sim-audio helper" >&2; return 1; }
-  "$helper" "$1" "$SILENT_OUTPUT_UID" && return 0
-  echo "ios-sim: BlackHole 2ch must be installed (brew install --cask blackhole-2ch) and loaded (log out or restart coreaudiod)" >&2
-  return 1
+  status=0
+  "$helper" "$1" "$SILENT_OUTPUT_UID" || status=$?
+  if [ "$status" = 2 ]; then
+    echo "ios-sim: BlackHole 2ch must be installed (brew install --cask blackhole-2ch) and loaded (log out or restart coreaudiod)" >&2
+  fi
+  return "$status"
 }
 
-# The simulator resets its audio route on boot, so this runs on every call.
 silence_audio() {
-  [ ! -e "$AUDIBLE_DIR/$1" ] || return 0
   route_silent "$1" || printf 'ios-sim: warning: simulator %s still plays sound aloud\n' "$1" >&2
-}
-
-# coreaudiod holds one assertion per guest process playing sound; that process's parent is the
-# simulator's launchd_sim, whose arguments include the device directory.
-list_audio() {
-  pmset -g assertions |
-    awk '/iOSSimulatorAudioDevice-[0-9]+/ { match($0, /AudioDevice-[0-9]+/); pid = substr($0, RSTART + 12, RLENGTH - 12) }
-         /Resources: audio-out / && pid != "" { sub(/.*audio-out /, ""); sub(/ +$/, ""); print pid "\t" $0; pid = "" }' |
-    while IFS="$(printf '\t')" read -r pid output; do
-      launchd=$(ps -o ppid= -p "$pid") || continue
-      udid=$(ps -o command= -p "$launchd" | sed -nE 's|.*/Devices/([0-9A-F-]{36})/.*|\1|p')
-      [ -n "$udid" ] || continue
-      name=$(xcrun simctl list devices -j | jq -r --arg u "$udid" '.devices[][] | select(.udid == $u) | .name')
-      printf '%s\t%s\t%s\n' "$name" "$udid" "$output"
-    done | sort -u
 }
 
 mode=get
 case "${1:-}" in
   rm) mode=rm; shift ;;
   audio)
-    shift
-    case "${1:-}" in
-      on | off) mode=audio-$1; shift ;;
-      ?*) die "usage: ios-sim audio [on|off [path]]" ;;
-      *)
-        playing=$(list_audio)
-        if [ -z "$playing" ]; then
-          echo "No simulator is sending sound to a host output." >&2
-        else
-          printf '%s\n' "$playing"
-        fi
-        exit 0
-        ;;
-    esac
+    case "${2:-}" in on | off) mode=audio-$2 ;; *) die "usage: ios-sim audio on|off [path]" ;; esac
+    shift 2
     ;;
 esac
 top=$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree: ${1:-.}"
@@ -100,28 +74,27 @@ lookup() {
 }
 
 found=$(lookup "$name")
+audible=$AUDIBLE_DIR/$name
+is_booted=0
+[ "${found#* }" != Booted ] || is_booted=1
 case $mode in
   rm)
+    rm -f "$audible"
     [ -n "$found" ] || exit 0
     udid=${found%% *}
     xcrun simctl shutdown "$udid" 2>/dev/null || true
     xcrun simctl delete "$udid"
-    rm -f "$AUDIBLE_DIR/$udid"
     exit 0
     ;;
   audio-on)
-    [ -n "$found" ] || die "no simulator \"$name\"; run ios-sim first"
-    udid=${found%% *}
     mkdir -p "$AUDIBLE_DIR"
-    : >"$AUDIBLE_DIR/$udid"
-    [ "${found#* }" != Booted ] || route_audio "$udid" "$DEFAULT_OUTPUT_UID"
+    : >"$audible"
+    [ "$is_booted" = 0 ] || route_audio "${found%% *}" "$DEFAULT_OUTPUT_UID"
     exit 0
     ;;
   audio-off)
-    [ -n "$found" ] || die "no simulator \"$name\"; run ios-sim first"
-    udid=${found%% *}
-    rm -f "$AUDIBLE_DIR/$udid"
-    [ "${found#* }" != Booted ] || route_silent "$udid" || exit 1
+    rm -f "$audible"
+    [ "$is_booted" = 0 ] || route_silent "${found%% *}" || exit 1
     exit 0
     ;;
 esac
@@ -136,5 +109,6 @@ fi
 
 udid=${found%% *}
 [ "${found#* }" = Booted ] || xcrun simctl boot "$udid" 2>/dev/null || true
-silence_audio "$udid"
+# The simulator resets its audio route on boot, so silence it on every call.
+[ -e "$audible" ] || silence_audio "$udid"
 printf '%s\n' "$udid"

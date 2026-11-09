@@ -3,6 +3,10 @@
 #   android-emu [path]     print the adb serial of the emulator owned by the worktree at <path>
 #                          (default .), starting it and waiting for boot on first use
 #   android-emu rm [path]  stop that worktree's emulator and release its port
+#   android-emu audio on|off [path]
+#                          start that worktree's emulator with or without sound from now on;
+#                          a running one restarts (installs vanish), else nothing starts
+# Emulators start with -no-audio unless `audio on` is set.
 # Every worktree boots the same base AVD (default "android-base", override with ANDROID_EMU_BASE)
 # read-only on its own port, so the base stays untouched and installs vanish when the emulator
 # stops. Headless by default; set ANDROID_EMU_WINDOW=1 for a window. Booting can take minutes:
@@ -16,8 +20,14 @@ set -eu
 
 die() { printf 'android-emu: %s\n' "$*" >&2; exit 1; }
 
-remove=0
-if [ "${1:-}" = rm ]; then remove=1; shift; fi
+mode=get
+case "${1:-}" in
+  rm) mode=rm; shift ;;
+  audio)
+    case "${2:-}" in on | off) mode=audio-$2 ;; *) die "usage: android-emu audio on|off [path]" ;; esac
+    shift 2
+    ;;
+esac
 top=$(git -C "${1:-.}" rev-parse --show-toplevel 2>/dev/null) || die "not inside a git worktree: ${1:-.}"
 # Keyed by path, not branch, so a branch switch keeps the same emulator.
 key=$(basename "$top")-$(printf '%s' "$top" | cksum | cut -d' ' -f1)
@@ -32,6 +42,7 @@ command -v adb >/dev/null 2>&1 || die "adb not found; run chezmoi apply to insta
 mkdir -p "$state"
 claimfile=$state/$key.port
 log=$state/$key.log
+audible=$state/$key.audible
 
 # True when an emulator answers adb on this port.
 alive() { adb -s "emulator-$1" get-state >/dev/null 2>&1; }
@@ -89,15 +100,36 @@ port=
 pid=
 load() { if [ -f "$claimfile" ]; then read -r port pid <"$claimfile" || true; fi; }
 
-if [ "$remove" = 1 ]; then
+if [ "$mode" = rm ]; then
   acquire
   load
   if [ -n "$port" ]; then
     if owned "$port" "$pid"; then adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true; fi
     release "$port"
   fi
-  rm -f "$claimfile"
+  rm -f "$claimfile" "$audible"
   exit 0
+fi
+
+if [ "$mode" = audio-on ] || [ "$mode" = audio-off ]; then
+  if [ "$mode" = audio-on ]; then : >"$audible"; else rm -f "$audible"; fi
+  acquire
+  load
+  if ! owned "$port" "$pid"; then exit 0; fi
+  case " $(ps -o args= -p "$pid") " in *" -no-audio "*) running_audible=0 ;; *) running_audible=1 ;; esac
+  wanted_audible=0
+  [ ! -e "$audible" ] || wanted_audible=1
+  [ "$running_audible" != "$wanted_audible" ] || exit 0
+  # Sound is fixed at launch, so stop the emulator and let the start path below boot it again.
+  adb -s "emulator-$port" emu kill >/dev/null 2>&1 || true
+  waited=0
+  while kill -0 "$pid" 2>/dev/null; do
+    waited=$((waited + 1))
+    [ "$waited" -le 30 ] || die "emulator-$port did not stop in 30s"
+    sleep 1
+  done
+  unlock
+  trap - EXIT
 fi
 
 # Check the install before claiming a port or touching the SDK, so a failure leaves nothing behind.
@@ -124,7 +156,8 @@ serial=emulator-$port
 # Still booting counts as running: adb answers only after a few seconds.
 if ! alive "$port" && ! owned "$port" "$pid"; then
   case "$(uname -s)" in Linux) gpu=swiftshader_indirect ;; *) gpu=auto ;; esac
-  set -- -avd "$base" -port "$port" -read-only -no-snapshot-save -no-audio -no-boot-anim -gpu "$gpu"
+  set -- -avd "$base" -port "$port" -read-only -no-snapshot-save -no-boot-anim -gpu "$gpu"
+  [ -e "$audible" ] || set -- "$@" -no-audio
   [ "${ANDROID_EMU_WINDOW:-0}" = 1 ] || set -- "$@" -no-window
   nohup "$emulator" "$@" >"$log" 2>&1 &
   pid=$!

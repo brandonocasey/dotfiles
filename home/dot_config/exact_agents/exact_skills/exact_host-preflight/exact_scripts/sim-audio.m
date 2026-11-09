@@ -1,4 +1,5 @@
 // sim-audio <udid> <host-output-uid>: send a booted simulator's audio output to one host device.
+// Exits 2 when that device is missing, 1 on other failures.
 // Uses CoreSimulator's private audio route, the one Simulator.app's I/O > Audio Output menu sets.
 // The route resets when the simulator boots. ios-sim builds and runs this.
 #import <Foundation/Foundation.h>
@@ -12,6 +13,8 @@ static const unsigned GUEST_OUTPUT_SCOPE = 2;
 // CoreSimulator's value for "follow the Mac's default output", the route a booted simulator starts with.
 static NSString *const DEFAULT_OUTPUT_UID = @"__sim__hostUseSystemDefaultDeviceUID";
 static const int64_t ROUTE_TIMEOUT_NS = 5 * NSEC_PER_SEC;
+// Exit status when the host device is missing; other failures exit 1.
+static const int EXIT_NO_HOST_DEVICE = 2;
 
 @protocol SimAudioHostRoutable
 - (void)routeGuestDeviceScope:(unsigned)scope toHostDeviceUID:(NSString *)uid completionQueue:(dispatch_queue_t)queue completionHandler:(void (^)(NSError *))handler;
@@ -75,7 +78,8 @@ int main(int argc, char **argv) {
     NSString *actual = [route guestOutputHostDeviceUID];
     if (![actual isEqual:hostUID]) {
       routeOutput(route, DEFAULT_OUTPUT_UID);
-      return fail([NSString stringWithFormat:@"output went to %@, not %@; is that device installed?", actual, hostUID]);
+      fail([NSString stringWithFormat:@"output went to %@, not %@; is that device installed?", actual, hostUID]);
+      return EXIT_NO_HOST_DEVICE;
     }
   }
   return 0;

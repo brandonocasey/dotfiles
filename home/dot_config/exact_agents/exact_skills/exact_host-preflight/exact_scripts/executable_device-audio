@@ -1,0 +1,70 @@
+#!/bin/sh
+# Sound from agent devices on this host.
+#   device-audio                list each process sending sound to a Mac output: owner (iOS
+#                               simulator name, Android emulator serial, or program), PID, output UID
+#   device-audio on|off [path]  play the iOS simulator and Android emulator of the worktree at <path>
+#                               (default .) aloud, or silence them, through `ios-sim audio` and
+#                               `android-emu audio`; a running Android emulator restarts
+set -eu
+
+die() { printf 'device-audio: %s\n' "$*" >&2; exit 1; }
+
+scripts=$(dirname "$0")
+
+# Names what owns a sound-playing process: its iOS simulator (the parent launchd_sim's arguments
+# hold the device directory), its Android emulator (qemu's -port), or else its program.
+owner() {
+  args=$(ps -o args= -p "$1" 2>/dev/null) || { echo "(exited)"; return; }
+  parent=$(ps -o ppid= -p "$1" | tr -d ' ')
+  udid=$(ps -o args= -p "$parent" 2>/dev/null | sed -nE 's|.*/CoreSimulator/Devices/([0-9A-F-]{36})/.*|\1|p')
+  if [ -n "$udid" ]; then
+    xcrun simctl list devices -j | jq -r --arg u "$udid" '.devices[][] | select(.udid == $u) | "ios \(.name)"'
+    return
+  fi
+  port=$(printf '%s\n' "$args" | sed -nE 's/.* -avd [^ ]+ -port ([0-9]+).*/\1/p')
+  if [ -n "$port" ]; then
+    echo "android emulator-$port"
+    return
+  fi
+  basename "$(ps -o comm= -p "$1")"
+}
+
+# coreaudiod holds one assertion per process playing sound, with its PID and output device.
+list_audio() {
+  pmset -g assertions |
+    awk '/^ +pid [0-9]+\(/ { pid = "" }
+         /Created for PID: / { pid = $4; sub(/\.$/, "", pid) }
+         /Resources: audio-out / && pid != "" { sub(/.*audio-out /, ""); sub(/ +$/, ""); print pid "\t" $0; pid = "" }' |
+    while IFS="$(printf '\t')" read -r pid output; do
+      printf '%s\t%s\t%s\n' "$(owner "$pid")" "$pid" "$output"
+    done | sort -u
+}
+
+case "${1:-}" in
+  "")
+    [ "$(uname -s)" = Darwin ] || die "listing needs macOS (pmset)"
+    playing=$(list_audio)
+    if [ -z "$playing" ]; then
+      echo "Nothing is sending sound to a Mac output." >&2
+    else
+      printf '%s\n' "$playing"
+    fi
+    ;;
+  on | off)
+    path=${2:-.}
+    ran=0
+    status=0
+    # One kind failing still switches the other.
+    if [ "$(uname -s)" = Darwin ] && command -v xcrun >/dev/null 2>&1; then
+      sh "$scripts/ios-sim" audio "$1" "$path" || status=1
+      ran=1
+    fi
+    if command -v adb >/dev/null 2>&1; then
+      sh "$scripts/android-emu" audio "$1" "$path" || status=1
+      ran=1
+    fi
+    [ "$ran" = 1 ] || die "neither xcrun nor adb is installed"
+    exit "$status"
+    ;;
+  *) die "usage: device-audio [on|off [path]]" ;;
+esac

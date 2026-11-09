@@ -92,6 +92,8 @@ managed=$(
       "Bash(idb ui *)",
       "Bash(sh ~/.config/agents/skills/host-preflight/scripts/ios-sim *)",
       "Bash(sh ~/.config/agents/skills/host-preflight/scripts/android-emu *)",
+      "Bash(sh ~/.config/agents/skills/host-preflight/scripts/device-audio)",
+      "Bash(sh ~/.config/agents/skills/host-preflight/scripts/device-audio *)",
       "Bash(adb -s emulator-* *)",
       "Bash(systemctl --user list-timers *)",
       "Bash(claude --version)",
