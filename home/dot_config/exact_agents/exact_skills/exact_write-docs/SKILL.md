@@ -13,9 +13,8 @@ description: "Create or edit documentation, one page at a time, using Diátaxis 
 - Docs must be useful at every state: no "coming soon" stubs, and don't hold back a
   page because it isn't finished.
 - Each paragraph covers one idea in at most four sentences. Apply
-  [writing.md](../shared/writing.md) and repository templates. Skip its chat-reply
-  rules: the leading result line, `Next:`, `Separately:`, status marks,
-  `agents/output/` files, and the heading minimum.
+  [public-writing.md](../shared/public-writing.md) and repository templates. Skip the
+  main rules' heading minimum: a short page keeps its headings.
 - Before the reader pass, check links, file paths, and command names on the changed pages through a `cheap` agent. It reports each broken one as `page:line` and edits nothing.
 - After writing or changing a tutorial or how-to, run a reader pass: a fresh `tester`
   given only the page paths, no diff or intent. Tell it to follow every step exactly
