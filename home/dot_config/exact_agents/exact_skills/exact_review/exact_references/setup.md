@@ -91,6 +91,13 @@ If the pinned diff is empty, report `empty` and stop.
   is missing, or the command fails.
 - Companion or linked MRs/PRs named in the request or description, as URLs.
 - Whether the authenticated user authored the MR/PR (`own: yes` or `own: no`).
+- Squash merge, as `squash: yes|no|unknown`. `yes`: GitLab `glab mr view <iid> -F json`
+  has `squash_on_merge` true; GitHub `gh pr view <n> --json autoMergeRequest` has
+  `mergeMethod` `SQUASH`, or `gh repo view <owner>/<repo> --json
+  squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed` shows squash as the only
+  allowed method; or the repository rules state that MRs/PRs squash merge. `no`: GitHub
+  `squashMergeAllowed` is false, or the rules state merge commits or rebase merges.
+  `unknown`: anything else, including a local target and a Forgejo target.
 - Prior reviews of the pinned head from the step 2 `status`: `reviews_at_head`, the
   open threads, and the run IDs. Report `prior reviews: 0` when none.
 
@@ -115,7 +122,7 @@ Also report the changed-line count and a review mode, from the pinned diff:
 A REVIEW.md at the root or in a changed directory may list `High risk:`, `Low risk:`,
 and `Skip:` path globs, and what counts as broken in that code.
 
-## 6. Reviewer prompt
+## 6. Reviewer prompts
 
 Fill this template. Fill the fields and add nothing else: no summary of the change,
 focus areas, or earlier findings. `<target>` is the user's target verbatim, followed by
@@ -130,6 +137,17 @@ Linked issue: <key, title, URL, and a few body lines>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory>
 ```
 
+Fill the `writing-reviewer` prompt the same way, with the same `<target>`, worktree,
+and `Repository rules` fields.
+
+```text
+Review the writing of <target>.
+Worktree: <path>
+Steps: follow <absolute path of writing-steps.md>, steps 0-3.
+Squash: <squash fact>
+Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory, and the MR/PR template path when one exists>
+```
+
 The `reviewer` role sets the severity scale, return format, and read-only limits;
 [output.md](output.md) uses the scale. The main session converts
 the returned prose to `pass end --findings` JSON per [store.md](store.md).
@@ -139,5 +157,5 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 Keep for later steps and report in at most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each check command, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), the MR/PR facts (with the linked issue), and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|opus`.
+none), the MR/PR facts (with the linked issue and `squash:`), and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|opus`.
 Or report `empty` or the blocker, with any worktree you created.

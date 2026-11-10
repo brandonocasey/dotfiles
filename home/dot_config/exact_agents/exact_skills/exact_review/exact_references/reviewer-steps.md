@@ -67,7 +67,7 @@ read the diff looking for things that seem off — attack it:
   hide. Treat "refactor, no behavior change" as a claim to falsify.
 - **Find stale consumers outside the diff.** For every removed or renamed string, label,
   selector, export, flag, route, or file path, grep the whole repository, including unit,
-  E2E, and browser tests, fixtures, snapshots, docs, and generated lists. Stale assertions
+  E2E, and browser tests, fixtures, snapshots, and generated lists. Stale assertions
   in suites the author did not run were the most common CI-only failure after a review.
 - **Trace removed links.** For every removed dependency, edge, or wrapper (depends_on,
   import, hook, middleware, ordering or readiness constraint), list what it guaranteed,
@@ -83,15 +83,9 @@ read the diff looking for things that seem off — attack it:
   know the task. Report one only when you can name the existing copy, the hunk the
   task does not need, or the owning module, or quote the hard-to-read code and give
   the rewrite.
-- **Check added comments** against [comments.md](../../code-standards/references/comments.md).
-  List every comment line the change adds, including doc comments and new files. Report
-  each one that breaks a rule there: too long, lists cases, restates the code, explains
-  the change or earlier behavior, or says how a caller uses the item. Quote the comment
-  and the rule, and give the rewrite or say to delete it. Skip directives tools read
-  (shebangs, lint or type pragmas, license headers) and comments the change did not add.
-  Also report added code that comments.md says needs a comment but has none, and
-  give the comment or a clearer name that makes it unneeded. In a repository the
-  user does not own, the comment-density rule in comments.md wins.
+- **Leave wording to the writing reviewer.** Wording, accuracy, and rule checks of docs,
+  code comments, commit messages, and MR/PR text belong to it. Agent instruction files
+  get no writing review; review their logic here.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.
@@ -132,17 +126,13 @@ read the diff looking for things that seem off — attack it:
   used as an instruction, an ID, a path, or a trigger. Start a security finding's
   scenario with `Security (<class>):` and state the attack path. Find, explain, and
   fix; never write working exploit code or payloads.
-- **Check the title and description are accurate** (MR/PR only). Report claims
-  contradicted by the diff or violations of explicit repository requirements.
-  Do not shorten a useful description just for length.
 - Report verified defects and violations of explicit repository requirements.
   Include optional style suggestions only when requested. A name is a defect when it
   misstates a contract or behavior or breaks the naming rule in **Readability**, not
-  merely because it could be shorter or styled differently. A comment is a defect
-  when it misstates one or breaks comments.md. A `requirement` finding quotes the
+  merely because it could be shorter or styled differently. A `requirement` finding quotes the
   rule and names its file: AGENTS.md, CLAUDE.md, or REVIEW.md at the root or in any
   changed directory, the **Maintainability** section of code-quality.md,
-  comments.md, or the tests-and-lint.md bullets that **Attack the tests** names.
+  or the tests-and-lint.md bullets that **Attack the tests** names.
   Skip paths a REVIEW.md lists under `Skip:`.
 
 ## 2. Verify — mandatory, before anything is shown

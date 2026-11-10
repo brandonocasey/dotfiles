@@ -4,11 +4,12 @@ Each finding or comment covers one issue in at most three sentences: what
 breaks, when, and the fix. Write comments to post per
 [public-writing.md](../../shared/public-writing.md). Apply repository templates when present.
 
-Severity scale (keep in sync with the `reviewer` role): `bug` (wrong behavior
-reachable in production), `question` (design choice worth confirming with the
-author), `requirement` (a violation of an explicit repository rule or of a
-`code-standards` rule that the review steps list for `requirement` findings), or `nit`
-(optional style feedback, only when requested). Give each `bug` a severity: `high`
+Severity scale (keep in sync with the `reviewer` and `writing-reviewer` roles): `bug`
+(wrong behavior reachable in production), `question` (design choice worth confirming
+with the author), `requirement` (a violation of an explicit repository rule, of a
+`code-standards` rule that the review steps list for `requirement` findings, or of a
+writing rule that [writing-steps.md](writing-steps.md) lists), or `nit` (optional style
+feedback, only when requested). Give each `bug` a severity: `high`
 (data loss, security hole, crash, or a broken main path), `medium` (wrong result on
 a common path), or `low` (rare edge case or minor effect).
 

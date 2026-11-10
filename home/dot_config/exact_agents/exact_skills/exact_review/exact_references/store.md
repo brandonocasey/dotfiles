@@ -108,6 +108,8 @@ For a surviving finding, `scenario` is the step 3 comment text, suggestion block
 included, without its kind label (remote-comments.md **Finding body**); `publish` adds it.
 Record a `pre-existing` finding as type `comment` with a scenario that starts
 `Pre-existing <type> (<severity>):`, so it never blocks approval or the step 7 gate.
+Record a commit-message finding from the `writing-reviewer` as type `comment` the same
+way, with a scenario that starts `Commit <short-sha>:`.
 Line numbers refer to the pass's reviewed head, or its tree for uncommitted work. The output lists the new finding IDs under `added` and `killed`.
 
 ## Usage input

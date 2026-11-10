@@ -59,7 +59,7 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
    the reviewers see the fixes:
    - MR/PR or branch: rerun setup; its pin ends at the new head.
    - Working diff: rerun setup; it saves a new diff file.
-   - Commit, range, or detached branch: keep the store target, but pin the
+   - Commit, range, or detached branch: keep the store target, but pin each
      reviewer prompt to `<from>..HEAD` (the fix branch's HEAD for a detached
      branch), and pass `--head HEAD` to the first `pass start` too.
 

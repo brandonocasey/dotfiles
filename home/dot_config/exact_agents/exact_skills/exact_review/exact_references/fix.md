@@ -29,6 +29,12 @@ threads that the request covers (fix only those threads):
   `pre-existing` finding on the reviewed branch. When the user names one, fix it on
   its own branch and MR/PR from the default branch (`worktree` skill), outside this
   review: that fix starts no fix check, run, or review of this target.
+- **Writing findings**: fix them like any other finding, in docs, code comments, and the
+  MR/PR title and description. A commit-message finding is recorded as type `comment`
+  ([store.md](store.md)), so it never blocks and is never fixed: reviewed commits are never
+  reworded. Resolve a title or description fix with `agt review resolve <id> --fixed
+  <head-sha> --reply "Fixed in the MR/PR description."`, where `<head-sha>` is the
+  MR/PR's current head (a description edit makes no commit).
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.

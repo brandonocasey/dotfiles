@@ -8,7 +8,9 @@ deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
 explained in plain language. Report verified defects, explicit repository
 requirement violations, and maintainability rule violations (duplication,
-unneeded changes, misplaced or hard-to-read code), and added or missing comments that break the comment rules. Include optional style suggestions only when requested.
+unneeded changes, misplaced or hard-to-read code). The `writing-reviewer` reports the
+docs, code comment, commit message, and MR/PR title and description checks. Include
+optional style suggestions only when requested.
 
 Arguments: `--test` and `--no-test` (**Testing**), `--fix` (steps 4–5), `--threads`
 (step 6), `--approve`, `--auto-merge`, and `--merge` (step 7), and
@@ -21,7 +23,8 @@ For automatic reviews of this session's work, read [when-to-run.md](references/w
 
 ## Delegation
 
-Every review runs through the `reviewer` sub-agent. After the reviewers return, read [delegation.md](references/delegation.md).
+Every review runs through the `reviewer` sub-agent, and the first cycle's full review also
+runs one `writing-reviewer` beside it. After the reviewers return, read [delegation.md](references/delegation.md).
 
 ## Testing
 
@@ -54,8 +57,12 @@ later passes).
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when setup's
   review mode is `haiku`, pass `model: haiku` (effort stays `xhigh`). If a `haiku`
-  reviewer returns `Risk: high` or a `high` bug
+  code reviewer returns `Risk: high` or a `high` bug
   survives verification, rerun once with the default model.
+- In the first cycle's full review only, also start one `writing-reviewer` per target with
+  setup.md's writing prompt verbatim. `--agents` and setup's review mode apply to the code
+  reviewer only. Later full reviews and fix checks start none; [loop.md](references/loop.md)
+  owns the one final writing pass.
 - On `skip` (setup.md owns the test),
   report `Skipped: <short-sha> already has <N> reviews` with the run IDs and stop.
   Setup stops before checks; clean up any worktree it reports per
@@ -66,7 +73,7 @@ later passes).
 - With `own: yes`, the review posts and resolves MR/PR comments only as **Own MR/PR
   comments** in [remote-comments.md](references/remote-comments.md) allows (own MR/PR
   in the user's organization). With `own: no`, it posts nothing unless the user asks.
-- Add nothing to the reviewer prompt beyond setup.md's template; only a fix check adds the
+- Add nothing to a reviewer prompt beyond setup.md's templates; only a fix check adds the
   inputs [loop.md](references/loop.md) lists.
 - Use the returned worktree; the tester uses it too.
 - On `mutations unsupported`, run no `--fix`, `--threads`, or merge step.
@@ -74,7 +81,7 @@ later passes).
   nor authored stays read-only; apply `--fix`, `--threads`, approval, and merge only
   to ones the user named or authored.
 - Use the reported CI facts in the step 3 report.
-- The risk tier is the highest of setup's `risk`, the reviewers' `Risk:` lines, and
+- The risk tier is the highest of setup's `risk`, the code reviewers' `Risk:` lines, and
   `high` when a security finding or `high` bug survives. A new head resets it.
 
 After the reviewers return, re-verify per **Delegation**, reading only the code each

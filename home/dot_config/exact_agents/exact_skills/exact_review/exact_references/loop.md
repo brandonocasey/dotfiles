@@ -38,12 +38,21 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    from the first cycle. Skip it when the first full review found no `high` severity
    major finding that survived verification. Its full review runs blind: send the
    reviewers nothing from cycle 1.
-5. Stop. Do not start a third cycle. Report one numbered list of: held `question` items,
+5. Stop. Do not start a third cycle. After the last pass, run the **Writing pass** below
+   once. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
    from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed. When the second cycle's full review still found a major finding,
    name the recurring cause in one line and suggest rethinking the approach before
    more fixes.
+
+**Writing pass.** The fix loop's reviewers skip writing; only the first cycle's full review
+runs the `writing-reviewer`. When the loop's fixes changed docs, code comments, or the MR/PR
+title or description, and the first writing review ran, start one fresh `writing-reviewer`
+with setup.md's writing prompt on the fix delta, `<head-sha at the first writing
+review>..<final head>`, and record it as a `fix-check` pass. Fix its findings per
+[fix.md](fix.md) and start no further pass; list any it leaves unfixed in step 5's list. The
+cap is one writing pass per run. Fix checks never continue or start the `writing-reviewer`.
 
 Keep the loop state in the store per [store.md](store.md): `pass start --kind full
 --base <pinned base>` with each
