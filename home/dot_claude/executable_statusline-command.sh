@@ -415,10 +415,10 @@ elapsed_awk='
 # $1 = used percentage, $2 = reset epoch, $3 = window length and $4 = budget
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
 # per day of a window over a day long, else one per hour, whose last cell is
-# darker (fill faint, track 22 levels darker). Every bar is 55 cells, which
-# keeps the widest line ("23.9h", "100%", "▼100.0%") whole in an 80-column
-# terminal, where Claude Code indents the line 2 columns and cuts it 2 short of
-# the edge: 7 days of 7 or 8 cells split at the nearest cell, or 5 hours of 11. Cells are
+# darker (fill faint, track 22 levels darker). Every bar is 35 cells, which
+# leaves room after the widest gauge ("23.9h", "100%", "▼100.0%") for the idle
+# and cache labels in an 80-column terminal, where Claude Code indents the line
+# 2 columns and cuts it 2 short of the edge: 7 days of 5 cells, or 5 hours of 7. Cells are
 # "▇", which leaves the top eighth of the line blank so stacked bars don't
 # touch; full-height eighth glyphs would, so fill rounds to whole cells. The
 # bar marks the same zones rate_seg colours by: up to one step's share past
@@ -436,7 +436,7 @@ pace_gauge() {
   function zone(x) { return x > red ? 31 : x > yellow ? 33 : 0 }
   BEGIN {
     K = w / (w > 86400 ? 86400 : 3600)
-    N = 55; cw = 100 / N
+    N = 35; cw = 100 / N
     # cut[j]: a segment ends at the edge before cell j.
     for (k = 1; k < K; k++) cut[int(k * N / K + 0.5)] = 1
     pre = "\033[" dim
@@ -870,8 +870,19 @@ case $pc_state in
     if [ -n "$rl_sid" ] && [ -n "$ka_pid" ] && kill -0 "$ka_pid" 2>/dev/null; then
       ka_last=$(cat "$ka_dir/$rl_sid.last_prompt" 2>/dev/null)
       case $ka_last in *[!0-9]* | '') ka_last=$now ;; esac
+      # A ping fails while a limit is used up, and a cache that lapses stays
+      # lapsed, so the chain stops at the first ping before the latest reset
+      # among the used-up limits.
+      ka_blocked=0
+      for ka_lim in "$five_hr:$five_hour_reset" "$seven_day:$seven_day_reset" "$spend_pct:$spend_reset"; do
+        ka_r=${ka_lim#*:}
+        ka_r=${ka_r%.*}
+        case $ka_r in '' | *[!0-9]*) continue ;; esac
+        awk -v u="${ka_lim%%:*}" 'BEGIN { exit !(u + 0 >= 100) }' &&
+          [ "$ka_r" -gt "$ka_blocked" ] && ka_blocked=$ka_r
+      done
       ka_ping=$((pc_end - 3600))
-      while [ $((ka_ping + 2700 - ka_last)) -lt 7200 ]; do
+      while [ $((ka_ping + 2700 - ka_last)) -lt 7200 ] && [ $((ka_ping + 2700)) -ge "$ka_blocked" ]; do
         ka_ping=$((ka_ping + 2700))
         pc_end=$((ka_ping + 3600))
       done
@@ -882,15 +893,14 @@ case $pc_state in
       { read -r pc_until < "$rl_dir/port-$rl_sid.until"; } 2>/dev/null
       [ "$pc_until" = "$pc_end" ] || printf '%s\n' "$pc_end" > "$rl_dir/port-$rl_sid.until"
     fi
-    # Minutes left ("25m"), shown only from 30 left; they turn yellow from 15
-    # left and red from 5.
+    # Time left, yellow from 15 minutes left and red from 5.
     pc_left=$(((pc_end - now) / 60))
     [ "$pc_left" -lt 0 ] && pc_left=0
     if [ "$pc_left" -le 5 ]; then
       pc_val=$(printf '\033[31m%sm\033[0m' "$pc_left")
     elif [ "$pc_left" -le 15 ]; then
       pc_val=$(printf '\033[33m%sm\033[0m' "$pc_left")
-    elif [ "$pc_left" -le 30 ]; then
+    else
       pc_val=$(rl_dim="" countdown_str "$pc_end")
     fi
     ;;
@@ -1004,16 +1014,15 @@ if [ -n "$rl_sid" ] && [ -f "$transcript" ]; then
 fi
 
 # Context window usage, led by the window only when unusual ("40.3%",
-# "200k:40.3%"), then in the same segment the compaction count, the idle time,
-# and the prompt cache's time to live once 30 minutes or less remain
-# ("40.3%:⟳2", "40.3%:12m", "40.3%:⟳1:47m:13m", "40.3%:3h10m:cold").
+# "200k:40.3%"), then in the same segment the compaction count ("40.3%:⟳2").
+# The idle time and the prompt cache's time to live go after the gauges.
 ctx_seg=""
 if [ -n "$ctx_used_pct" ]; then
   c=$(color_for_pct "$ctx_used_pct")
   ctx_seg=$(printf '\033[%sm%s%%\033[0m' "$c" "$ctx_used_pct")
   [ -n "$ctx_label" ] && ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_label" "$ctx_seg")
 fi
-for v in "$cc_val" "$idle_val" "$pc_val"; do
+for v in "$cc_val"; do
   [ -n "$v" ] || continue
   if [ -n "$ctx_seg" ]; then ctx_seg=$(printf '%s\033[38;5;245m:\033[0m%s' "$ctx_seg" "$v"); else ctx_seg=$v; fi
 done
@@ -1067,10 +1076,26 @@ rl_dim=$five_hour_dim
 fh_seg=$(rate_seg "$five_hour_reset" "$five_hr" 18000 900)
 rl_dim=$seven_day_dim
 sd_seg=$(rate_seg "$seven_day_reset" "$seven_day" 604800 21600)
-gauges=""
+# Idle time and cache time to live, labelled ("idle 12m", "cache 47m"; "0s"
+# while a turn runs, "-" when no cache is seen). They follow the gauges, the
+# idle time on the first line and the cache on the second, or both on a lone
+# gauge line; with no gauge line they join the first line.
+idle_txt=$(printf '\033[38;5;245midle\033[0m %s' "${idle_val:-$'\033[38;5;247m0s\033[0m'}")
+cache_txt=$(printf '\033[38;5;245mcache\033[0m %s' "${pc_val:-$'\033[38;5;247m-\033[0m'}")
+gauge_lines=$(align_gauges "$fh_seg" "$sd_seg")
+gauge_n=$(printf '%s\n' "$gauge_lines" | awk 'NF { n++ } END { print n + 0 }')
+gauges="" gauge_i=0
 while IFS= read -r g; do
-  [ -n "$g" ] && gauges="$gauges\n$(usage_link "$g")"
-done < <(align_gauges "$fh_seg" "$sd_seg")
+  [ -n "$g" ] || continue
+  gauge_i=$((gauge_i + 1))
+  case $gauge_n:$gauge_i in
+    1:*) g_extra="$idle_txt $cache_txt" ;;
+    *:1) g_extra=$idle_txt ;;
+    *) g_extra=$cache_txt ;;
+  esac
+  gauges="$gauges\n$(usage_link "$g") $g_extra"
+done <<< "$gauge_lines"
+[ "$gauge_n" -eq 0 ] && parts="$parts$sep$idle_txt$sep$cache_txt"
 
 # Claude gateway spend limit (rate_limits.spend_limit): "spend <countdown>:
 # <usage%>", then the dollars spent of the limit when the gateway reports them.
