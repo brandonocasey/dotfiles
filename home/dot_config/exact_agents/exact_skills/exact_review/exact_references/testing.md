@@ -41,7 +41,8 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
 
 1. **Test.** After setup, start one fresh `tester` with the prompt below on the
    whole target, or on only its untested part when earlier commits are already
-   tested (see above).
+   tested (see above). In the first cycle, start the `writing-reviewer` in the same
+   turn ([SKILL.md](../SKILL.md) steps 0–2).
 2. **Verify.** Re-verify each failure as [delegation.md](delegation.md) re-verifies
    findings: read the cited log lines or evidence and the code they point to. Mark
    a failure the change did not cause as `pre-existing`.
@@ -63,7 +64,7 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
      reviewer prompt to `<from>..HEAD` (the fix branch's HEAD for a detached
      branch), and pass `--head HEAD` to the first `pass start` too.
 
-   Then start the reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
+   Then start the code reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
    steps 0–2. Never pass test results to reviewers.
 
 If a tester stalls or returns nothing, start one fresh tester. If that fails too,

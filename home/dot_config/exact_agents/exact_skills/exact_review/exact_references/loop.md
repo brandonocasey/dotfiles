@@ -47,7 +47,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
    more fixes.
 
 **Writing pass.** The fix loop's reviewers skip writing; only the first cycle's full review
-runs the `writing-reviewer`. When the loop's fixes changed docs, code comments, or the MR/PR
+runs the `writing-reviewer`. When the loop's fixes, testing-stage fixes included, changed docs, code comments, or the MR/PR
 title or description, and the first writing review ran, start one fresh `writing-reviewer`
 with setup.md's writing prompt on the fix delta, `<head-sha at the first writing
 review>..<final head>`; for a working-diff target, save the new working diff to a file and
