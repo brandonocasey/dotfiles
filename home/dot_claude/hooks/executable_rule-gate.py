@@ -390,9 +390,8 @@ def mark_loaded(records: set[tuple[str, ...]], key: str, rule: str) -> None:
 
 def on_instructions_loaded(data: dict) -> None:
     reason, rule = data.get("load_reason"), data.get("file_path")
-    if reason == "compact":
-        forget_agent(data)
-        return
+    # PreCompact clears the records. The `compact` reload is not a reset: it can arrive after
+    # the first tool batch that follows the compaction, and would drop rules read in it.
     session, key = agent_ids(data)
     if reason != "path_glob_match" or not session or not key or not valid_path(rule):
         return

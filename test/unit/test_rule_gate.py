@@ -194,18 +194,13 @@ class AgentTests(RuleGateTestCase):
         self.assertPasses(self.edit(file, agent_id="agent-1"))
         self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
 
-    def test_a_compact_event_clears_that_agents_records(self):
+    def test_a_rule_loaded_before_the_late_compact_reload_stays_recorded(self):
         rule = self.rule("py.md", ["**/*.py"])
         file = self.work / "a.py"
+        self.pre_compact()
         self.loaded("path_glob_match", rule)
-        self.loaded("path_glob_match", rule, agent_id="agent-1")
-        self.assertPasses(self.edit(file))
         self.loaded("compact", self.work / "CLAUDE.md")
-        self.loaded("compact", self.work / "sub/CLAUDE.md")
-        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
-        self.batch_done()
         self.assertPasses(self.edit(file))
-        self.assertPasses(self.edit(file, agent_id="agent-1"))
 
     def test_pre_compact_clears_only_that_agents_records(self):
         rule = self.rule("py.md", ["**/*.py"])
@@ -229,13 +224,15 @@ class AgentTests(RuleGateTestCase):
 
     def test_other_load_reasons_change_nothing(self):
         rule = self.rule("py.md", ["**/*.py"])
-        for reason in ("session_start", "nested_traversal", "include"):
+        reasons = ("session_start", "nested_traversal", "include", "compact")
+        for reason in reasons:
             self.loaded(reason, rule)
         self.assertEqual(self.state_files(), [])
         file = self.work / "a.py"
         self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
         self.batch_done()
-        self.loaded("session_start", rule)
+        for reason in reasons:
+            self.loaded(reason, rule)
         self.assertPasses(self.edit(file))
 
     def test_hook_waits_for_the_state_file_lock(self):
@@ -339,17 +336,12 @@ class RetryTests(RuleGateTestCase):
     def test_a_compaction_forgets_denied_edits(self):
         self.rule("py.md", ["**/*.py"])
         file = self.work / "a.py"
-        compactions = {"PreCompact": self.pre_compact,
-                       "compact load": lambda: self.loaded("compact", self.work / "CLAUDE.md")}
-        for name, compact in compactions.items():
-            with self.subTest(name):
-                self.session = next(self.sessions)
-                self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
-                self.batch_done()
-                compact()
-                self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
-                self.batch_done()
-                self.assertPasses(self.edit(file))
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done()
+        self.pre_compact()
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/py.md")
+        self.batch_done()
+        self.assertPasses(self.edit(file))
 
     def test_denied_edits_belong_to_one_agent(self):
         self.rule("py.md", ["**/*.py"])
