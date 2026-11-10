@@ -345,6 +345,13 @@ def resolve(path: str | os.PathLike[str]) -> Path:
     return Path(os.path.realpath(path))
 
 
+def file_realpath(given: object, cwd: object) -> str | None:
+    """The realpath of a tool call's `file_path`, relative to `cwd`, or None when either is not a valid path."""
+    if valid_path(given) and (cwd is None or valid_path(cwd)):
+        return os.path.realpath(os.path.join(cwd or "", os.path.expanduser(given)))
+    return None
+
+
 def is_skipped(path: Path) -> bool:
     roots = [resolve(Path(os.environ.get("XDG_CACHE_HOME") or home() / ".cache") / "claude-tmp")]
     if os.environ.get("TMPDIR"):
@@ -409,16 +416,13 @@ def result_text(response: object) -> str:
 def read_calls(data: dict) -> list[tuple[str, str]]:
     """(realpath, result text) of each Read call in the hook input's tool batch."""
     cwd, calls = data.get("cwd"), data.get("tool_calls")
-    if not isinstance(calls, list) or not (cwd is None or valid_path(cwd)):
-        return []
     found = []
-    for call in calls:
+    for call in calls if isinstance(calls, list) else []:
         if not isinstance(call, dict) or call.get("tool_name") != "Read":
             continue
         tool_input = call.get("tool_input")
-        given = tool_input.get("file_path") if isinstance(tool_input, dict) else None
-        if valid_path(given):
-            real = os.path.realpath(os.path.join(cwd or "", os.path.expanduser(given)))
+        real = file_realpath(tool_input.get("file_path") if isinstance(tool_input, dict) else None, cwd)
+        if real is not None:
             found.append((real, result_text(call.get("tool_response"))))
     return found
 
@@ -426,8 +430,7 @@ def read_calls(data: dict) -> list[tuple[str, str]]:
 def shows_whole_rule(shown: str, rule: str) -> bool:
     """Whether the text holds every non-blank line of the rule file, in order, each at the end of a line.
 
-    A Read result starts each line with its number, and one that is partial, cut short, failed, or only says the file
-    is unchanged lacks some line. A rule that cannot be read or is not a regular file is never shown whole.
+    False for a rule that cannot be read or is not a regular file.
     """
     try:
         with open_rule(rule) as f:
@@ -436,7 +439,8 @@ def shows_whole_rule(shown: str, rule: str) -> bool:
             wanted = [line for line in f.read().splitlines() if line.strip()]
     except OSError:
         return False
-    # Each search goes on where the last one stopped, which keeps the rule's line order.
+    # A Read result puts a number before each line, so a rule line is matched at the end of a shown line. Each search
+    # goes on where the last one stopped, which keeps the rule's line order.
     remaining = iter(shown.splitlines())
     for want in wanted:
         if not any(line.endswith(want) for line in remaining):
@@ -489,12 +493,13 @@ def on_pre_tool_use(data: dict) -> str | None:
     if data.get("tool_name") not in EDIT_TOOLS or not isinstance(tool_input, dict):
         return None
     given = tool_input.get("file_path")
+    real = file_realpath(given, cwd)
     folder = os.environ.get("CLAUDE_PROJECT_DIR") or cwd
     session, key = agent_ids(data)
-    if not (valid_path(given) and valid_path(folder) and (cwd is None or valid_path(cwd)) and session and key):
+    if real is None or not (valid_path(folder) and session and key):
         return None
     prune(state_dir())
-    path = resolve(os.path.join(cwd or "", os.path.expanduser(given)))
+    path = Path(real)
     if is_skipped(path):
         return None
     rules = matching_rules(match_path_for(path, resolve(folder)))
