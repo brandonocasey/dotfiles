@@ -18,6 +18,7 @@ If the role is unavailable or incompatible, work inline and report the limitatio
 Unless an override applies, keep the role's model and effort pins.
 Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
 Omitting the role bypasses its pin: Claude Code uses `CLAUDE_CODE_SUBAGENT_MODEL` (Sonnet), or inherits the parent model when that is unset; Codex uses `default_subagent_model`.
+Name Fable 5.2 as `claude-fable-5-2[1m]` in a role's `model:` or `CLAUDE_CODE_SUBAGENT_MODEL`. Without `[1m]` it gets a 200k window on Claude Code before 2.1.321; the Agent tool `model` field takes aliases only, and `fable` there means 5.1.
 Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 
 | Role | Work | Claude Code | Codex |

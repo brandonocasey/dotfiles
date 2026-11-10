@@ -140,6 +140,15 @@ managed=$(
     ]
   },
   "model": "sonnet",
+  "modelPicker": {
+    "options": [
+      {
+        "model": "claude-fable-5-2[1m]",
+        "label": "Fable 5.2 (1M)",
+        "behavesAs": "claude-fable-5-1"
+      }
+    ]
+  },
   "autoCompactWindow": 433000,
   "idleCompaction": true,
   "promptCacheTtl": "1h",
