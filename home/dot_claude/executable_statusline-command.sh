@@ -315,6 +315,9 @@ eval "$(jq -nrS --argjson now "$now" --argjson live "${rl_live:-null}" \
         elif $k == "spend_limit" then $mine
         elif $mine == $old then ($cached // $mine)
         elif $old != null and same($mine; $old) and $mine.used_percentage < $old.used_percentage then $mine
+        # A newly reported value for a different window beats the cache, so a
+        # bad cached window with a later reset cannot pin the display.
+        elif $mine != $old and $cached != null and (same($mine; $cached) | not) then $mine
         else newer($mine; $cached) end)
   | def s: if . == null then "" else tostring end | @sh;
   "rl_cache_json=\(if . != $cache then tojson else null end | s)",
