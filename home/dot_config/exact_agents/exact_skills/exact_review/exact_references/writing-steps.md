@@ -16,8 +16,8 @@ description. Never read MR/PR comments, discussions, or threads.
 Check only text the change adds or edits:
 
 - **Docs**: added or changed lines of documentation files (Markdown, text, reStructuredText,
-  AsciiDoc, READMEs, changelogs). Use `git diff -M <range>`, so a moved file or block is
-  not new text.
+  AsciiDoc, READMEs, changelogs). Use `git diff -M <range>`, so a renamed file is not new
+  text, and skip an added block that the diff also removes unchanged elsewhere.
 - **Code comments**: every comment line the change adds, including doc comments and new
   files. Also changed code that [comments.md](../../code-standards/references/comments.md)
   says needs a comment but has none.
@@ -29,7 +29,7 @@ Check only text the change adds or edits:
 
 Skip:
 
-- Agent instruction files: SKILL.md and every file under a skill directory, AGENTS.md,
+- Agent instruction files: SKILL.md and Markdown files under a skill directory, AGENTS.md,
   CLAUDE.md, rule files, role files, and output-style files. The code reviewer owns them.
 - Generated or vendored text: lockfiles, `dist`, `vendor`, `node_modules`, and files that
   say "generated" or "do not edit".

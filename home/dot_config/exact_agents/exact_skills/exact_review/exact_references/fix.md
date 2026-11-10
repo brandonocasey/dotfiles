@@ -33,8 +33,8 @@ threads that the request covers (fix only those threads):
   MR/PR title and description. A commit-message finding is recorded as type `comment`
   ([store.md](store.md)), so it never blocks and is never fixed: reviewed commits are never
   reworded. Resolve a title or description fix with `agt review resolve <id> --fixed
-  <head-sha> --reply "Fixed in the MR/PR description."`, where `<head-sha>` is the
-  MR/PR's current head (a description edit makes no commit).
+  <head-sha> --reviewer <run>.<pass>.fix --reply "Fixed in the MR/PR description."`,
+  where `<head-sha>` is the MR/PR's current head (a description edit makes no commit).
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.
