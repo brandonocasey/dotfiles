@@ -14,6 +14,11 @@ the orchestrator, so run the stages below.
 
 ## Stages (orchestrator)
 
+Test runs: skip the baseline run of the repository's full test suite. Between a
+stage's steps (a worker's steps, each fix), run only the tests that cover the
+changed files. Run the full suite once per stage, at its end; a run by that
+stage's `tester` or `review-fix` is that run.
+
 1. **Implement.** One `worker` on its sonnet pin. It writes `decisions.md` per
    `sub-agents`. Check and commit.
 2. **QA.** A fresh `tester` on the committed work, given the acceptance criteria
