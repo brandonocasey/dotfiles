@@ -53,9 +53,9 @@ class IosSimTestCase(unittest.TestCase):
         self.sims = self.root / "sims.json"
         self.sims.write_text(json.dumps([{"name": "ios-base", "udid": "BASE-UDID", "state": "Shutdown"}]))
         self.markers = self.root / "state/agents/ios-sim/audible"
-        self.env = dict(os.environ, HOME=str(self.root / "home"), XDG_STATE_HOME=str(self.root / "state"),
-                        XDG_CACHE_HOME=str(self.root / "cache"), FAKE_SIMS=str(self.sims),
-                        PATH=f"{bin_dir}:{os.environ['PATH']}")
+        self.env = dict(os.environ, HOME=str(self.root / "home"), XDG_CONFIG_HOME=str(self.root / "config"),
+                        XDG_STATE_HOME=str(self.root / "state"), XDG_CACHE_HOME=str(self.root / "cache"),
+                        FAKE_SIMS=str(self.sims), PATH=f"{bin_dir}:{os.environ['PATH']}")
         self.env.pop("IOS_SIM_BASE", None)
         self.repo = self.root / "work/app"
         self.repo.mkdir(parents=True)
