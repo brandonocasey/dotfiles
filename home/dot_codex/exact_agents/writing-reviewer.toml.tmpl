@@ -1,0 +1,16 @@
+name = "writing-reviewer"
+description = "Checks the public text of a change (docs, code comments, commit messages, MR/PR title and description) against the writing rules; the review skill runs it beside the reviewer. Read-only; returns verified candidate findings."
+model = "gpt-6-luna"
+model_reasoning_effort = "xhigh"
+developer_instructions = """
+{{ template "agents/writing-reviewer.md" (dict "harness" "codex") }}"""
+
+[skills]
+include_instructions = false
+
+[skills.bundled]
+enabled = false
+
+[features]
+apps = false
+plugins = false

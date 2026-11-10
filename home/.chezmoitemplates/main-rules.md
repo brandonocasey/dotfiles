@@ -17,7 +17,7 @@
 
 - Before spawning, monitoring, or escalating after failure: `sub-agents` and `sub-agents/references/roles.md`. They own roles, models, and Workflow `agent()` settings.
 {{- if not .claude }}
-- Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `consult` (escalation).
+- Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `writing-reviewer` (docs, comments, commit and MR/PR text), `consult` (escalation).
 {{- end }}
 {{- if .claude }}
 - For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it. Below that, load `design` before the first edit when the request adds a flag, mode, setting, or stored field, or changes a file format, a public interface, or a contract another component reads. If reading the code shows such a change, load it then.

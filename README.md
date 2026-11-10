@@ -101,7 +101,7 @@ Use `command codex` for an explicit unwrapped invocation.
 
 All seven Codex roles omit automatic skill guidance and bundled skills.
 Delegating sessions must pass required skill paths and task constraints.
-The explorer, tester, reviewer, and consult roles disable apps and plugins.
+The explorer, tester, reviewer, writing-reviewer, and consult roles disable apps and plugins.
 Other roles retain them; standalone MCP servers remain available.
 The documentation MCP exposes search, page retrieval, and OpenAPI retrieval.
 Linux disables the bundled browser and Chrome plugins, whose configured
