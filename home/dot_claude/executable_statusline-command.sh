@@ -872,7 +872,7 @@ case $pc_state in
       case $ka_last in *[!0-9]* | '') ka_last=$now ;; esac
       # A ping fails while a limit is used up, and a cache that lapses stays
       # lapsed, so the chain stops at the first ping before the latest reset
-      # among the used-up limits.
+      # among the used-up limits (the hook skips those pings too).
       ka_blocked=0
       for ka_lim in "$five_hr:$five_hour_reset" "$seven_day:$seven_day_reset" "$spend_pct:$spend_reset"; do
         ka_r=${ka_lim#*:}
@@ -881,6 +881,8 @@ case $pc_state in
         awk -v u="${ka_lim%%:*}" 'BEGIN { exit !(u + 0 >= 100) }' &&
           [ "$ka_r" -gt "$ka_blocked" ] && ka_blocked=$ka_r
       done
+      # A failed ping, recorded by the hook, ends the chain at once.
+      [ "$(cat "$ka_dir/$rl_sid.ping" 2>/dev/null)" = fail ] && ka_blocked=9999999999
       ka_ping=$((pc_end - 3600))
       while [ $((ka_ping + 2700 - ka_last)) -lt 7200 ] && [ $((ka_ping + 2700)) -ge "$ka_blocked" ]; do
         ka_ping=$((ka_ping + 2700))
