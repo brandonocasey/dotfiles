@@ -94,11 +94,11 @@ A running Android emulator restarts to switch (installs vanish), so run it with 
 ## Cleanup
 
 Close task-owned MCP resources, stop servers and background processes, and free
-their ports before deleting their resources. Remove only known task-owned
-disposable scratch files, helpers, test data, debug output, and logs, even when
-an open-PR worktree stays. Inspect contents first: `.cache/agents/scratch/` or a Git ignore
-match alone is not evidence that a file is disposable. Preserve unknown files
-and other tasks' directories; do not recursively remove a shared `.cache/agents/scratch/` root.
+their ports before deleting their resources. Leave task dirs in place: `agt cleanup` removes `.cache/agents/scratch/<task>/`, in the
+cache root and in checkouts, after 30 days untouched, and `agents/output/<task>/` after 7.
+Outside them, remove only known task-owned helpers, test data, debug output, and logs, even
+when an open-PR worktree stays. Inspect contents first: a Git ignore match alone is not
+evidence that a file is disposable. Preserve unknown files and other tasks' directories.
 Delete with literal resolved task paths, never `rm -rf "$VAR"`.
 
 At task end, when the worktree stays, shut down its simulator

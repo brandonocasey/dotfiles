@@ -110,8 +110,7 @@ follow-up. Keep the `worktree` skill's safety checks; ask only for blockers it
 requires the user to resolve.
 
 Follow [task-resources.md](../host-preflight/references/task-resources.md) for
-task-owned servers, processes, browser resources, and disposable files
-(including `.cache/agents/scratch/<task>/`). If a live preview still needs a
+task-owned servers, processes, browser resources, and disposable files. If a live preview still needs a
 server, files, or a worktree, keep them, report the exception and its URL, and
 defer worktree removal until the preview ends.
 
