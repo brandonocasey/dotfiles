@@ -1,5 +1,10 @@
 # agt global settings. Reference: agt docs/reference.md, "$XDG_CONFIG_HOME/agt/config.toml".
 
+# The defaults plus the chezmoi source, so `agt cleanup` also sweeps the task scratch agents
+# leave there.
+[worktree]
+roots = ["~/Projects/*/*", "~/projects/*/*", "~/.local/share/chezmoi"]
+
 [worktree.hooks]
 # `agt worktree remove --yes` and `agt cleanup` run these in the worktree before removing it, and a
 # failing one stops the removal. Delete the worktree's own simulator and stop its emulator, which
