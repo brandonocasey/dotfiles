@@ -121,8 +121,8 @@ to a stale branch wastes a run.
   message and owner (**Authorization**). A review blocker does not stop branch
   and check work.
 
-Before any push (a fix, a rebase, or a conflict resolution), pause auto-merge
-and restore it after the last push, per
+Before starting work that will be pushed (a fix, a rebase, or a conflict
+resolution), pause auto-merge, and restore it after the last push, per
 [auto-merge-pause.md](../shared/auto-merge-pause.md). Before pushing a fix or a
 conflict resolution, review only the fix commits and any conflict resolutions
 per [when-to-run.md](../review/references/when-to-run.md) **Scope**, not the
