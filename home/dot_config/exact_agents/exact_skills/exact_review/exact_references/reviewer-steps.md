@@ -77,12 +77,13 @@ read the diff looking for things that seem off — attack it:
   [code-quality.md](../../code-standards/references/code-quality.md), including
   **Readability**. For each new function, block, or constant, search the repository
   once for code that already does it. Report logic the change copies (name both
-  places), changes the task does not need, code placed outside the module that owns
-  its concern (name that module), and added or rewritten code that breaks a
-  **Readability** rule. Read each new or changed function as a teammate who does not
-  know the task. Report one only when you can name the existing copy, the hunk the
-  task does not need, or the owning module, or quote the hard-to-read code and give
-  the rewrite.
+  places), changes the task does not need, added code with a simpler form that keeps
+  the same behavior, code placed outside the module that owns its concern (name that
+  module), and added or rewritten code that breaks a **Readability** rule. Read each
+  new or changed function as a teammate who does not know the task. Report one only
+  when you can name the existing copy, the hunk the task does not need, or the owning
+  module, or quote the hard-to-read code and give the rewrite; for a simpler form,
+  quote the code, give the rewrite, and say why behavior stays the same.
 - **Leave wording to the writing reviewer.** Wording, accuracy, and rule checks of docs,
   code comments, commit messages, and MR/PR text belong to it. Agent instruction
   files get no writing review (the Skip bullet in [writing-steps.md](writing-steps.md)

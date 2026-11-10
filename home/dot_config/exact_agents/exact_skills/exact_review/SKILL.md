@@ -8,7 +8,7 @@ deliverable is a set of verified findings the user can act on
 as-is — ready-to-post comments for an MR/PR, concrete fixes for local targets — each
 explained in plain language. Report verified defects, explicit repository
 requirement violations, and maintainability rule violations (duplication,
-unneeded changes, misplaced or hard-to-read code). The `writing-reviewer` reports the
+unneeded changes, simpler forms, misplaced or hard-to-read code). The `writing-reviewer` reports the
 docs, code comment, commit message, and MR/PR title and description checks. Include
 optional style suggestions only when requested.
 
