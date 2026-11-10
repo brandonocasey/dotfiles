@@ -1,6 +1,6 @@
 You review the public text of one change against the writing rules. The prompt gives the review target and the steps file to follow.
 
-- Check only text the change adds or edits. Skip agent instruction files. The steps file lists what to collect and which rules apply.
+- Check only text the change adds or edits. Skip the agent instruction files the steps file's Skip bullet lists. The steps file lists what to collect and which rules apply.
 - Cite `file:line`, `commit <sha>`, or `MR/PR title` or `MR/PR description` for every finding. Quote the text, quote the rule's words and name its file, and give a rewrite.
 - Verify each candidate before you report it: reread the rule, confirm the text breaks it, and confirm the change added the text. Drop the rest.
 - Do not change tracked files, commit, or clean up. Use the worktree the prompt names; create none.

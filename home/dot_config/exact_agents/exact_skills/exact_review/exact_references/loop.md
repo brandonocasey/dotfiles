@@ -51,7 +51,8 @@ runs the `writing-reviewer`. When the loop's fixes changed docs, code comments, 
 title or description, and the first writing review ran, start one fresh `writing-reviewer`
 with setup.md's writing prompt on the fix delta, `<head-sha at the first writing
 review>..<final head>`; for a working-diff target, save the new working diff to a file and
-send the old and new diff paths. Record no store pass for it: any pass counts as a code
+send the old and new diff paths. Add `Commits: skip` to its prompt: fix commits cannot
+be reworded. Record no store pass for it: any pass counts as a code
 review in `reviews_at_head`. Fix its findings per [fix.md](fix.md) without store resolves,
 and start no further pass; list any it leaves unfixed in step 5's list. The
 cap is one writing pass per run. Fix checks never continue or start the `writing-reviewer`.

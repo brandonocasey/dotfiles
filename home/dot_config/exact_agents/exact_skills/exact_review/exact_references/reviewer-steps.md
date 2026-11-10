@@ -84,9 +84,9 @@ read the diff looking for things that seem off — attack it:
   task does not need, or the owning module, or quote the hard-to-read code and give
   the rewrite.
 - **Leave wording to the writing reviewer.** Wording, accuracy, and rule checks of docs,
-  code comments, commit messages, and MR/PR text belong to it. Agent instruction files
-  (SKILL.md and Markdown under a skill directory, rule and role files) get no writing
-  review; review their logic here. Comments in skill scripts and tests go to it.
+  code comments, commit messages, and MR/PR text belong to it. Agent instruction
+  files get no writing review (the Skip bullet in [writing-steps.md](writing-steps.md)
+  lists them); review their logic here. Comments in skill scripts and tests go to it.
 - **Review code only.** Run no tests, lint, typecheck, builds, browsers, or the changed
   code; the review's `tester` runs those ([testing.md](testing.md)). When a finding
   depends on runtime behavior, name the check that would confirm it.

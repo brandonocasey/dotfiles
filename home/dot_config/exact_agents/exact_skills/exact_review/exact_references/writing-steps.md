@@ -11,6 +11,10 @@ worktree the prompt names and create no other. For a remote target, read only th
 fetch commands at the top of [remote-target.md](remote-target.md), for the title and
 description. Never read MR/PR comments, discussions, or threads.
 
+When the prompt gives two diff paths for a working-diff target, the old one is the diff
+the first writing review used. Check only text that is in the new diff and absent from
+the old one.
+
 ## 1. Collect the text
 
 Check only text the change adds or edits:
@@ -19,10 +23,11 @@ Check only text the change adds or edits:
   AsciiDoc, READMEs, changelogs). Use `git diff -M <range>`, so a renamed file is not new
   text, and skip an added block that the diff also removes unchanged elsewhere.
 - **Code comments**: every comment line the change adds, including doc comments and new
-  files. Also changed code that [comments.md](../../code-standards/references/comments.md)
+  files; skip an added comment that the diff also removes unchanged elsewhere, such as
+  code extracted to a new file. Also changed code that [comments.md](../../code-standards/references/comments.md)
   says needs a comment but has none.
-- **Commit messages**: `git log <range>`, unless the prompt says `squash: yes`. Then the
-  MR/PR title becomes the commit, so skip them.
+- **Commit messages**: `git log <range>`, unless the prompt says `squash: yes` (the
+  MR/PR title becomes the commit) or `Commits: skip`.
 - **MR/PR title and description**: only for an MR/PR target. A local target has none.
 - **Docs naming removed things**: for each string, flag, command, option, export, or file
   path the diff removes or renames, `rg` the docs outside the diff for the old name.
