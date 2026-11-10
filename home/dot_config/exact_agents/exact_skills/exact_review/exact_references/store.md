@@ -7,7 +7,7 @@ and output field. This file names what the review skill uses.
 
 ## Availability
 
-These rules need `agt` 0.34.2 or newer. Follow [agt.md](../../shared/agt.md).
+These rules need `agt` 0.34.2 or newer (0.37.0 for Forgejo or Gitea). Follow [agt.md](../../shared/agt.md).
 
 ## Commands
 
@@ -22,12 +22,12 @@ the second cycle's full review.
 
 Pick the store target once per review:
 
-- GitHub or GitLab MR/PR: after checkout, setup runs `agt review sync --pr <n|url>`,
-  which imports the MR/PR's threads and records and prints the target key (`gh-<n>` or
-  `gl-<iid>`). Setup reports the key. For a self-hosted GitLab, prefix every
+- GitHub, GitLab, Forgejo, or Gitea MR/PR: after checkout, setup runs `agt review sync --pr <n|url>`,
+  which imports the MR/PR's threads and records and prints the target key (`gh-<n>`,
+  `gl-<iid>`, or `fg-<n>`). Setup reports the key. For a self-hosted GitLab, prefix every
   `agt review` command with `GITLAB_HOST=<host>`. Runs that ended before the target
   got its MR/PR do not count for it.
-- MR/PR on any other forge (Forgejo, unknown hosts): `--range <pinned range>`, read-only:
+- MR/PR on any other forge (unknown hosts): `--range <pinned range>`, read-only:
   no `sync`, no `publish`, no skip check.
 - Commit or range the user named, or work on the default branch itself (its fixes go
   on a fix branch, [fix.md](fix.md)): `--range <from>..<to>` (or `--range <sha>`). It

@@ -40,7 +40,7 @@ Long reports follow the long-output rule in
 If nothing survives verification, say so plainly — the cleared list plus "nothing real found"
 is a valid result.
 
-Before reporting findings, for a GitHub or GitLab MR/PR, run `agt review sync --pr <n|url>`
+Before reporting findings, for a GitHub, GitLab, Forgejo, or Gitea MR/PR, run `agt review sync --pr <n|url>`
 (with `GITLAB_HOST=<host>` for a self-hosted GitLab), then
 `agt review list --target <key>` once for every thread with its resolved state
 ([store.md](store.md)). Then:
@@ -55,7 +55,7 @@ Before reporting findings, for a GitHub or GitLab MR/PR, run `agt review sync --
   (`agt review list --open`): list it in the report and in the loop's step 5 list,
   so the step 7 gate sees it.
 
-On an own GitHub or GitLab MR/PR, post per **Own MR/PR comments** in
+On an own GitHub, GitLab, Forgejo, or Gitea MR/PR, post per **Own MR/PR comments** in
 [remote-comments.md](remote-comments.md) and link each posted comment instead of
 printing comment blocks; the comment text goes only into the store. Otherwise post
 nothing to the MR/PR unless the user asks: print the comments for the user to

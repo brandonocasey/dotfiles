@@ -1,7 +1,9 @@
 # MR/PR threads
 
-GitLab and GitHub only. On any other platform, including Forgejo, report that
-`--threads` is unsupported and stop before any reply or resolve.
+GitLab, GitHub, Forgejo, and Gitea only. On any other platform, report that
+`--threads` is unsupported and stop before any reply or resolve. Forgejo and Gitea cannot resolve a
+thread: `publish` lists each resolve under `skipped` and posts a reply as a general comment. Report
+those threads as `replied; resolve local only`.
 
 ## Procedure
 

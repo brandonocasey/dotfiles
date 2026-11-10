@@ -4,7 +4,7 @@
 task's MRs/PRs until merged or blocked. `ship --approve` authorizes approval at
 the reviewed head. Neither authorizes marking drafts ready, policy changes, or
 deployment. It supports GitHub and
-GitLab. For another platform, report that `--merge` is unsupported there
+GitLab, and `--merge` also Forgejo and Gitea through `agt pr`. For another platform, report that `--merge` is unsupported there
 before any mutation. Ordinary `ship` still supports that platform.
 
 ## Inspect
@@ -34,6 +34,10 @@ and it is retargeted. Merge per **Chains of dependent MRs/PRs** in
   `--squash` or `--rebase` when selected. It merges at once when no pipeline
   is running. Read the state back with `glab mr view <iid> -F json` and
   report it.
+- Forgejo or Gitea: `agt pr merge <number> --auto --sha <HEAD_SHA>`, plus `--method merge|squash|rebase`
+  when selected. It schedules the merge for when checks succeed, and the PR never reports
+  auto-merge state: read the PR back with `agt pr view <number>`, where `auto_merge` stays `unknown`,
+  and report the schedule as unverified.
 
 Outside the repository's checkout, add `-R <owner/repo>` or `-R <group/project>`.
 Never use `--admin`, `--delete-branch`, or `--remove-source-branch`.
@@ -52,7 +56,9 @@ approval from `--merge`.
 
 ## Watch
 
-Load [pr-fix](../../pr-fix/SKILL.md). Limit its inventory to
+On Forgejo or Gitea, skip pr-fix: run `agt ci wait '#<number>@<HEAD_SHA>'` in the background, then
+read `agt pr view <number>` for `merged`; a failed check is a blocker to report, not repair.
+Otherwise load [pr-fix](../../pr-fix/SKILL.md). Limit its inventory to
 the MRs/PRs shipped for this task. Follow its repair limits, watcher, and merge
 gates on both platforms. Keep the worktree while a repair can still be needed.
 For owned submodules, follow the existing submodule merge order first.

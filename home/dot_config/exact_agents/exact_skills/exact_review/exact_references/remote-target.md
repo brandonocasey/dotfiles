@@ -29,8 +29,8 @@ fj -H <host> pr view <id> diff
 fj -H <host> pr view <id> comments
 ```
 
-This supports a read-only review. For `--fix`, `--threads`, or merge, report
-that the platform is unsupported and stop before any mutation.
+`fj` only reads. Fixes, threads, publishing, and merging go through `agt` with a `tea` login
+([store.md](store.md), [approve-merge.md](approve-merge.md)).
 
 ## Source checkout
 

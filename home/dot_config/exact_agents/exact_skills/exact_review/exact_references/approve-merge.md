@@ -31,6 +31,7 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
 3. **Ready**: if the MR/PR is a draft, mark it ready and read the state back.
    - GitHub: `gh pr ready <number>`; check `gh pr view <number> --json isDraft`.
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
+   - Forgejo or Gitea: `agt pr update <number> --draft=false`; check `draft` in `agt pr view <number>`.
    - Outside the checkout, add `-R` as in [merge.md](../../ship/references/merge.md). If it stays a draft, skip
      steps 5–6 and report it as a blocker.
 4. **Approve** (`--approve`): run `agt review publish --approve` on the review's store

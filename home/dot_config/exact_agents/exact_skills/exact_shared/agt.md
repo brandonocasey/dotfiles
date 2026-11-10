@@ -28,6 +28,11 @@ GitHub token of `gh`), then check `"$(mise which agt)" --version`:
 A skill that works without `agt` says so and skips the install above. It uses its
 own fallback instead.
 
+From 0.37.0 it also covers Forgejo and Gitea (target keys `fg-<n>`): reviews, issues, `agt pr`,
+`agt ci wait` (name the PR `#<n>[@SHA]`), and `agt branch check`, through a logged-in `tea`
+(`tea login add`; `agt doctor` checks it). A Forgejo host cannot resolve threads, so a resolve stays
+local until the host resolves it; `auto_merge` reads `unknown`; `agt ci failures` stays GitLab only.
+
 From 0.10.0, `agt issue` and `agt review` reads first sync from GitHub or GitLab when
 the local copy is over 5 minutes old. When that sync fails, agt prints
 `agt: sync skipped (<reason>); showing local data` on stderr. Treat that data as

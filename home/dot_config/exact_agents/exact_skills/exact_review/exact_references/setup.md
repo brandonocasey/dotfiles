@@ -49,16 +49,16 @@ If the pinned diff is empty, report `empty` and stop.
   create another worktree when needed. Avoid extra names when safe reuse is possible.
 - In a worktree you created, with `.gitmodules`, run
   `git -C <worktree> submodule update --init --recursive`.
-- From the review worktree, per [store.md](store.md): for a GitHub or GitLab MR/PR,
-  run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
+- From the review worktree, per [store.md](store.md): for a GitHub, GitLab, Forgejo, or Gitea
+  MR/PR, run `agt review sync --pr <n|url>` (prefixed with `GITLAB_HOST=<host>` for a
   self-hosted GitLab) and keep the target key it prints. Then run
   `agt review status --head <head-sha>` with the store target: `--target <key>` for
   that MR/PR, `--range <pinned range>` for an MR/PR on another forge, a commit or
   range the user named, or a detached local-branch checkout; otherwise no flag,
   also for a branch with a given base
   (`--default-branch <base branch>` when it is not the default branch; store.md
-  **Commands**). Run it bare, never filtered. For an own GitHub or
-  GitLab MR/PR only, when the skip check is on,
+  **Commands**). Run it bare, never filtered. For an own GitHub,
+  GitLab, Forgejo, or Gitea MR/PR only, when the skip check is on,
   `reviews_at_head` is 2 or more, and 0 threads are open, report `skip` with the
   count, run IDs, and any worktree you created, and stop before checks. Never skip
   another target on `reviews_at_head`.
@@ -77,12 +77,13 @@ If the pinned diff is empty, report `empty` and stop.
 
 ## 4. MR/PR facts
 
-- Platform. On Forgejo, report `mutations unsupported`.
+- Platform. On a host that is not GitHub, GitLab, Forgejo, or Gitea, report `mutations unsupported`.
+  Forgejo and Gitea need a `tea` login for the host (`agt doctor`); report its absence as the blocker.
 - CI per **Inspect the target** and **Compare with the target branch** in
   [ci-and-conflicts.md](ci-and-conflicts.md), without reading logs or diagnosing: each
   failed job with its label and both job URLs, the source SHA, pending jobs as pending,
   and mergeability.
-- Linked issue, for a GitHub or GitLab MR/PR: run `agt --offline issue list --pr <url>`. Use the
+- Linked issue, for a GitHub, GitLab, Forgejo, or Gitea MR/PR: run `agt --offline issue list --pr <url>`. Use the
   MR/PR URL, not a bare number: a number matches that PR in every synced tracker.
   Add `--tracker <owner/repo>` when only a number is known. The command is read-only
   and uses the local copy, so never run `sync` or any write. It returns no body. Report

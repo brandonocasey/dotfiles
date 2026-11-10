@@ -27,6 +27,6 @@ Otherwise, never watch an MR/PR or pipeline for success unless the user asks; `p
 "When it merges, do X" also counts. Start one watcher with a long `--timeout`.
 Run the queued action only when the watcher reports reason `merged`.
 On any other result, such as `required_checks_passed`, a deadline, or a new head SHA, report it to the user.
-`agt ci wait` (needs `agt` 0.10.0) takes GitHub `OWNER/REPO#PR@SHA`, GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA`, PR/MR URL, `#PR`/`!IID`, and GitLab pipeline targets. For other platforms, say the watch is unsupported.
+`agt ci wait` (needs `agt` 0.10.0) takes GitHub `OWNER/REPO#PR@SHA`, GitLab `GROUP[/SUBGROUP...]/PROJECT!IID@SHA`, Forgejo or Gitea `#PR[@SHA]` (an Actions run URL is refused), PR/MR URL, `#PR`/`!IID`, and GitLab pipeline targets. For other platforms, say the watch is unsupported.
 The queued action keeps its consent rules.
 Otherwise, report the pipeline status and stop: no watcher or polling.
