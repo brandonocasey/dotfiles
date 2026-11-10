@@ -1,0 +1,271 @@
+#!/bin/sh
+# Resource-heavy processes of the current user, with the signals that show whether they are still in use.
+#   proc-audit [list] [--min-mb N] [--top N] [--all]
+#                                              read-only table, largest memory first (default 100 MB, 25 rows).
+#                                              Omits processes used in the last 24 hours (an agent session
+#                                              updated, or a terminal changed); --all shows them too
+#   proc-audit made [--all]                    leftovers an agent probably created that no live agent session owns:
+#                                              automation browsers, MCP servers, emulators, adb, dev servers,
+#                                              and booted iOS simulators; omits ones younger than 24 hours
+#   proc-audit stop [--force] PID@START...     stop each process whose PID and START column still match;
+#                                              SIGTERM, or SIGKILL with --force; never self or an ancestor
+# START is the table's start column: the process start time with spaces removed. A reused PID has a new
+# start time, so a stale approval cannot stop a different process.
+set -eu
+
+die() { printf 'proc-audit: %s\n' "$*" >&2; exit 1; }
+
+uid=$(id -u)
+os=$(uname -s)
+scratch=$(mktemp -d "${TMPDIR:-/tmp}/proc-audit.XXXXXX")
+trap 'rm -rf "$scratch"' EXIT
+
+start_of() { ps -o lstart= -p "$1" 2>/dev/null | tr -d ' '; }
+
+# "pid tree_mb": resident memory of each process plus all its descendants (shared pages count twice).
+tree_sizes() {
+  awk '{ P[$1] = $2; R[$1] = $3 }
+    END { for (p in P) { q = p; n = 0; while (q in P && n++ < 50) { T[q] += R[p]; q = P[q] } }
+          for (p in P) printf "%s %d\n", p, T[p] / 1024 }' "$scratch/ps"
+}
+
+# PIDs of this script and every ancestor: stopping one would end the session doing the cleanup.
+ancestors() {
+  p=$$
+  while [ -n "$p" ] && [ "$p" -gt 1 ]; do
+    echo "$p"
+    p=$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')
+  done
+}
+
+# CPU seconds per PID from the TIME column ([[dd-]hh:]mm:ss[.ss]).
+cpu_secs() {
+  ps -U "$uid" -o pid= -o time= | awk '{
+    t = $2; d = 0
+    if (index(t, "-")) { split(t, a, "-"); d = a[1]; t = a[2] }
+    n = split(t, p, ":"); s = 0
+    for (i = 1; i <= n; i++) s = s * 60 + p[i]
+    printf "%d %.2f\n", $1, s + d * 86400
+  }'
+}
+
+tty_idle_hours() {
+  case "$1" in
+    '?'|'??'|'') echo - ;;
+    *)
+      f=/dev/$1
+      [ -e "$f" ] || { echo -; return; }
+      if [ "$os" = Darwin ]; then m=$(stat -f %m "$f"); else m=$(stat -c %Y "$f"); fi
+      echo $(( ($(date +%s) - m) / 3600 ))
+      ;;
+  esac
+}
+
+# tmux panes by terminal: "tty<TAB>session<TAB>attached-clients", across every tmux server of this user.
+tmux_map() {
+  command -v tmux >/dev/null 2>&1 || return 0
+  tab=$(printf '\t')
+  for sock in "${TMUX_TMPDIR:-/private/tmp}/tmux-$uid"/* "/tmp/tmux-$uid"/*; do
+    [ -S "$sock" ] || continue
+    tmux -S "$sock" list-panes -a -F "#{pane_tty}${tab}#{session_name}${tab}#{session_attached}" 2>/dev/null || true
+  done | sed 's|^/dev/||' | sort -u
+}
+
+# Claude Code writes ~/.claude*/sessions/<pid>.json (name, busy/idle, last update). Its startedAt
+# must match the process age, or the file belongs to an earlier process that had the same PID.
+claude_session() {
+  age=$(awk -v t="$2" 'BEGIN {
+    d = 0; if (index(t, "-")) { split(t, a, "-"); d = a[1]; t = a[2] }
+    n = split(t, p, ":"); s = 0; for (i = 1; i <= n; i++) s = s * 60 + p[i]
+    print s + d * 86400 }')
+  for f in "$HOME"/.claude*/sessions/"$1".json; do
+    [ -f "$f" ] || continue
+    out=$(jq -r --argjson age "$age" --argjson now "$(date +%s)" \
+      'select((($now - .startedAt / 1000) - $age) | fabs < 10) |
+       "\(.name // "(unnamed)") | \(.status // "?") | updated \(($now - (.updatedAt / 1000 | floor)) / 60 | floor)m ago | \(.sessionId[0:8])"' "$f" 2>/dev/null) || continue
+    [ -n "$out" ] && { echo "$out"; return; }
+  done
+  echo -
+}
+
+classify() {
+  case "$1" in
+    */CoreSimulator/*|*qemu-system*|*emulator64*|*"-headless"*|*puppeteer*|*playwright*|*chrome-headless*) echo sim-browser ;;
+    */claude|claude|claude\ *|*/codex|codex|codex\ *) echo agent ;;
+    *.app/Contents/*) echo app ;;
+    *node*|*python*|*ruby*|*java*|*cargo*|*rustc*|*vite*|*webpack*|*esbuild*|*gradle*|*tsserver*|*mcp*) echo dev ;;
+    *) echo other ;;
+  esac
+}
+
+list() {
+  min_mb=100 top=25 all=no
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --min-mb) min_mb=$2; shift 2 ;;
+      --top) top=$2; shift 2 ;;
+      --all) all=yes; shift ;;
+      *) die "unknown option $1" ;;
+    esac
+  done
+
+  ancestors > "$scratch/self"
+  cpu_secs > "$scratch/cpu1"; sleep 2; cpu_secs > "$scratch/cpu2"
+  # Open network sockets, listening ports, and working directories, one lsof call each.
+  lsof -nP -a -U -u "$uid" -i -Fp 2>/dev/null | sed -n 's/^p//p' | sort -u > "$scratch/net" || true
+  lsof -nP -a -u "$uid" -iTCP -sTCP:LISTEN -Fp 2>/dev/null | sed -n 's/^p//p' | sort -u > "$scratch/listen" || true
+  lsof -nP -a -u "$uid" -d cwd -Fpn 2>/dev/null | awk '/^p/{p=substr($0,2)} /^n/{print p, substr($0,2)}' > "$scratch/cwd" || true
+  tmux_map > "$scratch/tmux"
+  ps -ww -U "$uid" -o pid= -o ppid= -o rss= -o tty= -o stat= -o etime= -o lstart= -o command= > "$scratch/ps"
+
+  tree_sizes > "$scratch/tree"
+  # Child counts, to show that stopping a parent may orphan or end others.
+  awk '{c[$2]++} END {for (p in c) print p, c[p]}' "$scratch/ps" > "$scratch/kids"
+
+  awk -v min=$((min_mb * 1024)) '$3 >= min' "$scratch/ps" | sort -k3 -nr | head -n "$top" |
+  while read -r pid ppid rss tty stat etime d1 d2 d3 d4 d5 cmd; do
+    start="$d1$d2$d3$d4$d5"
+    c1=$(awk -v p="$pid" '$1 == p {print $2}' "$scratch/cpu1")
+    c2=$(awk -v p="$pid" '$1 == p {print $2}' "$scratch/cpu2")
+    cpu=$(awk -v a="${c1:-0}" -v b="${c2:-0}" 'BEGIN {printf "%.0f", (b - a) / 2 * 100}')
+    net=$(grep -cx "$pid" "$scratch/net" || true)
+    lis=$(grep -cx "$pid" "$scratch/listen" || true)
+    cwd=$(awk -v p="$pid" '$1 == p {sub(/^[0-9]+ /, ""); print; exit}' "$scratch/cwd")
+    kids=$(awk -v p="$pid" '$1 == p {print $2}' "$scratch/kids")
+    tree=$(awk -v p="$pid" '$1 == p {print $2}' "$scratch/tree")
+    self=no; grep -qx "$pid" "$scratch/self" && self=yes
+    class=$(classify "$cmd")
+    # where: tmux session name, "tty" for a plain terminal, "none" for no terminal.
+    # attached: a tmux client is showing the session, or the plain terminal still exists.
+    case "$tty" in
+      '?'|'??'|'') where=none attached=- ;;
+      *)
+        m=$(awk -F'\t' -v t="$tty" '$1 == t {print $2 "\t" $3; exit}' "$scratch/tmux")
+        if [ -n "$m" ]; then
+          where="tmux:${m%%	*}"; [ "${m##*	}" -gt 0 ] && attached=yes || attached=no
+        else
+          where=tty attached=yes
+        fi
+        ;;
+    esac
+    session=-
+    [ "$class" = agent ] && session=$(claude_session "$pid" "$etime")
+    # Used in the last 24 hours: an agent session by its last update, anything else by its terminal.
+    recent=no
+    mins=$(printf '%s' "$session" | sed -n 's/.*updated \([0-9]*\)m ago.*/\1/p')
+    if [ -n "$mins" ]; then
+      [ "$mins" -lt 1440 ] && recent=yes
+    else
+      th=$(tty_idle_hours "$tty")
+      case "$th" in -|'') ;; *) [ "$th" -lt 24 ] && recent=yes ;; esac
+    fi
+    if [ "$recent" = yes ] && [ "$all" = no ]; then echo "$pid" >> "$scratch/hidden"; continue; fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$pid" "$start" "$etime" "$((rss / 1024))" "${tree:-0}" "$cpu" "$(tty_idle_hours "$tty")" \
+      "$([ "$ppid" = 1 ] && echo yes || echo no)" "$([ "$lis" -gt 0 ] && echo yes || echo no)" \
+      "$([ "$net" -gt 0 ] && echo yes || echo no)" "${kids:-0}" "$self" "$class" "$where" "$attached" "$session" "${cwd:--}" \
+      "$(printf '%s' "$cmd" | cut -c1-110)"
+  done > "$scratch/rows"
+
+  printf 'pid\tstart\tage\trss_mb\ttree_mb\tcpu_pct_2s\ttty_idle_h\torphan\tlistening\tnet\tchildren\tself\tclass\twhere\tattached\tsession\tcwd\tcommand\n'
+  cat "$scratch/rows"
+  hidden=$(wc -l < "$scratch/hidden" 2>/dev/null | tr -d ' ' || true)
+  printf '# %s used in the last 24 hours left out (--all shows them)\n' "${hidden:-0}" >&2
+  printf '# %s of your %s processes shown (resident memory >= %s MB; shared pages count in every process)\n' \
+    "$(wc -l < "$scratch/rows" | tr -d ' ')" "$(wc -l < "$scratch/ps" | tr -d ' ')" "$min_mb" >&2
+}
+
+# Trees an agent probably started whose owning agent session is gone (nothing will stop them),
+# plus booted iOS simulators. Trees under a live agent session stop with that session.
+made() {
+  all=no
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --all) all=yes; shift ;;
+      *) die "unknown option $1" ;;
+    esac
+  done
+  ps -ww -U "$uid" -o pid= -o ppid= -o rss= -o tty= -o stat= -o etime= -o lstart= -o command= > "$scratch/ps"
+  awk -v all="$all" '
+    function secs(t,  d, a, n, p, i, s) {
+      d = 0; if (index(t, "-")) { split(t, a, "-"); d = a[1]; t = a[2] }
+      n = split(t, p, ":"); s = 0; for (i = 1; i <= n; i++) s = s * 60 + p[i]
+      return s + d * 86400
+    }
+    function kind(c) {
+      if (c ~ /app-server|crashpad_handler/) return ""
+      if (c ~ /--remote-debugging-port|--headless|--enable-automation|Chrome for Testing|chrome-for-testing|ms-playwright|puppeteer/) return "browser"
+      if (c ~ /chrome-devtools-mcp|playwright[-\/]mcp|@playwright\/mcp|mcp-server/) return "mcp"
+      if (c ~ /qemu-system|emulator.* -avd/) return "emulator"
+      if (c ~ /adb .*fork-server/) return "adb-server"
+      if (c ~ /webpack-dev-server|vite\/bin|next dev|storybook|http-server|live-server/) return "dev-server"
+      return ""
+    }
+    function isagent(c) { return c ~ /(^|\/)claude( |$)/ || (c ~ /(^|\/)codex( |$)/ && c !~ /app-server/) }
+    {
+      pid = $1; P[pid] = $2; R[pid] = $3; A[pid] = secs($6); E[pid] = $6; S[pid] = $7 $8 $9 $10 $11
+      c = ""; for (i = 12; i <= NF; i++) c = c (i > 12 ? " " : "") $i
+      C[pid] = c; K[pid] = kind(c); AG[pid] = isagent(c)
+    }
+    END {
+      for (p in P) { q = p; n = 0; while (q in P && n++ < 50) { T[q] += R[p]; N[q]++; q = P[q] } }
+      for (p in P) {
+        if (K[p] == "") continue
+        marked = 0; owner = 0; q = P[p]; n = 0
+        while (q in P && n++ < 50) { if (K[q] != "") marked = 1; if (AG[q] && !owner) owner = q; q = P[q] }
+        if (marked) continue
+        if (owner) { owned++; continue }
+        if (A[p] < 86400 && all != "yes") { young++; continue }
+        c = C[p]; if (length(c) > 100) c = substr(c, 1, 100)
+        printf "%s\t%s\t%s\t%d\torphan\t%d\t%s\t-\t%s\n", p, S[p], E[p], T[p] / 1024, N[p], K[p], c
+      }
+      printf "# %d agent-made trees run under live agent sessions and stop with them; %d younger than 24 hours left out\n", owned, young > "/dev/stderr"
+    }' "$scratch/ps" | sort -t "$(printf '\t')" -k4 -nr > "$scratch/made"
+
+  printf 'pid\tstart\tage\ttree_mb\towner\tprocs\tkind\tid\tcommand\n'
+  cat "$scratch/made"
+
+  # Booted iOS simulators: the device name tells who made it (ios-sim names devices wt-<worktree>).
+  command -v xcrun >/dev/null 2>&1 || return 0
+  xcrun simctl list devices booted -j 2>/dev/null | jq -r '.devices[][] | select(.state == "Booted") | "\(.udid)\t\(.name)"' |
+  while IFS="$(printf '\t')" read -r udid name; do
+    row=$(awk -v u="$udid" '$0 ~ ("launchd_sim.*" u) {print $1, $6; exit}' "$scratch/ps")
+    sp=${row%% *}; age=${row#* }
+    tree=$(tree_sizes | awk -v p="${sp:-0}" '$1 == p {print $2}')
+    # A simulator booted in the last 24 hours counts as used, like any other young process.
+    case "$age" in *-*) ;; *) [ "$all" = no ] && { echo "$udid" >> "$scratch/young-sims"; continue; } ;; esac
+    origin=unknown; case "$name" in wt-*) origin=agent-script ;; esac
+    printf '%s\t-\t%s\t%s\t%s\t-\tios-sim\t%s\t%s\n' "${sp:--}" "${age:--}" "${tree:-0}" "$origin" "$udid" "$name"
+  done
+  [ -s "$scratch/young-sims" ] && printf '# %s booted simulators younger than 24 hours left out\n' "$(wc -l < "$scratch/young-sims" | tr -d ' ')" >&2
+  return 0
+}
+
+stop() {
+  sig=TERM
+  [ "${1:-}" = --force ] && { sig=KILL; shift; }
+  [ $# -gt 0 ] || die "stop needs PID@START arguments"
+  ancestors > "$scratch/self"
+  for arg in "$@"; do
+    pid=${arg%%@*} want=${arg#*@}
+    case "$pid" in ''|*[!0-9]*) echo "skip $arg: not PID@START"; continue ;; esac
+    [ "$pid" != "$arg" ] || { echo "skip $arg: START missing"; continue; }
+    grep -qx "$pid" "$scratch/self" && { echo "skip $pid: this session or an ancestor"; continue; }
+    owner=$(ps -o uid= -p "$pid" 2>/dev/null | tr -d ' ') || true
+    [ "$owner" = "$uid" ] || { echo "skip $pid: gone or not yours"; continue; }
+    [ "$(start_of "$pid")" = "$want" ] || { echo "skip $pid: start time changed (PID reused)"; continue; }
+    kill "-$sig" "$pid" 2>/dev/null || { echo "fail $pid: kill refused"; continue; }
+    i=0
+    while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+    if kill -0 "$pid" 2>/dev/null; then echo "still running $pid after SIG$sig and ${i}s"; else echo "stopped $pid (SIG$sig)"; fi
+  done
+}
+
+cmd=${1:-list}
+case "$cmd" in
+  list) [ $# -gt 0 ] && shift; list "$@" ;;
+  made) shift; made "$@" ;;
+  stop) shift; stop "$@" ;;
+  --min-mb|--top) list "$@" ;;
+  *) die "usage: proc-audit [list [--min-mb N] [--top N] [--all] | made [--all] | stop [--force] PID@START...]" ;;
+esac
