@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Deny edits whose ~/.claude/rules files may be missing from the agent's context, until it reads those rules whole or
-retries a denied edit. The first denial for a rule carries the rule's text, so the agent need not read the file.
+retries a denied edit. A rule's first denial carries its text.
 
 Claude Code skips rules for files outside the working folder, loads a new file's rules only with its first write, and
 does not reload rules after a compaction.
@@ -427,7 +427,7 @@ def read_calls(data: dict) -> list[tuple[str, str]]:
 
 
 def rule_text(rule: str) -> str | None:
-    """The rule file's text, or None when it cannot be read or is not a regular file."""
+    """The rule's text, or None if it is unreadable or not a regular file."""
     try:
         with open_rule(rule) as f:
             return None if f is None else f.read()
@@ -495,10 +495,7 @@ def on_post_tool_batch(data: dict) -> None:
 
 def record_unread_rules(records: set[tuple[str, ...]], key: str, denied: str,
                         rules: list[tuple[str, str]]) -> list[tuple[str, str | None]]:
-    """Record the edit `denied` against each rule missing from the agent's context, or as read when it is a retry.
-
-    Returns the (name, text) of each missing rule. The text is None when an earlier denial gave it to the agent.
-    """
+    """Record `denied` on each missing rule; return (name, text), with text None if already shown."""
     unread = []
     for name, real in rules:
         if (key, real) in records:
@@ -506,7 +503,7 @@ def record_unread_rules(records: set[tuple[str, ...]], key: str, denied: str,
         if (denied, real) in records:
             mark_loaded(records, key, real)
             continue
-        # A denied edit on record means an earlier denial already gave this agent the rule's text.
+        # A denied edit on record means this agent already got the rule's text.
         shown = any(rule == real and owner.startswith(f"{key}/") for owner, rule in records)
         records.add((f"{denied}/batch", real))
         unread.append((name, None if shown else rule_text(real)))
@@ -514,7 +511,7 @@ def record_unread_rules(records: set[tuple[str, ...]], key: str, denied: str,
 
 
 def denial_reason(given: object, unread: list[tuple[str, str | None]]) -> str:
-    """The deny message for an edit of the path `given`: the unread rules by name, then each text that is not None."""
+    """The deny message for an edit of `given`: unread rule names, then their available texts."""
     listed = join_names([f"~/.claude/rules/{name}" for name, _ in unread])
     blocks = [f"\n\n----- ~/.claude/rules/{name} -----\n{text}" for name, text in unread if text is not None]
     return (f"rule-gate: the rules for {given} may not be in your context yet: {listed}. Retry this edit, changed if "

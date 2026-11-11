@@ -86,7 +86,7 @@ class RuleGateTestCase(unittest.TestCase):
                 "tool_response": shown}
 
     def assertDenied(self, result, file, rules, texts=None):
-        """Check the deny and its message; `texts` lists the (name, text) of each rule the message must carry."""
+        """Check the deny and its message; `texts` lists each (name, text) the message carries."""
         self.assertEqual((result.returncode, result.stderr), (0, ""))
         output = json.loads(result.stdout)["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "PreToolUse")
