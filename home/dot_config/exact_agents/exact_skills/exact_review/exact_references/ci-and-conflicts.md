@@ -70,9 +70,25 @@ If the intended result is ambiguous, name the conflicting paths and ask one ques
 If repository rules require a rebase that rewrites published commits, get
 authorization before rebasing or force-pushing. Report the blocker if unavailable.
 
+### Rebase under review-auto
+
+Under `review-auto`, rebase instead of merging the target branch. Do it when the
+source branch conflicts with the target, is behind it while the host or repository
+requires an up-to-date or linear branch, or fails CI only because its base is old.
+Ask nothing first.
+
+1. Pin the source SHA as `OBSERVED_SHA` and the fetched target as `BASE_SHA`.
+2. In the review worktree, run `git rebase BASE_SHA`. Resolve conflicts as above;
+   when the result is ambiguous, run `git rebase --abort` and ask one question.
+3. Retest per **Retest** in [testing.md](testing.md).
+4. Push with `git push --force-if-includes --force-with-lease=<source-branch>:OBSERVED_SHA origin HEAD:<source-branch>`,
+   as one command by itself. For a fork, push to the fork's URL instead of `origin`.
+5. A rejected lease means someone else pushed. Fetch, re-pin, and start over.
+
 Before pushing, make sure the destination source branch still matches the
 observed SHA. If it moved, reconcile its new commits and rerun affected checks.
-Never force-push to overcome a non-fast-forward rejection.
+Never force-push to overcome a non-fast-forward rejection; only the leased push
+above may force.
 Push to a fork per [fix.md](fix.md) MR/PR item 5; do not change remotes or Git settings.
 This authorization does not include merging the MR/PR, approving reviews, bypassing
 branch policy, publishing releases, or writing to production.

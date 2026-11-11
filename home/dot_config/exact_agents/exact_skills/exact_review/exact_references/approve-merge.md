@@ -27,7 +27,8 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    Use only that verified SHA as `HEAD_SHA`.
    **Risk**: when the risk tier is `high`, show the tier and its reason and ask the
    user to confirm approval and merge at `HEAD_SHA`, even when a flag requested them.
-   A new head needs a new confirmation.
+   A new head needs a new confirmation. Under `review-auto`, skip this question: its
+   invocation is the confirmation.
 3. **Ready**: if the MR/PR is a draft, mark it ready and read the state back.
    - GitHub: `gh pr ready <number>`; check `gh pr view <number> --json isDraft`.
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
@@ -37,14 +38,14 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
 4. **Approve** (`--approve`): run `agt review publish --approve` on the review's store
    target, which records the approval at `HEAD_SHA` and posts no comment; the summary
    headline shows `🔍 approved`. Only when
-   the user asks for a formal approval, use `publish --approve --formal`; it also submits the
+   the user asks for a formal approval, or under `review-auto`, use `publish --approve --formal`; it also submits the
    host's approval. GitHub does not let you approve your own PR, so there it posts a
    `COMMENT` review with the approval text and `skipped` lists `<id>/formal`; report
    `approved (comment review; GitHub blocks self-approval)`. When GitLab will not let you
    approve, `posted` shows the approve `error` with `"fallback": "comment"`, and a comment
    carries the approval text; report `approved (comment; GitLab refused: <error>)`. On
    another author's MR/PR, publish with `--approve --not-own`, after a `--dry-run` with the
-   same flags. When `skipped` lists the approval itself (head moved, open findings) or
+   same flags. Approve whether or not the user or this session wrote the code. When `skipped` lists the approval itself (head moved, open findings) or
    `posted` shows an approve `error` without that fallback, report that instead of approved.
    When the output has `kept_local`, posting is off: the approval is recorded only in the
    local store. Report `approved locally (posting off)`; never post it with `gh` or `glab`.
