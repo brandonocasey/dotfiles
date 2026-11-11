@@ -5,8 +5,8 @@
 # default-shell (fish), and loading its config delays the picker.
 # Entering :new-session, or pressing tmux.conf's new-session key (prefix + C),
 # creates a session. The popup gets keys before tmux's bindings do, so fzf
-# binds that key itself: ctrl-b turns C on for the next key only. Keep it in
-# sync with tmux.conf.
+# binds that key itself. ctrl-b turns C on until the search text changes.
+# Keep it in sync with tmux.conf.
 list=~/.config/tmux/scripts/sesh-list.sh
 new_session=:new-session
 picked=$(sh "$list" list -t --icons | fzf --tmux center,80%,70% --print-query \
