@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Deny edits whose ~/.claude/rules files may be missing from the agent's context, until it reads those rules whole or
-retries a denied edit. A rule's first denial carries its text.
+retries a denied edit. A rule's first denial carries its text, if the rule file is readable.
 
 Claude Code skips rules for files outside the working folder, loads a new file's rules only with its first write, and
 does not reload rules after a compaction.
@@ -495,7 +495,10 @@ def on_post_tool_batch(data: dict) -> None:
 
 def record_unread_rules(records: set[tuple[str, ...]], key: str, denied: str,
                         rules: list[tuple[str, str]]) -> list[tuple[str, str | None]]:
-    """Record `denied` on each missing rule; return (name, text), with text None if already shown."""
+    """Record `denied` on each missing rule, or mark the rule read on a retry.
+
+    Returns (name, text) per unread rule; text is None if already shown or unreadable.
+    """
     unread = []
     for name, real in rules:
         if (key, real) in records:
@@ -503,7 +506,7 @@ def record_unread_rules(records: set[tuple[str, ...]], key: str, denied: str,
         if (denied, real) in records:
             mark_loaded(records, key, real)
             continue
-        # A denied edit on record means this agent already got the rule's text.
+        # A recorded denied edit means this agent already got the rule's text.
         shown = any(rule == real and owner.startswith(f"{key}/") for owner, rule in records)
         records.add((f"{denied}/batch", real))
         unread.append((name, None if shown else rule_text(real)))
