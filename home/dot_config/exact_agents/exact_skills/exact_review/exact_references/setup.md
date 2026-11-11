@@ -32,6 +32,15 @@ parallel fetches share `FETCH_HEAD`.
   file in the scratch directory, when the tree is dirty; otherwise the current branch,
   pinned as a branch.
 
+For a commit or range target, look for an open MR/PR by the authenticated user whose
+head is the pin's end commit: GitLab `glab mr list --author=@me --per-page 100 -F json`
+(match `sha`), GitHub `gh pr list --author @me --state open --limit 100 --json
+url,headRefOid` (match `headRefOid`). Report each match's URL as `writing MR/PR`. On no
+match, another host, or a failed lookup, report none and continue. Only the
+`writing-reviewer` prompt names it, so its title and description get checked; the pin,
+checkout, store target, and code review stay as they are. Later setups of the same run
+keep the first setup's value.
+
 If the pinned diff is empty, report `empty` and stop.
 
 ## 2. Checkout
@@ -139,13 +148,15 @@ Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md 
 ```
 
 Fill the `writing-reviewer` prompt the same way, with the same `<target>`, worktree,
-and `Repository rules` fields.
+and `Repository rules` fields. Drop the `MR/PR` line when step 1 reported no
+`writing MR/PR`.
 
 ```text
 Review the writing of <target>.
 Worktree: <path>
 Steps: follow <absolute path of writing-steps.md>, steps 0-3.
 Squash: <squash fact>
+MR/PR: <each `writing MR/PR` URL>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory, and the MR/PR template path when one exists>
 ```
 
@@ -158,5 +169,5 @@ the returned prose to `pass end --findings` JSON per [store.md](store.md).
 Keep for later steps and report in at most 15 lines: the pin, worktree path, whether you created or reused it, starting
 SHA, whether you installed dependencies, each check command, the store
 target (`--target <key>` for an MR/PR, `--range <range>`, `--default-branch <ref>`, or
-none), the MR/PR facts (with the linked issue and `squash:`), and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|opus`.
+none), the MR/PR facts (with the linked issue and `squash:`), any `writing MR/PR`, and `risk: <tier> (<rule or paths>)`, `lines: <N>`, and `mode: haiku|opus`.
 Or report `empty` or the blocker, with any worktree you created.

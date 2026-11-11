@@ -7,9 +7,10 @@ steps, or the output format. Return candidate findings as raw data.
 ## 0. Get the target
 
 When the prompt pins a range or a diff path, use exactly that. Read the code in the
-worktree the prompt names and create no other. For a remote target, read only the
-fetch commands at the top of [remote-target.md](remote-target.md), for the title and
-description. Never read MR/PR comments, discussions, or threads.
+worktree the prompt names and create no other. For a remote target, and for each MR/PR
+on the prompt's `MR/PR` line, read only the fetch commands at the top of
+[remote-target.md](remote-target.md), for the title and description. Never read MR/PR
+comments, discussions, or threads.
 
 When the prompt gives two diff paths for a working-diff target, the old one is the diff
 the first writing review used. Check only text that is in the new diff and absent from
@@ -28,7 +29,9 @@ Check only text the change adds or edits:
   says needs a comment but has none.
 - **Commit messages**: `git log <range>`, unless the prompt says `squash: yes` (the
   MR/PR title becomes the commit) or `Commits: skip`.
-- **MR/PR title and description**: only for an MR/PR target. A local target has none.
+- **MR/PR title and description**: for an MR/PR target, and for each MR/PR on the prompt's
+  `MR/PR` line. Any other target has none. The pinned range may be only part of a listed
+  MR/PR, so check its claims against the code in the worktree, not the range alone.
 - **Docs naming removed things**: for each string, flag, command, option, export, or file
   path the diff removes or renames, `rg` the docs outside the diff for the old name.
 
