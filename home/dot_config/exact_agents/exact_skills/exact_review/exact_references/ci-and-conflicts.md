@@ -70,9 +70,10 @@ If the intended result is ambiguous, name the conflicting paths and ask one ques
 If repository rules require a rebase that rewrites published commits, get
 authorization before rebasing or force-pushing. Report the blocker if unavailable.
 
-### Rebase under review-auto
+### Rebase with full auto
 
-Under `review-auto`, rebase instead of merging the target branch. Do it when the
+With full auto (`--fix`, `--approve`, and `--merge` together, per
+[approve-merge.md](approve-merge.md)), rebase instead of merging the target branch. Do it when the
 source branch conflicts with the target, is behind it while the host or repository
 requires an up-to-date or linear branch, or fails CI only because its base is old.
 Ask nothing first.

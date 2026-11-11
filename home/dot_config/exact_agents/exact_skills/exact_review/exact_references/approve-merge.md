@@ -10,6 +10,11 @@ Each flag is the user's request to approve or merge the reviewed MR/PR
 
 `--auto-merge` and `--merge` never imply approval. Combine them with `--approve` for that.
 
+**Full auto** means `--fix`, `--approve`, and `--merge` together, by flag or in the
+user's words; `review-auto` adds all three. It requests a formal approval (step 4),
+confirms every risk tier (step 2), and authorizes **Rebase with full auto** in
+[ci-and-conflicts.md](ci-and-conflicts.md).
+
 A fix pushed to the MR/PR, `--approve`, `--auto-merge`, or `--merge` is also the
 user's request to mark a draft MR/PR ready. This overrides the `ship` rule that
 leaves drafts alone. A fix run with no flag runs only steps 1–3 here.
@@ -27,8 +32,8 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
    Use only that verified SHA as `HEAD_SHA`.
    **Risk**: when the risk tier is `high`, show the tier and its reason and ask the
    user to confirm approval and merge at `HEAD_SHA`, even when a flag requested them.
-   A new head needs a new confirmation. Under `review-auto`, skip this question: its
-   invocation is the confirmation.
+   A new head needs a new confirmation. With full auto, skip this question: the
+   request is the confirmation.
 3. **Ready**: if the MR/PR is a draft, mark it ready and read the state back.
    - GitHub: `gh pr ready <number>`; check `gh pr view <number> --json isDraft`.
    - GitLab: `glab mr update <iid> --ready`; check `draft` in `glab mr view <iid> -F json`.
@@ -38,7 +43,7 @@ Run this step last: after step 5's fix loop when `--fix` applies, otherwise afte
 4. **Approve** (`--approve`): run `agt review publish --approve` on the review's store
    target, which records the approval at `HEAD_SHA` and posts no comment; the summary
    headline shows `🔍 approved`. Only when
-   the user asks for a formal approval, or under `review-auto`, use `publish --approve --formal`; it also submits the
+   the user asks for a formal approval, or with full auto, use `publish --approve --formal`; it also submits the
    host's approval. GitHub does not let you approve your own PR, so there it posts a
    `COMMENT` review with the approval text and `skipped` lists `<id>/formal`; report
    `approved (comment review; GitHub blocks self-approval)`. When GitLab will not let you
