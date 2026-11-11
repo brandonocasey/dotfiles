@@ -3,11 +3,9 @@
 # their agent state, from sesh-list.sh.
 # fzf --tmux, not fzf-tmux -p: tmux starts the latter's popup through
 # default-shell (fish), and loading its config delays the picker.
-# Entering :new-session, or pressing tmux.conf's new-session key (prefix + C),
-# creates a session. The popup gets keys before tmux's bindings do, so fzf
-# binds that key itself. ctrl-b turns C on until the search text changes.
-# Keep it in sync with tmux.conf.
 list=~/.config/tmux/scripts/sesh-list.sh
+# The popup gets keys before tmux does, so fzf binds tmux.conf's prefix + C
+# itself. ctrl-b turns C on until the search text changes.
 new_session=:new-session
 picked=$(sh "$list" list -t --icons | fzf --tmux center,80%,70% --print-query \
   --no-sort --ansi --border-label ' sesh ' --prompt '🪟  ' \
@@ -21,6 +19,8 @@ picked=$(sh "$list" list -t --icons | fzf --tmux center,80%,70% --print-query \
   --bind "ctrl-d:execute(sh $list kill {})+change-prompt(🪟  )+reload(sh $list list -t --icons)" \
   --bind 'start:unbind(C)' --bind 'change:unbind(C)' --bind 'ctrl-b:rebind(C)' \
   --bind "C:become(echo $new_session)")
+# --print-query puts the search text on line 1 and the picked row on line 2.
+# The C key prints $new_session as line 1 instead.
 query=$(printf '%s\n' "$picked" | sed -n 1p)
 if [ "$query" = "$new_session" ]; then
   session=$(tmux new-session -d -P -F '#{session_id}') || exit
