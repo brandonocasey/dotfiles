@@ -7,7 +7,11 @@ Ship the current branch: push it, open or update the MR/PR, and report. When
 the argument names a local branch, run every step from that branch's worktree.
 Create one with the `worktree` skill if none exists. Other argument text is a
 task to finish first.
-Parse `--approve` and `--merge` as options, not branch or task names.
+Parse `--approve`, `--merge`, and `--auto` as options, not branch or task names.
+With `--auto` from the user, run `review-auto --ship` with the other arguments
+instead of these steps: read and follow [review-auto](../review-auto/SKILL.md),
+since that skill is user-invocable only. `/ship --auto` is the user's explicit
+review-auto request. When review-auto runs ship, it passes no `--auto`.
 With several branch names or `all`, ship each branch in turn, a parent before
 its dependent children. For `all`, list the branches that have a `.worktrees/`
 worktree with a clean tree and commits ahead of `TARGET`, excluding worktrees
