@@ -32,6 +32,15 @@ A `tester` sub-agent runs the checks and the manual and UX cases before the
 reviewer starts; `--no-test` skips only the cases. Read
 [testing.md](references/testing.md) for the stage order, retests, and `agt qa` records.
 
+## Progress
+
+At each stage change of a review, print one line that names the stage and what it
+waits on: `Review: <stage>. Waiting on: <agents>, about <expected duration>.` The
+stages are: the tester and reviewers start; fixing starts (give the counts of
+failures and findings); a retest starts; a fix check starts; the second cycle starts.
+The final report replaces the last line. Print no other progress text while the
+agents run.
+
 ## Fix authorization
 
 Before deciding whether review findings may be fixed, read **Fix authorization** in [fix.md](references/fix.md).

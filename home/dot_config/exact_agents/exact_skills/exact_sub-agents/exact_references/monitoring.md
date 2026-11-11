@@ -7,7 +7,7 @@ Use a `cheap` agent when the harness cannot monitor the process or interpretatio
 While the watcher runs, the main session never polls the same target.
 
 For a long run (workflow, build, or watcher), identify the running work at the start.
-Report a phase change in one line only when it changes the plan.
+Report a phase change in one line only when it changes the plan; a review reports each stage change (`review` **Progress**).
 Answer "status?" from the run's own log or journal, in three lines or fewer, state first.
 For a Workflow, use `agent-wf-status` per [workflows.md](workflows.md).
 Print timed progress lines (done/total, failures) only when the user asks for them.
