@@ -49,8 +49,8 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
 2. **Verify.** Re-verify each failure as [delegation.md](delegation.md) re-verifies
    findings: read the cited log lines or evidence and the code they point to. Mark
    a failure the change did not cause as `pre-existing`. Re-verify a review finding
-   that hinges on a test only after the tester has returned, so no second tester
-   starts for it.
+   that hinges on a test only after the tester's results are recorded;
+   [delegation.md](delegation.md) then says when a fresh tester runs that check.
 3. **Record.** Record the results (**Record**), with `pre-existing` in the check note.
 4. **Fix.** Make no fix until the tester, the code reviewers, and the
    `writing-reviewer` of the pass have returned and the pass's findings are recorded

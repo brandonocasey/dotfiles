@@ -42,7 +42,7 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 5. Stop. Do not start a third cycle. After the last pass, run the **Writing pass** below
    once. Report one numbered list of: held `question` items,
    major findings still open, other findings left unfixed, and fixes of major findings
-   from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
+   or test failures from the final cycle's last pass that no reviewer checked. When the list is not empty, ask the user
    how to proceed. When the second cycle's full review still found a major finding,
    name the recurring cause in one line and suggest rethinking the approach before
    more fixes.
