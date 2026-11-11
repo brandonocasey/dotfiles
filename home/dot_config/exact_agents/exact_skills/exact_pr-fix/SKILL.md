@@ -49,7 +49,9 @@ normal push, a rebase with a lease-protected force-push on the user's own
 branch, one eligible CI retry per run, a normal branch update on another
 author's branch, and CI watching. When another skill such as `ship` loads this
 one, skip the rebase and force-push: use a normal branch update, or report the
-needed rebase. `--approve`, `--merge`, and enabled auto-merge add only what
+needed rebase. Under the `review` skill's full auto, rebase and force-push instead,
+per **Rebase with full auto** in
+[ci-and-conflicts.md](../review/references/ci-and-conflicts.md). `--approve`, `--merge`, and enabled auto-merge add only what
 [merge.md](references/merge.md) allows.
 
 - Read the repository's `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, and the CI
@@ -57,7 +59,7 @@ needed rebase. `--approve`, `--merge`, and enabled auto-merge add only what
   specific rules.
 - A branch is the user's own when the pull request author equals the login
   from `gh api user` and the head repository is the current repository. Only
-  these branches may be rewritten. Never force-push without
+  these branches may be rewritten, except under full auto. Never force-push without
   `--force-with-lease=BRANCH:OBSERVED_SHA`.
 - Do not dismiss or request reviews, mark a draft ready, close a pull request,
   delete a remote branch, disable auto-merge (except the push pause in

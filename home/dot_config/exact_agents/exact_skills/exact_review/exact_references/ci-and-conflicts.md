@@ -76,15 +76,17 @@ With full auto (`--fix`, `--approve`, and `--merge` together, per
 [approve-merge.md](approve-merge.md)), rebase instead of merging the target branch. Do it when the
 source branch conflicts with the target, is behind it while the host or repository
 requires an up-to-date or linear branch, or fails CI only because its base is old.
-Ask nothing first.
+Ask nothing first. Full auto may rewrite any branch the review pushes to.
 
-1. Pin the source SHA as `OBSERVED_SHA` and the fetched target as `BASE_SHA`.
-2. In the review worktree, run `git rebase BASE_SHA`. Resolve conflicts as above;
-   when the result is ambiguous, run `git rebase --abort` and ask one question.
-3. Retest per **Retest** in [testing.md](testing.md).
-4. Push with `git push --force-if-includes --force-with-lease=<source-branch>:OBSERVED_SHA origin HEAD:<source-branch>`,
-   as one command by itself. For a fork, push to the fork's URL instead of `origin`.
-5. A rejected lease means someone else pushed. Fetch, re-pin, and start over.
+1. In the review worktree, commit pending fixes. Fetch the source branch and pin
+   its SHA as `OBSERVED_SHA`.
+2. Run `git merge-base --is-ancestor OBSERVED_SHA HEAD`. If it fails, someone
+   pushed commits HEAD lacks: reconcile them and rerun affected checks first.
+3. Follow **Rebase or update the branch** steps 2–6 in
+   [branch-repair.md](../../pr-fix/references/branch-repair.md). Skip its step 2
+   check that HEAD equals `OBSERVED_SHA`; step 2 here replaces it. Retest per
+   **Retest** in [testing.md](testing.md) in place of its step 4. For a fork, push to
+   the fork's URL instead of `origin`.
 
 Before pushing, make sure the destination source branch still matches the
 observed SHA. If it moved, reconcile its new commits and rerun affected checks.
