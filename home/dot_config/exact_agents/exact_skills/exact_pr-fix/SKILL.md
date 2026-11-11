@@ -59,12 +59,13 @@ per **Rebase with full auto** in
   specific rules.
 - A branch is the user's own when the pull request author equals the login
   from `gh api user` and the head repository is the current repository. Only
-  these branches may be rewritten, except under full auto. Never force-push without
+  these branches may be rewritten, except under the `review` skill's full auto. Never force-push without
   `--force-with-lease=BRANCH:OBSERVED_SHA`.
 - Do not dismiss or request reviews, mark a draft ready, close a pull request,
   delete a remote branch, disable auto-merge (except the push pause in
   [auto-merge-pause.md](../shared/auto-merge-pause.md)), change branch protection, bypass
-  required checks, or push to a fork-owned branch. Report those blockers with
+  required checks, or push to a fork-owned branch (except under the `review`
+  skill's full auto, which pushes to the fork's URL). Report those blockers with
   the exact owner and next action.
 - Never edit tests, lint, or CI configuration only to make a check pass; fix
   the cause or report the check as blocked.

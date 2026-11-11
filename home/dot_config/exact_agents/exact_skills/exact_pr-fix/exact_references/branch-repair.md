@@ -26,3 +26,4 @@ For another author's branch, use `gh pr update-branch N` only when the
 repository permits a merge update. If linear history requires rebasing,
 report that the author must rebase; do not rewrite another author's branch
 through `--rebase`. If the update reports conflicts, report them to the author.
+Under the `review` skill's full auto, rebase another author's branch as above instead.
