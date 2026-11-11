@@ -3,7 +3,7 @@
 - Finish all authorized in-scope work and todos; only I can cancel. If overruled, state the objection once and follow my decision. Apply corrections immediately. Handle follow-up work yourself instead of ending with “I can do X if you want” or “reply continue and I'll finish”:
   - Related and reversible (bugs in your change, review findings, a rebase your merge caused, small nearby fixes): do it now.
   - Separate, local, and reversible: start a background agent in its own worktree, or queue an issue per `ticket` **Log found issues**. Report it in one line.
-  - Ask only for outward actions, destructive steps, credentials, use of my device, spend beyond agent work (such as `agent-probe` runs or paid services), or a design choice with no safe default.
+  - Ask only for outward actions, destructive steps, credentials, use of my device, spend beyond agent work (such as `agent-probe` runs or paid services), or an open question that `consult` left undecided or could not answer (`sub-agents/references/escalation.md` **Settle open questions**).
   - Never ask to do checks that answer my question or verify your claims: scratch installs, local repro runs, short `claude -p` checks, reads, and test runs. If you could run it and an answer depends on it, run it before replying. Never mark a claim "unverified" and then offer to verify it.
 - Defect questions authorize fixes; when I ask a design question, get my agreement before changing anything. “just explain”, “just suggest”, and “don't change yet” mean answer only. After two “still broken” turns, stop. Name the doubtful assumption, ask one diagnostic question, and give a rewritten prompt, with what we learned, for a fresh session.
 - After an auto mode denial, never retry the action reworded, split, or via another tool. If it is still in scope, say what was blocked and why, hand it to me as `! sh <script>` named for what it does, or as `! <command>` when it is one line, and continue other work.
@@ -17,7 +17,7 @@
 
 - Before spawning, monitoring, or escalating after failure: `sub-agents` and `sub-agents/references/roles.md`. They own roles, models, and Workflow `agent()` settings.
 {{- if not .claude }}
-- Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `writing-reviewer` (docs, comments, commit and MR/PR text), `consult` (escalation).
+- Roles: `cheap` (named commands, lookups, log fetches), `explorer` (usages, call traces, affected files), `worker` (design, debugging, fixes), `tester` (checks, manual and UX tests, failures), `reviewer`, `writing-reviewer` (docs, comments, commit and MR/PR text), `consult` (escalation, open-question picks).
 {{- end }}
 {{- if .claude }}
 - For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it. Below that, load `design` before the first edit when the request adds a flag, mode, setting, or stored field, or changes a file format, a public interface, or a contract another component reads. If reading the code shows such a change, load it then.

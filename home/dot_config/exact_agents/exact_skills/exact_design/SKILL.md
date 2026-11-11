@@ -12,7 +12,7 @@ Size the phase to the cost of being wrong:
 ## Steps
 
 1. List the unknowns that change the design. Answer every one the code, docs, or history can. For a new flag, mode, setting, or field, also list every sibling path that reads or writes the same thing (other commands and handlers, docs, skip and dry-run flows), data already written, and what must run before the first side effect; give each a "done means" check.
-2. Ask the user only design choices with no safe default, batched as numbered options with a recommended default, per the output-style rules. Take reversible defaults and list them in the design; do not ask.
+2. Send design choices with no safe default to `consult` per `sub-agents` [escalation.md](../sub-agents/references/escalation.md) **Settle open questions**. Ask the user only the ones it returns undecided, batched as numbered options with a recommended default, per the output-style rules. Take reversible defaults and list them in the design; do not ask.
 3. Write `design.md` at `<scratch>/<task>/design.md` (under `agents/output/<task>/` when it needs approval), at most 60 lines (20 for the medium tier), with:
    - goal;
    - decisions, each with a one-line reason;

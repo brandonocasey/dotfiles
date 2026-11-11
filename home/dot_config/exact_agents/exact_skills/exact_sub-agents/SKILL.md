@@ -34,7 +34,7 @@ A sub-agent that stops while its own background job runs must keep a background 
 
 - Before writing or starting a Workflow, read [workflows.md](references/workflows.md).
 - Before monitoring a command or external target, read [monitoring.md](references/monitoring.md).
-- After a failed attempt leaves unresolved reasoning, or a loop may stop early, read [escalation.md](references/escalation.md) before escalating or reporting blocked.
+- After a failed attempt leaves unresolved reasoning, or a loop may stop early, read [escalation.md](references/escalation.md) before escalating or reporting blocked. Before asking the user an open question, read its **Settle open questions**.
 
 ## After they return
 

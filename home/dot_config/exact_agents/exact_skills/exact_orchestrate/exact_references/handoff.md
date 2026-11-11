@@ -10,7 +10,7 @@ the orchestrator, so run the stages below.
    `AGENT_HANDOFF=1 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 claude -p --model sonnet --append-system-prompt-file ~/.config/agents/skills/orchestrate/references/handoff.md --output-format json < <dir>/request.md > <dir>/orchestrator.json 2> <dir>/orchestrator.err`
    The request goes on stdin: a positional prompt that starts with `-` fails as an unknown option. Without the ceiling setting, print mode stops background sub-agents, such as a reviewer, 10 minutes after the orchestrator's last turn.
 3. Wait for the exit notification.
-4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator's `review-fix` covers the change: `agt review status --range <start>..HEAD` reports `reviewed: true` and an empty `unreviewed_commits`. The range catches commits that another session already pushed to the default branch. Run another review only when it does not or your checks fail. Report its open questions to the user.
+4. Verify: run the checks, read `git diff --stat` and `jq -r .result <dir>/orchestrator.json`, and confirm the orchestrator's `review-fix` covers the change: `agt review status --range <start>..HEAD` reports `reviewed: true` and an empty `unreviewed_commits`. The range catches commits that another session already pushed to the default branch. Run another review only when it does not or your checks fail. Report its picks and open questions to the user; do not send them to `consult` again.
 
 ## Stages (orchestrator)
 
@@ -37,4 +37,5 @@ stage's `tester` or `review-fix` is that run.
    in stage 4.
 6. **Report.** Final report: commits, checks, the `review-fix` result with its
    reviewed head, the `reviewed` and `unreviewed_commits` fields of
-   `agt review status`, and every open question.
+   `agt review status`, each pick `consult` made, and every open question it left
+   undecided or a skill held for the user.
