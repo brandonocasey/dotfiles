@@ -34,7 +34,7 @@ Get the full code, not just the diff — the diff alone is rarely enough context
   Never read MR/PR comments, discussions, threads, or review records; skip its
   discussion commands and **Source checkout**. The main session reports CI and
   mergeability.
-- An inline fallback runs after the testing stage too; it also runs no checks.
+- An inline fallback also runs no checks; the testing stage runs them.
 
 Read the surrounding code of every changed hunk you intend to comment on.
 

@@ -7,11 +7,12 @@ one full review and up to 3 fix checks. A pass is a full review or a fix check. 
 [output.md](output.md), that the change introduced or made reachable; a
 `pre-existing` finding is never major.
 
-1. **Full review.** Run the testing stage in [testing.md](testing.md) first: the whole
-   target in the first cycle, a retest of the changed code in the second. Then start
-   fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the whole current target. Re-verify, report, and fix as in steps 2–4. Hold
+1. **Full review.** Start the testing stage in [testing.md](testing.md) (the whole
+   target in the first cycle, a retest of the changed code in the second) and, in the
+   same turn, fresh reviewers per steps 0–2 of [SKILL.md](../SKILL.md) on the whole current target. Re-verify, report, and fix as in steps 2–4. Hold
    behavior-change `question` items for the user.
-2. **Fix check.** Run only when the previous pass fixed a major finding. The fixes were
+2. **Fix check.** Run only when the previous pass fixed a major finding or a test
+   failure the change caused ([testing.md](testing.md) step 6). The fixes were
    retested before their commit ([fix.md](fix.md) step 4). Continue the same
    reviewers when the harness supports it (Claude Code: `SendMessage`) and their last
    turn ended under 5 minutes ago; otherwise start fresh reviewers on the delta with

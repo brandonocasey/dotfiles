@@ -3,8 +3,9 @@
 A documentation, Markdown, or comment-only change (no test files) spawns no
 `tester`: the main session runs the repository's checks inline and records them.
 
-Every other review tests the target before the reviewer starts. A fresh `tester`
-sub-agent runs the repository's checks and the manual and UX cases in one pass.
+Every other review tests the target while the reviewers read it. A fresh `tester`
+sub-agent, started in the same turn as the reviewers, runs the repository's checks
+and the manual and UX cases in one pass.
 The main session tests itself only in the inline fallback below; it records the
 results with `agt qa`, as it records reviewer findings with `agt review`.
 
@@ -39,40 +40,39 @@ When resuming from a `session-resume` record, apply `session-resume`'s reuse rul
 
 ## Stage order
 
-1. **Test.** After setup, start one fresh `tester` with the prompt below on the
-   whole target, or on only its untested part when earlier commits are already
-   tested (see above). In the first cycle, start the `writing-reviewer` in the same
-   turn ([SKILL.md](../SKILL.md) steps 0–2).
+1. **Start.** After setup, in one turn start one fresh `tester` with the prompt below
+   on the whole target, or on only its untested part when earlier commits are already
+   tested (see above), and the code reviewers per the spawn bullets of
+   [SKILL.md](../SKILL.md) steps 0–2. In the first cycle, start the `writing-reviewer`
+   in that turn too. When no tester runs, start the reviewers first and run the
+   inline checks while they work. Never pass test results to reviewers.
 2. **Verify.** Re-verify each failure as [delegation.md](delegation.md) re-verifies
    findings: read the cited log lines or evidence and the code they point to. Mark
-   a failure the change did not cause as `pre-existing`.
+   a failure the change did not cause as `pre-existing`. Re-verify a review finding
+   that hinges on a test only after the tester has returned, so no second tester
+   starts for it.
 3. **Record.** Record the results (**Record**), with `pre-existing` in the check note.
-4. **Fix.** With fix authorization ([fix.md](fix.md)), fix verified failures the
-   change caused and leave them uncommitted. Report `pre-existing` ones; fix.md's
-   **Scope** rule for them applies. Without authorization, report all of them
-   beside the review findings.
+4. **Fix.** Make no fix until the tester, the code reviewers, and the
+   `writing-reviewer` of the pass have returned and the pass's findings are recorded
+   (`pass end`, [store.md](store.md)): they read the same worktree, and findings
+   anchor to the pinned head. Then, with fix authorization ([fix.md](fix.md)), fix
+   verified failures the change caused together with the review findings, and leave
+   them uncommitted. Report `pre-existing` ones; fix.md's **Scope** rule for them
+   applies. Without authorization, report all of them beside the review findings.
 5. **Retest.** Start a fresh `tester` on the uncommitted fixes only (**Retest**).
    Verify, record, and fix again. Stop after 3 retests, or sooner per
    [escalation.md](../../sub-agents/references/escalation.md), and report failures that
    remain. Then commit the fixes as fix.md's **4. Optional: --fix** section commits
    review fixes (its commit item, not its retest item).
-6. **Review.** When steps 4–5 changed the target, committed or not, re-pin it so
-   the reviewers see the fixes:
-   - MR/PR or branch: rerun setup; its pin ends at the new head.
-   - Working diff: rerun setup; it saves a new diff file.
-   - Commit, range, or detached branch: keep the store target, but pin each
-     reviewer prompt to `<from>..HEAD` (the fix branch's HEAD for a detached
-     branch), and pass `--head HEAD` to the first `pass start` too.
-
-   Then start the code reviewers per the spawn bullets of [SKILL.md](../SKILL.md)
-   steps 0–2. Never pass test results to reviewers.
+6. **Fix check.** A fix for a test failure is code no reviewer has read. It starts a
+   fix check as a fixed major finding does ([loop.md](loop.md) step 2).
 
 If a tester stalls or returns nothing, start one fresh tester. If that fails too,
 or no sub-agent is available, run [tester-steps.md](tester-steps.md) inline and report the tests as
 not independent.
 
-After review fixes, retest before each fix check and before the second cycle's
-full review ([loop.md](loop.md)). Feed test failures into the same verification
+After review fixes, retest before each fix check; the second cycle's retest starts
+with its full review ([loop.md](loop.md)). Feed test failures into the same verification
 pass; they never start another review cycle.
 
 ## Tester prompt

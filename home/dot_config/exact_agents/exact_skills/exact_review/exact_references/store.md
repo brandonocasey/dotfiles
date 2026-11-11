@@ -48,7 +48,7 @@ in this store) still need `--target <key>`.
 
 | When | Command |
 |---|---|
-| Before the run's first code reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. The array holds a `fix` entry when the review may fix (see below), and the `writing-reviewer` already started with the tester. `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Omit a flag whose value you cannot tell from the request or the commits: the run keeps the first pass's values for good. Later passes may add `--risk` and omit the rest |
+| Before the run's first code reviewers start | `pass start --kind full --base <base> --reviewers - --task-type <type> --risk <tier> --implementer <model>` (no `--run`: it starts the run); prints the run ID and pass `c1p0`. The array holds a `fix` entry when the review may fix (see below), and the `writing-reviewer` that starts with them. `<type>` is `design`, `bug`, `feature`, `fix`, or `other`; `<tier>` is setup's risk tier; `<model>` wrote the change (`user` for the user's own work). Omit a flag whose value you cannot tell from the request or the commits: the run keeps the first pass's values for good. Later passes may add `--risk` and omit the rest |
 | Before later reviewers start | `pass start --run <run> --kind full\|fix-check --base <base> --reviewers -` |
 | After re-verifying the pass's findings | `pass end --run <run> --pass <pass> --findings - --reviewer <id>`: every finding of the pass, surviving and killed, in one array; a finding of another reviewer adds `"reviewer": "<id>"`; `[]` for none; with reviewer usage, send `{"findings": [...], "usage": [...]}` instead (**Usage input**) |
 | Kill a finding that re-verification refutes | `finding kill <id> --reason <text>` |
@@ -66,8 +66,7 @@ Always pass `--base` to every full pass (`pass start --kind full`, also for the 
 an end-point review), `HEAD` for a working-diff target, or the pinned merge-base for an
 MR/PR. Without it every branch commit counts as reviewed. For a commit or range target,
 also pass `--head HEAD` (the fix head) to every `pass start` after the first full
-review, and to the first one when testing-stage fixes moved HEAD
-([testing.md](testing.md) step 6), to fix-check `list`, and to `run end`; `pass end`, `finding`, and
+review, to fix-check `list`, and to `run end`; `pass end`, `finding`, and
 `resolve` take no `--head`. Only `reply` and `resolve --fixed`/`--not-fixed`/`--rejected`/`--reply`
 add text.
 

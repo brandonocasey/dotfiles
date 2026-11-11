@@ -28,8 +28,8 @@ runs one `writing-reviewer`, started with the tester. After the reviewers return
 
 ## Testing
 
-A `tester` sub-agent runs the checks and the manual and UX cases before the
-reviewer starts; `--no-test` skips only the cases. Read
+A `tester` sub-agent runs the checks and the manual and UX cases while the
+reviewers read the code; `--no-test` skips only the cases. Read
 [testing.md](references/testing.md) for the stage order, retests, and `agt qa` records.
 
 ## Progress
@@ -60,8 +60,8 @@ later passes).
 - Run setups one at a time, never in parallel.
 - On `empty` or a blocker, clean up any worktree setup reports per
   [output.md](references/output.md). On `empty`, say there is nothing to review; on a blocker, report it to the user. Then stop.
-- Run the testing stage in [testing.md](references/testing.md) first. Start the
-  code reviewers only after its last retest.
+- Start the testing stage in [testing.md](references/testing.md) and the code
+  reviewers in the same turn. Its **Stage order** owns when fixes may start.
 - Start one `reviewer` with the filled prompt verbatim, or one per `--agents`
   `<model>[:<effort>]` entry on that model and effort; with several targets, one set
   per target. Otherwise the `sub-agents` skill sets model and effort; when setup's
@@ -69,14 +69,11 @@ later passes).
   code reviewer returns `Risk: high` or a `high` bug
   survives verification, rerun once with the default model.
 - In the first cycle's full review only, also start one `writing-reviewer` per target with
-  setup.md's writing prompt verbatim, in the same turn as the first `tester`, or before
-  testing.md's inline checks when no tester runs. It reviews setup's pin; fixes made
-  during testing reach it through loop.md's writing pass. Make no testing-stage fix
-  until it returns, so it never reads a half-fixed worktree. List it in the first full
-  pass's `--reviewers` array. Hold its findings until the code reviewers return, then
-  verify and record them with theirs. When testing-stage fixes moved the head, first
-  re-anchor each finding's line to the pass's head by its quoted text; drop the line
-  and keep the path when the text is gone. `--agents` and setup's
+  setup.md's writing prompt verbatim, in the same turn as the first `tester` and the
+  code reviewers, or before testing.md's inline checks when no tester runs. It reviews
+  setup's pin; later fixes reach it through loop.md's writing pass. List it in the
+  first full pass's `--reviewers` array. Hold its findings until the code reviewers
+  return, then verify and record them with theirs. `--agents` and setup's
   review mode apply to the code reviewer only. Later full reviews and fix checks start none; [loop.md](references/loop.md)
   owns the one final writing pass.
 - On `skip` (setup.md owns the test),
