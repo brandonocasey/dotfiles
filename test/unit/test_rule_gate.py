@@ -20,8 +20,10 @@ REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / "home/dot_claude/hooks/executable_rule-gate.py"
 SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
 
-REASON = ("rule-gate: the rules for {file} may not be in your context yet. Read {rules}, then retry this edit, changed "
-          "if those rules require it. Skip a read only if that rule's full text is already in your context.")
+REASON = ("rule-gate: the rules for {file} may not be in your context yet: {rules}. Retry this edit, changed if those "
+          "rules require it. The text of each rule follows, unless an earlier denial in this conversation showed it. "
+          "Read any rule whose full text you cannot see.")
+RULE_TEXT = "\n\n----- ~/.claude/rules/{name} -----\n{text}"
 
 
 class RuleGateTestCase(unittest.TestCase):
@@ -83,12 +85,18 @@ class RuleGateTestCase(unittest.TestCase):
         return {"tool_name": tool, "tool_input": {"file_path": str(file)}, "tool_use_id": "toolu_01",
                 "tool_response": shown}
 
-    def assertDenied(self, result, file, rules):
+    def assertDenied(self, result, file, rules, texts=None):
+        """Check the deny and its message; `texts` lists the (name, text) of each rule the message must carry."""
         self.assertEqual((result.returncode, result.stderr), (0, ""))
         output = json.loads(result.stdout)["hookSpecificOutput"]
         self.assertEqual(output["hookEventName"], "PreToolUse")
         self.assertEqual(output["permissionDecision"], "deny")
-        self.assertEqual(output["permissionDecisionReason"], REASON.format(file=file, rules=rules))
+        reason = output["permissionDecisionReason"]
+        expected = REASON.format(file=file, rules=rules)
+        if texts is None:
+            self.assertEqual(reason.partition("\n\n----- ")[0], expected)
+        else:
+            self.assertEqual(reason, expected + "".join(RULE_TEXT.format(name=n, text=t) for n, t in texts))
 
     def assertPasses(self, result, context=""):
         self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""), context)
@@ -374,6 +382,38 @@ class RetryTests(RuleGateTestCase):
         self.batch_done()
         self.assertPasses(self.edit(file))
         self.assertPasses(self.edit(self.work / "b.py"))
+
+
+class DenialTextTests(RuleGateTestCase):
+    def test_the_first_denial_for_a_rule_carries_its_whole_text(self):
+        first = self.rule("a-one.md", ["**/*.py"])
+        second = self.rule("b-two.md", ["**/*.py"])
+        long_text = second.read_text() + "- Küß the cook; keep `{braces}`.\n" + "x" * 30_000 + "\nlast line\n"
+        second.write_text(long_text, encoding="utf-8")
+        file = self.work / "a.py"
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/a-one.md and ~/.claude/rules/b-two.md",
+                          texts=[("a-one.md", first.read_text()), ("b-two.md", long_text)])
+
+    def test_later_denials_for_a_rule_leave_its_text_out_until_a_compaction(self):
+        rule = self.rule("py.md", ["**/*.py"])
+        text = [("py.md", rule.read_text())]
+        first, second, third = (self.work / f"{name}.py" for name in ("a", "b", "c"))
+        self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md", texts=text)
+        self.assertDenied(self.edit(first), first, "~/.claude/rules/py.md", texts=[])
+        self.assertDenied(self.edit(second), second, "~/.claude/rules/py.md", texts=[])
+        self.assertDenied(self.edit(second, agent_id="agent-10"), second, "~/.claude/rules/py.md", texts=text)
+        self.assertDenied(self.edit(second, agent_id="agent-1"), second, "~/.claude/rules/py.md", texts=text)
+        self.batch_done()
+        self.assertDenied(self.edit(third), third, "~/.claude/rules/py.md", texts=[])
+        self.pre_compact()
+        self.assertDenied(self.edit(third), third, "~/.claude/rules/py.md", texts=text)
+
+    def test_two_names_for_one_rule_carry_its_text_once(self):
+        real = self.rule("real.md", ["**/*.py"])
+        (self.home / ".claude/rules/alias.md").symlink_to(real)
+        file = self.work / "a.py"
+        self.assertDenied(self.edit(file), file, "~/.claude/rules/alias.md and ~/.claude/rules/real.md",
+                          texts=[("alias.md", real.read_text())])
 
 
 class RuleReadTests(RuleGateTestCase):
