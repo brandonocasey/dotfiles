@@ -161,6 +161,9 @@ managed=$(
     "NO_COLOR": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
     "CLAUDE_CODE_TMPDIR": "{{ .chezmoi.homeDir }}/.cache/claude-tmp",
+{{- if eq .chezmoi.os "darwin" }}
+    "CHROME_BIN": "{{ .chezmoi.homeDir }}/.local/bin/chrome-for-testing",
+{{- end }}
     "DISABLE_AUTOUPDATER": "1"
   },
   "skillOverrides": {

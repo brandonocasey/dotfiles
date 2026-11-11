@@ -5,7 +5,10 @@
 # per launch. Chrome for Testing makes no such copy.
 #   chrome-for-testing install   download the current Stable build and drop older ones not in use
 #   chrome-for-testing path      print the executable path; exit 1 when not installed
-#   chrome-for-testing [args]    run it
+#   chrome-for-testing [args]    run it; agent shells set CHROME_BIN to this script for karma
+# Runs add --use-mock-keychain and --password-store=basic because launchers such as karma omit
+# them, and without them Chrome reads its Safe Storage keychain item and macOS asks for the
+# login password.
 # `path` and runs start a background install when the last check is a week old (or nothing is
 # installed), so launches never wait on a download; the next launch uses the new build.
 set -eu
@@ -110,5 +113,5 @@ case "${1:-}" in
   path) refresh; exe ;;
   *) refresh
      path=$(exe) || { echo "chrome-for-testing: not installed yet; an install started in the background" >&2; exit 1; }
-     exec "$path" "$@" ;;
+     exec "$path" --use-mock-keychain --password-store=basic "$@" ;;
 esac
