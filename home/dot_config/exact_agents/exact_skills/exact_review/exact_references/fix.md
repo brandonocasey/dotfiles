@@ -35,6 +35,10 @@ threads that the request covers (fix only those threads):
   reworded. Resolve a title or description fix with `agt review resolve <id> --fixed
   <head-sha> --reviewer <run>.<pass>.fix --reply "Fixed in the MR/PR description."`,
   where `<head-sha>` is the MR/PR's current head (a description edit makes no commit).
+  For the `writing MR/PR` of a commit or range target ([setup.md](setup.md) step 1), edit
+  the title or description only when the MR/PR update rule in
+  [git-policy.md](../../shared/git-policy.md) allows it; otherwise report the rewrite and
+  leave the finding open.
 - **Behavior changes**: do not apply a fix that changes user-visible behavior beyond
   what the change or its spec intends. Report it as a `question` with options and a
   recommended default.

@@ -31,7 +31,9 @@ Check only text the change adds or edits:
   MR/PR title becomes the commit) or `Commits: skip`.
 - **MR/PR title and description**: for an MR/PR target, and for each MR/PR on the prompt's
   `MR/PR` line. Any other target has none. The pinned range may be only part of a listed
-  MR/PR, so check its claims against the code in the worktree, not the range alone.
+  MR/PR, so check its claims against the code at the pin's end commit, not the range
+  alone. When the worktree's HEAD is another commit, read files with
+  `git show <end-sha>:<path>`.
 - **Docs naming removed things**: for each string, flag, command, option, export, or file
   path the diff removes or renames, `rg` the docs outside the diff for the old name.
 
