@@ -85,6 +85,6 @@ if status is-interactive
     # Claude Desktop; the second instance has its own data folder and claude-two config dir
     if test (uname) = Darwin
         alias claude-desktop="open -a Claude"
-        alias claude-desktop-two="open -n -a Claude --env CLAUDE_CONFIG_DIR=$HOME/.claude-two --args '--user-data-dir=$HOME/Library/Application Support/Claude-two'"
+        alias claude-two-desktop="open -n -a Claude --env CLAUDE_CONFIG_DIR=$HOME/.claude-two --args '--user-data-dir=$HOME/Library/Application Support/Claude-two'"
     end
 end
