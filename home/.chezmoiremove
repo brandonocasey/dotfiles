@@ -19,3 +19,4 @@
 .local/bin/agent-sessions
 .local/bin/agent-wait
 .codex/hooks/guard.py
+.config/git/hooks
