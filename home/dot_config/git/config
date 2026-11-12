@@ -5,6 +5,8 @@
 	fsmonitor = false
   # use git-delta, aka delta to get better diffs
   pager = delta
+  # global hooks: secret scan on pre-commit, then the repo's own hooks
+  hooksPath = ~/.config/git/hooks
 [help]
   # 0.5 seconds before git command auto corrects
   autocorrect = 5
