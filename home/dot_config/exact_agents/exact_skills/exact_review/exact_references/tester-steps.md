@@ -51,6 +51,11 @@ reason. Stop when the list is done.
 ## Exercise the actual behavior
 
 Run repository setup and start commands within the prompt's scope.
+Build the fixtures for a case (git repositories, `HOME`, `XDG_*` directories, fake
+forge state) in the harness scratchpad directory, else `$TMPDIR`, never inside the
+checkout, not even under its `.cache/agents/scratch`. This overrides the role's scratch
+line for fixtures only: removing the checkout then never meets a nested repository.
+Logs and evidence stay in the scratch directory.
 Automated tests, static inspection, and screenshots alone do not replace manual interaction.
 Run each case on the surface the user meets, within the prompt's scope: the
 changed build or installed copy, an already-running instance for reload or
