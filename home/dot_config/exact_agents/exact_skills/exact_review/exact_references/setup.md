@@ -149,12 +149,14 @@ Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md 
 
 Fill the `writing-reviewer` prompt the same way, with the same `<target>`, worktree,
 and `Repository rules` fields. Drop the `MR/PR` line when step 1 reported no
-`writing MR/PR`.
+`writing MR/PR`. Set `Scope: claims` when the review fixes ([loop.md](loop.md));
+otherwise `Scope: all`.
 
 ```text
 Review the writing of <target>.
 Worktree: <path>
 Steps: follow <absolute path of writing-steps.md>, steps 0-3.
+Scope: <claims|all>
 Squash: <squash fact>
 MR/PR: <each `writing MR/PR` URL>
 Repository rules: <paths of AGENTS.md / CLAUDE.md / CONTRIBUTING.md / REVIEW.md at the root and in every changed directory, and the MR/PR template path when one exists>

@@ -9,7 +9,8 @@
   high findings.
 - The review skill's step 0–2 owns `--agents` and per-target reviewer sets.
 - The `writing-reviewer` runs once per target in the first cycle's full review,
-  started with the tester. It is cheap (Haiku `xhigh`) and never sets the risk tier.
+  started with the tester, and once more in loop.md's writing pass. It is cheap
+  (Haiku `xhigh`) and never sets the risk tier.
 
 An external tool's findings go through the same re-verification.
 

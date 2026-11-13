@@ -71,7 +71,8 @@ later passes).
 - In the first cycle's full review only, also start one `writing-reviewer` per target with
   setup.md's writing prompt verbatim, in the same turn as the first `tester` and the
   code reviewers, or before testing.md's inline checks when no tester runs. It reviews
-  setup's pin; later fixes reach it through loop.md's writing pass. List it in the
+  setup's pin; in a review that fixes it checks only claims against the code, and
+  loop.md's writing pass applies the writing rules once at the end. List it in the
   first full pass's `--reviewers` array. Hold its findings until the code reviewers
   return, then verify and record them with theirs. `--agents` and setup's
   review mode apply to the code reviewer only. Later full reviews and fix checks start none; [loop.md](references/loop.md)

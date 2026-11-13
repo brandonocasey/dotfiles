@@ -12,10 +12,6 @@ on the prompt's `MR/PR` line, read only the fetch commands at the top of
 [remote-target.md](remote-target.md), for the title and description. Never read MR/PR
 comments, discussions, or threads.
 
-When the prompt gives two diff paths for a working-diff target, the old one is the diff
-the first writing review used. Check only text that is in the new diff and absent from
-the old one.
-
 ## 1. Collect the text
 
 Check only text the change adds or edits:
@@ -67,6 +63,9 @@ Where a kind's rules differ from public-writing.md, the kind's rules win. For ex
 ship step 3 asks how the change was verified, so one short verification line is not a
 "test runs" finding. In a repository the user does not own, the comment-density rule in
 comments.md wins.
+
+When the prompt says `Scope: claims`, read only the repository rules, skip
+public-writing.md and the owner files, and apply only the last two bullets below.
 
 Apply each rule as written:
 
