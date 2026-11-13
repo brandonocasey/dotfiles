@@ -23,3 +23,9 @@ push = "manual"
 host = "github.com"
 repo = "rom-weaver/rom-weaver"
 pull_requests = { push = "auto" }
+
+# Send the queued issues of brandonocasey/agt on `agt issue push`.
+[[tracker]]
+host = "github.com"
+repo = "brandonocasey/agt"
+push = "manual"
