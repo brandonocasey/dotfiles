@@ -438,12 +438,12 @@ class CheckTests(CodeShapeTestCase):
 
 
 def summing(name, factor):
-    """Python source for an 18-line function, long enough for qlty to report a copy of it."""
+    """Python source for an 18-line function, long enough for qlty to report as a copy."""
     body = "".join(f"    total += values[{n}] * {n + factor}\n" for n in range(15))
     return f"def {name}(values):\n    total = 0\n{body}    return total\n"
 
 
-# qlty reports a chain of 5 or more terms joined by one operator as a complex boolean expression.
+# qlty flags a chain of 5 or more terms joined by one operator.
 READY = "\n\ndef ready(a, b):\n    return a.x and a.y and b.x and b.y and a.z\n"
 LATER = "\n\ndef later(a, b):\n    return a.p and a.q and b.p and b.q and a.r\n"
 SMALL = "\n\ndef small(x):\n    return x\n"
@@ -496,8 +496,7 @@ class SmellTests(CodeShapeTestCase):
                                  (1 if expected else 0, expected), result.stderr)
 
     def test_edited_copy_that_qlty_relabels_is_not_new(self):
-        # qlty reports these two copies as identical code, and as similar code once
-        # one line of one copy changes.
+        # qlty reports these copies as identical code, then as similar code after one edit.
         body = "".join(f"    if values.get('k{n}') is not None:\n        names.append(str(values['k{n}']).upper())\n"
                        for n in range(8))
         pair = f"def labels(values):\n    names = []\n{body}    return names\n"

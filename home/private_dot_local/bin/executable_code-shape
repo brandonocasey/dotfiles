@@ -5,8 +5,9 @@
 # ///
 """Report functions that a change adds or makes worse past the limits in
 code-quality.md: more than 3 nested control blocks, cognitive complexity over 15
-(25 in C and C++), or more than 4 parameters. `check` also reports the duplicate code
-and complex boolean expressions that a change adds, as qlty finds them, when qlty is installed.
+(25 in C and C++), or more than 4 parameters. `check` also reports duplicate code and
+complex boolean expressions that a change adds. It uses qlty, and skips these checks
+when qlty is missing.
 
     code-shape hook                           Claude Code PostToolUse hook; reads the event on stdin
     code-shape check --base REV [--head REV]  check files changed from REV to REV or the working tree
@@ -49,11 +50,11 @@ SMELL_LABELS = {
     "qlty:similar-code": "similar code",
 }
 QLTY_TIMEOUT_SECONDS = 600
-# qlty labels a copied block identical or similar depending on the other copies it
-# sees, so editing one copy relabels the whole group. Both labels count as one smell.
+# qlty labels a copied block identical or similar depending on the other copies it sees.
+# Editing one copy relabels the whole group, so both labels count as one smell.
 DUPLICATION_RULES = {"qlty:identical-code", "qlty:similar-code"}
 # qlty reads its settings from the repository it runs in. Only the smells in
-# SMELL_LABELS stay on, at qlty's default thresholds; this script measures the
+# SMELL_LABELS stay on, at qlty's default thresholds. This script measures the
 # function limits itself.
 QLTY_CONFIG = """\
 config_version = "0"
@@ -255,8 +256,8 @@ def parse_raw_diff(raw):
 
 
 def regular_files(root, *selection):
-    """List the unignored regular files that `git ls-files` selects; nested repositories,
-    symlinks, and deleted files are left out."""
+    """List the unignored regular files that `git ls-files` selects. Leave out nested
+    repositories, symlinks, and deleted files."""
     paths = git(root, "ls-files", "-z", "--exclude-standard", *selection).split("\0")
     return [path for path in dict.fromkeys(paths)
             if path and Path(root, path).is_file() and not Path(root, path).is_symlink()]
@@ -380,10 +381,9 @@ def limit_breaks(path, suffix, shape, previous):
 
 
 def smell_breaks(root, base, head, changes):
-    """Describe each duplicate block or complex boolean expression that qlty finds at
-    head on lines the change added or edited, unless qlty found the same smell at base
-    where the smell's first line came from. These checks are optional: when qlty is
-    missing or fails, a warning replaces them."""
+    """Describe each smell qlty finds at head on lines the change added or edited. Skip
+    a smell that qlty also found at base where it started. These checks are optional:
+    when qlty is missing or fails, a warning replaces them."""
     qlty = shutil.which("qlty")
     if qlty is None:
         print("code-shape: qlty not found; skipped the duplication and boolean logic checks",
@@ -407,15 +407,15 @@ def smell_breaks(root, base, head, changes):
 
 
 def is_new_smell(smell, change, unchanged, base_smells):
-    """Tell whether the change added or edited a line of smell and base had no such
-    smell where the smell started. unchanged maps head lines to base lines."""
+    """Tell whether the change added or edited a line of smell. Base must also lack the
+    smell where it starts. unchanged maps head lines to base lines."""
     lines = range(smell.line, smell.end_line + 1)
     kept = [line for line in lines if line in unchanged]
     if len(kept) == len(lines):
         return False
     if change.old_path is None or not kept:
         return True
-    # The first line may itself be edited, so place the start by the first kept line.
+    # The first line may be edited, so place the start by the first kept line.
     base_line = unchanged[kept[0]] - (kept[0] - smell.line)
     return smell_key(smell, change.old_path, base_line) not in base_smells
 
@@ -427,7 +427,7 @@ def smell_key(smell, path, line):
 
 def revision_sources(root, revision):
     """Yield (path, text) for each regular file at revision that could be source, as
-    stored: no .gitattributes export rules or filters such as Git LFS apply."""
+    stored. No .gitattributes export rules or filters, such as Git Large File Storage, apply."""
     blobs = []
     for entry in git(root, "ls-tree", "-r", "-z", revision).split("\0"):
         if not entry:
@@ -450,8 +450,8 @@ def revision_sources(root, revision):
 
 
 def working_tree_sources(root):
-    """Yield (path, text) for each tracked or untracked, unignored regular file in the
-    working tree that could be source."""
+    """Yield (path, text) for each regular source file in the working tree. Tracked and
+    untracked files count, unless ignored."""
     for path in regular_files(root, "--cached", "--others"):
         if could_be_source(path):
             yield path, read_text(Path(root, path))
@@ -459,10 +459,10 @@ def working_tree_sources(root):
 
 def run_qlty(qlty, sources):
     """Write sources to a new repository with QLTY_CONFIG and return the smells qlty
-    finds there. qlty skips files without a suffix, so an extensionless script gets a
+    finds there. qlty skips files without a suffix. An extensionless script gets a
     marker and its language's suffix, which the smells drop again."""
-    # A GIT_DIR or GIT_INDEX_FILE inherited from a Git hook would point git and qlty
-    # at the user's repository instead of the new one.
+    # A Git hook may set GIT_DIR or GIT_INDEX_FILE. Inherited, they would point git and
+    # qlty at the user's repository instead of the new one.
     env = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")}
     with tempfile.TemporaryDirectory(prefix="code-shape-qlty-") as directory:
         real_paths = {}
@@ -498,15 +498,16 @@ def run_qlty(qlty, sources):
 
 
 def sarif_smell(result, real_paths):
-    """Return the Smell in a qlty SARIF result, with paths of the repository checked."""
+    """Return the Smell in a qlty report result, with paths of the repository checked."""
     path, line, end_line = sarif_location(result["locations"][0], real_paths)
     others = tuple(sarif_location(location, real_paths)[:2] for location in result.get("relatedLocations", []))
     return Smell(result["ruleId"], path, line, end_line, others)
 
 
 def sarif_location(location, real_paths):
-    """Return (path, start line, end line) of a SARIF location."""
+    """Return (path, start line, end line) of a report result location."""
     physical = location["physicalLocation"]
+    # The report percent-encodes paths, so decode them to match the file names.
     name = urllib.parse.unquote(physical["artifactLocation"]["uri"])
     region = physical["region"]
     return real_paths.get(name, name), region["startLine"], region.get("endLine", region["startLine"])
