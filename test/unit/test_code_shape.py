@@ -470,8 +470,9 @@ class SmellTests(CodeShapeTestCase):
     def test_only_smells_the_change_adds_are_reported(self):
         cases = [
             ("file with old smells edited", None, {"old.py": OLD + SMALL, "copy_b.py": OLD_COPIES + SMALL}, []),
-            ("copy added", None, {"new.py": summing("first", 3)},
-             ["new.py:1: identical code: 18 lines, also at old.py:1"]),
+            ("copy of an edited file's untouched code added", None,
+             {"new.py": summing("first", 3), "old.py": OLD + SMALL},
+             ["new.py:1: identical code, also at old.py:1"]),
             ("expression added", None, {"old.py": OLD + LATER}, ["old.py:26: complex boolean expression"]),
             ("renamed with git mv", "git", {"moved.py": OLD + SMALL}, []),
             ("moved without git", "filesystem", {"moved.py": OLD}, []),
@@ -526,13 +527,35 @@ class SmellTests(CodeShapeTestCase):
         bin_directory = Path(self.directory.name, "bin")
         bin_directory.mkdir()
         (bin_directory / "git").symlink_to(git)
-        self.env["PATH"] = str(bin_directory)
+        # uv finds its Python on the system PATH; qlty is never installed there.
+        self.env["PATH"] = f"{bin_directory}:/usr/bin:/bin"
         self.write("new.py", summing("first", 3) + "\n\n" + nested_python(4))
         result = self.code_shape("check", "--base", "HEAD")
         self.assertEqual((result.returncode, result.stdout.splitlines()),
                          (1, ["new.py:21: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
         self.assertIn("qlty not found", result.stderr)
 
+    def test_failing_qlty_still_prints_function_limits(self):
+        bin_directory = Path(self.directory.name, "bin")
+        bin_directory.mkdir()
+        qlty = bin_directory / "qlty"
+        qlty.write_text("#!/bin/sh\necho 'qlty: internal failure' >&2\nexit 3\n")
+        qlty.chmod(0o755)
+        self.env["PATH"] = f"{bin_directory}:{self.env['PATH']}"
+        self.write("new.py", nested_python(4))
+        result = self.code_shape("check", "--base", "HEAD")
+        self.assertEqual((result.returncode, result.stdout.splitlines()),
+                         (2, ["new.py:1: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
+        self.assertIn("qlty: internal failure", result.stderr)
+
+    def test_export_ignored_files_are_checked(self):
+        self.write(".gitattributes", "old.py export-ignore\n")
+        self.commit("export-ignore")
+        self.write("old.py", OLD + LATER)
+        self.commit("later")
+        result = self.code_shape("check", "--base", "HEAD~1", "--head", "HEAD")
+        self.assertEqual((result.returncode, result.stdout.splitlines()),
+                         (1, ["old.py:26: complex boolean expression"]), result.stderr)
 
 class HookTests(CodeShapeTestCase):
     def run_hook(self, tool, file_path, response):

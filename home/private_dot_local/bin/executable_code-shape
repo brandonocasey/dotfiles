@@ -13,14 +13,12 @@ and complex boolean expressions that a change adds, as qlty finds them, when qlt
 """
 import argparse
 import difflib
-import io
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
-import tarfile
 import tempfile
 import urllib.parse
 from collections import defaultdict
@@ -50,9 +48,7 @@ SMELL_LABELS = {
     "qlty:identical-code": "identical code",
     "qlty:similar-code": "similar code",
 }
-# qlty labels a copied block identical or similar depending on which other copies
-# it sees, so a block counts as the same smell under either label.
-DUPLICATION_RULES = {"qlty:identical-code", "qlty:similar-code"}
+QLTY_TIMEOUT_SECONDS = 600
 # qlty reads its settings from the repository it runs in. Only the smells in
 # SMELL_LABELS stay on, at qlty's default thresholds; this script measures the
 # function limits itself.
@@ -197,10 +193,13 @@ def run_check(base, head):
         before = git(root, "show", f"{base}:{old_path}") if old_path else ""
         changes[new_path] = Change(old_path, before, after)
         messages += breaks(new_path, suffix, before, after)
-    if changes:
-        messages += smell_breaks(root, base, head, changes)
+    # Print the function limits first, so they still show when qlty fails.
     for message in messages:
         print(message)
+    smells = smell_breaks(root, base, head, changes) if changes else []
+    for message in smells:
+        print(message)
+    messages += smells
     summary = f"{count_of(len(messages), 'break')} in {count_of(len(changes), 'changed source file')}"
     print(f"code-shape: {summary}", file=sys.stderr)
     return 1 if messages else 0
@@ -226,7 +225,7 @@ def working_tree_diff(root, base):
     """Return the raw diff from base to the working tree, untracked files included, so a
     file moved to an untracked path counts as renamed. The untracked files become
     intent-to-add entries in a copy of the index; the real index is left alone."""
-    untracked = untracked_files(root)
+    untracked = regular_files(root, "--others")
     real_index = Path(root, git(root, "rev-parse", "--git-path", "index").strip())
     with tempfile.TemporaryDirectory(prefix="code-shape-") as directory:
         index = Path(directory, "index")
@@ -255,10 +254,12 @@ def parse_raw_diff(raw):
         yield (None if status[0] == "A" else paths[0]), paths[-1]
 
 
-def untracked_files(root):
-    """List untracked, unignored regular files; nested repositories and symlinks are left out."""
-    paths = git(root, "ls-files", "--others", "--exclude-standard", "-z").split("\0")
-    return [path for path in paths if Path(root, path).is_file() and not Path(root, path).is_symlink()]
+def regular_files(root, *selection):
+    """List the unignored regular files that `git ls-files` selects; nested repositories,
+    symlinks, and deleted files are left out."""
+    paths = git(root, "ls-files", "-z", "--exclude-standard", *selection).split("\0")
+    return [path for path in dict.fromkeys(paths)
+            if path and Path(root, path).is_file() and not Path(root, path).is_symlink()]
 
 
 def could_be_source(path):
@@ -379,54 +380,64 @@ def limit_breaks(path, suffix, shape, previous):
 
 
 def smell_breaks(root, base, head, changes):
-    """Describe each duplicate block or complex boolean expression that qlty finds in a
-    changed file at head, unless qlty found the same smell at that line at base and the
-    change left the line in place. A new copy of old code is reported where it was added."""
+    """Describe each duplicate block or complex boolean expression that qlty finds at
+    head on lines the change added or edited, unless qlty found the same smell at base
+    where the smell's first line came from."""
     qlty = shutil.which("qlty")
     if qlty is None:
         print("code-shape: qlty not found; skipped the duplication and boolean logic checks",
               file=sys.stderr)
         return []
-    base_smells = {smell_key(smell, smell.path, smell.line) for smell in run_qlty(qlty, revision_sources(root, base))}
+    base_smells = {(smell.rule, smell.path, smell.line) for smell in run_qlty(qlty, revision_sources(root, base))}
     head_sources = revision_sources(root, head) if head else working_tree_sources(root)
-    line_maps = {}
+    line_maps = {path: unchanged_lines(change.before, change.after) for path, change in changes.items()}
     messages = []
     for smell in run_qlty(qlty, head_sources):
         change = changes.get(smell.path)
-        if change is None:
-            continue
-        if change.old_path is not None:
-            if smell.path not in line_maps:
-                line_maps[smell.path] = unchanged_lines(change.before, change.after)
-            before_line = line_maps[smell.path].get(smell.line)
-            if smell_key(smell, change.old_path, before_line) in base_smells:
-                continue
-        messages.append(smell_message(smell))
+        if change is not None and is_new_smell(smell, change, line_maps[smell.path], base_smells):
+            messages.append(smell_message(smell))
     return list(dict.fromkeys(messages))
 
 
-def smell_key(smell, path, line):
-    kind = "duplication" if smell.rule in DUPLICATION_RULES else smell.rule
-    return kind, path, line
+def is_new_smell(smell, change, unchanged, base_smells):
+    """Tell whether the change added or edited a line of smell and base had no such
+    smell where its first line came from. unchanged maps head lines to base lines."""
+    lines = range(smell.line, smell.end_line + 1)
+    if all(line in unchanged for line in lines):
+        return False
+    return change.old_path is None or (smell.rule, change.old_path, unchanged.get(smell.line)) not in base_smells
 
 
 def revision_sources(root, revision):
-    """Yield (path, text) for each regular file at revision that could be source."""
-    archive = git_bytes(root, "archive", "--format=tar", revision)
-    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-        for member in tar:
-            if member.isfile() and could_be_source(member.name):
-                yield member.name, tar.extractfile(member).read().decode("utf-8", errors="replace")
+    """Yield (path, text) for each regular file at revision that could be source, as
+    stored: no .gitattributes export rules or filters such as Git LFS apply."""
+    blobs = []
+    for entry in git(root, "ls-tree", "-r", "-z", revision).split("\0"):
+        if not entry:
+            continue
+        info, path = entry.split("\t", 1)
+        mode, kind, object_id = info.split()
+        if kind == "blob" and mode not in SKIPPED_MODES and could_be_source(path):
+            blobs.append((path, object_id))
+    if not blobs:
+        return
+    # Each object prints as "<id> blob <size>\n<content>\n".
+    output = git_bytes(root, "cat-file", "--batch", stdin="".join(f"{object_id}\n" for _, object_id in blobs))
+    offset = 0
+    for path, _ in blobs:
+        header_end = output.index(b"\n", offset)
+        size = int(output[offset:header_end].split()[2])
+        start = header_end + 1
+        yield path, output[start:start + size].decode("utf-8", errors="replace")
+        offset = start + size + 1
 
 
 def working_tree_sources(root):
     """Yield (path, text) for each tracked or untracked, unignored regular file in the
     working tree that could be source."""
-    paths = git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").split("\0")
-    for path in dict.fromkeys(paths):
-        file = Path(root, path)
-        if path and could_be_source(path) and file.is_file() and not file.is_symlink():
-            yield path, read_text(file)
+    for path in regular_files(root, "--cached", "--others"):
+        if could_be_source(path):
+            yield path, read_text(Path(root, path))
 
 
 def run_qlty(qlty, sources):
@@ -450,8 +461,12 @@ def run_qlty(qlty, sources):
         Path(directory, ".qlty").mkdir(exist_ok=True)
         Path(directory, ".qlty", "qlty.toml").write_text(QLTY_CONFIG)
         git(directory, "init", "-q", env=env)
-        result = subprocess.run([qlty, "smells", "--all", "--sarif", "--no-upgrade-check"],
-                                cwd=directory, env=env, capture_output=True, text=True)
+        try:
+            result = subprocess.run([qlty, "smells", "--all", "--sarif", "--no-upgrade-check"],
+                                    cwd=directory, env=env, capture_output=True, text=True,
+                                    timeout=QLTY_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired as error:
+            raise ShapeError(f"qlty smells did not finish in {QLTY_TIMEOUT_SECONDS} seconds") from error
     if result.returncode != 0:
         error = "\n".join(result.stderr.strip().splitlines()[-20:])
         raise ShapeError(f"qlty smells failed: {error}")
@@ -482,7 +497,7 @@ def smell_message(smell):
     if not smell.others:
         return f"{smell.path}:{smell.line}: {label}"
     others = ", ".join(f"{path}:{line}" for path, line in smell.others)
-    return f"{smell.path}:{smell.line}: {label}: {smell.end_line - smell.line + 1} lines, also at {others}"
+    return f"{smell.path}:{smell.line}: {label}, also at {others}"
 
 
 def measure(path, suffix, source):
