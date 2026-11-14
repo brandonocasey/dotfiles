@@ -49,6 +49,9 @@ SMELL_LABELS = {
     "qlty:similar-code": "similar code",
 }
 QLTY_TIMEOUT_SECONDS = 600
+# qlty labels a copied block identical or similar depending on the other copies it
+# sees, so editing one copy relabels the whole group. Both labels count as one smell.
+DUPLICATION_RULES = {"qlty:identical-code", "qlty:similar-code"}
 # qlty reads its settings from the repository it runs in. Only the smells in
 # SMELL_LABELS stay on, at qlty's default thresholds; this script measures the
 # function limits itself.
@@ -193,13 +196,10 @@ def run_check(base, head):
         before = git(root, "show", f"{base}:{old_path}") if old_path else ""
         changes[new_path] = Change(old_path, before, after)
         messages += breaks(new_path, suffix, before, after)
-    # Print the function limits first, so they still show when qlty fails.
+    if changes:
+        messages += smell_breaks(root, base, head, changes)
     for message in messages:
         print(message)
-    smells = smell_breaks(root, base, head, changes) if changes else []
-    for message in smells:
-        print(message)
-    messages += smells
     summary = f"{count_of(len(messages), 'break')} in {count_of(len(changes), 'changed source file')}"
     print(f"code-shape: {summary}", file=sys.stderr)
     return 1 if messages else 0
@@ -382,17 +382,24 @@ def limit_breaks(path, suffix, shape, previous):
 def smell_breaks(root, base, head, changes):
     """Describe each duplicate block or complex boolean expression that qlty finds at
     head on lines the change added or edited, unless qlty found the same smell at base
-    where the smell's first line came from."""
+    where the smell's first line came from. These checks are optional: when qlty is
+    missing or fails, a warning replaces them."""
     qlty = shutil.which("qlty")
     if qlty is None:
         print("code-shape: qlty not found; skipped the duplication and boolean logic checks",
               file=sys.stderr)
         return []
-    base_smells = {(smell.rule, smell.path, smell.line) for smell in run_qlty(qlty, revision_sources(root, base))}
     head_sources = revision_sources(root, head) if head else working_tree_sources(root)
+    try:
+        base_smells = {smell_key(smell, smell.path, smell.line)
+                       for smell in run_qlty(qlty, revision_sources(root, base))}
+        head_smells = run_qlty(qlty, head_sources)
+    except ShapeError as error:
+        print(f"code-shape: {error}; skipped the duplication and boolean logic checks", file=sys.stderr)
+        return []
     line_maps = {path: unchanged_lines(change.before, change.after) for path, change in changes.items()}
     messages = []
-    for smell in run_qlty(qlty, head_sources):
+    for smell in head_smells:
         change = changes.get(smell.path)
         if change is not None and is_new_smell(smell, change, line_maps[smell.path], base_smells):
             messages.append(smell_message(smell))
@@ -401,11 +408,21 @@ def smell_breaks(root, base, head, changes):
 
 def is_new_smell(smell, change, unchanged, base_smells):
     """Tell whether the change added or edited a line of smell and base had no such
-    smell where its first line came from. unchanged maps head lines to base lines."""
+    smell where the smell started. unchanged maps head lines to base lines."""
     lines = range(smell.line, smell.end_line + 1)
-    if all(line in unchanged for line in lines):
+    kept = [line for line in lines if line in unchanged]
+    if len(kept) == len(lines):
         return False
-    return change.old_path is None or (smell.rule, change.old_path, unchanged.get(smell.line)) not in base_smells
+    if change.old_path is None or not kept:
+        return True
+    # The first line may itself be edited, so place the start by the first kept line.
+    base_line = unchanged[kept[0]] - (kept[0] - smell.line)
+    return smell_key(smell, change.old_path, base_line) not in base_smells
+
+
+def smell_key(smell, path, line):
+    kind = "duplication" if smell.rule in DUPLICATION_RULES else smell.rule
+    return kind, path, line
 
 
 def revision_sources(root, revision):
@@ -467,8 +484,11 @@ def run_qlty(qlty, sources):
                                     timeout=QLTY_TIMEOUT_SECONDS)
         except subprocess.TimeoutExpired as error:
             raise ShapeError(f"qlty smells did not finish in {QLTY_TIMEOUT_SECONDS} seconds") from error
+        except OSError as error:
+            raise ShapeError(f"qlty smells could not start: {error}") from error
     if result.returncode != 0:
-        error = "\n".join(result.stderr.strip().splitlines()[-20:])
+        # One line, so the warning's "skipped" phrase stays on the line that names the cause.
+        error = " | ".join(result.stderr.strip().splitlines()[-20:]) or f"exit status {result.returncode}"
         raise ShapeError(f"qlty smells failed: {error}")
     try:
         results = json.loads(result.stdout)["runs"][0]["results"]

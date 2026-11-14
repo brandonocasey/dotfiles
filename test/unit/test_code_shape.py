@@ -495,15 +495,21 @@ class SmellTests(CodeShapeTestCase):
                 self.assertEqual((result.returncode, result.stdout.splitlines()),
                                  (1 if expected else 0, expected), result.stderr)
 
-    def test_copy_that_qlty_relabels_is_not_new(self):
-        # With a similar third copy in old.py, qlty labels an edited copy of a pair
-        # similar instead of identical.
-        self.write("pair_a.py", summing("other", 7))
-        self.write("pair_b.py", summing("other", 7))
+    def test_edited_copy_that_qlty_relabels_is_not_new(self):
+        # qlty reports these two copies as identical code, and as similar code once
+        # one line of one copy changes.
+        body = "".join(f"    if values.get('k{n}') is not None:\n        names.append(str(values['k{n}']).upper())\n"
+                       for n in range(8))
+        pair = f"def labels(values):\n    names = []\n{body}    return names\n"
+        self.write("pair_a.py", pair)
+        self.write("pair_b.py", pair)
         self.commit("pair")
-        self.write("pair_b.py", summing("other", 7) + SMALL)
-        result = self.code_shape("check", "--base", "HEAD")
-        self.assertEqual((result.returncode, result.stdout), (0, ""), result.stderr)
+        for name, edited in [("inner line", pair.replace("upper()", "lower()", 1)),
+                             ("first line", pair.replace("def labels", "def other_labels"))]:
+            with self.subTest(name):
+                self.write("pair_b.py", edited)
+                result = self.code_shape("check", "--base", "HEAD")
+                self.assertEqual((result.returncode, result.stdout), (0, ""), result.stderr)
 
     def test_git_hook_environment_is_ignored(self):
         self.write("old.py", OLD + LATER)
@@ -535,18 +541,25 @@ class SmellTests(CodeShapeTestCase):
                          (1, ["new.py:21: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
         self.assertIn("qlty not found", result.stderr)
 
-    def test_failing_qlty_still_prints_function_limits(self):
+    def test_failing_qlty_skips_smells(self):
         bin_directory = Path(self.directory.name, "bin")
         bin_directory.mkdir()
         qlty = bin_directory / "qlty"
-        qlty.write_text("#!/bin/sh\necho 'qlty: internal failure' >&2\nexit 3\n")
-        qlty.chmod(0o755)
         self.env["PATH"] = f"{bin_directory}:{self.env['PATH']}"
         self.write("new.py", nested_python(4))
-        result = self.code_shape("check", "--base", "HEAD")
-        self.assertEqual((result.returncode, result.stdout.splitlines()),
-                         (2, ["new.py:1: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
-        self.assertIn("qlty: internal failure", result.stderr)
+        cases = [
+            ("exits with an error", "#!/bin/sh\necho 'qlty: internal failure' >&2\nexit 3\n",
+             "qlty smells failed: qlty: internal failure"),
+            ("cannot start", "no shebang\n", "qlty smells could not start"),
+        ]
+        for name, script, warning in cases:
+            with self.subTest(name):
+                qlty.write_text(script)
+                qlty.chmod(0o755)
+                result = self.code_shape("check", "--base", "HEAD")
+                self.assertEqual((result.returncode, result.stdout.splitlines()),
+                                 (1, ["new.py:1: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
+                self.assertIn(warning, result.stderr)
 
     def test_export_ignored_files_are_checked(self):
         self.write(".gitattributes", "old.py export-ignore\n")
@@ -556,6 +569,7 @@ class SmellTests(CodeShapeTestCase):
         result = self.code_shape("check", "--base", "HEAD~1", "--head", "HEAD")
         self.assertEqual((result.returncode, result.stdout.splitlines()),
                          (1, ["old.py:26: complex boolean expression"]), result.stderr)
+
 
 class HookTests(CodeShapeTestCase):
     def run_hook(self, tool, file_path, response):
