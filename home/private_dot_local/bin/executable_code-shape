@@ -5,23 +5,28 @@
 # ///
 """Report functions that a change adds or makes worse past the limits in
 code-quality.md: more than 3 nested control blocks, cognitive complexity over 15
-(25 in C and C++), or more than 4 parameters.
+(25 in C and C++), or more than 4 parameters. `check` also reports the duplicate code
+and complex boolean expressions that a change adds, as qlty finds them, when qlty is installed.
 
     code-shape hook                           Claude Code PostToolUse hook; reads the event on stdin
     code-shape check --base REV [--head REV]  check files changed from REV to REV or the working tree
 """
 import argparse
 import difflib
+import io
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
+import urllib.parse
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional, Tuple
 
 import lizard
 
@@ -39,6 +44,36 @@ CHECKED_SUFFIXES = C_FAMILY_SUFFIXES | {
 RECOUNTED_SUFFIXES = {".rs", ".kt", ".swift"}
 # Git modes of symlinks and submodules, which have no source text of their own.
 SKIPPED_MODES = {"120000", "160000"}
+
+SMELL_LABELS = {
+    "qlty:boolean-logic": "complex boolean expression",
+    "qlty:identical-code": "identical code",
+    "qlty:similar-code": "similar code",
+}
+# qlty labels a copied block identical or similar depending on which other copies
+# it sees, so a block counts as the same smell under either label.
+DUPLICATION_RULES = {"qlty:identical-code", "qlty:similar-code"}
+# qlty reads its settings from the repository it runs in. Only the smells in
+# SMELL_LABELS stay on, at qlty's default thresholds; this script measures the
+# function limits itself.
+QLTY_CONFIG = """\
+config_version = "0"
+
+[smells.function_complexity]
+enabled = false
+
+[smells.nested_control_flow]
+enabled = false
+
+[smells.function_parameters]
+enabled = false
+
+[smells.return_statements]
+enabled = false
+
+[smells.file_complexity]
+enabled = false
+"""
 
 HOOK_REASON = (
     "code-shape: this edit added or worsened functions past the Readability limits in"
@@ -82,6 +117,22 @@ class Shape:
     nesting: int
     cognitive: int
     parameters: int
+
+
+@dataclass
+class Change:
+    old_path: Optional[str]
+    before: str
+    after: str
+
+
+@dataclass(frozen=True)
+class Smell:
+    rule: str
+    path: str
+    line: int
+    end_line: int
+    others: Tuple[Tuple[str, int], ...]
 
 
 def main(argv):
@@ -137,18 +188,20 @@ def hook_reply(event):
 def run_check(base, head):
     root = git(".", "rev-parse", "--show-toplevel").strip()
     messages = []
-    checked = 0
+    changes = {}
     for old_path, new_path in changed_files(root, base, head):
         after = git(root, "show", f"{head}:{new_path}") if head else read_text(Path(root, new_path))
         suffix = source_suffix(new_path, after)
         if suffix is None:
             continue
-        checked += 1
         before = git(root, "show", f"{base}:{old_path}") if old_path else ""
+        changes[new_path] = Change(old_path, before, after)
         messages += breaks(new_path, suffix, before, after)
+    if changes:
+        messages += smell_breaks(root, base, head, changes)
     for message in messages:
         print(message)
-    summary = f"{count_of(len(messages), 'break')} in {count_of(checked, 'changed source file')}"
+    summary = f"{count_of(len(messages), 'break')} in {count_of(len(changes), 'changed source file')}"
     print(f"code-shape: {summary}", file=sys.stderr)
     return 1 if messages else 0
 
@@ -237,12 +290,16 @@ def read_text(path):
 
 
 def git(root, *args, env=None, stdin=None):
+    return git_bytes(root, *args, env=env, stdin=stdin).decode("utf-8", errors="replace")
+
+
+def git_bytes(root, *args, env=None, stdin=None):
     result = subprocess.run(["git", "-C", root, *args], capture_output=True, env=env,
                             input=None if stdin is None else stdin.encode())
     if result.returncode != 0:
         error = result.stderr.decode("utf-8", errors="replace").strip()
         raise ShapeError(f"git {' '.join(args)} failed: {error}")
-    return result.stdout.decode("utf-8", errors="replace")
+    return result.stdout
 
 
 def breaks(path, suffix, before_source, after_source):
@@ -319,6 +376,113 @@ def limit_breaks(path, suffix, shape, previous):
         history = "new function" if old_value is None else f"was {old_value}"
         messages.append(f"{path}:{shape.line}: {shape.name}: {label} {value} > {cap} ({history})")
     return messages
+
+
+def smell_breaks(root, base, head, changes):
+    """Describe each duplicate block or complex boolean expression that qlty finds in a
+    changed file at head, unless qlty found the same smell at that line at base and the
+    change left the line in place. A new copy of old code is reported where it was added."""
+    qlty = shutil.which("qlty")
+    if qlty is None:
+        print("code-shape: qlty not found; skipped the duplication and boolean logic checks",
+              file=sys.stderr)
+        return []
+    base_smells = {smell_key(smell, smell.path, smell.line) for smell in run_qlty(qlty, revision_sources(root, base))}
+    head_sources = revision_sources(root, head) if head else working_tree_sources(root)
+    line_maps = {}
+    messages = []
+    for smell in run_qlty(qlty, head_sources):
+        change = changes.get(smell.path)
+        if change is None:
+            continue
+        if change.old_path is not None:
+            if smell.path not in line_maps:
+                line_maps[smell.path] = unchanged_lines(change.before, change.after)
+            before_line = line_maps[smell.path].get(smell.line)
+            if smell_key(smell, change.old_path, before_line) in base_smells:
+                continue
+        messages.append(smell_message(smell))
+    return list(dict.fromkeys(messages))
+
+
+def smell_key(smell, path, line):
+    kind = "duplication" if smell.rule in DUPLICATION_RULES else smell.rule
+    return kind, path, line
+
+
+def revision_sources(root, revision):
+    """Yield (path, text) for each regular file at revision that could be source."""
+    archive = git_bytes(root, "archive", "--format=tar", revision)
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        for member in tar:
+            if member.isfile() and could_be_source(member.name):
+                yield member.name, tar.extractfile(member).read().decode("utf-8", errors="replace")
+
+
+def working_tree_sources(root):
+    """Yield (path, text) for each tracked or untracked, unignored regular file in the
+    working tree that could be source."""
+    paths = git(root, "ls-files", "-z", "--cached", "--others", "--exclude-standard").split("\0")
+    for path in dict.fromkeys(paths):
+        file = Path(root, path)
+        if path and could_be_source(path) and file.is_file() and not file.is_symlink():
+            yield path, read_text(file)
+
+
+def run_qlty(qlty, sources):
+    """Write sources to a new repository with QLTY_CONFIG and return the smells qlty
+    finds there. qlty skips files without a suffix, so an extensionless script gets a
+    marker and its language's suffix, which the smells drop again."""
+    # A GIT_DIR or GIT_INDEX_FILE inherited from a Git hook would point git and qlty
+    # at the user's repository instead of the new one.
+    env = {name: value for name, value in os.environ.items() if not name.startswith("GIT_")}
+    with tempfile.TemporaryDirectory(prefix="code-shape-qlty-") as directory:
+        real_paths = {}
+        for path, text in sources:
+            suffix = source_suffix(path, text)
+            if suffix is None:
+                continue
+            name = path if Path(path).suffix else f"{path}.code-shape{suffix}"
+            target = Path(directory, name)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8")
+            real_paths[name] = path
+        Path(directory, ".qlty").mkdir(exist_ok=True)
+        Path(directory, ".qlty", "qlty.toml").write_text(QLTY_CONFIG)
+        git(directory, "init", "-q", env=env)
+        result = subprocess.run([qlty, "smells", "--all", "--sarif", "--no-upgrade-check"],
+                                cwd=directory, env=env, capture_output=True, text=True)
+    if result.returncode != 0:
+        error = "\n".join(result.stderr.strip().splitlines()[-20:])
+        raise ShapeError(f"qlty smells failed: {error}")
+    try:
+        results = json.loads(result.stdout)["runs"][0]["results"]
+    except (json.JSONDecodeError, KeyError, IndexError, TypeError) as error:
+        raise ShapeError(f"qlty smells printed no SARIF report: {error!r}") from error
+    return [sarif_smell(entry, real_paths) for entry in results if entry.get("ruleId") in SMELL_LABELS]
+
+
+def sarif_smell(result, real_paths):
+    """Return the Smell in a qlty SARIF result, with paths of the repository checked."""
+    path, line, end_line = sarif_location(result["locations"][0], real_paths)
+    others = tuple(sarif_location(location, real_paths)[:2] for location in result.get("relatedLocations", []))
+    return Smell(result["ruleId"], path, line, end_line, others)
+
+
+def sarif_location(location, real_paths):
+    """Return (path, start line, end line) of a SARIF location."""
+    physical = location["physicalLocation"]
+    name = urllib.parse.unquote(physical["artifactLocation"]["uri"])
+    region = physical["region"]
+    return real_paths.get(name, name), region["startLine"], region.get("endLine", region["startLine"])
+
+
+def smell_message(smell):
+    label = SMELL_LABELS[smell.rule]
+    if not smell.others:
+        return f"{smell.path}:{smell.line}: {label}"
+    others = ", ".join(f"{path}:{line}" for path, line in smell.others)
+    return f"{smell.path}:{smell.line}: {label}: {smell.end_line - smell.line + 1} lines, also at {others}"
 
 
 def measure(path, suffix, source):

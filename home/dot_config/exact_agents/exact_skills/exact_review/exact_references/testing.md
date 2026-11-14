@@ -128,8 +128,10 @@ review (`--target <key>` or `--range <range>`; [store.md](store.md)):
    line change ([remote-comments.md](remote-comments.md)). Use the severity scale of
    [output.md](output.md); `--type question` for a behavior change the user must
    confirm. File each line of a failed `code-shape` check as its own
-   `--type requirement` comment with no severity, whose body quotes the limit from
-   [code-quality.md](../../code-standards/references/code-quality.md) **Readability**.
+   `--type requirement` comment with no severity, whose body quotes the rule it breaks from
+   [code-quality.md](../../code-standards/references/code-quality.md): **No duplication** for
+   identical or similar code, the compound-condition rule for a complex boolean expression,
+   and the function limits in **Readability** for the rest.
    File a `pre-existing` failure as `--type comment` with a body that starts
    `Pre-existing bug (<severity>):`, so it never blocks approval. The tester's
    identity comes from the check's run.

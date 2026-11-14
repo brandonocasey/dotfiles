@@ -31,6 +31,16 @@ jobs:
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      # code-shape runs qlty for its duplication and boolean checks.
+      - name: Install qlty
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/qlty.tar.xz" https://github.com/qltysh/qlty/releases/download/v0.668.0/qlty-x86_64-unknown-linux-gnu.tar.xz
+          echo "59318df9b8d264c9544ae426007867fcbf62417f68bdac28f1e2799b73d6ebfc  $RUNNER_TEMP/qlty.tar.xz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/qlty"
+          tar -xJf "$RUNNER_TEMP/qlty.tar.xz" -C "$RUNNER_TEMP/qlty"
+          install -D "$(find "$RUNNER_TEMP/qlty" -type f -name qlty)" "$HOME/.local/bin/qlty"
+          qlty --version
+
       - name: Python tests
         run: python3 -m unittest discover -s test/unit -v
 

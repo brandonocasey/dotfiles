@@ -437,6 +437,103 @@ class CheckTests(CodeShapeTestCase):
         self.assertIn("no-such-revision", result.stderr)
 
 
+def summing(name, factor):
+    """Python source for an 18-line function, long enough for qlty to report a copy of it."""
+    body = "".join(f"    total += values[{n}] * {n + factor}\n" for n in range(15))
+    return f"def {name}(values):\n    total = 0\n{body}    return total\n"
+
+
+# qlty reports a chain of 5 or more terms joined by one operator as a complex boolean expression.
+READY = "\n\ndef ready(a, b):\n    return a.x and a.y and b.x and b.y and a.z\n"
+LATER = "\n\ndef later(a, b):\n    return a.p and a.q and b.p and b.q and a.r\n"
+SMALL = "\n\ndef small(x):\n    return x\n"
+# old.py lines: summing 1-18, blank 19-20, ready 21-22, then LATER's def at 25.
+OLD = summing("first", 3) + READY
+OLD_COPIES = "def labels(values):\n    names = []\n" + "".join(
+    f"    names.append(str(values[{n}]).upper())\n" for n in range(15)) + "    return names\n"
+
+
+class SmellTests(CodeShapeTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if shutil.which("qlty") is None:
+            raise AssertionError("the smell checks run qlty; put qlty on PATH to run these tests")
+
+    def setUp(self):
+        super().setUp()
+        self.write("old.py", OLD)
+        self.write("copy_a.py", OLD_COPIES)
+        self.write("copy_b.py", OLD_COPIES)
+        self.commit("old smells")
+
+    def test_only_smells_the_change_adds_are_reported(self):
+        cases = [
+            ("file with old smells edited", None, {"old.py": OLD + SMALL, "copy_b.py": OLD_COPIES + SMALL}, []),
+            ("copy added", None, {"new.py": summing("first", 3)},
+             ["new.py:1: identical code: 18 lines, also at old.py:1"]),
+            ("expression added", None, {"old.py": OLD + LATER}, ["old.py:26: complex boolean expression"]),
+            ("renamed with git mv", "git", {"moved.py": OLD + SMALL}, []),
+            ("moved without git", "filesystem", {"moved.py": OLD}, []),
+            ("extensionless uv script", None, {"my tool": "#!/usr/bin/env -S uv run --script" + READY},
+             ["my tool:4: complex boolean expression"]),
+        ]
+        for name, move, files, expected in cases:
+            with self.subTest(name):
+                if move == "git":
+                    self.git("mv", "old.py", "moved.py")
+                elif move == "filesystem":
+                    (self.repo / "old.py").rename(self.repo / "moved.py")
+                for path, text in files.items():
+                    self.write(path, text)
+                try:
+                    result = self.code_shape("check", "--base", "HEAD")
+                finally:
+                    self.git("reset", "-q", "--hard")
+                    self.git("clean", "-fdq")
+                self.assertEqual((result.returncode, result.stdout.splitlines()),
+                                 (1 if expected else 0, expected), result.stderr)
+
+    def test_copy_that_qlty_relabels_is_not_new(self):
+        # With a similar third copy in old.py, qlty labels an edited copy of a pair
+        # similar instead of identical.
+        self.write("pair_a.py", summing("other", 7))
+        self.write("pair_b.py", summing("other", 7))
+        self.commit("pair")
+        self.write("pair_b.py", summing("other", 7) + SMALL)
+        result = self.code_shape("check", "--base", "HEAD")
+        self.assertEqual((result.returncode, result.stdout), (0, ""), result.stderr)
+
+    def test_git_hook_environment_is_ignored(self):
+        self.write("old.py", OLD + LATER)
+        self.env.update(GIT_DIR=str(self.repo / ".git"), GIT_INDEX_FILE=str(self.repo / ".git" / "index"))
+        result = self.code_shape("check", "--base", "HEAD")
+        self.assertEqual((result.returncode, result.stdout.splitlines()),
+                         (1, ["old.py:26: complex boolean expression"]), result.stderr)
+
+    def test_head_revision_is_read_from_git(self):
+        self.write("old.py", OLD + LATER)
+        self.commit("later")
+        self.write("old.py", OLD)
+        result = self.code_shape("check", "--base", "HEAD~1", "--head", "HEAD")
+        self.assertEqual((result.returncode, result.stdout.splitlines()),
+                         (1, ["old.py:26: complex boolean expression"]), result.stderr)
+
+    def test_missing_qlty_skips_smells(self):
+        git = shutil.which("git")
+        if git is None:
+            raise AssertionError("git is not on PATH")
+        bin_directory = Path(self.directory.name, "bin")
+        bin_directory.mkdir()
+        (bin_directory / "git").symlink_to(git)
+        self.env["PATH"] = str(bin_directory)
+        self.write("new.py", summing("first", 3) + "\n\n" + nested_python(4))
+        result = self.code_shape("check", "--base", "HEAD")
+        self.assertEqual((result.returncode, result.stdout.splitlines()),
+                         (1, ["new.py:21: nested: nesting depth 4 > 3 (new function)"]), result.stderr)
+        self.assertIn("qlty not found", result.stderr)
+
+
 class HookTests(CodeShapeTestCase):
     def run_hook(self, tool, file_path, response):
         event = {"session_id": "s", "transcript_path": "", "cwd": str(self.repo), "hook_event_name": "PostToolUse",
