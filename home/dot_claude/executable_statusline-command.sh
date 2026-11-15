@@ -361,23 +361,18 @@ color_for_pct() {
 }
 
 # --- Format a reset timestamp as a short countdown from now ---
-# Shows only the largest unit, rounded down to one decimal so it never
-# overstates the time left: "6.5d", "4.2h", "45m". Under 10 minutes it shows
-# seconds too: "5m27s", "0m05s". The unit sets the hue (days violet, hours
-# teal, minutes blue).
+# Shows the two largest units, rounded down so it never overstates the time
+# left: "6d03h", "4h12m", "45m". Under 10 minutes it shows seconds too:
+# "5m27s", "0m05s". The largest unit sets the hue (days violet, hours teal,
+# minutes blue).
 countdown_str() {
   awk -v r="$1" -v n="$(date +%s)" -v dim="$rl_dim" '
-  function part(v, u, c) {
-    v = sprintf("%.1f", int(v * 10) / 10)
-    sub(/\.0$/, "", v)
-    return c v u "\033[0m"
-  }
   BEGIN{
     DAYS = "\033[" dim "38;5;141m"; HOURS = "\033[" dim "38;5;43m"; MINS = "\033[" dim "38;5;111m"
     d = r - n
     if (d < 0) d = 0
-    if (d >= 86400)     out = part(d / 86400, "d", DAYS)
-    else if (d >= 3600) out = part(d / 3600, "h", HOURS)
+    if (d >= 86400)     out = DAYS sprintf("%dd%02dh", int(d / 86400), int(d % 86400 / 3600)) "\033[0m"
+    else if (d >= 3600) out = HOURS sprintf("%dh%02dm", int(d / 3600), int(d % 3600 / 60)) "\033[0m"
     else if (d >= 600)  out = MINS int(d / 60) "m\033[0m"
     else                out = MINS sprintf("%dm%02ds", int(d / 60), d % 60) "\033[0m"
     printf "%s", out
@@ -419,7 +414,7 @@ elapsed_awk='
 # step, in seconds, $5 = pace colour from rate_seg. The bar has one segment
 # per day of a window over a day long, else one per hour, whose last cell is
 # darker (fill faint, track 22 levels darker). Every bar is 35 cells, which
-# leaves room after the widest gauge ("23.9h", "100%", "▼100.0%") for the idle
+# leaves room after the widest gauge ("23h59m", "100%", "▼100.0%") for the idle
 # and cache labels in an 80-column terminal, where Claude Code indents the line
 # 2 columns and cuts it 2 short of the edge: 7 days of 5 cells, or 5 hours of 7. Cells are
 # "▇", which leaves the top eighth of the line blank so stacked bars don't
