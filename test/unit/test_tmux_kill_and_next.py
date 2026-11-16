@@ -1,4 +1,3 @@
-"""Exercise the kill binding with session names containing shell syntax."""
 import os
 from pathlib import Path
 import pty
