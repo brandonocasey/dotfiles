@@ -20,3 +20,4 @@
 .local/bin/agent-wait
 .codex/hooks/guard.py
 .config/git/hooks
+.local/bin/claude-api
