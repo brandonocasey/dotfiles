@@ -40,6 +40,8 @@ brew 'luajit'
 brew 'shellcheck'
 # secret scanner for staged changes (dotfiles-sync)
 brew 'gitleaks'
+tap 'qltysh/tap'
+brew 'qltysh/tap/qlty'
 # shell formatter to pair with shellcheck
 brew 'shfmt'
 # prompt spellcheck in Claude Code; unlike hunspell it ships an English dictionary
