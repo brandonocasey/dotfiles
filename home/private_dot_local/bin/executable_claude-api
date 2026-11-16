@@ -1,0 +1,16 @@
+#!/bin/bash
+# Runs claude billed to an Anthropic API key from pass instead of the subscription.
+# Same config dir, so sessions, settings, and --resume/--continue all carry over.
+# Usage: claude-api [claude args...]
+# Env: CLAUDE_API_PASS_ENTRY overrides the pass entry (default anthropic/api-key).
+
+ENTRY=${CLAUDE_API_PASS_ENTRY:-anthropic/api-key}
+
+if ! KEY=$(pass show "$ENTRY" | head -n 1) || [ -z "$KEY" ]; then
+    echo "claude-api: no key in pass entry '$ENTRY' (create it: pass insert $ENTRY)" >&2
+    exit 1
+fi
+
+# ANTHROPIC_AUTH_TOKEN would take precedence over the API key.
+unset ANTHROPIC_AUTH_TOKEN
+ANTHROPIC_API_KEY=$KEY exec claude "$@"
