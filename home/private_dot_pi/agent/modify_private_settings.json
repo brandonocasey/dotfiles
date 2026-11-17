@@ -30,7 +30,8 @@ managed='{
 
 # Shared skills live in ~/.agents/skills, which Pi scans recursively, so the
 # app-owned synced/<account>/ copies collide with each other. Mirror Codex:
-# hide the app-owned skills and any repeats.
+# hide the app-owned skills and any repeats. Pi finds them through the
+# ~/.agents/skills symlink, so exclude both path forms.
 skills='[]'
 if command -v jq >/dev/null 2>&1; then
   skill_lines=""
@@ -40,9 +41,9 @@ if command -v jq >/dev/null 2>&1; then
     dir=${skill_file%/SKILL.md}
     name=${dir##*/}
     case " docs docx pdf xlsx pptx google-workspace skill-creator chrome-browser computer-use built-in-browser " in
-      *" $name "*) skill_lines+="-$dir"$'\n'; continue ;;
+      *" $name "*) skill_lines+="-$dir"$'\n'"-${dir/\/.config\/agents\//\/.agents\/}"$'\n'; continue ;;
     esac
-    case "$seen" in *" $name "*) skill_lines+="-$dir"$'\n' ;; *) seen+="$name " ;; esac
+    case "$seen" in *" $name "*) skill_lines+="-$dir"$'\n'"-${dir/\/.config\/agents\//\/.agents\/}"$'\n' ;; *) seen+="$name " ;; esac
   done
   skills=$(printf '%s' "$skill_lines" | jq -R -s -c 'split("\n") | map(select(length > 0))')
 fi
