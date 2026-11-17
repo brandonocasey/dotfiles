@@ -1,0 +1,14 @@
+#!/bin/bash
+# Runs pi billed to an Anthropic API key from pass instead of its default provider.
+# Same ~/.pi config, so sessions, settings, and --resume/--continue all carry over.
+# Usage: claude-pi-api [pi args...]
+# Env: PI_API_PASS_ENTRY overrides the pass entry (default anthropic/api-key).
+
+ENTRY=${PI_API_PASS_ENTRY:-anthropic/api-key}
+
+if ! KEY=$(pass show "$ENTRY" | head -n 1) || [ -z "$KEY" ]; then
+    echo "claude-pi-api: no key in pass entry '$ENTRY' (create it: pass insert $ENTRY)" >&2
+    exit 1
+fi
+
+ANTHROPIC_API_KEY=$KEY exec pi --provider anthropic "$@"
