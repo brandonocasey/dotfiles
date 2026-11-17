@@ -6,8 +6,9 @@ set -euo pipefail
 managed='{
   "packages": [
     "npm:pi-mcp-adapter@2.32.1",
-    "npm:pi-subagents@0.63.0"
+    "npm:pi-subagents@0.88.1"
   ],
+  "extensions": ["-builtin:mcp"],
   "enableSkillCommands": true,
   "compaction": {
     "modelOverrides": {
@@ -27,6 +28,29 @@ managed='{
   }
 }'
 
+# Shared skills live in ~/.agents/skills, which Pi scans recursively, so the
+# app-owned synced/<account>/ copies collide with each other. Mirror Codex:
+# hide app-only skills and repeats, and load the compact docx/xlsx/pptx/pdf/
+# docs/google-workspace wrappers that read the synced skill on demand.
+skills='[]'
+if command -v jq >/dev/null 2>&1; then
+  skill_lines=""
+  for wrapper in docx xlsx pptx pdf docs google-workspace; do
+    [ -f "$HOME/.codex/skills/$wrapper/SKILL.md" ] && skill_lines+="$HOME/.codex/skills/$wrapper"$'\n'
+  done
+  seen=" "
+  for skill_file in "$HOME"/.config/agents/skills/synced/*/*/SKILL.md; do
+    [ -f "$skill_file" ] || continue
+    dir=${skill_file%/SKILL.md}
+    name=${dir##*/}
+    case " docs docx pdf xlsx pptx google-workspace skill-creator chrome-browser computer-use built-in-browser " in
+      *" $name "*) skill_lines+="-$dir"$'\n'; continue ;;
+    esac
+    case "$seen" in *" $name "*) skill_lines+="-$dir"$'\n' ;; *) seen+="$name " ;; esac
+  done
+  skills=$(printf '%s' "$skill_lines" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+fi
+
 live=$(cat)
 
 if ! command -v jq >/dev/null 2>&1; then
@@ -42,5 +66,5 @@ live=$(printf '%s' "$live" | jq -s -c \
   'first // {} | if type == "object" then . else {} end' 2>/dev/null) || live='{}'
 [ -n "$live" ] || live='{}'
 
-jq -n --argjson live "$live" --argjson managed "$managed" \
-  '$live * $managed'
+jq -n --argjson live "$live" --argjson managed "$managed" --argjson skills "$skills" \
+  '$live * $managed * {skills: $skills}'
