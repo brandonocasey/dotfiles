@@ -21,3 +21,9 @@
 .codex/hooks/guard.py
 .config/git/hooks
 .local/bin/claude-api
+.codex/skills/docx
+.codex/skills/xlsx
+.codex/skills/pptx
+.codex/skills/pdf
+.codex/skills/docs
+.codex/skills/google-workspace

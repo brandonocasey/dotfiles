@@ -30,14 +30,10 @@ managed='{
 
 # Shared skills live in ~/.agents/skills, which Pi scans recursively, so the
 # app-owned synced/<account>/ copies collide with each other. Mirror Codex:
-# hide app-only skills and repeats, and load the compact docx/xlsx/pptx/pdf/
-# docs/google-workspace wrappers that read the synced skill on demand.
+# hide the app-owned skills and any repeats.
 skills='[]'
 if command -v jq >/dev/null 2>&1; then
   skill_lines=""
-  for wrapper in docx xlsx pptx pdf docs google-workspace; do
-    [ -f "$HOME/.codex/skills/$wrapper/SKILL.md" ] && skill_lines+="$HOME/.codex/skills/$wrapper"$'\n'
-  done
   seen=" "
   for skill_file in "$HOME"/.config/agents/skills/synced/*/*/SKILL.md; do
     [ -f "$skill_file" ] || continue

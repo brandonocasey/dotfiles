@@ -70,25 +70,11 @@ so only this copy loads.
 Chezmoi also manages `ux-verify` in the shared skills directory. Codex and
 Claude can select it automatically.
 
-Codex keeps the synced `docs` and `google-workspace` bodies disabled and exposes
-explicit-only wrappers with those names. The wrappers read the installed synced
-skill only for an explicitly requested hosted destination. Codex uses its native
-`skill-creator`; Claude keeps its synced version.
-
-Codex discovers `docx`, `xlsx`, `pptx`, and `pdf` through compact wrappers that
-load the installed synced skill on demand, including its examples, scripts,
-and assets. These four wrappers remain automatically selectable. Claude keeps
-its existing compact listings. Neither harness changes the app-owned bodies.
-The Codex config modifier discovers synced paths on each host. Apply the
-wrappers before the config on an existing installation:
-
-```sh
-chezmoi apply ~/.codex/skills/docx ~/.codex/skills/xlsx ~/.codex/skills/pptx ~/.codex/skills/pdf
-chezmoi apply ~/.codex/config.toml
-```
-
-Rerun the config apply after a synced account path changes, then restart Codex
-to refresh skill discovery.
+Codex and Pi hide the app-owned synced skills, so they never load `docs`, `docx`,
+`xlsx`, `pptx`, `pdf`, or `google-workspace`. Claude keeps them. Codex uses its
+native `skill-creator`. The Codex config modifier finds synced paths on each host;
+rerun `chezmoi apply ~/.codex/config.toml` after a synced account path changes, then
+restart Codex.
 
 Codex limits the skill catalog to 1,000 tokens and retained tool outputs to
 4,000 tokens each. Automatic compaction uses the model's default threshold.

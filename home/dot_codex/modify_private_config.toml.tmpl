@@ -28,7 +28,7 @@ if [[ "$safaridriver_help" == *--mcp* ]]; then
 fi
 export SAFARI_NATIVE_TOML="$safari_native_toml"
 
-# Keep app-owned synced bodies intact; wrappers control Codex discovery.
+# Keep app-owned synced bodies intact; Codex loads none of them.
 SKILLS_CONFIG_TOML=""
 for skill_file in "$HOME"/.config/agents/skills/synced/*/*/SKILL.md; do
   [[ -f "$skill_file" ]] || continue
