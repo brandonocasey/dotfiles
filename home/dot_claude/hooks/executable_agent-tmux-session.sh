@@ -33,25 +33,26 @@ agent=${1:-}
 marker='agent-session:'
 title_state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title
 
-# The title as plain words (case kept), at most 60 (or $2) bytes, cut at a
-# word break, without a closing period. Claude shows this form. A cut drops a
+# The title as plain words (case kept) joined by hyphens, never spaces, at most
+# 60 (or $2) bytes, cut at a word break, without a closing period. Claude shows
+# this form. A cut drops a
 # split UTF-8 character; tmux rejects a name with one.
 tidy() {
   printf '%s' "$1" | LC_ALL=C tr -d '[:cntrl:]' |
     LC_ALL=C sed -e 's/[.!?]*[[:space:]]*$//' -e 's/[[:space:]][[:space:]]*/ /g' -e 's/^ //' -e 's/ $//' |
     LC_ALL=C awk -v m="${2:-60}" '{
       if (length($0) > m) {
-        s = substr($0, 1, m + 1); sub(/ [^ ]*$/, "", s); $0 = substr(s, 1, m)
+        s = substr($0, 1, m + 1); sub(/[ -][^ -]*$/, "", s); $0 = substr(s, 1, m)
         sub(/([\300-\337]|[\340-\357][\200-\277]?|[\360-\367][\200-\277]?[\200-\277]?)$/, "")
       }
       print
-    }'
+    }' | LC_ALL=C tr ' ' '-'
 }
 
 # The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
 # '_', so 8.51.14 becomes 8_51_14 here but stays exact in Claude.
 safe() {
-  tidy "$1" | LC_ALL=C sed -e 's/[:#]/ /g' -e 's/\./_/g' -e 's/  */ /g' -e 's/^ //' -e 's/ $//'
+  tidy "$1" | LC_ALL=C sed -e 's/[:#]/-/g' -e 's/\./_/g' -e 's/^-//' -e 's/-$//'
 }
 
 # Headless Claude runs (claude -p, the SDK) are unattended without a job dir;
@@ -64,7 +65,7 @@ headless() {
 # login"). A block port already in front is replaced; the pattern MUST match
 # session-port.sh's block layout.
 bare() {
-  printf '%s' "$1" | LC_ALL=C sed -E 's/^4[0-8][0-9][0-9]0( +|$)//'
+  printf '%s' "$1" | LC_ALL=C sed -E 's/^4[0-8][0-9][0-9]0([ -]+|$)//'
 }
 
 # Headless runs keep Claude's own title.
@@ -103,20 +104,20 @@ custom_title() {
   jq -rn 'reduce (inputs | select(.type == "custom-title")) as $e (""; $e.customTitle // "")' "$1" 2>/dev/null
 }
 
-# "Fix login" becomes "Fix login Part 2", and "Fix login Part 2" becomes "Fix
-# login Part 3". The base is cut so the part number survives the 60-character
+# "Fix-login" becomes "Fix-login-Part-2", and "Fix-login-Part-2" becomes
+# "Fix-login-Part-3". The base is cut so the part number survives the 60-character
 # cut of the name with its port in front.
 part() {
   t=$(tidy "$(bare "$1")" 1000)
   [ -n "$t" ] || return 0
-  n=$(printf '%s' "$t" | LC_ALL=C sed -nE 's/^.+ Part ([1-9][0-9]{0,5})$/\1/p')
+  n=$(printf '%s' "$t" | LC_ALL=C sed -nE 's/^.+-Part-([1-9][0-9]{0,5})$/\1/p')
   if [ -n "$n" ]; then
-    t=${t% Part $n}
+    t=${t%-Part-$n}
     n=$((n + 1))
   else
     n=2
   fi
-  suffix=" Part $n"
+  suffix="-Part-$n"
   printf '%s%s' "$(tidy "$t" $((54 - ${#suffix})))" "$suffix"
 }
 
@@ -128,11 +129,11 @@ no_title() {
 ported() {
   port=$(session_port "$2")
   if [ -z "$port" ]; then
-    printf '%s' "$1"
+    printf '%s' "$1" | LC_ALL=C tr ' ' '-'
     return 0
   fi
-  rest=$(bare "$1")
-  printf '%s%s' "$port" "${rest:+ $rest}"
+  rest=$(bare "$1" | LC_ALL=C tr ' ' '-')
+  printf '%s%s' "$port" "${rest:+-$rest}"
 }
 
 case $agent in
@@ -192,7 +193,7 @@ rename() {
   base=$name
   n=2
   while [ "$name" != "$current" ] && tmux has-session -t "=$name" 2>/dev/null; do
-    name="$base ($n)"
+    name="$base-$n"
     n=$((n + 1))
   done
   [ "$name" = "$current" ] && return 0

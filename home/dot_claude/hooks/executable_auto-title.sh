@@ -132,7 +132,7 @@ fi
 # Set by `claude -n`, /rename, or a resumed session's earlier name; keep it.
 # Claude's own generated title and this hook's Haiku title may be replaced.
 native=
-[ -r "$transcript" ] && native=$(grep '"type":"ai-title"' "$transcript" | tail -n 1 | jq -r '.aiTitle // empty')
+[ -r "$transcript" ] && native=$(grep '"type":"ai-title"' "$transcript" | tail -n 1 | jq -r '.aiTitle // empty' | tr ' ' '-')
 user_named() {
   [ -n "$base" ] || return 1
   [ "$base" = "$native" ] && return 1
