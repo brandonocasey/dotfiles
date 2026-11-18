@@ -9,17 +9,20 @@ import unittest
 REPO = Path(__file__).resolve().parents[2]
 REVIEW_TRIAL = REPO / "home/private_dot_local/bin/executable_review-trial"
 
-# Stands in for `agt sessions report`: prices every transcript argument at 1.5 USD.
+# Stands in for `agt sessions report`: prices each transcript argument at 1.5 USD per line.
 FAKE_AGT = """#!/bin/sh
 printf '{"rows":['
 separator=
 for argument in "$@"; do
   case "$argument" in
-    *.jsonl) printf '%s{"file":"%s","usd":1.5}' "$separator" "$argument"; separator=, ;;
+    *.jsonl)
+      printf '%s{"file":"%s","usd":%s}' "$separator" "$argument" "$(awk 'END { print NR * 1.5 }' "$argument")"
+      separator=, ;;
   esac
 done
 printf ']}\\n'
 """
+REPORT_HEADER = ["model", "reviews", "found", "only", "high", "medium", "killed", "usd"]
 
 
 def scratch_root():
@@ -62,40 +65,32 @@ class ReviewTrialTests(unittest.TestCase):
         }
         subprocess.run(["git", "init", "--quiet", str(self.repo)], check=True, env=self.env)
 
-    def review_trial(self, command):
+    def review_trial(self, command, env=None):
         result = subprocess.run(
-            [str(REVIEW_TRIAL), command], cwd=self.repo, env=self.env, capture_output=True, text=True, check=False
+            [str(REVIEW_TRIAL), command], cwd=self.repo, env=env or self.env, capture_output=True, text=True,
+            check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout.strip()
 
     def write_fable_reviewer_transcript(self, agent_id, started_at, cwd):
+        """Write a transcript whose second reply comes two hours after the trial pass ended."""
         subagents = self.home / ".claude/projects/project/session/subagents"
         subagents.mkdir(parents=True, exist_ok=True)
         (subagents / f"agent-{agent_id}.meta.json").write_text(json.dumps({"agentType": "reviewer-fable"}))
-        first_reply = {
-            "type": "assistant",
-            "timestamp": started_at,
-            "cwd": str(cwd),
-            "message": {"model": "claude-fable-5-2"},
-        }
-        (subagents / f"agent-{agent_id}.jsonl").write_text(json.dumps(first_reply) + "\n")
+        replies = [
+            {"type": "assistant", "timestamp": timestamp, "cwd": str(cwd), "message": {"model": "claude-fable-5-2"}}
+            for timestamp in (started_at, "2020-01-03T03:00:00.000Z")
+        ]
+        blank_line = "\n"
+        entries = blank_line + (blank_line * 2).join(json.dumps(reply) for reply in replies) + "\n"
+        (subagents / f"agent-{agent_id}.jsonl").write_text(entries)
 
-    def test_start_reserves_slots_until_the_limit(self):
-        self.assertEqual(self.review_trial("status"), "on 0/20")
-        self.assertEqual(self.review_trial("status"), "on 0/20")
-
-        lines = [self.review_trial("start") for _ in range(21)]
-
-        self.assertEqual(lines[0], "on 1/20")
-        self.assertEqual(lines[19], "on 20/20")
-        self.assertEqual(lines[20], "off 20/20")
-        self.assertEqual(self.review_trial("status"), "off 20/20")
-
-    def test_report_counts_each_model_once_per_finding(self):
+    def write_trial_fixture(self):
+        """Write two slots, one trial run, four runs that are not trial runs, and five reviewer transcripts."""
         slots = self.home / "state/agents/review-trial/slots.tsv"
         slots.parent.mkdir(parents=True)
-        slots.write_text(f"2020-01-02T00:00:00Z\t{self.repo}\n")
+        slots.write_text(f"not-a-time\t{self.repo}\n2020-01-02T00:00:00Z\t{self.repo}\n2020-01-02T06:00:00\t{self.repo}\n")
         trial_pass = {
             "id": "c1p0",
             "kind": "full",
@@ -116,10 +111,15 @@ class ReviewTrialTests(unittest.TestCase):
         }
         opus_only_reviewers = [reviewer("r1", "claude-opus-5-5"), reviewer("fix", "claude-fable-5-2")]
         opus_only_pass = dict(trial_pass, reviewers=opus_only_reviewers, killed=[])
+        fable_only_reviewers = [reviewer("r1", "claude-fable-5-2"), reviewer("r2", "claude-haiku-5-5")]
+        fable_only_pass = dict(trial_pass, reviewers=fable_only_reviewers, killed=[])
+        open_pass = dict(trial_pass, ended_at=None, killed=[])
         store = {
             "runs": [
                 {"id": "rv-trial", "started_at": "2020-01-03T00:00:00Z", "passes": [trial_pass]},
                 {"id": "rv-plain", "started_at": "2020-01-03T00:00:00Z", "passes": [opus_only_pass]},
+                {"id": "rv-agents", "started_at": "2020-01-03T00:00:00Z", "passes": [fable_only_pass]},
+                {"id": "rv-open", "started_at": "2020-01-03T00:00:00Z", "passes": [open_pass]},
                 {"id": "rv-early", "started_at": "2020-01-01T00:00:00Z", "passes": [trial_pass]},
             ],
             "threads": [
@@ -128,6 +128,8 @@ class ReviewTrialTests(unittest.TestCase):
                 thread("rv-trial.c1p0.r3.f1", resolution="rejected: intended"),
                 thread("rv-trial.c1p0.r5.f1"),
                 thread("rv-plain.c1p0.r1.f1"),
+                thread("rv-agents.c1p0.r2.f1"),
+                thread("rv-open.c1p0.r2.f1"),
                 thread("rv-early.c1p0.r2.f1"),
             ],
         }
@@ -139,11 +141,37 @@ class ReviewTrialTests(unittest.TestCase):
         self.write_fable_reviewer_transcript("before", "2020-01-02T23:00:00.000Z", review_worktree)
         self.write_fable_reviewer_transcript("after", "2020-01-03T02:00:00.000Z", review_worktree)
         self.write_fable_reviewer_transcript("elsewhere", "2020-01-03T00:10:00.000Z", self.root / "other repo")
+        self.write_fable_reviewer_transcript("unreadable", "not-a-time", review_worktree)
+
+    def test_start_reserves_slots_until_the_limit(self):
+        self.assertEqual(self.review_trial("status"), "on 0/20")
+        self.assertEqual(self.review_trial("status"), "on 0/20")
+
+        lines = [self.review_trial("start") for _ in range(21)]
+
+        self.assertEqual(lines[0], "on 1/20")
+        self.assertEqual(lines[19], "on 20/20")
+        self.assertEqual(lines[20], "off 20/20")
+        self.assertEqual(self.review_trial("status"), "off 20/20")
+
+    def test_start_and_status_skip_the_same_malformed_slot_lines(self):
+        slots = self.home / "state/agents/review-trial/slots.tsv"
+        slots.parent.mkdir(parents=True)
+        malformed_lines = f"not-a-time\t{self.repo}\n\xff\xfe\t{self.repo}\n2020-01-02T00:00:00Z\t\n"
+        slot_without_line_end = f"2020-01-02T00:00:00Z\t{self.repo}"
+        slots.write_bytes((malformed_lines + slot_without_line_end).encode("latin-1"))
+
+        self.assertEqual(self.review_trial("status"), "on 1/20")
+        self.assertEqual(self.review_trial("start"), "on 2/20")
+        self.assertEqual(self.review_trial("status"), "on 2/20")
+
+    def test_report_counts_each_model_once_per_finding(self):
+        self.write_trial_fixture()
 
         lines = self.review_trial("report").splitlines()
 
-        self.assertEqual(lines[0], "trial reviews: 1; slots 1/20")
-        self.assertEqual(lines[1].split("\t"), ["model", "reviews", "found", "only", "high", "medium", "killed", "usd"])
+        self.assertEqual(lines[0], "trial reviews: 1; slots 2/20")
+        self.assertEqual(lines[1].split("\t"), REPORT_HEADER)
         self.assertEqual(
             [line.split("\t") for line in lines[2:]],
             [
@@ -153,6 +181,13 @@ class ReviewTrialTests(unittest.TestCase):
                 ["haiku", "1", "0", "0", "0", "0", "1", "?"],
             ],
         )
+
+    def test_report_prints_findings_when_agt_is_missing(self):
+        self.write_trial_fixture()
+
+        lines = self.review_trial("report", env=dict(self.env, PATH="/usr/bin:/bin")).splitlines()
+
+        self.assertEqual(lines[3].split("\t"), ["fable", "1", "2", "1", "1", "1", "0", "?"])
 
 
 if __name__ == "__main__":

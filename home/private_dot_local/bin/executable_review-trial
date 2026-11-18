@@ -6,7 +6,7 @@ status  print the same line without reserving a slot
 report  per reviewer model: findings kept after verification, findings no other model found, killed findings, cost
 
 Slots are `<UTC time>\\t<main checkout>` lines in $XDG_STATE_HOME/agents/review-trial/slots.tsv
-(default ~/.local/state). Exit 2: not in a git repository, or the slot file cannot be written.
+(default ~/.local/state). `start` exits 2 when it is not in a git repository or cannot write the slot file.
 """
 import argparse
 import fcntl
@@ -15,12 +15,12 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
 SLOT_LIMIT = 20
-TRIAL_MODEL = "fable-5-2"
 MODEL_FAMILIES = ("opus", "fable", "sonnet", "haiku")
 REVIEWER_ROLES = ("reviewer", "reviewer-fable")
 DUPLICATE_REASON = re.compile(r"^duplicate of (\S+)")
@@ -43,19 +43,27 @@ def slots_path():
 
 
 def parse_time(text):
-    return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    """Parse an ISO time; one without a zone counts as UTC."""
+    parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def parse_slots(text):
+    """Return (reserved at, main checkout) for each well-formed slot line."""
+    slots = []
+    for line in text.splitlines():
+        reserved_at, _, repo = line.partition("\t")
+        if not repo:
+            continue
+        try:
+            slots.append((parse_time(reserved_at), Path(repo)))
+        except ValueError:
+            warn(f"skipped slot line with a bad time: {line}")
+    return slots
 
 
 def read_slots(path):
-    """Return (reserved at, main checkout) for each slot line."""
-    if not path.exists():
-        return []
-    slots = []
-    for line in path.read_text().splitlines():
-        reserved_at, _, repo = line.partition("\t")
-        if repo:
-            slots.append((parse_time(reserved_at), Path(repo)))
-    return slots
+    return parse_slots(path.read_text(errors="replace")) if path.exists() else []
 
 
 def main_checkout():
@@ -76,14 +84,16 @@ def reserve_slot(path, repo):
     """Append a slot unless the limit is reached, and return the gate line. The lock keeps two reviews from sharing the last slot."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "a+") as slots_file:
+        with open(path, "a+", errors="replace") as slots_file:
             fcntl.flock(slots_file, fcntl.LOCK_EX)
             slots_file.seek(0)
-            used = sum(1 for line in slots_file if "\t" in line)
+            text = slots_file.read()
+            used = len(parse_slots(text))
             if used >= SLOT_LIMIT:
                 return gate_line(used)
             now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-            slots_file.write(f"{now}\t{repo}\n")
+            line_break = "" if not text or text.endswith("\n") else "\n"
+            slots_file.write(f"{line_break}{now}\t{repo}\n")
             return f"on {used + 1}/{SLOT_LIMIT}"
     except OSError as error:
         fail(f"cannot write {path}: {error}")
@@ -94,18 +104,17 @@ def model_family(model):
 
 
 class TrialRun:
-    """One review run whose first full pass had a TRIAL_MODEL code reviewer."""
+    """One review run whose first full pass has ended and had a code reviewer of each model family."""
 
     def __init__(self, repo, store, run, first_pass):
         self.repo, self.store, self.run, self.first_pass = repo, store, run, first_pass
         self.models = code_reviewer_models(first_pass)
+        self.started_at = parse_time(first_pass["started_at"])
+        self.ended_at = parse_time(first_pass["ended_at"])
 
     def contains(self, started_at, cwd):
         """True when a reviewer that started at `started_at` in `cwd` belongs to this run's first pass."""
-        ended_at = self.first_pass.get("ended_at") or self.run.get("ended_at")
-        if started_at < parse_time(self.first_pass["started_at"]):
-            return False
-        if ended_at and started_at > parse_time(ended_at):
+        if not self.started_at <= started_at <= self.ended_at:
             return False
         return cwd == self.repo or self.repo in cwd.parents
 
@@ -135,12 +144,8 @@ def first_full_pass(run):
 
 
 def is_trial_run(run, first_pass, since):
-    has_trial_reviewer = any(
-        TRIAL_MODEL in (r.get("model") or "")
-        for r in first_pass.get("reviewers") or []
-        if r.get("id") != "fix"
-    )
-    return has_trial_reviewer and parse_time(run["started_at"]) >= since
+    models = set(code_reviewer_models(first_pass).values())
+    return models >= set(MODEL_FAMILIES) and parse_time(run["started_at"]) >= since
 
 
 def trial_runs(slots):
@@ -159,8 +164,12 @@ def trial_runs(slots):
 def store_trial_runs(repo, store, since):
     for run in store.get("runs") or []:
         first_pass = first_full_pass(run)
-        if first_pass and is_trial_run(run, first_pass, since):
-            yield TrialRun(repo, store, run, first_pass)
+        if not first_pass or not is_trial_run(run, first_pass, since):
+            continue
+        if not first_pass.get("ended_at"):
+            warn(f"skipped run {run['id']}: its first pass has not ended")
+            continue
+        yield TrialRun(repo, store, run, first_pass)
 
 
 def credit(counts, thread):
@@ -169,9 +178,9 @@ def credit(counts, thread):
         counts[thread["severity"]] += 1
 
 
-def kept_threads(trial, totals):
-    """Return this run's surviving findings by ID; rejected ones count as killed."""
-    kept = {}
+def first_pass_threads(trial):
+    """Return this run's surviving findings by ID, and the model of each rejected finding."""
+    kept, rejected_models = {}, []
     for thread in trial.store.get("threads") or []:
         finding = thread.get("finding") or {}
         model = trial.models.get(finding.get("reviewer"))
@@ -179,10 +188,10 @@ def kept_threads(trial, totals):
         if model is None or not in_first_pass:
             continue
         if str(thread.get("resolution") or "").startswith("rejected"):
-            totals[model]["killed"] += 1
+            rejected_models.append(model)
         else:
             kept[thread["id"]] = (model, thread)
-    return kept
+    return kept, rejected_models
 
 
 def reviewer_of(finding_id):
@@ -192,7 +201,9 @@ def reviewer_of(finding_id):
 
 
 def tally_run(trial, totals):
-    kept = kept_threads(trial, totals)
+    kept, rejected_models = first_pass_threads(trial)
+    for model in rejected_models:
+        totals[model]["killed"] += 1
     shared_ids = set()
     for killed in trial.first_pass.get("killed") or []:
         model = trial.models.get(reviewer_of(killed.get("id")))
@@ -215,10 +226,21 @@ def tally_run(trial, totals):
 def first_assistant_entry(transcript):
     with open(transcript, encoding="utf-8", errors="replace") as lines:
         for line in lines:
-            entry = json.loads(line)
+            entry = json.loads(line) if line.strip() else {}
             if entry.get("type") == "assistant":
                 return entry
     return None
+
+
+def reviewer_start(meta, transcript):
+    """Return (started at, cwd, model family) of a reviewer's transcript, or None for another role or no reply yet."""
+    if json.loads(meta.read_text()).get("agentType") not in REVIEWER_ROLES:
+        return None
+    entry = first_assistant_entry(transcript)
+    if not (entry and entry.get("timestamp") and entry.get("cwd")):
+        return None
+    model = model_family((entry.get("message") or {}).get("model"))
+    return parse_time(entry["timestamp"]), Path(entry["cwd"]), model
 
 
 def reviewer_transcripts(since):
@@ -228,42 +250,64 @@ def reviewer_transcripts(since):
         try:
             if transcript.stat().st_mtime < since.timestamp():
                 continue
-            if json.loads(meta.read_text()).get("agentType") not in REVIEWER_ROLES:
-                continue
-            entry = first_assistant_entry(transcript)
+            start = reviewer_start(meta, transcript)
         except FileNotFoundError:
             continue
         except (OSError, ValueError) as error:
             warn(f"skipped {transcript}: {error}")
             continue
-        if entry and entry.get("timestamp") and entry.get("cwd"):
-            model = model_family((entry.get("message") or {}).get("model"))
-            yield parse_time(entry["timestamp"]), Path(entry["cwd"]), model, transcript
+        if start:
+            yield (*start, transcript)
 
 
 def transcripts_by_model(trials, since):
-    """Group the transcripts of the trial runs' reviewers by model family; each transcript counts once."""
+    """Group (transcript, first-pass end) of the trial runs' reviewers by model family; each transcript counts once."""
     grouped = defaultdict(list)
     for started_at, cwd, model, transcript in reviewer_transcripts(since):
-        if any(model in trial.models.values() and trial.contains(started_at, cwd) for trial in trials):
-            grouped[model].append(str(transcript))
+        matches = (trial for trial in trials if model in trial.models.values() and trial.contains(started_at, cwd))
+        trial = next(matches, None)
+        if trial:
+            grouped[model].append((transcript, trial.ended_at))
     return grouped
 
 
 def cost_by_model(grouped):
-    """Price each model's transcripts with `agt sessions report`; None when agt cannot price them."""
-    files = [path for paths in grouped.values() for path in paths]
-    if not files:
-        return {}
+    """Price each model's first-pass transcript entries; a model is left out when they cannot be priced."""
+    cost = {}
+    with tempfile.TemporaryDirectory(prefix="review-trial-") as directory:
+        for model, transcripts in grouped.items():
+            try:
+                cost[model] = first_pass_usd(transcripts, Path(directory) / model)
+            except (OSError, ValueError) as error:
+                warn(f"cost unknown for {model}: {error}")
+    return cost
+
+
+def first_pass_usd(transcripts, directory):
+    """Price copies of the transcripts, cut at each first pass's end, with `agt sessions report`."""
+    directory.mkdir()
+    copies = []
+    for index, (transcript, ended_at) in enumerate(transcripts):
+        copies.append(str(directory / f"{index}.jsonl"))
+        copy_entries_until(transcript, ended_at, copies[-1])
     agt = subprocess.run(
-        ["agt", "sessions", "report", "--sections", "cost", "--by", "file", "--json", *files],
+        ["agt", "sessions", "report", "--sections", "cost", "--by", "file", "--json", *copies],
         capture_output=True, text=True, check=False,
     )
     if agt.returncode != 0:
-        warn(f"agt sessions report failed, cost unknown: {agt.stderr.strip()}")
-        return {}
-    usd_by_file = {row.get("file"): row.get("usd", 0) for row in json.loads(agt.stdout).get("rows") or []}
-    return {model: sum(usd_by_file.get(path, 0) for path in paths) for model, paths in grouped.items()}
+        raise ValueError(f"agt sessions report failed: {agt.stderr.strip()}")
+    return sum(row.get("usd", 0) for row in json.loads(agt.stdout).get("rows") or [])
+
+
+def copy_entries_until(transcript, ended_at, copy):
+    """Copy the entries written up to `ended_at`. A reviewer continued into fix checks appends to the same transcript."""
+    with open(transcript, encoding="utf-8", errors="replace") as entries, open(copy, "w", encoding="utf-8") as kept:
+        for line in entries:
+            if not line.strip():
+                continue
+            timestamp = json.loads(line).get("timestamp")
+            if not timestamp or parse_time(timestamp) <= ended_at:
+                kept.write(line)
 
 
 def print_report(slots):
