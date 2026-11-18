@@ -2,3 +2,4 @@
 - `sleep` of 20s+, `agt wait`, `agt ci wait`, `gh run watch`, and a `timeout` over 270000 in the foreground are rewritten or blocked: use `run_in_background: true`.
 - No `pkill`, `killall`, `kill $(pgrep …)`, or `pgrep … | xargs kill` by name: `kill` the PID you saved at start, or `pkill -F <pidfile>`. Use `pgrep -f '[n]ame'` in a call with no other copy of the name.
 - No unquoted words starting with `=` (use `printf '--- %s\n'`) and no `; echo $?`. Tool names are case-sensitive: `Bash`.
+- Never search `env`, `~/.netrc`, or config for credentials. Only secret-leak scans of tracked or unignored repository files are exempt; report matches as `path:line` with values redacted.
