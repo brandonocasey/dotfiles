@@ -16,9 +16,10 @@ import threading
 import time
 import unittest
 
+from settings_template import managed_settings
+
 REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / "home/dot_claude/hooks/executable_rule-gate.py"
-SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
 
 REASON = ("rule-gate: the rules for {file} may not be in your context yet: {rules}. Retry this edit, changed if those "
           "rules require it. The text of each rule follows, unless an earlier denial in this conversation showed it. "
@@ -969,8 +970,7 @@ class PruneTests(RuleGateTestCase):
 
 class RegistrationTests(unittest.TestCase):
     def setUp(self):
-        text = SETTINGS.read_text().split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0]
-        self.hooks = json.loads(text)["hooks"]
+        self.hooks = managed_settings()["hooks"]
         self.command = {"type": "command", "command": "python3 -I ~/.claude/hooks/rule-gate.py", "timeout": 5}
 
     def test_pre_tool_use_runs_after_edit_guard_in_the_same_group(self):

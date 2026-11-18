@@ -9,9 +9,10 @@ import tempfile
 import time
 import unittest
 
+from settings_template import managed_settings
+
 REPO = Path(__file__).resolve().parents[2]
 HOOK = REPO / "home/dot_claude/hooks/executable_edit-guard.py"
-SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
 
 PYPROJECT = '[project]\nname = "x"\n\n[tool.ruff]\nline-length = 100\n\n[tool.other]\nkey = 1\n'
 
@@ -233,7 +234,7 @@ class PassThroughTests(EditGuardTestCase):
 
 class RegistrationTests(unittest.TestCase):
     def test_hook_runs_on_edit_write_and_multiedit(self):
-        settings = json.loads(SETTINGS.read_text().split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0])
+        settings = managed_settings()
         groups = [g for g in settings["hooks"]["PreToolUse"]
                   if any("edit-guard.py" in h["command"] for h in g["hooks"])]
         self.assertEqual(len(groups), 1)

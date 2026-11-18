@@ -9,9 +9,10 @@ import tempfile
 from textwrap import dedent
 import unittest
 
+from settings_template import managed_settings
+
 REPO = Path(__file__).resolve().parents[2]
 SCRIPT = REPO / "home/private_dot_local/bin/executable_code-shape"
-SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
 
 
 def nested_python(depth, name="nested"):
@@ -612,7 +613,7 @@ class HookTests(CodeShapeTestCase):
 
 class RegistrationTests(unittest.TestCase):
     def test_hook_runs_after_edit_write_and_multiedit(self):
-        settings = json.loads(SETTINGS.read_text().split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0])
+        settings = managed_settings()
         groups = [g for g in settings["hooks"]["PostToolUse"]
                   if any("code-shape" in h["command"] for h in g["hooks"])]
         self.assertEqual(len(groups), 1)

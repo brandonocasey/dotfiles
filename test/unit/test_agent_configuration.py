@@ -8,6 +8,8 @@ import tempfile
 import tomllib
 import unittest
 
+from settings_template import managed_settings
+
 REPO = Path(__file__).resolve().parents[2]
 CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
 CLAUDE_SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
@@ -63,8 +65,7 @@ class AgentConfigurationTests(unittest.TestCase):
             self.assertIn("claudeAutoModeEnvironment", rendered.stderr)
 
     def test_claude_cleanup_skips_compaction(self):
-        template = (REPO / "home/.chezmoitemplates/claude-settings-modify.sh").read_text()
-        settings = json.loads(template.split("cat <<'JSON'\n", 1)[1].split("\nJSON\n", 1)[0])
+        settings = managed_settings()
 
         def commands(event):
             return [hook["command"] for group in settings["hooks"]["SessionStart"]
