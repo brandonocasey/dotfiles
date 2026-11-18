@@ -52,7 +52,7 @@ tidy() {
 # The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
 # '_', so 8.51.14 becomes 8_51_14 here but stays exact in Claude.
 safe() {
-  tidy "$1" | LC_ALL=C sed -e 's/[:#]/-/g' -e 's/\./_/g' -e 's/^-//' -e 's/-$//'
+  tidy "$1" | LC_ALL=C sed -e 's/-*[:#][-:#]*/-/g' -e 's/\./_/g' -e 's/^-//' -e 's/-$//'
 }
 
 # Headless Claude runs (claude -p, the SDK) are unattended without a job dir;
