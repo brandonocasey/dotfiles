@@ -120,7 +120,7 @@ managed=$(
       "Read(~/.config/gh/hosts.yml)",
       "Read(~/.aws/**)"
     ],
-    "additionalDirectories": ["~/.cache/agents"],
+    "additionalDirectories": ["~/.cache/agents", "~/Projects", "~/projects"],
     "defaultMode": "auto"
   },
   "sandbox": {
