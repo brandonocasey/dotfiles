@@ -41,8 +41,11 @@ jobs:
           install -D "$(find "$RUNNER_TEMP/qlty" -type f -name qlty)" "$HOME/.local/bin/qlty"
           qlty --version
 
+      # One process per test file, so the slowest file sets the wall time.
       - name: Python tests
-        run: python3 -m unittest discover -s test/unit -v
+        run: |
+          ls test/unit | sed -n 's/^\(test_.*\)\.py$/\1/p' |
+            xargs -P "$(nproc)" -n 1 sh -c 'python3 -m unittest discover -s test/unit -p "$1.py" -v > "$RUNNER_TEMP/$1.log" 2>&1 && tail -n 3 "$RUNNER_TEMP/$1.log" || { cat "$RUNNER_TEMP/$1.log"; exit 1; }' sh
 
       - name: Node tests
         run: node --test home/dot_config/exact_agents/exact_skills/*/exact_test/*.test.*js
