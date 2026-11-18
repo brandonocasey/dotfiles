@@ -120,10 +120,10 @@ class TrialRun:
 
 
 def code_reviewer_models(first_pass):
-    """Map reviewer ID to model family. With two Haiku entries, the last one is the writing-reviewer."""
+    """Map reviewer ID to model family. The last Haiku entry is the writing-reviewer, which is left out."""
     reviewers = [r for r in first_pass.get("reviewers") or [] if r.get("id") != "fix"]
     haiku = [r for r in reviewers if model_family(r.get("model")) == "haiku"]
-    if len(haiku) > 1:
+    if haiku:
         reviewers.remove(haiku[-1])
     return {r["id"]: model_family(r.get("model")) for r in reviewers}
 
@@ -261,11 +261,14 @@ def reviewer_transcripts(since):
 
 
 def transcripts_by_model(trials, since):
-    """Group (transcript, first-pass end) of the trial runs' reviewers by model family; each transcript counts once."""
+    """Group (transcript, first-pass end) of the trial runs' reviewers by model family; each transcript counts once.
+
+    When trial runs overlap, a transcript belongs to the one that started last.
+    """
     grouped = defaultdict(list)
     for started_at, cwd, model, transcript in reviewer_transcripts(since):
         matches = (trial for trial in trials if model in trial.models.values() and trial.contains(started_at, cwd))
-        trial = next(matches, None)
+        trial = max(matches, key=lambda match: match.started_at, default=None)
         if trial:
             grouped[model].append((transcript, trial.ended_at))
     return grouped

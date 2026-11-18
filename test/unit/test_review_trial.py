@@ -87,7 +87,7 @@ class ReviewTrialTests(unittest.TestCase):
         (subagents / f"agent-{agent_id}.jsonl").write_text(entries)
 
     def write_trial_fixture(self):
-        """Write two slots, one trial run, four runs that are not trial runs, and five reviewer transcripts."""
+        """Write two slots, two overlapping trial runs, five runs that are not trial runs, and five reviewer transcripts."""
         slots = self.home / "state/agents/review-trial/slots.tsv"
         slots.parent.mkdir(parents=True)
         slots.write_text(f"not-a-time\t{self.repo}\n2020-01-02T00:00:00Z\t{self.repo}\n2020-01-02T06:00:00\t{self.repo}\n")
@@ -114,9 +114,13 @@ class ReviewTrialTests(unittest.TestCase):
         fable_only_reviewers = [reviewer("r1", "claude-fable-5-2"), reviewer("r2", "claude-haiku-5-5")]
         fable_only_pass = dict(trial_pass, reviewers=fable_only_reviewers, killed=[])
         open_pass = dict(trial_pass, ended_at=None, killed=[])
+        no_haiku_code_reviewer_pass = dict(trial_pass, reviewers=trial_pass["reviewers"][:4], killed=[])
+        wide_pass = dict(trial_pass, started_at="2020-01-02T23:30:00Z", ended_at="2020-01-03T04:00:00Z", killed=[])
         store = {
             "runs": [
+                {"id": "rv-wide", "started_at": "2020-01-02T23:30:00Z", "passes": [wide_pass]},
                 {"id": "rv-trial", "started_at": "2020-01-03T00:00:00Z", "passes": [trial_pass]},
+                {"id": "rv-three", "started_at": "2020-01-03T00:00:00Z", "passes": [no_haiku_code_reviewer_pass]},
                 {"id": "rv-plain", "started_at": "2020-01-03T00:00:00Z", "passes": [opus_only_pass]},
                 {"id": "rv-agents", "started_at": "2020-01-03T00:00:00Z", "passes": [fable_only_pass]},
                 {"id": "rv-open", "started_at": "2020-01-03T00:00:00Z", "passes": [open_pass]},
@@ -129,6 +133,7 @@ class ReviewTrialTests(unittest.TestCase):
                 thread("rv-trial.c1p0.r5.f1"),
                 thread("rv-plain.c1p0.r1.f1"),
                 thread("rv-agents.c1p0.r2.f1"),
+                thread("rv-three.c1p0.r4.f1"),
                 thread("rv-open.c1p0.r2.f1"),
                 thread("rv-early.c1p0.r2.f1"),
             ],
@@ -170,15 +175,16 @@ class ReviewTrialTests(unittest.TestCase):
 
         lines = self.review_trial("report").splitlines()
 
-        self.assertEqual(lines[0], "trial reviews: 1; slots 2/20")
+        self.assertEqual(lines[0], "trial reviews: 2; slots 2/20")
         self.assertEqual(lines[1].split("\t"), REPORT_HEADER)
+        # Fable cost: the "during" transcript is cut at rv-trial's end (1 reply), "after" at rv-wide's end (2 replies).
         self.assertEqual(
             [line.split("\t") for line in lines[2:]],
             [
-                ["opus", "1", "1", "0", "1", "0", "0", "?"],
-                ["fable", "1", "2", "1", "1", "1", "0", "1.50"],
-                ["sonnet", "1", "0", "0", "0", "0", "1", "?"],
-                ["haiku", "1", "0", "0", "0", "0", "1", "?"],
+                ["opus", "2", "1", "0", "1", "0", "0", "?"],
+                ["fable", "2", "2", "1", "1", "1", "0", "4.50"],
+                ["sonnet", "2", "0", "0", "0", "0", "1", "?"],
+                ["haiku", "2", "0", "0", "0", "0", "1", "?"],
             ],
         )
 
@@ -187,7 +193,7 @@ class ReviewTrialTests(unittest.TestCase):
 
         lines = self.review_trial("report", env=dict(self.env, PATH="/usr/bin:/bin")).splitlines()
 
-        self.assertEqual(lines[3].split("\t"), ["fable", "1", "2", "1", "1", "1", "0", "?"])
+        self.assertEqual(lines[3].split("\t"), ["fable", "2", "2", "1", "1", "1", "0", "?"])
 
 
 if __name__ == "__main__":
