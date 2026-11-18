@@ -67,19 +67,19 @@ jobs:
         id: zsh-debs
         uses: actions/cache@v4
         with:
-          path: ~/zsh-debs
+          path: ${{ runner.temp }}/zsh-debs
           key: zsh-debs-${{ runner.os }}-${{ hashFiles('.github/workflows/tests.yml') }}
 
       - name: Download zsh packages
         if: steps.zsh-debs.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          mkdir -p ~/zsh-debs
-          cd ~/zsh-debs
+          mkdir -p "$RUNNER_TEMP/zsh-debs"
+          cd "$RUNNER_TEMP/zsh-debs"
           apt-get download zsh zsh-common
 
       - name: Install zsh
-        run: sudo apt-get install -y --no-install-recommends ~/zsh-debs/*.deb
+        run: sudo apt-get install -y --no-install-recommends "$RUNNER_TEMP"/zsh-debs/*.deb
 
       - name: Hook tests on Python 3.9
         working-directory: test/unit
