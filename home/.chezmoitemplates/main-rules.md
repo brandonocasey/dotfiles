@@ -22,7 +22,7 @@
 {{- if .claude }}
 - For an implementation request, first estimate the files it will change, counting tests and docs. Use the request and the file list; do this before reading code. At 15 or more, load `orchestrate` and follow it. Below that, load `design` before the first edit when the request adds a flag, mode, setting, or stored field, or changes a file format, a public interface, or a contract another component reads. If reading the code shows such a change, load it then.
 {{- end }}
-- Delegate broad code searches and call tracing, per `roles.md`. Search inline when one `ast-grep` or `rg` call covers it and its capped output stays small; otherwise delegate.
+- Delegate broad code searches and call tracing when they would take three or more turns, per `roles.md`. Search inline when one or two `ast-grep` or `rg` calls cover it and their capped output stays small.
 - When remaining steps must wait a long time (pipelines, reviews, slow runs) and other work remains, hand them off to one or more fitting agents per `sub-agents`; meanwhile, review, do other tasks, and make fixes. Wait idle only when nothing else is left to do. When a push is authorized, push as soon as local checks pass so CI starts early.
 - Before completing code/test/config/instruction changes: `review/references/when-to-run.md`. Review only at its end points (finish with commits, push, integrate, deploy, land, remote test run), not per turn or intermediate commit; read-only tasks need none.
 - Before copyable output: `host-preflight/references/copyable-output.md`. Before links, ELI5, plans, long reports, option sets, status updates, recaps, PR descriptions, review comments, tickets, or docs: `shared/writing-details.md`.
