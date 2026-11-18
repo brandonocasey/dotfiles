@@ -33,6 +33,12 @@ agent=${1:-}
 marker='agent-session:'
 title_state=${XDG_STATE_HOME:-$HOME/.local/state}/agents/auto-title
 
+# Spaces become hyphens, and a run of spaces and hyphens that has a space in it
+# ("Fix  login", "Fix - login") becomes one hyphen.
+hyphenate() {
+  LC_ALL=C sed -e 's/-* [ -]*/-/g'
+}
+
 # The title as plain words (case kept) joined by hyphens, never spaces, at most
 # 60 (or $2) bytes, cut at a word break, without a closing period. Claude shows
 # this form. A cut drops a
@@ -46,7 +52,7 @@ tidy() {
         sub(/([\300-\337]|[\340-\357][\200-\277]?|[\360-\367][\200-\277]?[\200-\277]?)$/, "")
       }
       print
-    }' | LC_ALL=C tr ' ' '-'
+    }' | hyphenate
 }
 
 # The tmux form: tmux treats ':' and '#' specially in names and turns '.' into
@@ -130,10 +136,10 @@ no_title() {
 ported() {
   port=$(session_port "$2")
   if [ -z "$port" ]; then
-    printf '%s' "$1" | LC_ALL=C tr ' ' '-'
+    printf '%s' "$1"
     return 0
   fi
-  rest=$(bare "$1" | LC_ALL=C tr ' ' '-')
+  rest=$(bare "$1" | LC_ALL=C sed 's/[.!?]*[[:space:]]*$//' | hyphenate)
   printf '%s%s' "$port" "${rest:+-$rest}"
 }
 

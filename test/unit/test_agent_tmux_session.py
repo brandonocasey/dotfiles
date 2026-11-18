@@ -347,18 +347,20 @@ class ClaudePortNameTests(TmuxCase):
         cases = {"Fix login": "47950-Fix-login", "": "47950", "47950": "47950",
                  "41230 Fix login": "47950-Fix-login", "47950  Two spaces": "47950-Two-spaces",
                  "40005 Not a block": "47950-40005-Not-a-block", "123 apples": "47950-123-apples",
-                 "49000 Out of range": "47950-49000-Out-of-range", "419990 Six digits": "47950-419990-Six-digits"}
+                 "49000 Out of range": "47950-49000-Out-of-range", "419990 Six digits": "47950-419990-Six-digits",
+                 "Fix  login": "47950-Fix-login", "Fix - login": "47950-Fix-login",
+                 "Fix login. ": "47950-Fix-login"}
         for title, expected in cases.items():
             self.assertEqual(self.ported(title), expected, title)
-        self.assertEqual(self.ported("Fix login", "unknown"), "Fix-login")
+        self.assertEqual(self.ported("Fix login", "unknown"), "Fix login")
         self.port("bad", "4795x")
-        self.assertEqual(self.ported("Fix login", "bad"), "Fix-login")
-        self.assertEqual(self.ported("Fix login", ""), "Fix-login")
+        self.assertEqual(self.ported("Fix login", "bad"), "Fix login")
+        self.assertEqual(self.ported("Fix login", ""), "Fix login")
         self.assertEqual(self.run_hook("agent-tmux-session", "bare", "41230 Fix"), "Fix")
 
     def test_headless_session_keeps_its_title(self):
         self.env["CLAUDE_CODE_SESSION_ATTENDED"] = "0"
-        self.assertEqual(self.ported("Fix login"), "Fix-login")
+        self.assertEqual(self.ported("Fix login"), "Fix login")
         out = self.run_hook("session-port", payload=dict(
             session_id="two", source="startup", session_title="Fix-login"))
         self.assertEqual(out, "")
