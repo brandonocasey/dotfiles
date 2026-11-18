@@ -149,7 +149,7 @@ class CodexTmuxSessionTests(TmuxCase):
         port = reservation.read_text().strip()
         self.assertNotEqual(port, (self.ports / "port-other").read_text().strip())
         self.title("After waking")
-        self.wait_name(f"{port} After waking")
+        self.wait_name(f"{port}-After-waking")
 
     def test_allocates_port_before_title_and_keeps_it_on_resume(self):
         inherited = self.home / "claude-env"
@@ -168,10 +168,10 @@ class CodexTmuxSessionTests(TmuxCase):
         self.assertNotIn(port, ("40000", "40010"))
         self.wait_name(port)
         self.title("47950 Fix login", "new")
-        self.wait_name(f"{port} Fix login")
+        self.wait_name(f"{port}-Fix-login")
         self.fire("new", source="resume")
         self.fire("new", event="Stop")
-        self.wait_name(f"{port} Fix login")
+        self.wait_name(f"{port}-Fix-login")
         self.assertEqual(reservation.read_text().strip(), port)
         self.assertEqual(inherited.read_text(), "parent environment\n")
         os.utime(reservation, (1, 1))
@@ -188,48 +188,48 @@ class CodexTmuxSessionTests(TmuxCase):
         keys = ("HOME", "CODEX_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "TMUX", "TMUX_PANE")
         command = shlex.join(["env", *(f"{key}={self.env[key]}" for key in keys),
                               "sh", str(self.home / ".claude/hooks/agent-tmux-session.sh"), "codex"])
-        for title in ("Fix direct hook", ""):
+        for title, name in (("Fix direct hook", "40000-Fix-direct-hook"), ("", "40000")):
             with self.subTest(title=title):
                 self.title(title)
                 self.tmux("run-shell", command + " < " + shlex.quote(str(payload)) +
                           " > " + shlex.quote(str(output)) + " 2> " + shlex.quote(str(errors)))
                 self.assertEqual(output.read_text(), "")
                 self.assertEqual(errors.read_text(), "")
-                self.assertEqual(self.name(), "40000" + (f" {title}" if title else ""))
+                self.assertEqual(self.name(), name)
 
     def test_title_created_after_startup_and_idle_rename(self):
         self.fire()
         self.title("Fix late title")
-        self.wait_name("40000 Fix late title")
+        self.wait_name("40000-Fix-late-title")
         self.title("Renamed while idle")
-        self.wait_name("40000 Renamed while idle")
+        self.wait_name("40000-Renamed-while-idle")
 
     def test_resume_supersedes_previous_session(self):
         self.title("First session")
         self.fire()
-        self.wait_name("40000 First session")
+        self.wait_name("40000-First-session")
         self.title("Second session", "two")
         self.fire("two")
-        self.wait_name("40010 Second session")
+        self.wait_name("40010-Second-session")
         self.title("Stale first title")
         self.title("Current second title", "two")
-        self.wait_name("40010 Current second title")
+        self.wait_name("40010-Current-second-title")
         time.sleep(1.2)
-        self.assertEqual(self.name(), "40010 Current second title")
+        self.assertEqual(self.name(), "40010-Current-second-title")
 
     def test_active_pane_selects_session_title(self):
         self.title("First pane")
         self.fire()
-        self.wait_name("40000 First pane")
+        self.wait_name("40000-First-pane")
         pane = self.tmux("split-window", "-d", "-P", "-F", "#{pane_id}", "sleep 60").strip()
         self.title("Second pane", "two")
         self.fire("two", parent=self.start_parent(pane))
         time.sleep(1.2)
-        self.assertEqual(self.name(), "40000 First pane")
+        self.assertEqual(self.name(), "40000-First-pane")
         self.tmux("select-pane", "-t", pane)
-        self.wait_name("40010 Second pane")
+        self.wait_name("40010-Second-pane")
         self.tmux("select-pane", "-t", self.env["TMUX_PANE"])
-        self.wait_name("40000 First pane")
+        self.wait_name("40000-First-pane")
 
     def test_fast_pane_switch_restores_title_between_watcher_ticks(self):
         first = self.env["TMUX_PANE"]
@@ -237,7 +237,7 @@ class CodexTmuxSessionTests(TmuxCase):
         self.title("First pane")
         self.title("Second pane", "two")
         self.fire()
-        self.wait_name("40000 First pane")
+        self.wait_name("40000-First-pane")
         deadline = time.monotonic() + 4
         while self.tmux("display-message", "-p", "#{@codex_title_pane}").strip() != first:
             self.assertLess(time.monotonic(), deadline)
@@ -248,33 +248,33 @@ class CodexTmuxSessionTests(TmuxCase):
         try:
             self.fire("two", parent=self.start_parent(second))
             self.tmux("select-pane", "-t", second)
-            self.wait_name("40010 Second pane")
+            self.wait_name("40010-Second-pane")
             self.tmux("select-pane", "-t", first)
         finally:
             os.kill(watcher, signal.SIGCONT)
-        self.wait_name("40000 First pane")
+        self.wait_name("40000-First-pane")
 
     def test_manual_name_survives_until_title_changes(self):
         self.title("Agent title")
         self.fire()
-        self.wait_name("40000 Agent title")
+        self.wait_name("40000-Agent-title")
         self.tmux("rename-session", "Manual name")
         time.sleep(1.2)
         self.assertEqual(self.name(), "Manual name")
         self.title("Changed agent title")
-        self.wait_name("40000 Changed agent title")
+        self.wait_name("40000-Changed-agent-title")
 
     def test_duplicate_and_unsafe_title(self):
-        self.tmux("new-session", "-d", "-s", "40000 Fix v1_2 issue", "sleep 60")
+        self.tmux("new-session", "-d", "-s", "40000-Fix-v1_2-issue", "sleep 60")
         self.title("Fix v1.2: #issue!")
         self.fire()
-        self.wait_name("40000 Fix v1_2 issue (2)")
+        self.wait_name("40000-Fix-v1_2-issue-2")
 
     def test_partial_index_recovers(self):
         self.index.write_text('{"id":')
         self.fire()
         self.index.write_text('{"id":\n{"id":"one","thread_name":"Recovered title"}\n')
-        self.wait_name("40000 Recovered title")
+        self.wait_name("40000-Recovered-title")
 
     def test_empty_and_invalid_titles_wait_for_valid_title(self):
         self.index.write_text('{"id":"one","thread_name":null}\n')
@@ -283,7 +283,7 @@ class CodexTmuxSessionTests(TmuxCase):
         time.sleep(1.2)
         self.assertEqual(self.name(), "40000")
         self.title("Valid title")
-        self.wait_name("40000 Valid title")
+        self.wait_name("40000-Valid-title")
 
     def test_claude_custom_title_still_wins(self):
         transcript = self.home / "claude.jsonl"
@@ -292,17 +292,17 @@ class CodexTmuxSessionTests(TmuxCase):
         subprocess.run(["sh", str(self.home / ".claude/hooks/agent-tmux-session.sh"), "claude"],
                        input=json.dumps(dict(session_id="claude", transcript_path=str(transcript))),
                        text=True, env=self.env, check=True, timeout=5)
-        self.assertEqual(self.name(), "Claude custom title")
+        self.assertEqual(self.name(), "Claude-custom-title")
 
     def test_parent_exit_stops_syncing(self):
         self.title("Before exit")
         self.fire()
-        self.wait_name("40000 Before exit")
+        self.wait_name("40000-Before-exit")
         self.parent.stdin.close()
         self.parent.wait(timeout=5)
         self.title("After exit")
         time.sleep(1.2)
-        self.assertEqual(self.name(), "40000 Before exit")
+        self.assertEqual(self.name(), "40000-Before-exit")
 
 
 @unittest.skipUnless(shutil.which("tmux") and shutil.which("jq"), "tmux and jq required")
@@ -344,23 +344,23 @@ class ClaudePortNameTests(TmuxCase):
         return json.loads(out)["hookSpecificOutput"]["sessionTitle"] if out else None
 
     def test_ported_titles(self):
-        cases = {"Fix login": "47950 Fix login", "": "47950", "47950": "47950",
-                 "41230 Fix login": "47950 Fix login", "47950  Two spaces": "47950 Two spaces",
-                 "40005 Not a block": "47950 40005 Not a block", "123 apples": "47950 123 apples",
-                 "49000 Out of range": "47950 49000 Out of range", "419990 Six digits": "47950 419990 Six digits"}
+        cases = {"Fix login": "47950-Fix-login", "": "47950", "47950": "47950",
+                 "41230 Fix login": "47950-Fix-login", "47950  Two spaces": "47950-Two-spaces",
+                 "40005 Not a block": "47950-40005-Not-a-block", "123 apples": "47950-123-apples",
+                 "49000 Out of range": "47950-49000-Out-of-range", "419990 Six digits": "47950-419990-Six-digits"}
         for title, expected in cases.items():
             self.assertEqual(self.ported(title), expected, title)
-        self.assertEqual(self.ported("Fix login", "unknown"), "Fix login")
+        self.assertEqual(self.ported("Fix login", "unknown"), "Fix-login")
         self.port("bad", "4795x")
-        self.assertEqual(self.ported("Fix login", "bad"), "Fix login")
-        self.assertEqual(self.ported("Fix login", ""), "Fix login")
+        self.assertEqual(self.ported("Fix login", "bad"), "Fix-login")
+        self.assertEqual(self.ported("Fix login", ""), "Fix-login")
         self.assertEqual(self.run_hook("agent-tmux-session", "bare", "41230 Fix"), "Fix")
 
     def test_headless_session_keeps_its_title(self):
         self.env["CLAUDE_CODE_SESSION_ATTENDED"] = "0"
-        self.assertEqual(self.ported("Fix login"), "Fix login")
+        self.assertEqual(self.ported("Fix login"), "Fix-login")
         out = self.run_hook("session-port", payload=dict(
-            session_id="two", source="startup", session_title="Fix login"))
+            session_id="two", source="startup", session_title="Fix-login"))
         self.assertEqual(out, "")
         transcript = self.home / "claude.jsonl"
         transcript.write_text("")
@@ -381,7 +381,7 @@ class ClaudePortNameTests(TmuxCase):
 
     def test_background_session_keeps_port(self):
         self.env.update(CLAUDE_CODE_SESSION_ATTENDED="0", CLAUDE_JOB_DIR=str(self.home / "job"))
-        self.assertEqual(self.ported("Fix login"), "47950 Fix login")
+        self.assertEqual(self.ported("Fix login"), "47950-Fix-login")
 
     def test_claude_hook_names_tmux_session_with_port(self):
         transcript = self.home / "claude.jsonl"
@@ -392,7 +392,7 @@ class ClaudePortNameTests(TmuxCase):
         transcript.write_text('{"type":"custom-title","customTitle":"41230 Fix v1.2: login"}\n')
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(session_id="one", transcript_path=str(transcript)))
-        self.assertEqual(self.name(), "47950 Fix v1_2 login")
+        self.assertEqual(self.name(), "47950-Fix-v1_2-login")
 
     def test_port_only_custom_title_is_no_title(self):
         transcript = self.home / "claude.jsonl"
@@ -400,18 +400,18 @@ class ClaudePortNameTests(TmuxCase):
                               '{"type":"custom-title","customTitle":"47950"}\n')
         payload = dict(session_id="one", transcript_path=str(transcript))
         self.run_hook("agent-tmux-session", "claude", payload=payload)
-        self.assertEqual(self.name(), "47950 Native title")
+        self.assertEqual(self.name(), "47950-Native-title")
         (self.state / "one.haiku").write_text("Haiku title\n")
         self.run_hook("agent-tmux-session", "claude", payload=payload)
-        self.assertEqual(self.name(), "47950 Haiku title")
+        self.assertEqual(self.name(), "47950-Haiku-title")
 
     def test_set_and_sync_add_port(self):
         self.run_hook("agent-tmux-session", "set", "Haiku title", "one")
-        self.assertEqual(self.name(), "47950 Haiku title")
+        self.assertEqual(self.name(), "47950-Haiku-title")
         self.run_hook("agent-tmux-session", "sync", "47950", "one")
-        self.assertEqual(self.name(), "47950 Haiku title")
+        self.assertEqual(self.name(), "47950-Haiku-title")
         self.run_hook("agent-tmux-session", "sync", "Renamed", "one")
-        self.assertEqual(self.name(), "47950 Renamed")
+        self.assertEqual(self.name(), "47950-Renamed")
 
     def test_session_start_sets_port_title(self):
         out = self.run_hook("session-port", payload=dict(session_id="two", source="startup"))
@@ -419,52 +419,52 @@ class ClaudePortNameTests(TmuxCase):
         self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], port)
         out = self.run_hook("session-port", payload=dict(
             session_id="two", source="resume", session_title="40000 Old name"))
-        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], f"{port} Old name")
+        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], f"{port}-Old-name")
         out = self.run_hook("session-port", payload=dict(
-            session_id="two", source="compact", session_title=f"{port} Old name"))
+            session_id="two", source="compact", session_title=f"{port}-Old-name"))
         self.assertEqual(out, "")
 
     def test_user_name_gets_port_on_next_prompt(self):
         (self.state / "one").touch()
-        self.assertEqual(self.prompt("My name"), "47950 My name")
-        self.assertIsNone(self.prompt("47950 My name"))
-        self.assertEqual(self.prompt("41230 My name"), "47950 My name")
+        self.assertEqual(self.prompt("My name"), "47950-My-name")
+        self.assertIsNone(self.prompt("47950-My-name"))
+        self.assertEqual(self.prompt("41230 My name"), "47950-My-name")
 
     def test_first_name_is_user_named_check_without_port(self):
         self.assertIsNone(self.prompt("47950"))
         self.assertFalse((self.state / "one").exists())
-        self.assertEqual(self.prompt("Picked by user"), "47950 Picked by user")
+        self.assertEqual(self.prompt("Picked by user"), "47950-Picked-by-user")
         self.assertTrue((self.state / "one").exists())
 
     def test_haiku_title_gets_port(self):
         (self.state / "one.haiku").write_text("Fix login\n")
-        self.assertEqual(self.prompt("47950"), "47950 Fix login")
+        self.assertEqual(self.prompt("47950"), "47950-Fix-login")
         (self.state / "one").unlink()
-        self.assertIsNone(self.prompt("47950 Fix login"))
+        self.assertIsNone(self.prompt("47950-Fix-login"))
 
     def test_part_names(self):
-        cases = {"45060 Fix login": "Fix login Part 2", "Fix login Part 2": "Fix login Part 3",
-                 "47950 feat/x Part 9": "feat/x Part 10", "Part 2": "Part 2 Part 2",
-                 "Fix Part 0": "Fix Part 0 Part 2", "Fix part 2": "Fix part 2 Part 2",
+        cases = {"45060 Fix login": "Fix-login-Part-2", "Fix login Part 2": "Fix-login-Part-3",
+                 "47950 feat/x Part 9": "feat/x-Part-10", "Part 2": "Part-2-Part-2",
+                 "Fix Part 0": "Fix-Part-0-Part-2", "Fix part 2": "Fix-part-2-Part-2",
                  "": "", "45060": ""}
         for title, expected in cases.items():
             self.assertEqual(self.run_hook("agent-tmux-session", "part", title), expected, title)
         long = self.run_hook("agent-tmux-session", "part", "word " * 20 + "Part 99")
-        self.assertTrue(long.endswith(" Part 100"), long)
+        self.assertTrue(long.endswith("-Part-100"), long)
         self.assertLessEqual(len(long), 54)
         self.assertLessEqual(len(self.run_hook("agent-tmux-session", "part", "x" * 80)), 54)
 
     def test_clear_continues_as_next_part(self):
         self.run_hook("auto-title", "new", payload=dict(
             session_id="one", source="clear", session_title="45060 My name"))
-        self.assertEqual(self.prompt("45060 My name"), "47950 My name Part 2")
+        self.assertEqual(self.prompt("45060 My name"), "47950-My-name-Part-2")
         self.assertTrue((self.state / "one").exists())
-        self.assertIsNone(self.prompt("47950 My name Part 2"))
+        self.assertIsNone(self.prompt("47950-My-name-Part-2"))
         self.assertFalse((self.state / "one.cleared").exists())
         self.port("two", "41230")
         self.run_hook("auto-title", "new", payload=dict(
-            session_id="two", source="clear", session_title="47950 My name Part 2"))
-        self.assertEqual(self.prompt("47950 My name Part 2", sid="two"), "41230 My name Part 3")
+            session_id="two", source="clear", session_title="47950-My-name-Part-2"))
+        self.assertEqual(self.prompt("47950-My-name-Part-2", sid="two"), "41230-My-name-Part-3")
 
     def test_clear_of_unnamed_session_waits_for_haiku(self):
         self.run_hook("auto-title", "new", payload=dict(
@@ -483,16 +483,16 @@ class ClaudePortNameTests(TmuxCase):
         payload = dict(session_id="one", transcript_path=str(transcript))
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(payload, source="clear", session_title="45060 Old"))
-        self.assertEqual(self.name(), "47950 Old Part 2")
+        self.assertEqual(self.name(), "47950-Old-Part-2")
         self.tmux("rename-session", "elsewhere")
         self.run_hook("auto-title", "new", payload=dict(
             session_id="one", source="clear", session_title="45060 Old"))
         self.run_hook("agent-tmux-session", "claude", payload=payload)
-        self.assertEqual(self.name(), "47950 Old Part 2")
+        self.assertEqual(self.name(), "47950-Old-Part-2")
         self.run_hook("agent-tmux-session", "sync", "45060 Old", "one")
-        self.assertEqual(self.name(), "47950 Old Part 2")
+        self.assertEqual(self.name(), "47950-Old-Part-2")
         self.run_hook("agent-tmux-session", "sync", "Renamed", "one")
-        self.assertEqual(self.name(), "47950 Renamed")
+        self.assertEqual(self.name(), "47950-Renamed")
 
     def worktree(self, branch="feat/x-y.1"):
         """A repository with a linked worktree on <branch>; returns (main, worktree)."""
@@ -523,25 +523,25 @@ class ClaudePortNameTests(TmuxCase):
         transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
         line = json.dumps(dict(path=str(tree), branch="feat/x-y.1", reused=False, warnings=[]))
         self.bash_done(f"Preparing\n{line}\ndone\n", transcript="claude.jsonl")
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.assertEqual(self.name(), "47950-feat/x-y_1")
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(session_id="one", transcript_path=str(transcript)))
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.assertEqual(self.name(), "47950-feat/x-y_1")
         self.run_hook("agent-tmux-session", "sync", "47950 Old", "one")
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.assertEqual(self.name(), "47950-feat/x-y_1")
         (self.state / "one").touch()
-        self.assertEqual(self.prompt("47950 Old", transcript="claude.jsonl"), "47950 feat/x-y.1")
+        self.assertEqual(self.prompt("47950 Old", transcript="claude.jsonl"), "47950-feat/x-y.1")
         self.assertFalse((self.state / "one.branch").exists())
-        self.assertIsNone(self.prompt("47950 feat/x-y.1"))
-        self.assertIsNone(self.prompt("47950 Renamed later"))
+        self.assertIsNone(self.prompt("47950-feat/x-y.1"))
+        self.assertIsNone(self.prompt("47950-Renamed-later"))
 
     def test_long_branch_is_cut_to_fit_beside_port(self):
         branch = "feat/" + "a" * 70
         _, tree = self.worktree(branch)
         self.bash_done(json.dumps(dict(path=str(tree), branch=branch, reused=False)) + "\n")
-        self.assertEqual(self.name(), "47950 feat/" + "a" * 49)
+        self.assertEqual(self.name(), "47950-feat/" + "a" * 49)
         (self.state / "one").touch()
-        self.assertEqual(self.prompt("47950 Old"), "47950 feat/" + "a" * 49)
+        self.assertEqual(self.prompt("47950 Old"), "47950-feat/" + "a" * 49)
 
     def test_branch_that_tidies_to_nothing_is_skipped(self):
         _, tree = self.worktree("!!!")
@@ -555,7 +555,7 @@ class ClaudePortNameTests(TmuxCase):
         _, tree = self.worktree(branch)
         self.run_hook("auto-title", "branch", payload=dict(
             session_id="one", hook_event_name="CwdChanged", new_cwd=str(tree)))
-        self.assertEqual(self.name(), "47950 feat/" + "a" * 48)
+        self.assertEqual(self.name(), "47950-feat/" + "a" * 48)
         for title in ("é" * 40, "€" * 30, "😀" * 20, "a" + "é" * 40):
             out = self.run_hook("agent-tmux-session", "tidy", title, "55").rstrip("\n")
             self.assertTrue(title.startswith(out) and len(out.encode()) <= 55, out)
@@ -568,19 +568,19 @@ class ClaudePortNameTests(TmuxCase):
         self.run_hook("auto-title", "branch", payload=dict(
             session_id="one", hook_event_name="PostToolUse", transcript_path=str(transcript),
             tool_response=dict(stdout=line + "\n")))
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.assertEqual(self.name(), "47950-feat/x-y_1")
         self.run_hook("agent-tmux-session", "sync", "47950 Old", "one")
-        self.assertEqual(self.name(), "47950 feat/x-y_1")
+        self.assertEqual(self.name(), "47950-feat/x-y_1")
         with transcript.open("a") as stream:
             stream.write('{"type":"custom-title","customTitle":"Mine"}\n')
         self.run_hook("agent-tmux-session", "sync", "Mine", "one")
-        self.assertEqual(self.name(), "47950 Mine")
+        self.assertEqual(self.name(), "47950-Mine")
         self.run_hook("agent-tmux-session", "claude",
                       payload=dict(session_id="one", transcript_path=str(transcript)))
-        self.assertEqual(self.name(), "47950 Mine")
+        self.assertEqual(self.name(), "47950-Mine")
         out = self.run_hook("auto-title", payload=dict(
             session_id="one", session_title="Mine", prompt="hi", transcript_path=str(transcript)))
-        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], "47950 Mine")
+        self.assertEqual(json.loads(out)["hookSpecificOutput"]["sessionTitle"], "47950-Mine")
         self.assertFalse((self.state / "one.branch").exists())
 
     def test_subagent_worktree_leaves_session_name(self):
@@ -625,21 +625,21 @@ class ClaudePortNameTests(TmuxCase):
         self.run_hook("auto-title", "branch", payload=dict(cd, new_cwd=str(tree / "src")))
         self.assertFalse((self.state / "one.branch").exists())
         self.run_hook("auto-title", "new", payload=dict(start, source="startup", session_title=""))
-        self.assertEqual(self.prompt("47950"), "47950 feat/x-y.1")
+        self.assertEqual(self.prompt("47950"), "47950-feat/x-y.1")
         self.run_hook("auto-title", "new", payload=dict(
-            session_id="two", source="clear", session_title="47950 feat/x-y.1"))
+            session_id="two", source="clear", session_title="47950-feat/x-y.1"))
         self.port("two", "41230")
         self.run_hook("auto-title", "branch", payload=dict(cd, session_id="two", new_cwd=str(tree / "src")))
-        self.assertEqual(self.prompt("47950 feat/x-y.1", sid="two"), "41230 feat/x-y.1 Part 2")
+        self.assertEqual(self.prompt("47950-feat/x-y.1", sid="two"), "41230-feat/x-y.1-Part-2")
         _, other = self.worktree_in(main, "feat/other")
         self.run_hook("auto-title", "branch", payload=dict(cd, session_id="two", new_cwd=str(other)))
-        self.assertEqual(self.prompt("41230 feat/x-y.1 Part 2", sid="two"), "41230 feat/other")
+        self.assertEqual(self.prompt("41230-feat/x-y.1-Part-2", sid="two"), "41230-feat/other")
 
     def test_start_in_linked_worktree_names_session(self):
         main, tree = self.worktree()
         start = dict(session_id="one", source="startup", cwd=str(tree))
         self.run_hook("auto-title", "new", payload=start)
-        self.assertEqual(self.prompt("47950"), "47950 feat/x-y.1")
+        self.assertEqual(self.prompt("47950"), "47950-feat/x-y.1")
         self.run_hook("auto-title", "new", payload=dict(start, session_title="47950 Named with -n"))
         self.assertFalse((self.state / "one.branch").exists())
         self.run_hook("auto-title", "new", payload=dict(start, cwd=str(main)))
@@ -654,10 +654,10 @@ class ClaudePortNameTests(TmuxCase):
         transcript.write_text('{"type":"custom-title","customTitle":"47950 Old"}\n')
         self.run_hook("agent-tmux-session", "claude", payload=dict(
             session_id="two", transcript_path=str(transcript), source="clear", session_title="47950 Old"))
-        self.assertEqual(self.name(), "41230 feat/a")
+        self.assertEqual(self.name(), "41230-feat/a")
         self.run_hook("auto-title", "new", payload=dict(
             session_id="two", source="clear", session_title="47950 Old"))
-        self.assertEqual(self.prompt("47950 Old", sid="two"), "41230 feat/a")
+        self.assertEqual(self.prompt("47950 Old", sid="two"), "41230-feat/a")
         self.assertFalse((self.state / "pid-4242.branch").exists())
         self.env["CLAUDE_PID"] = "12a"
         (self.state / "one.branch").write_text("feat/a\n")
@@ -673,8 +673,8 @@ class ClaudePortNameTests(TmuxCase):
         while not (self.state / "one.haiku").read_text() and time.monotonic() < deadline:
             time.sleep(0.05)
         time.sleep(0.3)
-        self.assertEqual((self.state / "one.haiku").read_text(), "Haiku title\n")
-        self.assertEqual(self.name(), "47950 feat/a")
+        self.assertEqual((self.state / "one.haiku").read_text(), "Haiku-title\n")
+        self.assertEqual(self.name(), "47950-feat/a")
 
 if __name__ == "__main__":
     unittest.main()
