@@ -41,7 +41,6 @@ jobs:
           install -D "$(find "$RUNNER_TEMP/qlty" -type f -name qlty)" "$HOME/.local/bin/qlty"
           qlty --version
 
-      # One process per test file, at most nproc at once.
       - name: Python tests
         run: |
           ls test/unit | sed -n 's/^\(test_.*\)\.py$/\1/p' |
