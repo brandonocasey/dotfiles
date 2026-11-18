@@ -68,6 +68,20 @@ later passes).
   review mode is `haiku`, pass `model: haiku` (effort stays `xhigh`). If a `haiku`
   code reviewer returns `Risk: high` or a `high` bug
   survives verification, rerun once with the default model.
+- Shadow trial (Claude Code only; remove this bullet once `review-trial status`
+  prints `off`): for a run's first full review in review mode `opus` without
+  `--agents`, run `review-trial start` before `pass start`. When it prints
+  `on <n>/20`, also start three more code reviewers with the same prompt in the same
+  turn: one `reviewer-fable`, one `reviewer` with `model: sonnet`, and one `reviewer`
+  with `model: haiku` (effort stays `xhigh`). List them in `--reviewers` after the
+  Opus reviewer in that order and before the `writing-reviewer`, as
+  `claude-fable-5-2`, `claude-sonnet-5-5`, and `claude-haiku-5-5`. On any other
+  output or an error, start none; on `off`, add the line
+  `Shadow trial complete: run review-trial report` to the review's report. The `haiku` rerun rule above does not apply to
+  them. Fix checks and later full reviews use only the Opus reviewer; never continue
+  the three. The script stops at 20 reviews, so at most 60 extra reviewers run.
+  [delegation.md](references/delegation.md) **Shadow trial** owns how their findings
+  are recorded.
 - In the first cycle's full review only, also start one `writing-reviewer` per target with
   setup.md's writing prompt verbatim, in the same turn as the first `tester` and the
   code reviewers, or before testing.md's inline checks when no tester runs. It reviews

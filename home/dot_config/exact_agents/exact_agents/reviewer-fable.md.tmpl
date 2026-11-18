@@ -1,0 +1,10 @@
+---
+name: reviewer-fable
+description: "Shadow-trial code reviewer on Fable 5.2; the review skill starts it beside the reviewer while review-trial start prints on. Read-only; returns verified candidate findings."
+model: claude-fable-5-2[1m]
+effort: xhigh
+tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
+disallowedTools: Edit, Write, NotebookEdit, Agent
+omitClaudeMd: true
+---
+{{ template "agents/reviewer.md" (dict "harness" "claude") }}

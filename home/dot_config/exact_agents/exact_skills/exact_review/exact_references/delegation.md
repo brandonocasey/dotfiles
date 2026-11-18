@@ -14,6 +14,13 @@
 
 An external tool's findings go through the same re-verification.
 
+**Shadow trial.** When a pass has the three trial reviewers (the review skill's step
+0–2), re-verify every reviewer's findings the same way. When several reviewers report
+the same finding, send each copy to `pass end` under its own `reviewer` ID. Keep the
+copy of the first reviewer in `--reviewers` order. Kill each other copy with
+`agt review finding kill <id> --reason "duplicate of <kept finding ID>"`.
+`review-trial report` counts findings per model from these records.
+
 Merge the findings, writing findings included, and remove duplicates by file, line, and
 failure scenario. Name the reviewers that found each finding. Then re-verify each finding in the worktree before
 showing or fixing anything: read the cited code, verify the failure scenario is reachable,

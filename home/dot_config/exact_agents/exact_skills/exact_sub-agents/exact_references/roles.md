@@ -18,7 +18,7 @@ If the role is unavailable or incompatible, work inline and report the limitatio
 Unless an override applies, keep the role's model and effort pins.
 Never use a generic agent (`general-purpose`, `claude`, `default`) for work a role covers.
 Omitting the role bypasses its pin: Claude Code uses `CLAUDE_CODE_SUBAGENT_MODEL` (Sonnet), or inherits the parent model when that is unset; Codex uses `default_subagent_model`.
-Name Fable 5.2 as `claude-fable-5-2[1m]` in a role's `model:` or `CLAUDE_CODE_SUBAGENT_MODEL`. Without `[1m]` it gets a 200k window on Claude Code before 2.1.321; the Agent tool `model` field takes aliases only, and `fable` there means 5.1.
+Name Fable 5.2 as `claude-fable-5-2[1m]` in a role's `model:` or `CLAUDE_CODE_SUBAGENT_MODEL`. Without `[1m]` it gets a 200k window on Claude Code before 2.1.321; the Agent tool `model` field takes aliases only, and `fable` there is not fixed: it gave 5.1 from Opus and Sonnet sessions on 2026-11-10 and 5.2 from a Fable 5.2 session on 2026-11-18. Pin a role when the version matters.
 Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 
 | Role | Work | Claude Code | Codex |
@@ -29,6 +29,7 @@ Workflow `agent()` calls follow [workflows.md](workflows.md#agents).
 | `tester` | Run checks, manual cases, and UX checks; inspect failures and validate evidence; the `review` skill runs it with every review; changes no tracked files | claude-haiku-5-5, high; probes: on a 3-file Node change both models found 6 of 6 planted bugs; on a localized focus-return bug checked in a browser both found it in 2 of 2 runs; Haiku used about 1.3–2x the tokens | gpt-6.1-sol, high |
 | `consult` | Main-session escalation, design critique, and open-question picks only; read-only | claude-opus-5-5, xhigh | gpt-6-astra, xhigh |
 | `reviewer` | Independent adversarial review of a change; the `review` skill runs it for every review; read-only | claude-opus-5-5, xhigh; trials: on 27 changes `xhigh` found 20 of 31 known high/medium bugs and `high` 17, at $2.11 vs $1.13 per review; the `review` skill passes `model: haiku` for `low` risk tiers, and `model: sonnet` for fresh fix checks; both keep `xhigh` | gpt-6-astra, xhigh |
+| `reviewer-fable` | Shadow-trial code reviewer; only the `review` skill starts it, beside `reviewer`, while `review-trial start` prints `on`; read-only | claude-fable-5-2[1m], xhigh; not yet trialed | none |
 | `writing-reviewer` | Check the public text of a change (docs, code comments, commit messages, MR/PR title and description) against the writing rules; the `review` skill starts it with the `tester` in the first full review; read-only | claude-haiku-5-5, xhigh; Haiku's token price is 1/20 of Sonnet's; not yet trialed on writing checks | gpt-6-luna, xhigh |
 
 Routing:
