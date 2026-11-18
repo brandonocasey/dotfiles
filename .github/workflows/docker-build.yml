@@ -51,7 +51,8 @@ jobs:
 
   # Claude Code runs the hooks with the python3 on PATH, which can be Apple's Python 3.9.
   hooks-python39:
-    runs-on: ubuntu-latest
+    # setup-python has no Python 3.9 build for Ubuntu 26.04, which ubuntu-latest now is.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
