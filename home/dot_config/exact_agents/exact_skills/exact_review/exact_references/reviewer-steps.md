@@ -188,8 +188,15 @@ everything else.
 Every tool call re-sends the whole context, so cost grows with turns times context.
 Cut both without skipping any step above:
 
-- Batch independent reads, searches, and commands into one call. Search the whole
-  scope with one `rg`, not file by file.
+- Batch independent reads, searches, and commands into one response. Before each
+  call, list every read and search you can already name, and send them all at once.
+  Send one alone only when it depends on a result you do not have yet. Search the
+  whole scope with one `rg`, not file by file.
+- In Claude Code, batch file reads as several Read tool calls in one response, not as
+  `sed` or `cat` commands joined in one shell call: shell output over 6,000
+  characters is saved to a file and costs a second call. Read this steps file, rule
+  files, and any range over about 100 lines with the Read tool. Send a long diff to
+  a file in the scratch directory and read that.
 - Read partials: only the ranges you located.
   Still read all needed context: the whole changed function, its callers, and the
   contracts a finding depends on. Read whole config files, small modules, and files
