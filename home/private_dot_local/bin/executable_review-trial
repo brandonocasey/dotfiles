@@ -6,7 +6,7 @@ status  print the same line without reserving a slot
 report  per reviewer model: findings kept after verification, findings no other model found, killed findings, cost
 
 Slots are `<UTC time>\\t<main checkout>` lines in $XDG_STATE_HOME/agents/review-trial/slots.tsv
-(default ~/.local/state). `start` exits 2 when it is not in a git repository or cannot write the slot file.
+(default ~/.local/state). `start` exits 2 outside a git repository or when it cannot write the slot file.
 """
 import argparse
 import fcntl
@@ -23,6 +23,7 @@ from pathlib import Path
 SLOT_LIMIT = 20
 MODEL_FAMILIES = ("opus", "fable", "sonnet", "haiku")
 REVIEWER_ROLES = ("reviewer", "reviewer-fable")
+# Matches the kill reason the review skill writes for a shared finding (delegation.md, Shadow trial).
 DUPLICATE_REASON = re.compile(r"^duplicate of (\S+)")
 COUNTED_SEVERITIES = ("high", "medium")
 REPORT_COLUMNS = ("reviews", "found", "only", "high", "medium", "killed")
@@ -104,7 +105,7 @@ def model_family(model):
 
 
 class TrialRun:
-    """One review run whose first full pass has ended and had a code reviewer of each model family."""
+    """One trial run: its first full pass ended, with a code reviewer per model family."""
 
     def __init__(self, repo, store, run, first_pass):
         self.repo, self.store, self.run, self.first_pass = repo, store, run, first_pass
@@ -113,7 +114,7 @@ class TrialRun:
         self.ended_at = parse_time(first_pass["ended_at"])
 
     def contains(self, started_at, cwd):
-        """True when a reviewer that started at `started_at` in `cwd` belongs to this run's first pass."""
+        """True when a reviewer started at `started_at` in `cwd` during this run's first pass."""
         if not self.started_at <= started_at <= self.ended_at:
             return False
         return cwd == self.repo or self.repo in cwd.parents
@@ -121,6 +122,7 @@ class TrialRun:
 
 def code_reviewer_models(first_pass):
     """Map reviewer ID to model family. The last Haiku entry is the writing-reviewer, which is left out."""
+    # The "fix" entry is the main session that applies fixes (review store.md), not a reviewer.
     reviewers = [r for r in first_pass.get("reviewers") or [] if r.get("id") != "fix"]
     haiku = [r for r in reviewers if model_family(r.get("model")) == "haiku"]
     if haiku:
@@ -233,7 +235,7 @@ def first_assistant_entry(transcript):
 
 
 def reviewer_start(meta, transcript):
-    """Return (started at, cwd, model family) of a reviewer's transcript, or None for another role or no reply yet."""
+    """Return (started at, cwd, model family), or None for another role or no reply yet."""
     if json.loads(meta.read_text()).get("agentType") not in REVIEWER_ROLES:
         return None
     entry = first_assistant_entry(transcript)
@@ -261,7 +263,7 @@ def reviewer_transcripts(since):
 
 
 def transcripts_by_model(trials, since):
-    """Group (transcript, first-pass end) of the trial runs' reviewers by model family; each transcript counts once.
+    """Group trial reviewers' (transcript, first-pass end) pairs by model family; each transcript counts once.
 
     When trial runs overlap, a transcript belongs to the one that started last.
     """
@@ -275,7 +277,7 @@ def transcripts_by_model(trials, since):
 
 
 def cost_by_model(grouped):
-    """Price each model's first-pass transcript entries; a model is left out when they cannot be priced."""
+    """Price each model's first-pass transcript entries; leave out a model that cannot be priced."""
     cost = {}
     with tempfile.TemporaryDirectory(prefix="review-trial-") as directory:
         for model, transcripts in grouped.items():

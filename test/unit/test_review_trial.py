@@ -87,7 +87,7 @@ class ReviewTrialTests(unittest.TestCase):
         (subagents / f"agent-{agent_id}.jsonl").write_text(entries)
 
     def write_trial_fixture(self):
-        """Write two slots, two overlapping trial runs, five runs that are not trial runs, and five reviewer transcripts."""
+        """Write two slots, two overlapping trial runs, five non-trial runs, and five reviewer transcripts."""
         slots = self.home / "state/agents/review-trial/slots.tsv"
         slots.parent.mkdir(parents=True)
         slots.write_text(f"not-a-time\t{self.repo}\n2020-01-02T00:00:00Z\t{self.repo}\n2020-01-02T06:00:00\t{self.repo}\n")
@@ -177,7 +177,7 @@ class ReviewTrialTests(unittest.TestCase):
 
         self.assertEqual(lines[0], "trial reviews: 2; slots 2/20")
         self.assertEqual(lines[1].split("\t"), REPORT_HEADER)
-        # Fable cost: the "during" transcript is cut at rv-trial's end (1 reply), "after" at rv-wide's end (2 replies).
+        # Fable cost: cut "during" at rv-trial's end (1 reply) and "after" at rv-wide's end (2).
         self.assertEqual(
             [line.split("\t") for line in lines[2:]],
             [
