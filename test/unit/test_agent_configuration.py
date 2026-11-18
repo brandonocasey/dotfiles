@@ -8,11 +8,10 @@ import tempfile
 import tomllib
 import unittest
 
-from settings_template import managed_settings
+from settings_template import TEMPLATE, managed_settings
 
 REPO = Path(__file__).resolve().parents[2]
 CODEX_MODIFIER = REPO / "home/dot_codex/modify_private_config.toml.tmpl"
-CLAUDE_SETTINGS = REPO / "home/.chezmoitemplates/claude-settings-modify.sh"
 SCRATCH = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "agents/scratch"
 
 
@@ -41,7 +40,7 @@ def render_claude_settings(directory, data=None):
     return subprocess.run(
         ["chezmoi", "--source", str(REPO if data is not None else source), "--config", str(config),
          *override, "execute-template"],
-        input=CLAUDE_SETTINGS.read_text(), text=True, capture_output=True, timeout=10)
+        input=TEMPLATE.read_text(), text=True, capture_output=True, timeout=10)
 
 
 class AgentConfigurationTests(unittest.TestCase):
