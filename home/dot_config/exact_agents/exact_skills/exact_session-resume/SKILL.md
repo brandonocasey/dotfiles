@@ -21,7 +21,7 @@ Use `--parent-pr`, `--target-branch`, and `--task-boundary` when those fields
 define where the resumed work belongs. The same flags update an existing record.
 
 Before work, run `agt task show <id>`. Check its repository, worktree, and HEAD
-against the current checkout. Apply recorded corrections. Continue from `nextStep`.
+against the current checkout. Apply recorded corrections. Continue from `next_step` (`nextStep` before agt 0.41.0).
 
 Update with the revision returned by `show`; stale updates fail:
 

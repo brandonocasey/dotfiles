@@ -53,4 +53,4 @@ and report it. Restoring needs no new merge consent; it returns the user's setti
 Leave it off when the work stops unfinished: a blocking finding, a failed
 repair, a rejected push, or the user's stop. Then report that auto-merge is
 paused, with its method and the restore command. In a
-`session-resume` record, put the pause and method in `nextStep` as plain text.
+`session-resume` record, put the pause and method in `next_step` as plain text.
