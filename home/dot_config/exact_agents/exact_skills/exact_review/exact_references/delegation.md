@@ -14,7 +14,7 @@
 
 An external tool's findings go through the same re-verification.
 
-**Shadow trial.** When a pass has the three trial reviewers (the review skill's step
+**Shadow trial.** When a pass has the two trial reviewers (the review skill's step
 0–2), re-verify every reviewer's findings the same way. When several reviewers report
 the same finding, send each copy to `pass end` under its own `reviewer` ID. Keep the
 copy of the first reviewer in `--reviewers` order. Kill each other copy with

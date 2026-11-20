@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Gate and report for the reviewer shadow trial: Fable, Sonnet, and Haiku beside Opus.
+"""Gate and report for the reviewer shadow trial: Sonnet and Haiku beside Opus.
 
 start   reserve a slot for a review of the current repository; prints `on <n>/<limit>` or `off <n>/<limit>`
 status  print the same line without reserving a slot
-report  per reviewer model: findings kept after verification, findings no other model found, killed findings, cost
+report  per reviewer model: findings kept after verification, findings no other model found, killed findings, cost;
+        then per review: task type, risk tier, changed lines
 
 Slots are `<UTC time>\\t<main checkout>` lines in $XDG_STATE_HOME/agents/review-trial/slots.tsv
 (default ~/.local/state). `start` exits 2 outside a git repository or when it cannot write the slot file.
@@ -21,8 +22,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SLOT_LIMIT = 20
-MODEL_FAMILIES = ("opus", "fable", "sonnet", "haiku")
-REVIEWER_ROLES = ("reviewer", "reviewer-fable")
+MODEL_FAMILIES = ("opus", "sonnet", "haiku")
+REVIEWER_ROLES = ("reviewer",)
 # Matches the kill reason the review skill writes for a shared finding (delegation.md, Shadow trial).
 DUPLICATE_REASON = re.compile(r"^duplicate of (\S+)")
 COUNTED_SEVERITIES = ("high", "medium")
@@ -315,6 +316,20 @@ def copy_entries_until(transcript, ended_at, copy):
                 kept.write(line)
 
 
+def changed_lines(trial):
+    """Return the lines added plus deleted from the first pass's base to its head, or `?` when git cannot tell."""
+    base, head = trial.first_pass.get("base"), trial.first_pass.get("head")
+    if not (base and head):
+        return "?"
+    diff = subprocess.run(
+        ["git", "-C", str(trial.repo), "diff", "--numstat", base, head], capture_output=True, text=True, check=False,
+    )
+    if diff.returncode != 0:
+        return "?"
+    counts = (line.split("\t")[:2] for line in diff.stdout.splitlines())
+    return str(sum(int(count) for pair in counts for count in pair if count.isdigit()))
+
+
 def print_report(slots):
     trials = trial_runs(slots)
     totals = defaultdict(lambda: defaultdict(int))
@@ -328,6 +343,10 @@ def print_report(slots):
     for model in sorted(totals, key=lambda name: (MODEL_FAMILIES + ("other",)).index(name)):
         usd = f"{cost[model]:.2f}" if model in cost else "?"
         print("\t".join((model, *(str(totals[model][column]) for column in REPORT_COLUMNS), usd)))
+    print("\t".join(("review", "task_type", "risk", "lines")))
+    for trial in sorted(trials, key=lambda trial: trial.started_at):
+        task_type, risk = trial.run.get("task_type") or "?", trial.first_pass.get("risk") or "?"
+        print("\t".join((trial.run["id"], task_type, risk, changed_lines(trial))))
 
 
 def main():
