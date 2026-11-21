@@ -36,17 +36,19 @@ agt worktree remove <worktree-path> --yes
   a submodule problem, or a directory git could not empty (unreadable or read-only; fix its
   permissions with the `chmod -R u+rwX` the error names). When it refuses, follow
   **Blocked removal** in [removal-checks.md](removal-checks.md).
+- From agt 0.42.0, if no branch contains HEAD, the plan refuses outside ignored paths.
+  Keep the reported commit on a branch before retrying a refused removal.
+  For ignored paths, the plan warns that the backup leaves those commits out.
 - When the plan's `hooks.remove` lists commands, `--yes` runs them first; a failing one stops the
   removal: report its command and log. Report `hooks.untrusted` as
   [prepare.md](prepare.md) says. Pass `--no-hooks` only when the user asks.
-- `--yes` snapshots the working tree as a commit pinned at `refs/agt/backups/<id>`,
-  saves its record under
-  `~/.local/state/agents/backups/<repo>/<stamp>-worktree-<name>/`, then runs
-  `git worktree remove --force`, which deletes the ignored files. Report the backup `id`
-  and that `agt worktree restore <id>` brings the worktree back.
-- When the result reports `head_on_local_branch` and `head_on_remote_branch` both
-  false, the HEAD commit is on no branch. Report the HEAD commit ID and the backup ref
-  `refs/agt/backups/<id>`: those commits live only there.
+- `--yes` creates a backup, then removes the worktree and its ignored files.
+  From agt 0.42.0, the backup is a `.tar.gz` archive of tracked files.
+  Report the backup `id` and the restore command, `agt worktree restore <id>`.
+- When both `head_on_local_branch` and `head_on_remote_branch` are false,
+  report the HEAD commit ID and any warning from agt.
+  Git can garbage-collect commits that no ref keeps.
+  For older backups, report the ref if `agt worktree backups <id>` shows one.
 - It never deletes the branch. Delete a local branch only through **Remove after
   push** below, `land`'s merged branch checks, the wrong-base cleanup in
   [create.md](create.md), or the `-D` exceptions in `review`

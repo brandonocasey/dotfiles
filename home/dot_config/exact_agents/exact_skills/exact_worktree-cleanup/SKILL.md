@@ -144,8 +144,8 @@ branch. When the user approved only the worktree, run `agt worktree remove <path
 agt cleanup --only worktrees --dirty --recent [--offline] --yes --worktree <branch-or-path> [--worktree <branch-or-path> ...]
 ```
 
-It snapshots each worktree (a commit pinned at `refs/agt/backups/<id>`; ignored files are not
-kept), removes it, then deletes the branches that qualify with `-d`, or
+It [backs up each worktree](../worktree/references/remove.md), removes it,
+then deletes the branches that qualify with `-d`, or
 `-D` for a verified squash merge, and prints `removed` (with the backup `id`), `deleted` (with
 each `tip` and the `git branch <name> <tip>` that restores it), `kept`, and `warnings`. A named row
 that no longer qualifies with the same verdict is skipped. Report each skipped row and why. Show a
@@ -156,8 +156,7 @@ Then handle what agt kept, one target at a time, after a fresh recheck of its pa
 - For a confirmed review-worktree or detached-baseline row:
   `agt worktree remove <path> --yes`. If it refuses, follow the `worktree` skill's
   **Blocked removal** section and retain the target.
-- After each `agt worktree remove`, when `head_on_local_branch` and `head_on_remote_branch` are
-  both false, report the HEAD commit and `refs/agt/backups/<id>` per
+- After each `agt worktree remove`, report backup details per
   [remove.md](../worktree/references/remove.md).
 - For a user-named closed-without-merge or relevance branch: record the tip SHA. When a worktree
   has the branch checked out, first run `agt worktree remove <path> --yes`; if it refuses, keep
@@ -178,8 +177,8 @@ Do not overlap removal commands; wait for each command to finish.
 
 End with:
 
-- every removed worktree with its backup id (and, when its HEAD is on no branch, the HEAD commit
-  and `refs/agt/backups/<id>`), and every deleted local branch with its tip;
+- every removed worktree with its backup id and any detached HEAD details,
+  and every deleted local branch with its tip;
 - every removed review worktree grouped by PR, including duplicate paths for the same PR;
 - every retained candidate and the reason it was retained;
 - the step 5 verdict for every retained branch, with the evidence behind it and the tip SHA of
