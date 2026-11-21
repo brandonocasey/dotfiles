@@ -121,9 +121,10 @@ dispositions are authorized; changed scope needs a new preview.
 user a message listing exactly what that command will delete: each worktree path with its branch
 (or detached HEAD), tip SHA, verdict, PR number, and changed-file count, then each branch deleted
 without a worktree with its tip SHA and verdict. Take the rows from a fresh plan run, not an
-earlier one. State that each worktree gets a snapshot backup and each branch can be restored with
-`git branch <name> <tip>`. The preview needs no reply for auto-approved rows; send it, then run
-step 6 with exactly those names.
+earlier one. State that each worktree gets a backup. Say which branch tips a remaining ref keeps.
+`git branch <name> <tip>` works while the tip commit exists. Git can garbage-collect tips
+that no remaining ref keeps. The preview needs no reply for auto-approved rows; send it,
+then run step 6 with exactly those names.
 
 ### 5. Assess retained candidates
 
@@ -147,7 +148,7 @@ agt cleanup --only worktrees --dirty --recent [--offline] --yes --worktree <bran
 It [backs up each worktree](../worktree/references/remove.md), removes it,
 then deletes the branches that qualify with `-d`, or
 `-D` for a verified squash merge, and prints `removed` (with the backup `id`), `deleted` (with
-each `tip` and the `git branch <name> <tip>` that restores it), `kept`, and `warnings`. A named row
+each `tip` and the branch recreation command), `kept`, and `warnings`. A named row
 that no longer qualifies with the same verdict is skipped. Report each skipped row and why. Show a
 new plan before acting on it.
 
